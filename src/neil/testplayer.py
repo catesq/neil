@@ -22,7 +22,7 @@
 Provides a test player for testcases.
 """
 
-from gtkimport from gi.repository import Gtk
+from gi.repository import Gtk
 from gi.repository import GObject
 import config
 from config import get_plugin_aliases, get_plugin_blacklist
