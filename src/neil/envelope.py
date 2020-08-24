@@ -721,6 +721,7 @@ def save_envelope(path, points, sustainindex=-1):
     f.close()
 
 if __name__ == '__main__':
-    import sys, utils
+    import sys
+    from . import utils
     from .main import run
     run(sys.argv)

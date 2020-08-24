@@ -164,7 +164,8 @@ def learn_controller(parent):
     return None
 
 if __name__ == '__main__':
-    import testplayer, gobject
+    from . import testplayer
+    import gobject
     from .testplayer import TestWindow
     window = TestWindow()
     def show_dialog(rootwindow):

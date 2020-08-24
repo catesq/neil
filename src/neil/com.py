@@ -159,7 +159,8 @@ class ComponentManager:
         try:
             obj = class_(*args, **kwargs)
         except:
-            import traceback, errordlg
+            import traceback
+            from . import errordlg
             traceback.print_exc()
             msg = "<b><big>Could not create component</big></b>"
             msg2 = "while trying to create '" + id + "'"

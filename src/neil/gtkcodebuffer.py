@@ -676,4 +676,5 @@ class CodeBuffer(Gtk.TextBuffer):
             else: # update tag
                 tag = table.lookup(name)
                 _log_debug("Update tag %s with (%s)"%(name, style))
-                list(map(lambda i: tag.set_property(i[0],i[1]), list(style.items())))
+                for (k, v) in style.items():
+                    tag.set_property(k, v)
