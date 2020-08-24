@@ -27,8 +27,8 @@ if __name__ == '__main__':
     os.system('../../bin/neil-combrowser neil.core.pref.components')
     raise SystemExit
 
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 import neil.com as com
 from neil.common import MARGIN, MARGIN2, MARGIN3
 from neil.utils import new_listview, add_scrollbars
@@ -42,7 +42,7 @@ from neil.utils import new_listview, add_scrollbars
 #       'Copyright',
 #       'Website',
 
-class ComponentPanel(gtk.VBox):
+class ComponentPanel(Gtk.VBox):
     """
     Panel which allows changing of general settings.
     """
@@ -62,18 +62,18 @@ class ComponentPanel(gtk.VBox):
         """
         Initializing.
         """
-        gtk.VBox.__init__(self)
+        GObject.GObject.__init__(self)
         self.set_border_width(MARGIN)
 
-        frame1 = gtk.Frame("Components")
-        fssizer = gtk.VBox(False, MARGIN)
+        frame1 = Gtk.Frame("Components")
+        fssizer = Gtk.VBox(False, MARGIN)
         fssizer.set_border_width(MARGIN)
         frame1.add(fssizer)
         self.compolist, store, columns = new_listview([
                 ('Use', bool),
                 ('Icon', str, dict(icon=True)),
                 ('Name', str, dict(markup=True)),
-                (None, gobject.TYPE_PYOBJECT),
+                (None, GObject.TYPE_PYOBJECT),
         ])
         self.compolist.set_headers_visible(False)
         def cmp_package(a,b):
@@ -85,7 +85,7 @@ class ComponentPanel(gtk.VBox):
             store.append([True, package.icon, text, package])
             
         scrollbars = add_scrollbars(self.compolist)
-        fssizer.pack_start(scrollbars)
+        fssizer.pack_start(scrollbars, True, True, 0)
         self.add(frame1)
 
     def apply(self):

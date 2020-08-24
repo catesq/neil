@@ -28,9 +28,9 @@ if __name__ == '__main__':
     os.system('../../bin/neil-combrowser neil.core.sequencerpanel')
     raise SystemExit
 
-import gtk
-import pango
-import gobject
+from gi.repository import Gtk
+from gi.repository import Pango
+from gi.repository import GObject
 import sys
 # from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS
 # from neil.utils import GENERATOR_PLUGIN_FLAGS, EFFECT_PLUGIN_FLAGS
@@ -63,22 +63,22 @@ class PatternNotFoundException(Exception):
     pass
 
 
-class AddSequencerTrackDialog(gtk.Dialog):
+class AddSequencerTrackDialog(Gtk.Dialog):
     """
     Sequencer Dialog Box.
 
     This dialog is used to create a new track for an existing machine.
     """
     def __init__(self, parent, machines):
-        gtk.Dialog.__init__(self,
+        GObject.GObject.__init__(self,
                 "Add track",
                 parent.get_toplevel(),
-                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
                 None
         )
-        self.btnok = self.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
-        self.btncancel = self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        self.combo = gtk.combo_box_new_text()
+        self.btnok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        self.btncancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+        self.combo = Gtk.ComboBoxText()
         for machine in sorted(machines, lambda a, b: cmp(a.lower(), b.lower())):
             self.combo.append_text(machine)
         # Set a default.
@@ -87,7 +87,7 @@ class AddSequencerTrackDialog(gtk.Dialog):
         self.show_all()
 
 
-class SequencerToolBar(gtk.HBox):
+class SequencerToolBar(Gtk.HBox):
     """
     Sequencer Toolbar
 
@@ -97,12 +97,12 @@ class SequencerToolBar(gtk.HBox):
         """
         Initialization.
         """
-        gtk.HBox.__init__(self, False, MARGIN)
+        GObject.GObject.__init__(self, False, MARGIN)
         self.seqview = seqview
         self.set_border_width(MARGIN)
-        self.steplabel = gtk.Label()
+        self.steplabel = Gtk.Label()
         self.steplabel.set_text_with_mnemonic("_Step")
-        self.stepselect = gtk.combo_box_entry_new_text()
+        self.stepselect = Gtk.combo_box_entry_new_text()
         self.steps = [1, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44,
                       48, 52, 56, 60, 64]
         self.stepselect.connect('changed', self.on_stepselect)
@@ -110,12 +110,12 @@ class SequencerToolBar(gtk.HBox):
         self.stepselect.set_size_request(60, -1)
         self.steplabel.set_mnemonic_widget(self.stepselect)
         # Follow song checkbox.
-        self.followsong = gtk.CheckButton("Follow Song Position")
+        self.followsong = Gtk.CheckButton("Follow Song Position")
         self.followsong.set_active(False)
         # Display all the components.
-        self.pack_start(self.steplabel, expand=False)
-        self.pack_start(self.stepselect, expand=False)
-        self.pack_start(self.followsong, expand=False)
+        self.pack_start(self.steplabel, False, True, 0)
+        self.pack_start(self.stepselect, False, True, 0)
+        self.pack_start(self.followsong, False, True, 0)
 
     def increase_step(self):
         if self.parent.view.step < 64:
@@ -176,7 +176,7 @@ class SequencerToolBar(gtk.HBox):
         player.set_seqstep(step)
 
 
-class SequencerPanel(gtk.VBox):
+class SequencerPanel(Gtk.VBox):
     """
     Sequencer pattern panel.
 
@@ -202,24 +202,24 @@ class SequencerPanel(gtk.VBox):
         """
         Initialization.
         """
-        gtk.VBox.__init__(self)
-        self.splitter = gtk.HPaned()
-        self.seqliststore = gtk.ListStore(str, str)
-        self.seqpatternlist = gtk.TreeView(self.seqliststore)
+        GObject.GObject.__init__(self)
+        self.splitter = Gtk.HPaned()
+        self.seqliststore = Gtk.ListStore(str, str)
+        self.seqpatternlist = Gtk.TreeView(self.seqliststore)
         self.seqpatternlist.set_rules_hint(True)
         self.seqpatternlist.connect("button-press-event",
                                     self.on_pattern_list_button)
         self.seqpatternlist.connect("enter-notify-event",
                                     self.on_mouse_over)
         self.seqpatternlist.connect("row-activated", self.on_visit_pattern)
-        tvkey = gtk.TreeViewColumn("Key")
+        tvkey = Gtk.TreeViewColumn("Key")
         tvkey.set_resizable(True)
-        tvpname = gtk.TreeViewColumn("Pattern Name")
+        tvpname = Gtk.TreeViewColumn("Pattern Name")
         tvpname.set_resizable(True)
-        cellkey = gtk.CellRendererText()
-        cellpname = gtk.CellRendererText()
-        tvkey.pack_start(cellkey)
-        tvpname.pack_start(cellpname)
+        cellkey = Gtk.CellRendererText()
+        cellpname = Gtk.CellRendererText()
+        tvkey.pack_start(cellkey, True, True, 0)
+        tvpname.pack_start(cellpname, True, True, 0)
         tvkey.add_attribute(cellkey, 'text', 0)
         tvpname.add_attribute(cellpname, 'text', 1)
         self.seqpatternlist.append_column(tvkey)
@@ -228,31 +228,31 @@ class SequencerPanel(gtk.VBox):
         tvkey.set_sort_column_id(0)
         tvpname.set_sort_column_id(1)
 
-        vscroll = gtk.VScrollbar()
-        hscroll = gtk.HScrollbar()
+        vscroll = Gtk.VScrollbar()
+        hscroll = Gtk.HScrollbar()
 
         self.seqview = SequencerView(self, hscroll, vscroll)
         self.seqview.connect("enter-notify-event",
                              self.on_mouse_over)
-        self.viewport = gtk.Viewport()
+        self.viewport = Gtk.Viewport()
         self.viewport.add(self.seqview)
-        scrollwin = gtk.Table(2, 2)
+        scrollwin = Gtk.Table(2, 2)
         scrollwin.attach(self.viewport, 0, 1, 0, 1,
-                         gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND)
-        scrollwin.attach(vscroll, 1, 2, 0, 1, 0, gtk.FILL)
-        scrollwin.attach(hscroll, 0, 1, 1, 2, gtk.FILL, 0)
+                         Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND)
+        scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL)
+        scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, 0)
 
         self.splitter.pack1(add_scrollbars(self.seqpatternlist), False, False)
         self.splitter.pack2(scrollwin, True, True)
         self.view = self.seqview
         self.toolbar = SequencerToolBar(self.seqview)
 
-        self.statusbar = gtk.HBox(False, MARGIN)
+        self.statusbar = Gtk.HBox(False, MARGIN)
         self.statusbar.set_border_width(MARGIN0)
 
-        self.pack_start(self.toolbar, expand=False)
-        self.pack_start(self.splitter)
-        self.pack_end(self.statusbar, expand=False)
+        self.pack_start(self.toolbar, False, True, 0)
+        self.pack_start(self.splitter, True, True, 0)
+        self.pack_end(self.statusbar, False, True, 0)
 
         self.__set_properties()
         self.__do_layout()
@@ -347,12 +347,12 @@ class SequencerPanel(gtk.VBox):
             x = int(event.x)
             y = int(event.y)
             path = treeview.get_path_at_pos(x, y)
-            menu = gtk.Menu()
-            new = gtk.MenuItem("New pattern")
-            clone = gtk.MenuItem("Clone pattern")
-            rename = gtk.MenuItem("Pattern properties")
-            clear = gtk.MenuItem("Clear pattern")
-            delete = gtk.MenuItem("Delete pattern")
+            menu = Gtk.Menu()
+            new = Gtk.MenuItem("New pattern")
+            clone = Gtk.MenuItem("Clone pattern")
+            rename = Gtk.MenuItem("Pattern properties")
+            clear = Gtk.MenuItem("Clear pattern")
+            delete = Gtk.MenuItem("Delete pattern")
             menu.append(new)
             new.connect('activate', on_create)
             menu.append(clone)
@@ -435,17 +435,17 @@ class SequencerPanel(gtk.VBox):
         # begin wxGlade: SequencerFrame.__set_properties
         self.statuslabels = []
         
-        label = gtk.Label()
-        vsep = gtk.VSeparator()
+        label = Gtk.Label()
+        vsep = Gtk.VSeparator()
         self.statuslabels.append(label)
-        self.statusbar.pack_start(label, expand=False)
-        self.statusbar.pack_start(vsep, expand=False)
+        self.statusbar.pack_start(label, False, True, 0)
+        self.statusbar.pack_start(vsep, False, True, 0)
         
-        label = gtk.Label()
-        vsep = gtk.VSeparator()
+        label = Gtk.Label()
+        vsep = Gtk.VSeparator()
         self.statuslabels.append(label)
-        self.statusbar.pack_start(label, expand=False)
-        self.statusbar.pack_start(vsep, expand=False)
+        self.statusbar.pack_start(label, False, True, 0)
+        self.statusbar.pack_start(vsep, False, True, 0)
         # end wxGlade
 
     def __do_layout(self):
@@ -459,7 +459,7 @@ class SequencerPanel(gtk.VBox):
 # end of class SequencerFrame
 
 
-class SequencerView(gtk.DrawingArea):
+class SequencerView(Gtk.DrawingArea):
     """
     Sequence viewer class.
     """
@@ -496,8 +496,8 @@ class SequencerView(gtk.DrawingArea):
         self.selection_start = None
         self.selection_end = None
         self.dragging = False
-        gtk.DrawingArea.__init__(self)
-        self.add_events(gtk.gdk.ALL_EVENTS_MASK)
+        GObject.GObject.__init__(self)
+        self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.set_property('can-focus', True)
         self.connect("expose_event", self.expose)
         self.connect('key-press-event', self.on_key_down)
@@ -507,7 +507,7 @@ class SequencerView(gtk.DrawingArea):
         self.connect('scroll-event', self.on_mousewheel)
         self.hscroll.connect('change-value', self.on_hscroll_window)
         self.vscroll.connect('change-value', self.on_vscroll_window)
-        gobject.timeout_add(100, self.update_position)
+        GObject.timeout_add(100, self.update_position)
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_sequencer_changed += self.redraw
         eventbus.zzub_set_sequence_event += self.redraw
@@ -909,11 +909,11 @@ class SequencerView(gtk.DrawingArea):
         player.set_position(player.get_loop_start())
         player.set_loop_enabled(0)
         player.play()
-        dialog = gtk.Dialog(
+        dialog = Gtk.Dialog(
             "Recording",
-            buttons=(gtk.STOCK_OK, True)
+            buttons=(Gtk.STOCK_OK, True)
             )
-        dialog.vbox.add(gtk.Label("Press OK when the recording is done."))
+        dialog.vbox.add(Gtk.Label(label="Press OK when the recording is done."))
         dialog.show_all()
         dialog.run()
         recorder.destroy()
@@ -979,7 +979,7 @@ class SequencerView(gtk.DrawingArea):
         dlg = AddSequencerTrackDialog(self, pmenu)
         response = dlg.run()
         dlg.hide_all()
-        if response == gtk.RESPONSE_OK:
+        if response == Gtk.ResponseType.OK:
             name = dlg.combo.get_active_text()
             for plugin in player.get_plugin_list():
                 if plugin.get_name() == name:
@@ -1019,28 +1019,28 @@ class SequencerView(gtk.DrawingArea):
         """
         player = com.get('neil.core.player')
         seq = player.get_current_sequencer()
-        mask = event.state
+        mask = event.get_state()
         kv = event.keyval
         # convert keypad numbers
-        if gtk.gdk.keyval_from_name('KP_0') <= kv <= gtk.gdk.keyval_from_name('KP_9'):
-            kv = kv - gtk.gdk.keyval_from_name('KP_0') + gtk.gdk.keyval_from_name('0')
-        k = gtk.gdk.keyval_name(event.keyval)
+        if Gdk.keyval_from_name('KP_0') <= kv <= Gdk.keyval_from_name('KP_9'):
+            kv = kv - Gdk.keyval_from_name('KP_0') + Gdk.keyval_from_name('0')
+        k = Gdk.keyval_name(event.keyval)
         #print kv, k, event.keyval
         arrow_down = k in ['Left', 'Right', 'Up', 'Down', 'KP_Left', 'KP_Right', 'KP_Up', 'KP_Down']
-        is_selecting = arrow_down and (mask & gtk.gdk.SHIFT_MASK)
+        is_selecting = arrow_down and (mask & Gdk.ModifierType.SHIFT_MASK)
         if is_selecting:
             # starts the selection if nothing selected
             if self.selection_start == None:
                 self.selection_start = (self.track, self.row)
         elif arrow_down:
             self.deselect()
-        if mask & gtk.gdk.SHIFT_MASK and (k in ('KP_Add', 'plus', 'asterisk')):
+        if mask & Gdk.ModifierType.SHIFT_MASK and (k in ('KP_Add', 'plus', 'asterisk')):
             self.panel.toolbar.increase_step()
             self.set_cursor_pos(self.track, self.row)
-        elif mask & gtk.gdk.SHIFT_MASK and (k in ('KP_Subtract', 'underscore')):
+        elif mask & Gdk.ModifierType.SHIFT_MASK and (k in ('KP_Subtract', 'underscore')):
             self.panel.toolbar.decrease_step()
             self.set_cursor_pos(self.track, self.row)
-        elif (mask & gtk.gdk.CONTROL_MASK):
+        elif (mask & Gdk.ModifierType.CONTROL_MASK):
             if k == 'Return':
                 self.show_plugin_dialog()
             elif k == 'Delete':
@@ -1248,16 +1248,16 @@ class SequencerView(gtk.DrawingArea):
         @param event: Mouse event
         @type event: wx.MouseEvent
         """
-        if event.state & gtk.gdk.CONTROL_MASK:
-            if event.direction == gtk.gdk.SCROLL_DOWN:
+        if event.get_state() & Gdk.ModifierType.CONTROL_MASK:
+            if event.direction == Gdk.ScrollDirection.DOWN:
                 self.panel.toolbar.increase_step()
                 self.set_cursor_pos(self.track, self.row)
-            elif event.direction == gtk.gdk.SCROLL_UP:
+            elif event.direction == Gdk.ScrollDirection.UP:
                 self.panel.toolbar.decrease_step()
                 self.set_cursor_pos(self.track, self.row)
-        elif event.direction == gtk.gdk.SCROLL_UP:
+        elif event.direction == Gdk.ScrollDirection.UP:
             self.set_cursor_pos(self.track, self.row - self.step)
-        elif event.direction == gtk.gdk.SCROLL_DOWN:
+        elif event.direction == Gdk.ScrollDirection.DOWN:
             self.set_cursor_pos(self.track, self.row + self.step)
 
     def on_left_down(self, widget, event):
@@ -1285,7 +1285,7 @@ class SequencerView(gtk.DrawingArea):
                     self.deselect()
                     self.dragging = True
                     self.grab_add()
-            if event.type == gtk.gdk._2BUTTON_PRESS:  # double-click
+            if event.type == Gdk._2BUTTON_PRESS:  # double-click
                 m, index, bp = self.get_pattern_at(self.track, self.row)
                 if index == None:
                     track = self.get_track()
@@ -1538,7 +1538,7 @@ class SequencerView(gtk.DrawingArea):
         if self.playpos >= self.startseqtime:
             gc.set_foreground(white)
             gc.set_background(white)
-            gc.set_function(gtk.gdk.XOR)
+            gc.set_function(Gdk.XOR)
             x = self.seq_left_margin + int((float(self.playpos - self.startseqtime) / self.step) * self.seq_row_size) + 1
             drawable.draw_rectangle(gc, True, x, 1, 1, height - 1)
 
@@ -1589,7 +1589,7 @@ class SequencerView(gtk.DrawingArea):
         drawable = self.window
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
-        layout = pango.Layout(self.get_pango_context())
+        layout = Pango.Layout(self.get_pango_context())
         layout.set_width(-1)
         start = self.startseqtime
         while (x < width):
@@ -1622,9 +1622,9 @@ class SequencerView(gtk.DrawingArea):
         drawable = self.window
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
-        layout = pango.Layout(self.get_pango_context())
+        layout = Pango.Layout(self.get_pango_context())
         layout.set_width(-1)
-        layout.set_font_description(pango.FontDescription("sans 8"))
+        layout.set_font_description(Pango.FontDescription("sans 8"))
         # cfg = config.get_config()
         sequencer = player.get_current_sequencer()
         tracks = sequencer.get_track_list()
@@ -1656,7 +1656,7 @@ class SequencerView(gtk.DrawingArea):
                                 pass
                             box_size = max(int(((self.seq_row_size * length) / self.step) + 0.5), 4)
                             gfx_w, gfx_h = box_size - 3, self.seq_track_size - 3
-                            gfx = gtk.gdk.Pixmap(drawable, gfx_w, gfx_h, -1)
+                            gfx = Gdk.Pixmap(drawable, gfx_w, gfx_h, -1)
                             pattern_color = self.get_random_color(plugin.get_name() + name)
                             ctx.set_foreground(ctx.get_colormap().alloc_color(pattern_color))
                             gfx.draw_rectangle(ctx, True, 0, 0, gfx_w, gfx_h)

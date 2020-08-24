@@ -23,10 +23,10 @@ if __name__ == '__main__':
     os.system('../../bin/neil-combrowser neil.core.panel.master')
     raise SystemExit
 
-import gtk
+from gi.repository import Gtk
 import cairo
 from neil.common import MARGIN
-import gobject
+from gi.repository import GObject
 import neil.utils as utils
 import neil.com as com
 import array
@@ -39,20 +39,20 @@ pattern = cairo.SurfacePattern(cairo.ImageSurface.create_for_data(
 pattern.set_extend(cairo.EXTEND_REPEAT)
 
 
-class AmpView(gtk.DrawingArea):
+class AmpView(Gtk.DrawingArea):
     """
     A simple control rendering a Buzz-like master VU bar.
     """
 
     __gsignals__ = {
-       'clip': (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_FLOAT,))
+       'clip': (GObject.SignalFlags.RUN_LAST, None, (GObject.TYPE_FLOAT,))
     }
 
     def __init__(self, parent, channel):
         """
         Initializer.
         """
-        gtk.DrawingArea.__init__(self)
+        GObject.GObject.__init__(self)
         self.linear = None
         self.range = 80
         self.amp = 0.0
@@ -63,7 +63,7 @@ class AmpView(gtk.DrawingArea):
         self.set_size_request(20, -1)
         self.connect("expose_event", self.expose)
         self.connect("configure_event", self.configure)
-        gobject.timeout_add(33, self.on_update)
+        GObject.timeout_add(33, self.on_update)
 
     def on_update(self):
         """
@@ -167,7 +167,7 @@ class AmpView(gtk.DrawingArea):
         return False
 
 
-class MasterPanel(gtk.VBox):
+class MasterPanel(Gtk.VBox):
     """
     A panel containing the master machine controls.
     """
@@ -178,14 +178,14 @@ class MasterPanel(gtk.VBox):
     )
 
     def __init__(self):
-        gtk.VBox.__init__(self)
+        GObject.GObject.__init__(self)
         self.latency = 0
         self.ohg = utils.ObjectHandlerGroup()
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         eventbus.document_loaded += self.update_all
         #eventbus.zzub_player_state_changed += self.on_zzub_player_state_changed
-        self.masterslider = gtk.VScale()
+        self.masterslider = Gtk.VScale()
         self.masterslider.set_draw_value(False)
         self.masterslider.set_range(0, 16384)
         self.masterslider.set_size_request(-1, 333)
@@ -199,24 +199,24 @@ class MasterPanel(gtk.VBox):
         self.ampl.connect('clip', self.on_clipped)
         self.ampr.connect('clip', self.on_clipped)
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         hbox.set_border_width(MARGIN)
-        hbox.pack_start(self.ampl)
-        hbox.pack_start(self.masterslider)
-        hbox.pack_start(self.ampr)
-        vbox = gtk.VBox()
+        hbox.pack_start(self.ampl, True, True, 0)
+        hbox.pack_start(self.masterslider, True, True, 0)
+        hbox.pack_start(self.ampr, True, True, 0)
+        vbox = Gtk.VBox()
 
-        self.clipbtn = gtk.Button()
+        self.clipbtn = Gtk.Button()
         self.clipbtn.connect('clicked', self.on_clip_button_clicked)
         self.clipbtn.set_property("can-focus", False)
 
-        self.volumelabel = gtk.Label()
+        self.volumelabel = Gtk.Label()
 
         vbox.pack_start(self.clipbtn, expand=False, fill=False)
         vbox.pack_start(hbox, expand=True, fill=True)
         vbox.pack_start(self.volumelabel, expand=False, fill=False)
 
-        self.pack_start(vbox)
+        self.pack_start(vbox, True, True, 0)
 
         self.update_all()
 
@@ -226,7 +226,7 @@ class MasterPanel(gtk.VBox):
         self.connect('realize', self.on_realize)
 
     def on_realize(self, widget):
-        self.clipbtn_org_color = self.clipbtn.get_style().bg[gtk.STATE_NORMAL]
+        self.clipbtn_org_color = self.clipbtn.get_style().bg[Gtk.StateType.NORMAL]
 
     def on_zzub_parameter_changed(self, plugin, group, track, param, value):
         player = com.get('neil.core.player')
@@ -255,9 +255,9 @@ class MasterPanel(gtk.VBox):
         """
         vol = self.masterslider.get_value()
         step = 16384 / 48
-        if event.direction == gtk.gdk.SCROLL_UP:
+        if event.direction == Gdk.ScrollDirection.UP:
             vol += step
-        elif event.direction == gtk.gdk.SCROLL_DOWN:
+        elif event.direction == Gdk.ScrollDirection.DOWN:
             vol -= step
         vol = min(max(0, vol), 16384)
         self.on_scroll_changed(None, None, vol)
@@ -267,12 +267,12 @@ class MasterPanel(gtk.VBox):
         master = player.get_plugin(0)
         maxL, maxR = master.get_last_peak()
         self.clipbtn.set_label("%.1f dbFS" % utils.linear2db(min(maxL, maxR, 1.)))
-        self.clipbtn.modify_bg(gtk.STATE_NORMAL, self.clipbtn_org_color)
+        self.clipbtn.modify_bg(Gtk.StateType.NORMAL, self.clipbtn_org_color)
 
     def on_clipped(self, widget, level):
         # db = utils.linear2db(level, widget.range)
         self.clipbtn.set_label('CLIP')
-        self.clipbtn.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color("#f00"))
+        self.clipbtn.modify_bg(Gtk.StateType.NORMAL, Gdk.Color("#f00"))
 
     def update_all(self):
         """

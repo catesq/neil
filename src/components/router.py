@@ -30,8 +30,8 @@ if __name__ == '__main__':
     raise SystemExit
 
 import neil.com as com
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 
 from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS,\
      GENERATOR_PLUGIN_FLAGS, EFFECT_PLUGIN_FLAGS,\
@@ -75,7 +75,7 @@ AREA_PANNING = 1
 AREA_LED = 2
 
 
-class AttributesDialog(gtk.Dialog):
+class AttributesDialog(Gtk.Dialog):
     """
     Displays plugin atttributes and allows to edit them.
     """
@@ -93,13 +93,13 @@ class AttributesDialog(gtk.Dialog):
         @param plugin: Plugin object.
         @type plugin: wx.Plugin
         """
-        gtk.Dialog.__init__(self,
+        GObject.GObject.__init__(self,
                 "Attributes",
                 parent.get_toplevel(),
-                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
                 None
         )
-        vbox = gtk.VBox(False, MARGIN)
+        vbox = Gtk.VBox(False, MARGIN)
         vbox.set_border_width(MARGIN)
         self.plugin = plugin
         self.pluginloader = plugin.get_pluginloader()
@@ -112,17 +112,17 @@ class AttributesDialog(gtk.Dialog):
                 ('Default', str),
         ])
         vbox.add(add_scrollbars(self.attriblist))
-        hsizer = gtk.HButtonBox()
+        hsizer = Gtk.HButtonBox()
         hsizer.set_spacing(MARGIN)
-        hsizer.set_layout(gtk.BUTTONBOX_START)
-        self.edvalue = gtk.Entry()
+        hsizer.set_layout(Gtk.ButtonBoxStyle.START)
+        self.edvalue = Gtk.Entry()
         self.edvalue.set_size_request(50, -1)
-        self.btnset = gtk.Button("_Set")
-        self.btnok = self.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
-        self.btncancel = self.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        hsizer.pack_start(self.edvalue, expand=False)
-        hsizer.pack_start(self.btnset, expand=False)
-        vbox.pack_start(hsizer, expand=False)
+        self.btnset = Gtk.Button("_Set")
+        self.btnok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        self.btncancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+        hsizer.pack_start(self.edvalue, False, True, 0)
+        hsizer.pack_start(self.btnset, False, True, 0)
+        vbox.pack_start(hsizer, False, True, 0)
         self.attribs = []
         for i in range(self.pluginloader.get_attribute_count()):
             attrib = self.pluginloader.get_attribute(i)
@@ -185,12 +185,12 @@ class AttributesDialog(gtk.Dialog):
         """
         Called when the "ok" or "cancel" button is being pressed.
         """
-        if response == gtk.RESPONSE_OK:
+        if response == Gtk.ResponseType.OK:
             for i in range(len(self.attribs)):
                 self.plugin.set_attribute_value(i, self.attribs[i])
 
 
-class ParameterDialog(gtk.Dialog):
+class ParameterDialog(Gtk.Dialog):
     """
     Displays parameter sliders for a plugin in a new Dialog.
     """
@@ -202,7 +202,7 @@ class ParameterDialog(gtk.Dialog):
     )
 
     def __init__(self, manager, plugin, parent):
-        gtk.Dialog.__init__(self, parent=parent.get_toplevel())
+        GObject.GObject.__init__(self, parent=parent.get_toplevel())
         self.plugin = plugin
         self.manager = manager
         self.manager.plugin_dialogs[plugin] = self
@@ -282,13 +282,13 @@ class PresetDialogManager:
         dlg.show_all()
 
 
-class PresetDialog(gtk.Dialog):
+class PresetDialog(Gtk.Dialog):
     """
     Displays parameter sliders for a plugin in a new Dialog.
     """
     def __init__(self, manager, plugin, parent):
-        #gtk.Dialog.__init__(self, parent=parent.get_toplevel())
-        gtk.Dialog.__init__(self, parent=com.get('neil.core.window.root'))
+        #GObject.GObject.__init__(self, parent=parent.get_toplevel())
+        GObject.GObject.__init__(self, parent=com.get('neil.core.window.root'))
         self.plugin = plugin
         self.manager = manager
         self.manager.preset_dialogs[plugin] = self
@@ -324,7 +324,7 @@ DRAG_FORMATS = [
 ]
 
 
-class RoutePanel(gtk.VBox):
+class RoutePanel(Gtk.VBox):
     """
     Contains the view panel and manages parameter dialogs.
     """
@@ -349,7 +349,7 @@ class RoutePanel(gtk.VBox):
         """
         Initializer.
         """
-        gtk.VBox.__init__(self)
+        GObject.GObject.__init__(self)
         self.view = com.get('neil.core.router.view', self)
         self.add(self.view)
 
@@ -368,7 +368,7 @@ class RoutePanel(gtk.VBox):
         self.view.redraw()
 
 
-class VolumeSlider(gtk.Window):
+class VolumeSlider(Gtk.Window):
     """
     A temporary popup volume control for the router. Can
     only be summoned parametrically and will vanish when the
@@ -381,10 +381,10 @@ class VolumeSlider(gtk.Window):
         self.parent_window = parent
         self.plugin = None
         self.index = -1
-        gtk.Window.__init__(self, gtk.WINDOW_POPUP)
-        self.drawingarea = gtk.DrawingArea()
+        GObject.GObject.__init__(self, Gtk.WindowType.POPUP)
+        self.drawingarea = Gtk.DrawingArea()
         self.add(self.drawingarea)
-        self.drawingarea.add_events(gtk.gdk.ALL_EVENTS_MASK)
+        self.drawingarea.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.drawingarea.set_property('can-focus', True)
         self.resize(VOLBARWIDTH, VOLBARHEIGHT)
         self.hide_all()
@@ -445,11 +445,11 @@ class VolumeSlider(gtk.Window):
             drawable.draw_rectangle(gc, True, 1, pos + 1,
                                     VOLBARWIDTH - 2, VOLKNOBHEIGHT - 2)
 
-        black = cm.alloc_color(gtk.gdk.color_parse("black"))
+        black = cm.alloc_color(Gdk.color_parse("black"))
         gc.set_foreground(black)
-        import pango
-        layout = pango.Layout(self.get_pango_context())
-        font = pango.FontDescription("sans 6")
+        from gi.repository import Pango
+        layout = Pango.Layout(self.get_pango_context())
+        font = Pango.FontDescription("sans 6")
         layout.set_font_description(font)
         layout.set_markup("<small>%.1f dB</small>" % (self.amp * -48.0))
         drawable.draw_layout(gc, 2, 2, layout)
@@ -488,7 +488,7 @@ class VolumeSlider(gtk.Window):
         self.drawingarea.grab_remove()
 
 
-class RouteView(gtk.DrawingArea):
+class RouteView(Gtk.DrawingArea):
     """
     Allows to monitor and control plugins and their connections.
     """
@@ -533,7 +533,7 @@ class RouteView(gtk.DrawingArea):
         @param rootwindow: Main window.
         @type rootwindow: NeilFrame
         """
-        gtk.DrawingArea.__init__(self)
+        GObject.GObject.__init__(self)
         self.panel = parent
         self.routebitmap = None
         # self.peaks = {}
@@ -547,7 +547,7 @@ class RouteView(gtk.DrawingArea):
         self.chordnotes = []
         self.update_colors()
         self.volume_slider = VolumeSlider(self)
-        self.add_events(gtk.gdk.ALL_EVENTS_MASK)
+        self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.set_property('can-focus', True)
         self.connect('button-press-event', self.on_left_down)
         self.connect('button-release-event', self.on_left_up)
@@ -557,7 +557,7 @@ class RouteView(gtk.DrawingArea):
         self.connect('key-release-event', self.on_key_jazz_release, None)
         self.connect('size-allocate', self.on_size_allocate)
         if config.get_config().get_led_draw() == True:
-            gobject.timeout_add(100, self.on_draw_led_timer)
+            GObject.timeout_add(100, self.on_draw_led_timer)
         self.drag_dest_set(0, DRAG_FORMATS, 0)
         self.connect('drag_motion', self.on_drag_motion)
         self.connect('drag_drop', self.on_drag_drop)
@@ -785,7 +785,7 @@ class RouteView(gtk.DrawingArea):
             x, y = mp.get_position()
             x, y = int(cx * (1 + x)), int(cy * (1 + y))
             if (mx >= (x - PW)) and (mx <= (x + PW)) and (my >= (y - PH)) and (my <= (y + PH)):
-                if sum(tuple(gtk.gdk.Rectangle(x - PW + LEDOFSX, y - PH + LEDOFSY, LEDWIDTH, LEDHEIGHT).intersect((mx, my, 1, 1)))):
+                if sum(tuple((x - PW + LEDOFSX, y - PH + LEDOFSY, LEDWIDTH, LEDHEIGHT).intersect((mx, my, 1, 1)))):
                     area = AREA_LED
                 return mp, (x, y), area
 
@@ -825,7 +825,7 @@ class RouteView(gtk.DrawingArea):
             return self.on_context_menu(widget, event)
         if not event.button in (1, 2):
             return
-        if (event.button == 1) and (event.type == gtk.gdk._2BUTTON_PRESS):
+        if (event.button == 1) and (event.type == Gdk._2BUTTON_PRESS):
             self.window.set_cursor(None)
             return self.on_left_dclick(widget, event)
         mx, my = int(event.x), int(event.y)
@@ -837,23 +837,23 @@ class RouteView(gtk.DrawingArea):
                 self.redraw()
             else:
                 if not mp in player.active_plugins:
-                    if (event.state & gtk.gdk.SHIFT_MASK):
+                    if (event.get_state() & Gdk.ModifierType.SHIFT_MASK):
                         player.active_plugins = [mp] + player.active_plugins
                     else:
                         player.active_plugins = [mp]
                 if not mp in player.active_patterns and is_generator(mp):
-                    if (event.state & gtk.gdk.SHIFT_MASK):
+                    if (event.get_state() & Gdk.ModifierType.SHIFT_MASK):
                         player.active_patterns = [(mp, 0)] + player.active_patterns
                     else:
                         player.active_patterns = [(mp, 0)]
                 player.set_midi_plugin(mp)
-                if (event.state & gtk.gdk.CONTROL_MASK) or (event.button == 2):
+                if (event.get_state() & Gdk.ModifierType.CONTROL_MASK) or (event.button == 2):
                     if is_controller(mp):
                         pass
                     else:
                         self.connecting = True
                         self.connectpos = int(mx), int(my)
-                        self.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.CROSSHAIR))
+                        self.window.set_cursor(Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR))
                 if not self.connecting:
                     for plugin in player.active_plugins:
                         pinfo = self.get_plugin_info(plugin)
@@ -861,7 +861,7 @@ class RouteView(gtk.DrawingArea):
                         x, y = self.float_to_pixel(pinfo.dragpos)
                         pinfo.dragoffset = x - mx, y - my
                     self.dragging = True
-                    self.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.FLEUR))
+                    self.window.set_cursor(Gdk.Cursor.new(Gdk.FLEUR))
                     self.grab_add()
         else:
             res = self.get_connection_at((mx, my))
@@ -891,7 +891,7 @@ class RouteView(gtk.DrawingArea):
             mx, my = int(x), int(y)
             size = self.get_allocation()
             x, y = max(0, min(mx - ox, size.width)), max(0, min(my - oy, size.height))
-            if (event.state & gtk.gdk.CONTROL_MASK):
+            if (event.get_state() & Gdk.ModifierType.CONTROL_MASK):
                 # quantize position
                 x = int(float(x) / QUANTIZEX + 0.5) * QUANTIZEX
                 y = int(float(y) / QUANTIZEY + 0.5) * QUANTIZEY
@@ -907,7 +907,7 @@ class RouteView(gtk.DrawingArea):
             res = self.get_plugin_at((x, y))
             if res:
                 mp, (mx, my), area = res
-                self.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.HAND1) if area == AREA_LED else None)
+                self.window.set_cursor(Gdk.Cursor.new(Gdk.HAND1) if area == AREA_LED else None)
         return True
 
     def on_left_up(self, widget, event):
@@ -926,7 +926,7 @@ class RouteView(gtk.DrawingArea):
             ox, oy = self.dragoffset
             size = self.get_allocation()
             x, y = max(0, min(mx - ox, size.width)), max(0, min(my - oy, size.height))
-            if (event.state & gtk.gdk.CONTROL_MASK):
+            if (event.get_state() & Gdk.ModifierType.CONTROL_MASK):
                 # quantize position
                 x = int(float(x) / QUANTIZEX + 0.5) * QUANTIZEX
                 y = int(float(y) / QUANTIZEY + 0.5) * QUANTIZEY
@@ -949,7 +949,7 @@ class RouteView(gtk.DrawingArea):
         if res:
             mp, (x, y), area = res
             if area == AREA_LED:
-                self.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.HAND1))
+                self.window.set_cursor(Gdk.Cursor.new(Gdk.HAND1))
         else:
             self.window.set_cursor(None)
 
@@ -1000,8 +1000,8 @@ class RouteView(gtk.DrawingArea):
         cm = gc.get_colormap()
         #cfg = config.get_config()
         rect = self.get_allocation()
-        import pango
-        layout = pango.Layout(self.get_pango_context())
+        from gi.repository import Pango
+        layout = Pango.Layout(self.get_pango_context())
         #~ layout.set_font_description(self.fontdesc)
         layout.set_width(-1)
         w, h = rect.width, rect.height
@@ -1034,7 +1034,7 @@ class RouteView(gtk.DrawingArea):
                 return brush2cm(brushes[flag])
 
             if not pi.plugingfx:
-                pi.plugingfx = gtk.gdk.Pixmap(self.window, PLUGINWIDTH, PLUGINHEIGHT, -1)
+                pi.plugingfx = Gdk.Pixmap(self.window, PLUGINWIDTH, PLUGINHEIGHT, -1)
                 # adjust colour for muted plugins
                 color = brushes[self.COLOR_MUTED if pi.muted else self.COLOR_DEFAULT]
                 gc.set_foreground(cm.alloc_color(color))
@@ -1051,7 +1051,7 @@ class RouteView(gtk.DrawingArea):
                                             PLUGINWIDTH - 1, PLUGINHEIGHT - 1)
 
                 #  inner border
-                border = blend(cm.alloc_color(color), gtk.gdk.Color("#fff"), 0.65)
+                border = blend(cm.alloc_color(color), Gdk.Color("#fff"), 0.65)
                 gc.set_foreground(cm.alloc_color(border))
                 pi.plugingfx.draw_rectangle(gc, False, 1, 1, PLUGINWIDTH - 3, PLUGINHEIGHT - 3)
 
@@ -1070,14 +1070,14 @@ class RouteView(gtk.DrawingArea):
                                                 PLUGINWIDTH / 2 - lw / 2 - 3,
                                                 PLUGINHEIGHT / 2 - lh / 2,
                                                 lw + 6, lh)
-                gc.set_foreground(cm.alloc_color(blend(flag2cm(self.COLOR_MUTED if pi.muted else self.COLOR_DEFAULT), gtk.gdk.Color("#fff"), 0.7)))
+                gc.set_foreground(cm.alloc_color(blend(flag2cm(self.COLOR_MUTED if pi.muted else self.COLOR_DEFAULT), Gdk.Color("#fff"), 0.7)))
                 pi.plugingfx.draw_layout(gc, PLUGINWIDTH / 2 - lw / 2 + 1, PLUGINHEIGHT / 2 - lh / 2 + 1, layout)
 
                 gc.set_foreground(flag2cm(self.COLOR_TEXT))
                 pi.plugingfx.draw_layout(gc, PLUGINWIDTH / 2 - lw / 2, PLUGINHEIGHT / 2 - lh / 2, layout)
             if config.get_config().get_led_draw() == True:
                 # led border
-                border = blend(flag2cm(self.COLOR_MUTED if pi.muted else self.COLOR_DEFAULT), gtk.gdk.Color("#000"), 0.5)
+                border = blend(flag2cm(self.COLOR_MUTED if pi.muted else self.COLOR_DEFAULT), Gdk.Color("#000"), 0.5)
                 gc.set_foreground(cm.alloc_color(border))
                 pi.plugingfx.draw_rectangle(gc, False, LEDOFSX, LEDOFSY, LEDWIDTH - 1, LEDHEIGHT - 1)
 
@@ -1113,7 +1113,7 @@ class RouteView(gtk.DrawingArea):
                             # dq = self.peaks[mp.get_name()]
                             # dq.append(height)
 
-                            # peak_color = cm.alloc_color(blend(cm.alloc_color(brushes[self.COLOR_LED_ON]), gtk.gdk.Color("#fff"), 0.15))
+                            # peak_color = cm.alloc_color(blend(cm.alloc_color(brushes[self.COLOR_LED_ON]), Gdk.Color("#fff"), 0.15))
                             # h = LEDOFSY + LEDHEIGHT - 1 - max(height, sum(dq)/len(dq))
                             # gc.set_foreground(peak_color)
                             # pi.plugingfx.draw_line(gc, LEDOFSX + 1, h, LEDOFSX + LEDWIDTH - 2, h)
@@ -1129,7 +1129,7 @@ class RouteView(gtk.DrawingArea):
 
                     # cpu border
                     color = brushes[self.COLOR_MUTED if pi.muted else self.COLOR_DEFAULT]
-                    border = blend(cm.alloc_color(color), gtk.gdk.Color("#000"), 0.5)
+                    border = blend(cm.alloc_color(color), Gdk.Color("#000"), 0.5)
                     gc.set_foreground(cm.alloc_color(border))
                     pi.plugingfx.draw_rectangle(gc, False, CPUOFSX, CPUOFSY, CPUWIDTH - 1, CPUHEIGHT - 1)
 
@@ -1279,7 +1279,7 @@ class RouteView(gtk.DrawingArea):
             bmpctx.restore()
 
         if not self.routebitmap:
-            self.routebitmap = gtk.gdk.Pixmap(self.window, w, h, -1)
+            self.routebitmap = Gdk.Pixmap(self.window, w, h, -1)
             gc = self.routebitmap.new_gc()
             cm = gc.get_colormap()
             drawable = self.routebitmap
@@ -1315,7 +1315,7 @@ class RouteView(gtk.DrawingArea):
                         amp = amp ** 0.5
                         #color = [amp, amp, amp]
                         #arrowcolors[zzub.zzub_connection_type_audio][0] = color
-                        c = blend(cm.alloc_color(cfg.get_color("MV Arrow")), gtk.gdk.Color("#000"), amp)
+                        c = blend(cm.alloc_color(cfg.get_color("MV Arrow")), Gdk.Color("#000"), amp)
                         arrowcolors[zzub.zzub_connection_type_audio][0] = [c.red_float, c.green_float, c.blue_float]
 
                     draw_line_arrow(bmpctx, arrowcolors[mp.get_input_connection_type(index)], int(crx), int(cry), int(rx), int(ry))
@@ -1330,10 +1330,10 @@ class RouteView(gtk.DrawingArea):
 
     # This method is not *just* for key-jazz, it handles all key-events in router. Rename?
     def on_key_jazz(self, widget, event, plugin):
-        mask = event.state
+        mask = event.get_state()
         kv = event.keyval
-        k = gtk.gdk.keyval_name(kv)
-        if (mask & gtk.gdk.CONTROL_MASK):
+        k = Gdk.keyval_name(kv)
+        if (mask & Gdk.ModifierType.CONTROL_MASK):
             if k == 'Return':
                 com.get('neil.core.pluginbrowser', self)
                 return
@@ -1413,4 +1413,4 @@ if __name__ == '__main__':
     window.PAGE_ROUTE = 1
     window.index = 1
     window.show_all()
-    gtk.main()
+    Gtk.main()

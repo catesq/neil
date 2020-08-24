@@ -24,7 +24,7 @@ Contains the information displayed in the about box.
 
 import sys
 from neil.utils import prepstr
-import gtk
+from gi.repository import Gtk
 
 NAME = "Neil"
 VERSION = "0.9"
@@ -78,10 +78,10 @@ def about_send_email(dialog, link, user_data):
     print link
     webbrowser.open_new('mailto:'+link)
 
-gtk.about_dialog_set_url_hook(about_visit_website, None)
-gtk.about_dialog_set_email_hook(about_send_email, None)
+Gtk.about_dialog_set_url_hook(about_visit_website, None)
+Gtk.about_dialog_set_email_hook(about_send_email, None)
 
-class AboutDialog(gtk.AboutDialog):
+class AboutDialog(Gtk.AboutDialog):
     """
     A simple about dialog with a text control and an OK button.
     """
@@ -94,7 +94,7 @@ class AboutDialog(gtk.AboutDialog):
         """
         Initialization.
         """
-        gtk.AboutDialog.__init__(self)
+        GObject.GObject.__init__(self)
         self.set_name(NAME)
         self.set_version(VERSION)
         self.set_copyright(COPYRIGHT)
@@ -105,7 +105,7 @@ class AboutDialog(gtk.AboutDialog):
         self.set_authors(AUTHORS)
         self.set_artists(ARTISTS)
         self.set_documenters(DOCUMENTERS)
-        self.set_logo(gtk.gdk.pixbuf_new_from_file(imagepath("alien.png")))
+        self.set_logo(GdkPixbuf.Pixbuf.new_from_file(imagepath("alien.png")))
 
     def show(self):
         self.run()

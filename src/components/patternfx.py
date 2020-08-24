@@ -1,5 +1,5 @@
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 import os
 import pickle
 import neil.com as com
@@ -39,25 +39,25 @@ class RandomWalk():
     name = "Random Walk"
 
     def transform(self, data, parameter):
-        dialog = gtk.Dialog(
+        dialog = Gtk.Dialog(
             "Random Walk",
-            buttons=(gtk.STOCK_OK, True, gtk.STOCK_CANCEL, False)
+            buttons=(Gtk.STOCK_OK, True, Gtk.STOCK_CANCEL, False)
             )
-        grid = gtk.Table(3, 2, True)
-        grid.attach(gtk.Label("Start:"), 0, 1, 0, 1)
-        grid.attach(gtk.Label("Min Step:"), 0, 1, 1, 2)
-        grid.attach(gtk.Label("Max Step:"), 0, 1, 2, 3)
-        start_box = gtk.SpinButton(gtk.Adjustment(
+        grid = Gtk.Table(3, 2, True)
+        grid.attach(Gtk.Label(label="Start:"), 0, 1, 0, 1)
+        grid.attach(Gtk.Label(label="Min Step:"), 0, 1, 1, 2)
+        grid.attach(Gtk.Label(label="Max Step:"), 0, 1, 2, 3)
+        start_box = Gtk.SpinButton(Gtk.Adjustment(
                 parameter.get_value_min(),
                 parameter.get_value_min(),
                 parameter.get_value_max(),
                 1))
-        min_box = gtk.SpinButton(gtk.Adjustment(
+        min_box = Gtk.SpinButton(Gtk.Adjustment(
                 1,
                 1,
                 parameter.get_value_max(),
                 1))
-        max_box = gtk.SpinButton(gtk.Adjustment(
+        max_box = Gtk.SpinButton(Gtk.Adjustment(
                 1,
                 1,
                 parameter.get_value_max(),
@@ -99,15 +99,15 @@ class LinearTransform():
     name = "Linear Transform"
 
     def transform(self, data, parameter):
-        dialog = gtk.Dialog(
+        dialog = Gtk.Dialog(
             "Linear Transform",
-            buttons=(gtk.STOCK_OK, True, gtk.STOCK_CANCEL, False)
+            buttons=(Gtk.STOCK_OK, True, Gtk.STOCK_CANCEL, False)
             )
-        grid = gtk.Table(2, 2, True)
-        grid.attach(gtk.Label("Add"), 0, 1, 0, 1)
-        grid.attach(gtk.Label("Mul:"), 0, 1, 1, 2)
-        add = gtk.Entry()
-        mul = gtk.Entry()
+        grid = Gtk.Table(2, 2, True)
+        grid.attach(Gtk.Label(label="Add"), 0, 1, 0, 1)
+        grid.attach(Gtk.Label(label="Mul:"), 0, 1, 1, 2)
+        add = Gtk.Entry()
+        mul = Gtk.Entry()
         add.set_size_request(10, -1)
         mul.set_size_request(10, -1)
         add.set_text("0")
@@ -142,9 +142,9 @@ class Envelope():
     name = "Envelope"
 
     def transform(self, data, parameter):
-        dialog = gtk.Dialog(
+        dialog = Gtk.Dialog(
             "Envelope",
-            buttons=(gtk.STOCK_OK, True, gtk.STOCK_CANCEL, False)
+            buttons=(Gtk.STOCK_OK, True, Gtk.STOCK_CANCEL, False)
             )
         if len(data) < 2:
             warning(dialog, "The selection is too short! Select more rows.")
@@ -179,7 +179,7 @@ class Envelope():
             envelope.envelope = [point for index, point in enumerate(points)
                                  if index not in to_delete]
         envelope.set_size_request(600, 200)
-        dialog.vbox.pack_start(envelope)
+        dialog.vbox.pack_start(envelope, True, True, 0)
         dialog.show_all()
         response = dialog.run()
         dialog.destroy()

@@ -19,8 +19,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 import neil.utils as utils, os, stat
 from neil.utils import new_stock_image_toggle_button, ObjectHandlerGroup
 from neil.utils import is_effect,is_generator,is_controller,\
@@ -40,7 +40,7 @@ DRAG_FORMATS = [
         ('application/x-neil-plugin-uri', 0, DRAG_FORMAT_PLUGIN_URI)
 ]
 
-class SearchPluginsDialog(gtk.Window):
+class SearchPluginsDialog(Gtk.Window):
 
     __neil__ = dict(
         id = 'neil.core.searchplugins',
@@ -58,41 +58,41 @@ class SearchPluginsDialog(gtk.Window):
         )
 
     def __init__(self):
-        gtk.Window.__init__(self)
+        GObject.GObject.__init__(self)
         self.set_default_size(250, -1)
-        self.vbox = gtk.VBox()
+        self.vbox = Gtk.VBox()
         self.add(self.vbox)
         self.set_title("Search Plugins")
         self.connect('delete-event', self.hide_on_delete)
         com.get("neil.core.icons") # make sure theme icons are loaded
         self.searchterms = ['']
-        self.searchbox = gtk.Entry()
-        self.treeview = gtk.TreeView()
+        self.searchbox = Gtk.Entry()
+        self.treeview = Gtk.TreeView()
         new_liststore(self.treeview, [
-                ('Icon', gtk.gdk.Pixbuf),
+                ('Icon', GdkPixbuf.Pixbuf),
                 ('Name', str, dict(markup=True)),
                 (None, object),
                 (None, str, dict(markup=True)),
         ])
 
         # checkboxes
-        self.check_containers = [gtk.HBox() for i in range(2)]
+        self.check_containers = [Gtk.HBox() for i in range(2)]
         self.vbox.pack_end(self.check_containers[1], False, False)
         self.vbox.pack_end(self.check_containers[0], False, False)
 
-        self.show_generators_button = gtk.CheckButton(label="Generators")
+        self.show_generators_button = Gtk.CheckButton(label="Generators")
         self.check_containers[0].add(self.show_generators_button)
         self.show_generators_button.connect("toggled", self.on_checkbox_changed)
 
-        self.show_effects_button = gtk.CheckButton(label="Effects")
+        self.show_effects_button = Gtk.CheckButton(label="Effects")
         self.check_containers[0].add(self.show_effects_button)
         self.show_effects_button.connect("toggled", self.on_checkbox_changed)
 
-        self.show_controllers_button = gtk.CheckButton(label="Controllers")
+        self.show_controllers_button = Gtk.CheckButton(label="Controllers")
         self.check_containers[1].add(self.show_controllers_button)
         self.show_controllers_button.connect("toggled", self.on_checkbox_changed)
 
-        self.show_nonnative_button = gtk.CheckButton(label="Non-native")
+        self.show_nonnative_button = Gtk.CheckButton(label="Non-native")
         self.check_containers[1].add(self.show_nonnative_button)
         self.show_nonnative_button.connect("toggled", self.on_checkbox_changed)
 
@@ -101,15 +101,15 @@ class SearchPluginsDialog(gtk.Window):
         self.treeview.set_rules_hint(True)
         self.populate()
         scrollbars = add_scrollbars(self.treeview)
-        self.vbox.pack_start(scrollbars)
+        self.vbox.pack_start(scrollbars, True, True, 0)
         self.vbox.pack_end(self.searchbox, False, False)
         self.searchbox.connect("changed", self.on_entry_changed)
         self.filter = self.store.filter_new()
         self.filter.set_visible_func(self.filter_item, data=None)
         self.treeview.set_model(self.filter)
         self.treeview.set_tooltip_column(3)
-        self.treeview.drag_source_set(gtk.gdk.BUTTON1_MASK | gtk.gdk.BUTTON3_MASK,
-                DRAG_FORMATS, gtk.gdk.ACTION_COPY | gtk.gdk.ACTION_MOVE)
+        self.treeview.drag_source_set(Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK,
+                DRAG_FORMATS, Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
         self.treeview.connect('drag_data_get', self.on_treeview_drag_data_get)
         cfg = com.get('neil.core.config')
         self.searchbox.set_text(cfg.pluginlistbrowser_search_term)
@@ -199,7 +199,7 @@ class SearchPluginsDialog(gtk.Window):
         cfg = com.get('neil.core.config')
         for pluginloader in player.get_pluginloader_list():
             plugins[pluginloader.get_uri()] = pluginloader
-        theme = gtk.icon_theme_get_default()
+        theme = Gtk.IconTheme.get_default()
         def get_type_rating(n):
             uri = n.get_uri()
             if uri.startswith('@zzub.org/dssidapter/'):
@@ -260,7 +260,7 @@ class SearchPluginsDialog(gtk.Window):
             author = pl.get_author().replace('<', '&lt;').replace('>', '&gt;')
             tooltip += 'Written by ' + prepstr(author)
             if icon and theme.has_icon(icon):
-                pixbuf = theme.load_icon(icon, gtk.ICON_SIZE_MENU, 0)
+                pixbuf = theme.load_icon(icon, Gtk.IconSize.MENU, 0)
             self.store.append([pixbuf, text, pl, tooltip])
 
 

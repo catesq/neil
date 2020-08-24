@@ -28,9 +28,9 @@ if __name__ == '__main__':
     os.system('../../bin/neil-combrowser neil.core.trackviewpanel')
     raise SystemExit
 
-import gtk
-import pango
-import gobject
+from gi.repository import Gtk
+from gi.repository import Pango
+from gi.repository import GObject
 from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS, \
         GENERATOR_PLUGIN_FLAGS, EFFECT_PLUGIN_FLAGS, CONTROLLER_PLUGIN_FLAGS
 from neil.utils import prepstr, from_hsb, to_hsb, get_item_count, \
@@ -48,7 +48,7 @@ import neil.com as com
 
 SEQROWSIZE = 24
 
-class Track(gtk.HBox):
+class Track(Gtk.HBox):
     """
     Track header. Displays controls to mute or solo the track.
     """
@@ -59,31 +59,31 @@ class Track(gtk.HBox):
     )
 
     def __init__(self, track, hadjustment=None):
-        gtk.HBox.__init__(self)
+        GObject.GObject.__init__(self)
         self.track = track
         self.hadjustment = hadjustment
-        self.header = gtk.VBox()
-        self.label = gtk.Label(prepstr(self.track.get_plugin().get_name()))
+        self.header = Gtk.VBox()
+        self.label = Gtk.Label(label=prepstr(self.track.get_plugin().get_name()))
         self.label.set_alignment(0.0, 0.5)
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         hbox.pack_start(self.label, True, True, 5)
         self.header.pack_start(hbox, True, True)
-        separator = gtk.HSeparator()
+        separator = Gtk.HSeparator()
         self.header.pack_end(separator, False, False)
         self.view = com.get('neil.core.trackview', track, hadjustment)
         self.pack_start(self.header, False, False)
         self.pack_end(self.view, True, True)
 
-class View(gtk.DrawingArea):
+class View(Gtk.DrawingArea):
     """
     base class for track-like views.
     """
     def __init__(self, hadjustment=None):
-        gtk.DrawingArea.__init__(self)
+        GObject.GObject.__init__(self)
         self.step = 64
         self.patterngfx = {}
         self.hadjustment = hadjustment
-        self.add_events(gtk.gdk.ALL_EVENTS_MASK)
+        self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.connect("expose_event", self.expose)
         if hadjustment:
             self.hadjustment.connect('value-changed', self.on_adjustment_value_changed)
@@ -147,8 +147,8 @@ class TimelineView(View):
         gc.set_background(bgbrush)
         drawable.draw_rectangle(gc, True, 0, 0, w, h)
 
-        layout = pango.Layout(self.get_pango_context())
-        desc = pango.FontDescription('Sans 7.5')
+        layout = Pango.Layout(self.get_pango_context())
+        desc = Pango.FontDescription('Sans 7.5')
         layout.set_font_description(desc)
         layout.set_width(-1)
 
@@ -229,7 +229,7 @@ class TrackView(View):
             ps2 = int(((end-offset) / tpp) + 0.5)
             psize = max(ps2-ps1,2) # max(int(((SEQROWSIZE * length) / self.step) + 0.5),2)
             bbh = h-2
-            bb = gtk.gdk.Pixmap(self.window, psize-1, bbh-1, -1)
+            bb = Gdk.Pixmap(self.window, psize-1, bbh-1, -1)
             self.patterngfx[value] = bb
             if value < 0x10:
                 gc.set_foreground(sbrushes[value])
@@ -286,7 +286,7 @@ class TrackView(View):
         gc.set_background(bgbrush)
         drawable.draw_rectangle(gc, True, 0, 0, w, h)
 
-        layout = pango.Layout(self.get_pango_context())
+        layout = Pango.Layout(self.get_pango_context())
         #~ layout.set_font_description(self.fontdesc)
         layout.set_width(-1)
 
@@ -327,9 +327,9 @@ class TrackView(View):
 
 #                               if intrack and (pos >= selstart[1]) and (pos <= selend[1]):
 #                                       gc.set_foreground(invbrush)
-#                                       gc.set_function(gtk.gdk.XOR)
+#                                       gc.set_function(Gdk.XOR)
 #                                       drawable.draw_rectangle(gc, True, x+ofs, y+1, bbw-ofs, bbh)
-#                                       gc.set_function(gtk.gdk.COPY)
+#                                       gc.set_function(Gdk.COPY)
         #gc.set_foreground(vlinepen)
         #drawable.draw_line(gc, 0, y, w, y)
 
@@ -342,7 +342,7 @@ class TrackView(View):
 #                       gc.set_foreground(pen)
 #                       drawable.draw_line(gc, x-1, 0, x-1, h)
 #               gc.set_foreground(loop_pen)
-#               gc.line_style = gtk.gdk.LINE_ON_OFF_DASH
+#               gc.line_style = Gdk.LINE_ON_OFF_DASH
 #               gc.set_dashes(0, (1,1))
 #               lb,le = player.get_loop()
 #               x,y = self.track_row_to_pos((0,lb))
@@ -355,7 +355,7 @@ class TrackView(View):
 
         return False
 
-class TrackViewPanel(gtk.VBox):
+class TrackViewPanel(Gtk.VBox):
     """
     Sequencer pattern panel.
 
@@ -381,34 +381,34 @@ class TrackViewPanel(gtk.VBox):
         """
         Initialization.
         """
-        gtk.VBox.__init__(self)
-        self.sizegroup = gtk.SizeGroup(gtk.SIZE_GROUP_HORIZONTAL)
-        self.hscroll = gtk.HScrollbar()
+        GObject.GObject.__init__(self)
+        self.sizegroup = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
+        self.hscroll = Gtk.HScrollbar()
         hadjustment = self.hscroll.get_adjustment()
         hadjustment.set_all(0, 0, 16384, 1, 1024, 2300)
         self.timeline = com.get('neil.core.timelineview', hadjustment)
-        self.trackviews = gtk.VBox()
+        self.trackviews = Gtk.VBox()
 
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
 
-        hbox = gtk.HBox()
-        timeline_padding = gtk.HBox()
+        hbox = Gtk.HBox()
+        timeline_padding = Gtk.HBox()
         self.sizegroup.add_widget(timeline_padding)
         hbox.pack_start(timeline_padding, False, False)
-        hbox.pack_start(self.timeline)
+        hbox.pack_start(self.timeline, True, True, 0)
 
         vbox.pack_start(hbox, False, False)
-        vbox.pack_start(self.trackviews)
+        vbox.pack_start(self.trackviews, True, True, 0)
 
-        hbox = gtk.HBox()
-        scrollbar_padding = gtk.HBox()
+        hbox = Gtk.HBox()
+        scrollbar_padding = Gtk.HBox()
         self.sizegroup.add_widget(scrollbar_padding)
         hbox.pack_start(scrollbar_padding, False, False)
-        hbox.pack_start(self.hscroll)
+        hbox.pack_start(self.hscroll, True, True, 0)
 
         vbox.pack_end(hbox, False, False)
 
-        self.pack_start(vbox)
+        self.pack_start(vbox, True, True, 0)
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_sequencer_changed += self.update_tracks
         eventbus.zzub_set_sequence_tracks += self.update_tracks

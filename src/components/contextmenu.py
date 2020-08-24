@@ -25,7 +25,7 @@ such as plugins, patterns, and so on. based on the context object currently
 selected, items can choose to append themselves or not.
 """
 
-import gtk
+from gi.repository import Gtk
 import neil.common as common
 from neil.com import com
 import zzub
@@ -71,7 +71,7 @@ class ContextMenu(Menu):
         return Menu.popup(self, parent, event)
 
 
-class PluginContextMenu(gtk.Menu):
+class PluginContextMenu(Gtk.Menu):
     __neil__ = dict(id='neil.core.popupmenu',
                       singleton=True,
                       categories=['contextmenu.handler'])
@@ -256,11 +256,11 @@ class PluginContextMenu(gtk.Menu):
         def populate_from_tree(menu, tree):
             for key, value in tree.iteritems():
                 if type(value) is not type({}):
-                    icon = gtk.Image()
+                    icon = Gtk.Image()
                     filename = get_icon_name(value)
                     if os.path.isfile(filename):
                         icon.set_from_file(get_icon_name(value))
-                    item = gtk.ImageMenuItem(prepstr(key, fix_underscore=True))
+                    item = Gtk.ImageMenuItem(prepstr(key, fix_underscore=True))
                     item.set_image(icon)
                     item.connect('activate', create_plugin, value, connection)
                     menu.add(item)
@@ -360,7 +360,7 @@ class PluginContextMenu(gtk.Menu):
     def on_machine_help(self, widget, mp):
         name = filenameify(mp.get_pluginloader().get_name())
         if not show_machine_manual(name):
-            info = gtk.MessageDialog(self.get_toplevel(), flags=0, type=gtk.MESSAGE_INFO, buttons=gtk.BUTTONS_OK, message_format="Sorry, there's no help for this plugin yet")
+            info = Gtk.MessageDialog(self.get_toplevel(), flags=0, type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, message_format="Sorry, there's no help for this plugin yet")
             info.run()
             info.destroy()
 

@@ -24,9 +24,9 @@ Provides controls usually found on front panels of audio hardware.
 See the bottom for some examples.
 """
 
-import gtk
-import pango
-import gobject
+from gi.repository import Gtk
+from gi.repository import Pango
+from gi.repository import GObject
 import cairo
 import math
 from colorsys import hls_to_rgb
@@ -116,7 +116,7 @@ def make_knobshape(gaps, gapdepth):
 
 def hls_to_color(h,l,s):
     r,g,b = hls_to_rgb(h,l,s)
-    return gtk.gdk.color_parse('#%04X%04X%04X' % (int(r*65535),int(g*65535),int(b*65535)))
+    return Gdk.color_parse('#%04X%04X%04X' % (int(r*65535),int(g*65535),int(b*65535)))
 
 MARKER_NONE = ''
 MARKER_LINE = 'line'
@@ -133,12 +133,12 @@ LEGEND_LED_DOTS = 'led-dots' # leds around the knob
 
 class KnobTooltip:
     def __init__(self):
-        self.tooltip_window = gtk.Window(gtk.WINDOW_POPUP)
-        self.tooltip = gtk.Label()
-        self.tooltip.modify_fg(gtk.STATE_NORMAL, hls_to_color(0.0, 1.0, 0.0))
+        self.tooltip_window = Gtk.Window(Gtk.WindowType.POPUP)
+        self.tooltip = Gtk.Label()
+        self.tooltip.modify_fg(Gtk.StateType.NORMAL, hls_to_color(0.0, 1.0, 0.0))
         self.tooltip_timeout = None
-        vbox = gtk.VBox()
-        vbox2 = gtk.VBox()
+        vbox = Gtk.VBox()
+        vbox2 = Gtk.VBox()
         vbox2.add(self.tooltip)
         vbox2.set_border_width(2)
         vbox.add(vbox2)
@@ -158,8 +158,8 @@ class KnobTooltip:
         self.tooltip_window.window.invalidate_rect((0,0,rc.width,rc.height), False)
         self.tooltip.set_text(text)
         if self.tooltip_timeout:
-            gobject.source_remove(self.tooltip_timeout)
-        self.tooltip_timeout = gobject.timeout_add(500, self.hide_tooltip)
+            GObject.source_remove(self.tooltip_timeout)
+        self.tooltip_timeout = GObject.timeout_add(500, self.hide_tooltip)
 
     def hide_tooltip(self):
         self.tooltip_window.hide_all()
@@ -185,9 +185,9 @@ def get_knob_tooltip():
         knob_tooltip = KnobTooltip()
     return knob_tooltip
 
-class Knob(gtk.VBox):
+class Knob(Gtk.VBox):
     def __init__(self):
-        gtk.VBox.__init__(self)
+        GObject.GObject.__init__(self)
         self.gapdepth = 6
         self.gaps = 6
         self.value = 0.0
@@ -218,7 +218,7 @@ class Knob(gtk.VBox):
 
     def on_realize(self, widget):
         self.root = self.get_toplevel()
-        self.root.add_events(gtk.gdk.ALL_EVENTS_MASK)
+        self.root.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.root.connect('scroll-event', self.on_mousewheel)
         self.root.connect('button-press-event', self.on_left_down)
         self.root.connect('button-release-event', self.on_left_up)
@@ -332,7 +332,7 @@ class Knob(gtk.VBox):
             rc = self.get_allocation()
             range = self.max_value - self.min_value
             scale = rc.height
-            if event.state & gtk.gdk.SHIFT_MASK:
+            if event.get_state() & Gdk.ModifierType.SHIFT_MASK:
                 scale = rc.height*8
             value = self.startvalue - ((y - self.start)*range)/scale
             oldval = self.value
@@ -347,14 +347,14 @@ class Knob(gtk.VBox):
             return
         range = self.max_value - self.min_value
         minstep = 1.0 / (10**self.digits)
-        if event.state & (gtk.gdk.SHIFT_MASK | gtk.gdk.BUTTON1_MASK):
+        if event.get_state() & (Gdk.ModifierType.SHIFT_MASK | Gdk.ModifierType.BUTTON1_MASK):
             step = minstep
         else:
             step = max(self.quantize_value(range/25.0), minstep)
         value = self.value
-        if event.direction == gtk.gdk.SCROLL_UP:
+        if event.direction == Gdk.ScrollDirection.UP:
             value += step
-        elif event.direction == gtk.gdk.SCROLL_DOWN:
+        elif event.direction == Gdk.ScrollDirection.DOWN:
             value -= step
         self.set_value(value)
         self.show_tooltip()
@@ -550,9 +550,9 @@ class Knob(gtk.VBox):
         self.draw(self.context)
         return False
 
-class DecoBox(gtk.VBox):
+class DecoBox(Gtk.VBox):
     def __init__(self):
-        gtk.VBox.__init__(self)
+        GObject.GObject.__init__(self)
         self.arc1 = 0.0
         self.arc2 = None
         self.arc3 = None
@@ -568,10 +568,10 @@ class DecoBox(gtk.VBox):
         self.alpha = 1.0
         self.set_app_paintable(True)
         self.connect('expose-event', self.on_expose)
-        self.vbox = gtk.VBox()
-        hbox = gtk.HBox()
-        self.pack_start(hbox, expand=False)
-        self.pack_start(self.vbox)
+        self.vbox = Gtk.VBox()
+        hbox = Gtk.HBox()
+        self.pack_start(hbox, False, True, 0)
+        self.pack_start(self.vbox, True, True, 0)
         self.tabbox = hbox
 
     def update_tabbox_size(self):
@@ -706,9 +706,9 @@ import lcdfont
 LCD_CHARWIDTH = 5 # lcd character width in tiles
 LCD_CHARHEIGHT = 7 # lcd character height in tiles
 
-class LCD(gtk.DrawingArea):
+class LCD(Gtk.DrawingArea):
     def __init__(self):
-        gtk.DrawingArea.__init__(self)
+        GObject.GObject.__init__(self)
         self.font = lcdfont.charset_5x7
         self.fg_hls = 0.2, 0.7, 1.0
         self.bg_hls = 0.6, 0.2, 1.0
@@ -744,7 +744,7 @@ class LCD(gtk.DrawingArea):
         BITMASK = lcdfont.BITMASK
         for i in xrange(256):
             x,y,w,h = 0, 0, self.charwidth, self.charheight
-            pm = gtk.gdk.Pixmap(self.window, w, h, -1)
+            pm = Gdk.Pixmap(self.window, w, h, -1)
             self.chars.append(pm)
             ctx = pm.cairo_create()
             ctx.set_source_rgb(*hls_to_rgb(*self.bg_hls))
@@ -850,8 +850,8 @@ class LCD(gtk.DrawingArea):
         return True
 
 if __name__ == '__main__':
-    window = gtk.Window()
-    window.connect('destroy', lambda widget: gtk.main_quit())
+    window = Gtk.Window()
+    window.connect('destroy', lambda widget: Gtk.main_quit())
     s = 0.9
 
 
@@ -886,8 +886,8 @@ if __name__ == '__main__':
     def new_vbox(text):
         vbox = DecoBox()
         vbox.set_label(text)
-        hbox = gtk.HBox()
-        vbox.vbox.pack_start(hbox, expand=False)
+        hbox = Gtk.HBox()
+        vbox.vbox.pack_start(hbox, False, True, 0)
         return vbox, hbox
     def new_knob(size, value, hue, sat, gaps):
         knob = Knob()
@@ -905,8 +905,8 @@ if __name__ == '__main__':
             knob.set_gap_depth(0)
             knob.set_segments(36)
         return knob
-    window.modify_bg(gtk.STATE_NORMAL, hls_to_color(0.0, 0.4, s))
-    hbox = gtk.HBox(False, 6)
+    window.modify_bg(Gtk.StateType.NORMAL, hls_to_color(0.0, 0.4, s))
+    hbox = Gtk.HBox(False, 6)
     hbox.set_border_width(6)
     vb, hb = new_vbox("LMAO")
     vb.set_roundness(6, 6, 6, 6)
@@ -918,16 +918,16 @@ if __name__ == '__main__':
     vb.set_alpha(0.8)
     
     def wrap_vb(vb):
-        vbox = gtk.VBox()
-        vbox.pack_start(vb, expand=False)
+        vbox = Gtk.VBox()
+        vbox.pack_start(vb, False, True, 0)
         return vbox
 
     wrapped_vb = wrap_vb(vb)
-    hbox.pack_start(wrapped_vb, expand=False)
+    hbox.pack_start(wrapped_vb, False, True, 0)
     
     def wrap_border(knob):
-        hbox = gtk.HBox()
-        hbox.pack_start(knob, expand=False)
+        hbox = Gtk.HBox()
+        hbox.pack_start(knob, False, True, 0)
         hbox.set_border_width(6)
         return hbox
     
@@ -935,10 +935,10 @@ if __name__ == '__main__':
     knob.set_legend_scale(False)
     knob.set_marker(MARKER_DOT)
     bordered_knob = wrap_border(knob)
-    hb.pack_start(bordered_knob, expand=False)
+    hb.pack_start(bordered_knob, False, True, 0)
     
     bordered_new_knob = wrap_border(new_knob(64, 0.0, 0.0, 0.1, 9))
-    hb.pack_start(bordered_new_knob, expand=False)
+    hb.pack_start(bordered_new_knob, False, True, 0)
     titles = ["LOL", "ROFL", "WTF", "YBG"]
     for x,i in enumerate((0.1, 0.2, 0.4, 0.6)):
         title = titles.pop()
@@ -951,7 +951,7 @@ if __name__ == '__main__':
         vb.set_fg_color(0.0, 1.0, 1.0)
         vb.set_alpha(0.9)
         wrapped_vb = wrap_vb(vb)
-        hbox.pack_start(wrapped_vb, expand=False)
+        hbox.pack_start(wrapped_vb, False, True, 0)
         knob = new_knob(48, 0.1, i, 1.0, 6)
         knob.set_border_width(9)
         knob.set_angle(math.pi)
@@ -989,19 +989,19 @@ if __name__ == '__main__':
             knob.set_legend_line_width(2)
             knob.set_segments(7)
         bordered_knob = wrap_border(knob)
-        hb.pack_start(bordered_knob, expand=False)
+        hb.pack_start(bordered_knob, False, True, 0)
     vb, hb = new_vbox("BRB")
     vb.set_roundness(6, 6, 6, 6)
     vb.set_tab_size(16,6)
     vb.set_thickness(1)
     vb.set_bg_color(0.0, 0.3, s)
     vb.set_fg_color(0.0, 0.28, s)
-    vbox = gtk.VBox(False, 6)
-    vbox.pack_start(vb, expand=False)
+    vbox = Gtk.VBox(False, 6)
+    vbox.pack_start(vb, False, True, 0)
     lcd = LCD()
     lcd.set_contrast(0.1)
     lcd.set_dimensions(19,3)
-    vbox.pack_start(lcd, expand=False)
+    vbox.pack_start(lcd, False, True, 0)
     lcd1 = lcd
     lcd = LCD()
     lcd.set_fg_color(0.4, 0.5, 1.0)
@@ -1010,17 +1010,17 @@ if __name__ == '__main__':
     lcd.set_contrast(0.05)
     lcd.set_brightness(0.8)
     lcd.set_text("Slider 2\n 41 CC12  1  U12")
-    vbox.pack_start(lcd, expand=False)
-    hbox.pack_start(vbox, expand=False)
+    vbox.pack_start(lcd, False, True, 0)
+    hbox.pack_start(vbox, False, True, 0)
     
     knobs = (new_knob(32, 0.0, 0.6, 0.1, 3), new_knob(32, 0.0, 0.6, 0.1, 3), new_knob(32, 0.0, 0.6, 0.1, 3), new_knob(32, 1.0, 0.6, 0.1, 3))
-    hb.pack_start(knobs[0], expand=False)
-    hb.pack_start(knobs[1], expand=False)
-    hb.pack_start(knobs[2], expand=False)
-    hb.pack_start(knobs[3], expand=False)
+    hb.pack_start(knobs[0], False, True, 0)
+    hb.pack_start(knobs[1], False, True, 0)
+    hb.pack_start(knobs[2], False, True, 0)
+    hb.pack_start(knobs[3], False, True, 0)
     window.add(hbox)
     window.show_all()
-    gobject.timeout_add(150, scroller, lcd1, scrollinfo1())
-    gobject.timeout_add(100, scroller, lcd1, scrollinfo2())
-    gobject.timeout_add(40, scroller, lcd1, scrollinfo3())
-    gtk.main()
+    GObject.timeout_add(150, scroller, lcd1, scrollinfo1())
+    GObject.timeout_add(100, scroller, lcd1, scrollinfo2())
+    GObject.timeout_add(40, scroller, lcd1, scrollinfo3())
+    Gtk.main()

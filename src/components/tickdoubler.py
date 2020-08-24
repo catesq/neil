@@ -26,20 +26,20 @@ This module can also be executed standalone.
 
 import neil.com as com
 import zzub
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 import time
 import os
 from neil.utils import prepstr, new_listview, is_generator, message
 
-class TickDoublerDialog(gtk.Dialog):
+class TickDoublerDialog(Gtk.Dialog):
     __neil__ = dict(
             id = 'neil.tickdoubler.dialog',
             singleton = True,
     )
 
     def __init__(self, hide_on_delete=True):
-        gtk.Dialog.__init__(self, "Change resolution of song")
+        GObject.GObject.__init__(self, "Change resolution of song")
 
         # do not destroy dialog on close
         if hide_on_delete:
@@ -48,14 +48,14 @@ class TickDoublerDialog(gtk.Dialog):
         self.plugin = 0
         self.resize(250, 10)
 
-        self.double_button = gtk.Button("Double")
+        self.double_button = Gtk.Button("Double")
         self.double_button.connect("clicked", self.on_double, 2)
-        self.halve_button= gtk.Button("Halve")
+        self.halve_button= Gtk.Button("Halve")
         self.halve_button.connect("clicked", self.on_double, 0.5)
-        hbox = gtk.HBox(False, 6)
-        hbox.pack_start(self.double_button, expand=True)
-        hbox.pack_start(self.halve_button, expand=True)
-        self.vbox.pack_start(hbox, expand=False)
+        hbox = Gtk.HBox(False, 6)
+        hbox.pack_start(self.double_button, True, True, 0)
+        hbox.pack_start(self.halve_button, True, True, 0)
+        self.vbox.pack_start(hbox, False, True, 0)
         self.connect('button-press-event', self.on_left_down)
 
     def double_pattern(self, plugin, pattern_index):
@@ -150,7 +150,7 @@ class TickDoublerMenuItem:
 
     def __init__(self, menu):
         # create a menu item
-        item = gtk.MenuItem(label="Tick Doubler")
+        item = Gtk.MenuItem(label="Tick Doubler")
         # connect the menu item to our handler
         item.connect('activate', self.on_menuitem_activate)
         # append the item to the menu

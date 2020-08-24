@@ -27,13 +27,13 @@ from neil.common import MARGIN, MARGIN0
 from neil.utils import new_image_button, new_image_toggle_button, imagepath
 from neil.utils import ObjectHandlerGroup
 import config
-import gobject
-import gtk
+from gi.repository import GObject
+from gi.repository import Gtk
 import neil.com as com
 import zzub
 
 
-class TransportPanel(gtk.HBox):
+class TransportPanel(Gtk.HBox):
     """
     A panel containing the BPM/TPB spin controls.
     """
@@ -56,32 +56,32 @@ class TransportPanel(gtk.HBox):
         """
         Initializer.
         """
-        gtk.HBox.__init__(self)
+        GObject.GObject.__init__(self)
         self.master_controls = com.get('neil.core.panel.master')
-        self.master_control_window = gtk.Window()
+        self.master_control_window = Gtk.Window()
         self.master_control_window.add(self.master_controls)
         self.master_control_window.connect('delete-event', lambda widget, event: self.volume_button.set_state(False))
         self.master_control_window.connect('delete-event', self.master_control_window.hide_on_delete)
         #self.master_control_window.set_deletable(False)
         self.master_control_window.set_resizable(True)
-        self.master_control_window.set_position(gtk.WIN_POS_MOUSE)
+        self.master_control_window.set_position(Gtk.WindowPosition.MOUSE)
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         eventbus.zzub_player_state_changed += self.on_zzub_player_state_changed
         eventbus.document_loaded += self.update_all
-        self.cpulabel = gtk.Label("CPU:")
-        #self.cpu = gtk.ProgressBar()
+        self.cpulabel = Gtk.Label(label="CPU:")
+        #self.cpu = Gtk.ProgressBar()
         #self.cpu.set_size_request(80,-1)
-        self.cpuvalue = gtk.Label("100%")
+        self.cpuvalue = Gtk.Label(label="100%")
         self.cpuvalue.set_size_request(32, -1)
-        self.bpmlabel = gtk.Label("BPM")
-        self.bpm = gtk.SpinButton()
+        self.bpmlabel = Gtk.Label(label="BPM")
+        self.bpm = Gtk.SpinButton()
         self.bpm.set_range(16, 500)
         self.bpm.set_value(126)
         self.bpm.set_increments(1, 10)
         #self.bpm.connect('button-press-event', self.spinbox_clicked)
-        self.tpblabel = gtk.Label("TPB")
-        self.tpb = gtk.SpinButton()
+        self.tpblabel = Gtk.Label(label="TPB")
+        self.tpb = Gtk.SpinButton()
         self.tpb.set_range(1, 32)
         self.tpb.set_value(4)
         self.tpb.set_increments(1, 2)
@@ -91,24 +91,24 @@ class TransportPanel(gtk.HBox):
         self.btnplay = new_image_toggle_button(imagepath("playback_play.svg"), "Play (F5/F6)")
 
         self.btnrecord = new_image_toggle_button(imagepath("playback_record.svg"), "Record (F7)")
-        self.btnrecord.modify_bg(gtk.STATE_ACTIVE, gtk.gdk.color_parse("red"))
+        self.btnrecord.modify_bg(Gtk.StateType.ACTIVE, Gdk.color_parse("red"))
 
         self.btnstop = new_image_button(imagepath("playback_stop.svg"), "Stop (F8)")
 
         self.btnloop = new_image_toggle_button(imagepath("playback_repeat.svg"), "Repeat")
-        self.btnloop.modify_bg(gtk.STATE_ACTIVE, gtk.gdk.color_parse("green"))
+        self.btnloop.modify_bg(Gtk.StateType.ACTIVE, Gdk.color_parse("green"))
 
         self.btnpanic = new_image_toggle_button(imagepath("playback_panic.svg"), "Panic (F12)")
 
         self.volume_button = new_image_toggle_button(imagepath("speaker.svg"), "Volume")
 
-        combosizer = gtk.HBox(False, MARGIN)
+        combosizer = Gtk.HBox(False, MARGIN)
 
-        hbox = gtk.HBox(False, MARGIN0)
-        hbox.pack_start(self.btnplay, expand=False)
-        hbox.pack_start(self.btnrecord, expand=False)
-        hbox.pack_start(self.btnstop, expand=False)
-        hbox.pack_start(self.btnloop, expand=False)
+        hbox = Gtk.HBox(False, MARGIN0)
+        hbox.pack_start(self.btnplay, False, True, 0)
+        hbox.pack_start(self.btnrecord, False, True, 0)
+        hbox.pack_start(self.btnstop, False, True, 0)
+        hbox.pack_start(self.btnloop, False, True, 0)
         self.transport_buttons = hbox.get_children() + [self.btnpanic]
 
         def on_realize(self):
@@ -118,39 +118,39 @@ class TransportPanel(gtk.HBox):
                 e.set_size_request(w, w)
         self.connect('realize', on_realize)
 
-        vsep = gtk.VSeparator()
-        combosizer.pack_start(hbox, expand=False)
-        combosizer.pack_start(vsep, expand=False)
+        vsep = Gtk.VSeparator()
+        combosizer.pack_start(hbox, False, True, 0)
+        combosizer.pack_start(vsep, False, True, 0)
 
-        combosizer.pack_start(self.bpmlabel, expand=False)
-        combosizer.pack_start(self.bpm, expand=False)
-        combosizer.pack_start(self.tpblabel, expand=False)
-        combosizer.pack_start(self.tpb, expand=False)
+        combosizer.pack_start(self.bpmlabel, False, True, 0)
+        combosizer.pack_start(self.bpm, False, True, 0)
+        combosizer.pack_start(self.tpblabel, False, True, 0)
+        combosizer.pack_start(self.tpb, False, True, 0)
 
-        vbox_top = gtk.VBox()
-        vbox_btm = gtk.VBox()
-        vsep_a = gtk.VSeparator()
-        vsep_b = gtk.VSeparator()
-        combosizer.pack_start(vsep_a, expand=False)
-        cpubox = gtk.HBox(False, MARGIN)
-        cpubox.pack_start(self.cpulabel, expand=False)
-        #cpubox.pack_start(self.cpu, expand=False)
-        cpubox.pack_start(self.cpuvalue, expand=False)
-        cpuvbox = gtk.VBox(False, MARGIN0)
-        cpuvbox.pack_start(vbox_top)
-        cpuvbox.pack_start(cpubox, expand=False)
-        cpuvbox.pack_end(vbox_btm)
-        combosizer.pack_start(cpuvbox, expand=False)
-        combosizer.pack_start(vsep_b, expand=False)
-        combosizer.pack_start(self.btnpanic, expand=False)
-        combosizer.pack_start(self.volume_button, expand=False)
+        vbox_top = Gtk.VBox()
+        vbox_btm = Gtk.VBox()
+        vsep_a = Gtk.VSeparator()
+        vsep_b = Gtk.VSeparator()
+        combosizer.pack_start(vsep_a, False, True, 0)
+        cpubox = Gtk.HBox(False, MARGIN)
+        cpubox.pack_start(self.cpulabel, False, True, 0)
+        #cpubox.pack_start(self.cpu, False, True, 0)
+        cpubox.pack_start(self.cpuvalue, False, True, 0)
+        cpuvbox = Gtk.VBox(False, MARGIN0)
+        cpuvbox.pack_start(vbox_top, True, True, 0)
+        cpuvbox.pack_start(cpubox, False, True, 0)
+        cpuvbox.pack_end(vbox_btm, True, True, 0)
+        combosizer.pack_start(cpuvbox, False, True, 0)
+        combosizer.pack_start(vsep_b, False, True, 0)
+        combosizer.pack_start(self.btnpanic, False, True, 0)
+        combosizer.pack_start(self.volume_button, False, True, 0)
 
         # To center the transport panel uncomment the HBox's below.
-        hbox_start = gtk.HBox()
-        hbox_end = gtk.HBox()
-        self.pack_start(hbox_start)
-        self.pack_start(combosizer, expand=False)
-        self.pack_end(hbox_end)
+        hbox_start = Gtk.HBox()
+        hbox_end = Gtk.HBox()
+        self.pack_start(hbox_start, True, True, 0)
+        self.pack_start(combosizer, False, True, 0)
+        self.pack_end(hbox_end, True, True, 0)
 
         self.set_border_width(MARGIN)
         player = com.get('neil.core.player')
@@ -160,7 +160,7 @@ class TransportPanel(gtk.HBox):
         self.hgroup = ObjectHandlerGroup()
         self.hgroup.connect(self.bpm, 'value-changed', self.on_bpm)
         self.hgroup.connect(self.tpb, 'value-changed', self.on_tpb)
-        gobject.timeout_add(500, self.update_cpu)
+        GObject.timeout_add(500, self.update_cpu)
 
         player = com.get('neil.core.player')
         driver = com.get('neil.core.driver.audio')

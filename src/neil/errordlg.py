@@ -1,6 +1,6 @@
 
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 from traceback import format_exception, print_exc as traceback_print_exc
 import sys
 
@@ -11,42 +11,42 @@ def error(parent, msg, msg2=None, details=None, offer_quit=False):
     """
     Shows an error message dialog.
     """
-    dialog = gtk.MessageDialog(parent and parent.get_toplevel(),
-        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-        gtk.MESSAGE_ERROR, gtk.BUTTONS_NONE)
+    dialog = Gtk.MessageDialog(parent and parent.get_toplevel(),
+        Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+        Gtk.MessageType.ERROR, Gtk.ButtonsType.NONE)
     dialog.set_markup(msg)
     dialog.set_resizable(True)
     if msg2:
         dialog.format_secondary_text(msg2)
     if details:
-        expander = gtk.Expander("Details")
+        expander = Gtk.Expander("Details")
         dialog.vbox.pack_start(expander, expand=False, fill=True)
-        label = gtk.TextView()
+        label = Gtk.TextView()
         label.set_editable(False)
         label.get_buffer().set_property('text', details)
-        label.set_wrap_mode(gtk.WRAP_NONE)
+        label.set_wrap_mode(Gtk.WrapMode.NONE)
 
-        sw = gtk.ScrolledWindow()
-        sw.set_shadow_type(gtk.SHADOW_ETCHED_IN)
-        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw = Gtk.ScrolledWindow()
+        sw.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
+        sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         sw.set_size_request(-1, 200)
 
         sw.add(label)
         expander.add(sw)
         dialog.show_all()
-    dialog.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
+    dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
     if offer_quit:
-        dialog.add_button(gtk.STOCK_QUIT, gtk.RESPONSE_REJECT)
+        dialog.add_button(Gtk.STOCK_QUIT, Gtk.ResponseType.REJECT)
 
         def delayed_quit():
             try:
-                gtk.main_quit()
+                Gtk.main_quit()
             except RuntimeError:
                 raise SystemExit
 
         def quit_on_cancel(dlg, response_id):
-            if response_id == gtk.RESPONSE_REJECT:
-                gobject.timeout_add(1, delayed_quit)
+            if response_id == Gtk.ResponseType.REJECT:
+                GObject.timeout_add(1, delayed_quit)
         dialog.connect('response', quit_on_cancel)
     response = dialog.run()
     dialog.destroy()

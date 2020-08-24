@@ -22,14 +22,14 @@
 Provides an info view which allows to enter text.
 """
 
-import gtk
-import pango
+from gi.repository import Gtk
+from gi.repository import Pango
 import neil.common as common
 from neil.utils import add_scrollbars
 from neil.common import MARGIN, MARGIN0, MARGIN2, MARGIN3
 import neil.com as com
 
-class InfoPanel(gtk.VBox):
+class InfoPanel(Gtk.VBox):
     """
     Contains the info view.
     """
@@ -53,11 +53,11 @@ class InfoPanel(gtk.VBox):
         """
         Initializer.
         """
-        gtk.VBox.__init__(self, False, MARGIN)
+        GObject.GObject.__init__(self, False, MARGIN)
         scrollbars = add_scrollbars(self.view)
         self.set_border_width(MARGIN)
         self.view = InfoView()
-        self.pack_start(scrollbars)
+        self.pack_start(scrollbars, True, True, 0)
         eventbus = com.get('neil.core.eventbus')
         eventbus.document_loaded += self.update_all
 
@@ -74,7 +74,7 @@ class InfoPanel(gtk.VBox):
     def update_all(self):
         self.view.update()
 
-class InfoView(gtk.TextView):
+class InfoView(Gtk.TextView):
     """
     Allows to enter and view text saved with the module.
     """
@@ -83,10 +83,10 @@ class InfoView(gtk.TextView):
         """
         Initializer.
         """
-        gtk.TextView.__init__(self)
-        self.set_wrap_mode(gtk.WRAP_WORD)
+        GObject.GObject.__init__(self)
+        self.set_wrap_mode(Gtk.WrapMode.WORD)
         self.get_buffer().connect('changed', self.on_edit)
-        self.modify_font(pango.FontDescription('monospace 8'))
+        self.modify_font(Pango.FontDescription('monospace 8'))
 
     def on_edit(self, buffer_):
         """

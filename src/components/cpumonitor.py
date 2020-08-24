@@ -22,15 +22,15 @@
 Provides dialog class for cpu monitor.
 """
 
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 from neil.utils import prepstr, add_scrollbars
 import neil.utils as utils, os, stat
 import neil.common as common
 from neil.common import MARGIN, MARGIN2, MARGIN3
 import neil.com as com
 
-class CPUMonitorDialog(gtk.Dialog):
+class CPUMonitorDialog(Gtk.Dialog):
     """
     This Dialog shows the CPU monitor, which allows monitoring
     CPU usage and individual plugin CPU consumption.
@@ -55,22 +55,22 @@ class CPUMonitorDialog(gtk.Dialog):
         """
         Initializer.
         """
-        gtk.Dialog.__init__(self)
+        GObject.GObject.__init__(self)
         self.connect('delete-event', self.hide_on_delete)
         self.set_size_request(200,300)
         self.set_title("CPU Monitor")
-        self.pluginlist = gtk.ListStore(str, str)
-        scrollwin = gtk.ScrolledWindow()
-        scrollwin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        self.pluginlistview = gtk.TreeView(self.pluginlist)
+        self.pluginlist = Gtk.ListStore(str, str)
+        scrollwin = Gtk.ScrolledWindow()
+        scrollwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        self.pluginlistview = Gtk.TreeView(self.pluginlist)
         self.pluginlistview.set_rules_hint(True)
-        self.tvplugin = gtk.TreeViewColumn("Plugin")
+        self.tvplugin = Gtk.TreeViewColumn("Plugin")
         self.tvplugin.set_resizable(True)
-        self.tvload = gtk.TreeViewColumn("CPU Load")
-        self.cellplugin = gtk.CellRendererText()
-        self.cellload = gtk.CellRendererText()
-        self.tvplugin.pack_start(self.cellplugin)
-        self.tvload.pack_start(self.cellload)
+        self.tvload = Gtk.TreeViewColumn("CPU Load")
+        self.cellplugin = Gtk.CellRendererText()
+        self.cellload = Gtk.CellRendererText()
+        self.tvplugin.pack_start(self.cellplugin, True, True, 0)
+        self.tvload.pack_start(self.cellload, True, True, 0)
         self.tvplugin.add_attribute(self.cellplugin, 'text', 0)
         self.tvload.add_attribute(self.cellload, 'text', 1)
         self.pluginlistview.append_column(self.tvplugin)
@@ -78,20 +78,20 @@ class CPUMonitorDialog(gtk.Dialog):
         self.pluginlistview.set_search_column(0)
         self.tvplugin.set_sort_column_id(0)
         self.tvload.set_sort_column_id(1)
-        self.labeltotal = gtk.Label("100%")
-        self.gaugetotal = gtk.ProgressBar()
+        self.labeltotal = Gtk.Label(label="100%")
+        self.gaugetotal = Gtk.ProgressBar()
         
         scrollbars = add_scrollbars(self.pluginlistview)
-        sizer = gtk.VBox(False, MARGIN)
+        sizer = Gtk.VBox(False, MARGIN)
         sizer.set_border_width(MARGIN)
-        sizer.pack_start(scrollbars)
+        sizer.pack_start(scrollbars, True, True, 0)
         
-        hsizer = gtk.HBox(False, MARGIN)
-        hsizer.pack_start(self.gaugetotal)
-        hsizer.pack_start(self.labeltotal, expand=False)
-        sizer.pack_start(hsizer, expand=False)
+        hsizer = Gtk.HBox(False, MARGIN)
+        hsizer.pack_start(self.gaugetotal, True, True, 0)
+        hsizer.pack_start(self.labeltotal, False, True, 0)
+        sizer.pack_start(hsizer, False, True, 0)
         self.vbox.add(sizer)
-        gobject.timeout_add(1000, self.on_timer)
+        GObject.timeout_add(1000, self.on_timer)
 
     def on_timer(self):
         """
@@ -113,7 +113,7 @@ class CPUMonitorDialog(gtk.Dialog):
                 to_delete = []
 
             def update_node(store, level, item, udata):
-                ref = gtk.TreeRowReference(store, store.get_path(item))
+                ref = Gtk.TreeRowReference(store, store.get_path(item))
                 name = self.pluginlist.get_value(item, 0)
                 if name in cpu_loads:
                     relperc = cpu_loads[name] * 100.0

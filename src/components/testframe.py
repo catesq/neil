@@ -18,10 +18,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import gtk
+from gi.repository import Gtk
 import neil.com as com
 
-class TestDialog(gtk.Dialog):
+class TestDialog(Gtk.Dialog):
     """
     A test dialog for testing embedded views.
     """
@@ -33,7 +33,7 @@ class TestDialog(gtk.Dialog):
     )
 
     def __init__(self, embed=None, destroy_on_close=True):
-        gtk.Dialog.__init__(self)
+        GObject.GObject.__init__(self)
         self.set_title("Test Dialog")
         if destroy_on_close:
             self.connect('destroy', self.on_destroy)
@@ -42,7 +42,7 @@ class TestDialog(gtk.Dialog):
         self.show_all()
 
     def on_destroy(self, event):
-        gtk.main_quit()
+        Gtk.main_quit()
 
 __neil__ = dict(
         classes = [

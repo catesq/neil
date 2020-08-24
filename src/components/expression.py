@@ -1,5 +1,5 @@
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 import os
 import pickle
 import neil.com as com
@@ -91,13 +91,13 @@ class Expression():
             self.read_expressions()
         except IOError:
             self.expressions = {}
-        self.dialog = gtk.Dialog(
+        self.dialog = Gtk.Dialog(
                 "Expression",
-                buttons=(gtk.STOCK_OK, True, gtk.STOCK_CANCEL, False)
+                buttons=(Gtk.STOCK_OK, True, Gtk.STOCK_CANCEL, False)
                 )
-        hbox = gtk.HBox()
-        self.selector = gtk.ComboBox(gtk.ListStore(str))
-        cell = gtk.CellRendererText()
+        hbox = Gtk.HBox()
+        self.selector = Gtk.ComboBox(Gtk.ListStore(str))
+        cell = Gtk.CellRendererText()
         self.selector.pack_start(cell, True)
         self.selector.add_attribute(cell, 'text', 0)
         self.selector.connect('changed', self.active_expression_changed)
@@ -105,10 +105,10 @@ class Expression():
         model = self.selector.get_model()
         for name, expression in self.expressions.items():
             model.append([name])
-        add_button = new_stock_image_button(gtk.STOCK_OPEN, "Add Expression")
-        del_button = new_stock_image_button(gtk.STOCK_REMOVE, "Remove Expression")
-        mov_button = new_stock_image_button(gtk.STOCK_BOLD, "Rename Expression")
-        hlp_button = new_stock_image_button(gtk.STOCK_HELP, "Help")
+        add_button = new_stock_image_button(Gtk.STOCK_OPEN, "Add Expression")
+        del_button = new_stock_image_button(Gtk.STOCK_REMOVE, "Remove Expression")
+        mov_button = new_stock_image_button(Gtk.STOCK_BOLD, "Rename Expression")
+        hlp_button = new_stock_image_button(Gtk.STOCK_HELP, "Help")
         add_button.connect('clicked', self.add_expression)
         del_button.connect('clicked', self.del_expression)
         mov_button.connect('clicked', self.mov_expression)
@@ -116,19 +116,19 @@ class Expression():
         del_button.set_size_request(30, 30)
         mov_button.set_size_request(30, 30)
         hlp_button.set_size_request(30, 30)
-        hbox.pack_start(self.selector)
-        hbox.pack_start(add_button, expand=False)
-        hbox.pack_start(del_button, expand=False)
-        hbox.pack_start(mov_button, expand=False)
-        hbox.pack_start(hlp_button, expand=False)
-        scrolled_window = gtk.ScrolledWindow()
+        hbox.pack_start(self.selector, True, True, 0)
+        hbox.pack_start(add_button, False, True, 0)
+        hbox.pack_start(del_button, False, True, 0)
+        hbox.pack_start(mov_button, False, True, 0)
+        hbox.pack_start(hlp_button, False, True, 0)
+        scrolled_window = Gtk.ScrolledWindow()
         lang = SyntaxLoader("python")
         buff = CodeBuffer(lang=lang)
-        self.text = gtk.TextView(buff)
+        self.text = Gtk.TextView(buff)
         scrolled_window.add(self.text)
         scrolled_window.set_size_request(500, 300)
-        self.dialog.vbox.pack_start(hbox, expand=False)
-        self.dialog.vbox.pack_start(scrolled_window)
+        self.dialog.vbox.pack_start(hbox, False, True, 0)
+        self.dialog.vbox.pack_start(scrolled_window, True, True, 0)
         if self.selector.get_model().get_iter_first():
             self.selector.set_active(0)
         self.dialog.show_all()

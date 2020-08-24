@@ -24,9 +24,9 @@ A view that allows browsing available extension interfaces and documentation.
 This module can also be executed standalone.
 """
 
-import gtk
-import gobject
-gobject.threads_init()
+from gi.repository import Gtk
+from gi.repository import GObject
+GObject.threads_init()
 import os
 import inspect
 
@@ -35,35 +35,35 @@ import neil.utils as utils
 
 import neil.contextlog as contextlog
 
-import pango
+from gi.repository import Pango
 import fnmatch
 
 MARGIN = 6
 
-VIEW_CLASS = gtk.TextView
-BUFFER_CLASS = gtk.TextBuffer
+VIEW_CLASS = Gtk.TextView
+BUFFER_CLASS = Gtk.TextBuffer
 
 import thread
 import time
 import code
 
-class PythonConsoleDialog(gtk.Dialog):
+class PythonConsoleDialog(Gtk.Dialog):
     __neil__ = dict(
             id = 'neil.pythonconsole.dialog',
             singleton = True,
     )
 
     def __init__(self, hide_on_delete=True):
-        gtk.Dialog.__init__(self,
+        GObject.GObject.__init__(self,
                 "Python Console")
         if hide_on_delete:
             self.connect('delete-event', self.hide_on_delete)
         self.resize(600,500)
-        vpack = gtk.VBox()
-        hpack = gtk.HBox()
-        self.shell = gtk.MenuBar()
-        toolitem = gtk.MenuItem("Tools")
-        self.toolmenu = gtk.Menu()
+        vpack = Gtk.VBox()
+        hpack = Gtk.HBox()
+        self.shell = Gtk.MenuBar()
+        toolitem = Gtk.MenuItem("Tools")
+        self.toolmenu = Gtk.Menu()
         toolitem.set_submenu(self.toolmenu)
         self.shell.append(toolitem)
         self.locals = {}
@@ -97,31 +97,31 @@ class PythonConsoleDialog(gtk.Dialog):
         view = VIEW_CLASS(buffer)
         cfg = com.get('neil.core.config')
         # "ProFontWindows 9"
-        view.modify_font(pango.FontDescription(cfg.get_pattern_font('Monospace')))
+        view.modify_font(Pango.FontDescription(cfg.get_pattern_font('Monospace')))
         view.set_editable(False)
-        view.set_wrap_mode(gtk.WRAP_WORD)
+        view.set_wrap_mode(Gtk.WrapMode.WORD)
         self.consoleview = view
         self.buffer = buffer
-        self.entry = gtk.combo_box_entry_new_text()
-        self.entry.child.modify_font(pango.FontDescription(cfg.get_pattern_font('Monospace')))
+        self.entry = Gtk.combo_box_entry_new_text()
+        self.entry.get_child().modify_font(Pango.FontDescription(cfg.get_pattern_font('Monospace')))
         renderer = self.entry.get_cells()[0]
-        renderer.set_property('font-desc', pango.FontDescription(cfg.get_pattern_font('Monospace')))
+        renderer.set_property('font-desc', Pango.FontDescription(cfg.get_pattern_font('Monospace')))
 
-        self.entry.child.connect('activate', self.on_entry_activate)
+        self.entry.get_child().connect('activate', self.on_entry_activate)
         self.textmark = self.buffer.create_mark(None, self.buffer.get_end_iter(), False)
 
-        scrollwin = gtk.ScrolledWindow()
-        scrollwin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrollwin.set_shadow_type(gtk.SHADOW_IN)
+        scrollwin = Gtk.ScrolledWindow()
+        scrollwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        scrollwin.set_shadow_type(Gtk.ShadowType.IN)
         scrollwin.add(self.consoleview)
 
         vpack.pack_start(self.shell, False)
-        vpack.pack_start(scrollwin)
+        vpack.pack_start(scrollwin, True, True, 0)
         vpack.pack_end(self.entry, False)
-        hpack.pack_start(vpack)
+        hpack.pack_start(vpack, True, True, 0)
         self.vbox.add(hpack)
 
-        gobject.timeout_add(50, self.update_output)
+        GObject.timeout_add(50, self.update_output)
         self.log_buffer_pos = 0
         self.entry.grab_focus()
 
@@ -131,7 +131,7 @@ class PythonConsoleDialog(gtk.Dialog):
     def add_tool(self, cmd, name = None, add_to_config=True):
         if not name:
             name = cmd
-        item = gtk.MenuItem(name)
+        item = Gtk.MenuItem(name)
         item.connect('activate', self.exec_tool, cmd)
         item.show()
         self.toolmenu.append(item)
@@ -173,16 +173,16 @@ class PythonConsoleDialog(gtk.Dialog):
 
     def push_text(self, text):
         if self.compiler.push(text):
-            self.entry.child.set_text("  ")
-            self.entry.child.select_region(99,-1)
+            self.entry.get_child().set_text("  ")
+            self.entry.get_child().select_region(99,-1)
 
     def command(self, text):
         print '>>> ' + text
-        gobject.timeout_add(50, self.push_text, text)
+        GObject.timeout_add(50, self.push_text, text)
 
     def on_entry_activate(self, widget):
-        text = self.entry.child.get_text()
-        self.entry.child.set_text("")
+        text = self.entry.get_child().get_text()
+        self.entry.get_child().set_text("")
         if text.strip() == "":
             text = ""
         self.command(text)
@@ -213,7 +213,7 @@ class PythonConsoleMenuItem:
 
     def __init__(self, menu):
         # create a menu item
-        item = gtk.MenuItem(label="Show _Python Console")
+        item = Gtk.MenuItem(label="Show _Python Console")
         # connect the menu item to our handler
         item.connect('activate', self.on_menuitem_activate)
         # append the item to the menu
@@ -236,6 +236,6 @@ if __name__ == '__main__': # extension mode
     com.load_packages()
     # running standalone
     browser = com.get('neil.pythonconsole.dialog', False)
-    browser.connect('destroy', lambda widget: gtk.main_quit())
+    browser.connect('destroy', lambda widget: Gtk.main_quit())
     browser.show_all()
-    gtk.main()
+    Gtk.main()

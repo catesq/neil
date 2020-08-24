@@ -1,5 +1,5 @@
 """ This module contains the PyGTKCodeBuffer-class. This class is a
-    specialisation of the gtk.TextBuffer and enables syntax-highlighting for
+    specialisation of the Gtk.TextBuffer and enables syntax-highlighting for
     PyGTK's TextView-widget.
 
     To use the syntax-highlighting feature you have load a syntax-definition or
@@ -21,8 +21,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import gtk
-import pango
+from gi.repository import Gtk
+from gi.repository import Pango
 import re
 import sys
 import os.path
@@ -41,18 +41,18 @@ DEFAULT_STYLES = {
     'comment':      {'foreground': '#0000FF'},
     'preprocessor': {'foreground': '#A020F0'},
     'keyword':      {'foreground': '#A52A2A',
-                     'weight': pango.WEIGHT_BOLD},
+                     'weight': Pango.Weight.BOLD},
     'special':      {'foreground': 'turquoise'},
     'mark1':        {'foreground': '#008B8B'},
     'mark2':        {'foreground': '#6A5ACD'},
     'string':       {'foreground': '#FF00FF'},
     'number':       {'foreground': '#FF00FF'},
     'datatype':     {'foreground': '#2E8B57',
-                     'weight': pango.WEIGHT_BOLD},
+                     'weight': Pango.Weight.BOLD},
     'function':     {'foreground': '#008A8C'},
 
     'link':         {'foreground': '#0000FF',
-                     'underline': pango.UNDERLINE_SINGLE}}
+                     'underline': Pango.Underline.SINGLE}}
 
 
 
@@ -295,28 +295,28 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
         function. """
 
     # some translation-tables for the style-defs:
-    style_weight_table =    {'ultralight': pango.WEIGHT_ULTRALIGHT,
-                             'light': pango.WEIGHT_LIGHT,
-                             'normal': pango.WEIGHT_NORMAL,
-                             'bold':   pango.WEIGHT_BOLD,
-                             'ultrabold': pango.WEIGHT_ULTRABOLD,
-                             'heavy': pango.WEIGHT_HEAVY}
-    style_variant_table =   {'normal': pango.VARIANT_NORMAL,
-                             'smallcaps': pango.VARIANT_SMALL_CAPS}
-    style_underline_table = {'none': pango.UNDERLINE_NONE,
-                             'single': pango.UNDERLINE_SINGLE,
-                             'double': pango.UNDERLINE_DOUBLE}
-    style_style_table =     {'normal': pango.STYLE_NORMAL,
-                             'oblique': pango.STYLE_OBLIQUE,
-                             'italic': pango.STYLE_ITALIC}
+    style_weight_table =    {'ultralight': Pango.Weight.ULTRALIGHT,
+                             'light': Pango.Weight.LIGHT,
+                             'normal': Pango.Weight.NORMAL,
+                             'bold':   Pango.Weight.BOLD,
+                             'ultrabold': Pango.Weight.ULTRABOLD,
+                             'heavy': Pango.Weight.HEAVY}
+    style_variant_table =   {'normal': Pango.VARIANT_NORMAL,
+                             'smallcaps': Pango.VARIANT_SMALL_CAPS}
+    style_underline_table = {'none': Pango.Underline.NONE,
+                             'single': Pango.Underline.SINGLE,
+                             'double': Pango.Underline.DOUBLE}
+    style_style_table =     {'normal': Pango.Style.NORMAL,
+                             'oblique': Pango.Style.OBLIQUE,
+                             'italic': Pango.Style.ITALIC}
     style_scale_table =     {
-                            'xx_small': pango.SCALE_XX_SMALL,
-                            'x_small':  pango.SCALE_X_SMALL,
-                            'small':  pango.SCALE_SMALL,
-                            'medium':  pango.SCALE_MEDIUM,
-                            'large':  pango.SCALE_LARGE,
-                            'x_large':  pango.SCALE_X_LARGE,
-                            'xx_large': pango.SCALE_XX_LARGE,
+                            'xx_small': Pango.SCALE_XX_SMALL,
+                            'x_small':  Pango.SCALE_X_SMALL,
+                            'small':  Pango.SCALE_SMALL,
+                            'medium':  Pango.SCALE_MEDIUM,
+                            'large':  Pango.SCALE_LARGE,
+                            'x_large':  Pango.SCALE_X_LARGE,
+                            'xx_large': Pango.SCALE_XX_LARGE,
                             }
 
 
@@ -505,8 +505,8 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
 
 
 
-class CodeBuffer(gtk.TextBuffer):
-    """ This class extends the gtk.TextBuffer to support syntax-highlighting.
+class CodeBuffer(Gtk.TextBuffer):
+    """ This class extends the Gtk.TextBuffer to support syntax-highlighting.
         You can use this class like a normal TextBuffer. """
 
     def __init__(self, table=None, lang=None, styles={}):
@@ -523,7 +523,7 @@ class CodeBuffer(gtk.TextBuffer):
             styles is a dictionary used to extend or overwrite the default styles
             provided by this module (DEFAULT_STYLE) and any language specific
             styles defined by the LanguageDefinition. """
-        gtk.TextBuffer.__init__(self, table)
+        GObject.GObject.__init__(self, table)
 
         # default styles
         self.styles = DEFAULT_STYLES
