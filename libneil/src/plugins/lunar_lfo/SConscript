@@ -1,10 +1,10 @@
 Import('pluginenv', 'build_plugin')
 
 localenv = pluginenv.Clone()
+# fixme: do not build plugin using gtk2
+#if localenv['GTK2']:
+#    localenv.Append(CCFLAGS=' `pkg-config --cflags gtk+-2.0` ')
+#    localenv.Append(LINKFLAGS=' `pkg-config --libs gtk+-2.0` ')
+#    files = ["Lfo.cpp"]
+#    build_plugin(localenv, "lunar_lfo", files)
 
-if localenv['GTK2']:
-    localenv.Append(CCFLAGS=' `pkg-config --cflags gtk+-2.0` ')
-    localenv.Append(LINKFLAGS=' `pkg-config --libs gtk+-2.0` ')
-    files = ["Lfo.cpp"]
-    build_plugin(localenv, "lunar_lfo", files)
-	     
