@@ -159,11 +159,11 @@ class Envelope():
         last_point = (0.0, 0.0)
         for row, value in enumerate(data):
             if value != parameter.get_value_none():
-                last_point = (float(row) / (len(data) - 1), 
+                last_point = (float(row) / (len(data) - 1),
                               (value - a) / float(b - a))
                 envelope.envelope.append(last_point)
             else:
-                last_point = (float(row) / (len(data) - 1), 
+                last_point = (float(row) / (len(data) - 1),
                               last_point[1])
                 envelope.envelope.append(last_point)
         # Prune points that are linear interpolations of the points
@@ -176,7 +176,7 @@ class Envelope():
                 p1, p2, p3 = [points[i] for i in triple]
                 if abs((p1[1] + p3[1]) * 0.5 - p2[1]) <= (1.0 / (b - a)):
                     to_delete.append(triple[1])
-            envelope.envelope = [point for index, point in enumerate(points) 
+            envelope.envelope = [point for index, point in enumerate(points)
                                  if index not in to_delete]
         envelope.set_size_request(600, 200)
         dialog.vbox.pack_start(envelope)
@@ -190,7 +190,7 @@ class Envelope():
                 phase = float(row) / (len(data) - 1)
                 while env[index + 1][0] < phase:
                     index += 1
-                p = ((phase - env[index][0]) / 
+                p = ((phase - env[index][0]) /
                      (env[index + 1][0] - env[index][0]))
                 value = env[index][1] + p * (env[index + 1][1] - env[index][1])
                 data[row] = int(a + value * (b - a))

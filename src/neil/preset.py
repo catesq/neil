@@ -141,10 +141,10 @@ class Preset:
             else:
                 trackcount = self.trackcount
             for t in range(trackcount):
-                    for i in range(pl.get_parameter_count(g)):
-                        p = pl.get_parameter(g, i)
-                        if p.get_flags() & zzub.zzub_parameter_flag_state:
-                            self.params.append(plugin.get_parameter_value(g, t, i))
+                for i in range(pl.get_parameter_count(g)):
+                    p = pl.get_parameter(g, i)
+                    if p.get_flags() & zzub.zzub_parameter_flag_state:
+                        self.params.append(plugin.get_parameter_value(g, t, i))
 
 
 class PresetCollection:

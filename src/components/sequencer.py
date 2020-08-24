@@ -751,7 +751,7 @@ class SequencerView(gtk.DrawingArea):
             machine.add_pattern(pattern)
             self.insert_at_cursor(machine.get_pattern_count() + 0x10 - 1)
             player.history_commit("clone pattern")
-        
+
     def on_popup_merge(self, *args):
         player = com.get('neil.core.player')
         player.set_callback_state(False)
@@ -813,7 +813,7 @@ class SequencerView(gtk.DrawingArea):
         player = com.get('neil.core.player')
         player.set_callback_state(False)
         seq = player.get_current_sequencer()
-        data = get_clipboard_text()            
+        data = get_clipboard_text()
         try:
             for track, row, value in self.unpack_clipboard_data(data.strip()):
                 t = seq.get_sequence(track)

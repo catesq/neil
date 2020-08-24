@@ -22,159 +22,159 @@ def make_glcolor(colour):
 
 class GLClientDC:
     def __init__(self, glcanvas):
-	self.canvas = glcanvas		
+        self.canvas = glcanvas
 
     def BeginDrawing(self):
-	self.canvas.SetCurrent()
-	w,h = self.canvas.GetClientSize()
-	glMatrixMode(GL_PROJECTION)
-	glLoadIdentity()
-	glOrtho(0, w, h, 0, -1, 1)
+        self.canvas.SetCurrent()
+        w,h = self.canvas.GetClientSize()
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, w, h, 0, -1, 1)
 
     def EndDrawing(self):
-	self.canvas.SwapBuffers()
+        self.canvas.SwapBuffers()
 
     def SetFont(self, font):
-	pass
+        pass
 
     def SetBackground(self, brush):
-	self.bgbrushcolor = make_glcolor(brush.GetColour())
+        self.bgbrushcolor = make_glcolor(brush.GetColour())
 
     def SetBackgroundMode(self, mode):
-	pass
+        pass
 
     def SetBrush(self, brush):
-	self.brushcolor = make_glcolor(brush.GetColour())
+        self.brushcolor = make_glcolor(brush.GetColour())
 
     def SetPen(self, pen):
-	if pen == wx.TRANSPARENT_PEN:
-	    self.pencolor = None
-	else:
-	    self.pencolor = make_glcolor(pen.GetColour())
+        if pen == wx.TRANSPARENT_PEN:
+            self.pencolor = None
+        else:
+            self.pencolor = make_glcolor(pen.GetColour())
 
     def SetTextForeground(self, color):
-	pass
+        pass
 
     def SetTextBackground(self, color):
-	pass
+        pass
 
     def Clear(self):
-	glClearColor(*(self.bgbrushcolor + (0,)))
-	glClear(GL_COLOR_BUFFER_BIT)
+        glClearColor(*(self.bgbrushcolor + (0,)))
+        glClear(GL_COLOR_BUFFER_BIT)
 
     def DrawCircle(self, x, y, radius):
-	pass
+        pass
 
     def DrawRectangle(self, x, y, w, h):
-	w -= 1
-	h -= 1
-	if self.brushcolor:
-	    glColor3f(*self.brushcolor)
-	    glBegin(GL_QUADS)
-	    glVertex2f(x,y)
-	    glVertex2f(x,y+h)
-	    glVertex2f(x+w,y+h)
-	    glVertex2f(x+w,y)
-	    glEnd()
-	if self.pencolor:
-	    glColor3f(*self.pencolor)
-	    #~ x += 1
-	    #~ y += 1
-	    #~ w -= 2
-	    #~ h -= 2
-	    glBegin(GL_LINE_LOOP)
-	    glVertex2f(x,y)
-	    glVertex2f(x,y+h)
-	    glVertex2f(x+w,y+h)
-	    glVertex2f(x+w,y)
-	    glEnd()
+        w -= 1
+        h -= 1
+        if self.brushcolor:
+            glColor3f(*self.brushcolor)
+            glBegin(GL_QUADS)
+            glVertex2f(x,y)
+            glVertex2f(x,y+h)
+            glVertex2f(x+w,y+h)
+            glVertex2f(x+w,y)
+            glEnd()
+        if self.pencolor:
+            glColor3f(*self.pencolor)
+            #~ x += 1
+            #~ y += 1
+            #~ w -= 2
+            #~ h -= 2
+            glBegin(GL_LINE_LOOP)
+            glVertex2f(x,y)
+            glVertex2f(x,y+h)
+            glVertex2f(x+w,y+h)
+            glVertex2f(x+w,y)
+            glEnd()
 
     def DrawPolygon(self, points):
-	if self.brushcolor:
-	    glColor3f(*self.brushcolor)
-	    glBegin(GL_POLYGON)
-	    for pt in points:
-		glVertex2f(pt.x, pt.y)
-	    glEnd()
-	if self.pencolor:
-	    glColor3f(*self.pencolor)
-	    glBegin(GL_LINE_LOOP)
-	    for pt in points:
-		glVertex2f(pt.x, pt.y)
-	    glEnd()
+        if self.brushcolor:
+            glColor3f(*self.brushcolor)
+            glBegin(GL_POLYGON)
+            for pt in points:
+                glVertex2f(pt.x, pt.y)
+            glEnd()
+        if self.pencolor:
+            glColor3f(*self.pencolor)
+            glBegin(GL_LINE_LOOP)
+            for pt in points:
+                glVertex2f(pt.x, pt.y)
+            glEnd()
 
     def SetLogicalFunction(self, func):
-	pass
+        pass
 
     def DrawLine(self, x1, y1, x2, y2):
-	if self.pencolor:
-	    glColor3f(*self.pencolor)
-	    glBegin(GL_LINES)
-	    glVertex2f(x1, y1)
-	    glVertex2f(x2, y2)
-	    glEnd()
+        if self.pencolor:
+            glColor3f(*self.pencolor)
+            glBegin(GL_LINES)
+            glVertex2f(x1, y1)
+            glVertex2f(x2, y2)
+            glEnd()
 
     def DrawLabel(self, text, rect, flags):
-	pass
+        pass
 
     def DestroyClippingRegion(self):
-	pass
+        pass
 
     def SetClippingRegion(self, region):
-	pass
+        pass
 
     def SetClippingRegionAsRegion(self, region):
-	pass
+        pass
 
 class GLCanvas(wx.glcanvas.GLCanvas):
     def ReDraw(self, *args, **kargs):
-	pass
+        pass
 
     def __init__(self, *args, **kargs):
-	self.buffer = None
-	self.redraw_args = None
-	wx.glcanvas.GLCanvas.__init__(self, *args, **kargs)
+        self.buffer = None
+        self.redraw_args = None
+        wx.glcanvas.GLCanvas.__init__(self, *args, **kargs)
 
-	self.ReDraw()
+        self.ReDraw()
 
-	self.Bind(wx.EVT_SIZE, self.onSize)
-	self.Bind(wx.EVT_PAINT, self.onPaint)
+        self.Bind(wx.EVT_SIZE, self.onSize)
+        self.Bind(wx.EVT_PAINT, self.onPaint)
 
     def onSize(self, event):
-	self.ReDraw()
+        self.ReDraw()
 
     def ReDraw(self,*args,**kargs):
-	self.Refresh()
+        self.Refresh()
 
     def Refresh(self):
-	dc = GLClientDC(self)
-	dc.BeginDrawing()
-	self.buffer = dc
-	self.DrawBuffer()
-	self.onPostPaint(dc)
-	dc.EndDrawing()
+        dc = GLClientDC(self)
+        dc.BeginDrawing()
+        self.buffer = dc
+        self.DrawBuffer()
+        self.onPostPaint(dc)
+        dc.EndDrawing()
 
     def onPostPaint(self, dc):
-	pass
+        pass
 
     def onPaint(self, event):
-	dc = wx.PaintDC(self)
-	dc.BeginDrawing()
-	gldc = GLClientDC(self)
-	gldc.BeginDrawing()
-	self.buffer = gldc
-	self.DrawBuffer()
-	self.onPostPaint(gldc)
-	gldc.EndDrawing()
-	dc.EndDrawing()
+        dc = wx.PaintDC(self)
+        dc.BeginDrawing()
+        gldc = GLClientDC(self)
+        gldc.BeginDrawing()
+        self.buffer = gldc
+        self.DrawBuffer()
+        self.onPostPaint(gldc)
+        gldc.EndDrawing()
+        dc.EndDrawing()
 
     def Blit(self, dc):
-	pass
+        pass
 
     def GetBoundingRect(self):
-	x, y = self.GetPosition()
-	w, h = self.GetSize()
-	return(x, y + h, x + w, y)
+        x, y = self.GetPosition()
+        w, h = self.GetSize()
+        return(x, y + h, x + w, y)
 
     def DrawBuffer(self, *args, **kargs):
-	pass
+        pass

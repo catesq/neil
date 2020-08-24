@@ -21,25 +21,25 @@
 import optparse, sys
 
 class OptionParser(optparse.OptionParser):
-	__neil__ = dict(
-		id = 'neil.core.options',
-		singleton = True,
-	)
-	
-	def __init__(self):
-		optparse.OptionParser.__init__(self)
-		self.add_option("--profile", metavar="profile", default='', help="Start Neil with profiling enabled, save results to <profile>.")
-		self._options = dict()
-		self._args = []
-		
-	def parse_args(self, *args, **kwargs):
-		self._options, self._args = optparse.OptionParser.parse_args(self, *args, **kwargs)
-		
-	def get_options_args(self):
-		return self._options, self._args
+    __neil__ = dict(
+            id = 'neil.core.options',
+            singleton = True,
+    )
+
+    def __init__(self):
+        optparse.OptionParser.__init__(self)
+        self.add_option("--profile", metavar="profile", default='', help="Start Neil with profiling enabled, save results to <profile>.")
+        self._options = dict()
+        self._args = []
+
+    def parse_args(self, *args, **kwargs):
+        self._options, self._args = optparse.OptionParser.parse_args(self, *args, **kwargs)
+
+    def get_options_args(self):
+        return self._options, self._args
 
 __neil__ = dict(
-	classes = [
-		OptionParser,
-	],
+        classes = [
+                OptionParser,
+        ],
 )

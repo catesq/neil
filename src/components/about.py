@@ -87,34 +87,34 @@ class AboutDialog(gtk.AboutDialog):
     """
 
     __neil__ = dict(
-	    id = "neil.core.dialog.about",
+            id = "neil.core.dialog.about",
     )
 
     def __init__(self, parent):
-	"""
-	Initialization.
-	"""
-	gtk.AboutDialog.__init__(self)
-	self.set_name(NAME)
-	self.set_version(VERSION)
-	self.set_copyright(COPYRIGHT)
-	self.set_comments(COMMENTS)
-	self.set_license(LICENSE)
-	self.set_wrap_license(True)
-	self.set_website(WEBSITE)
-	self.set_authors(AUTHORS)
-	self.set_artists(ARTISTS)
-	self.set_documenters(DOCUMENTERS)
-	self.set_logo(gtk.gdk.pixbuf_new_from_file(imagepath("alien.png")))
+        """
+        Initialization.
+        """
+        gtk.AboutDialog.__init__(self)
+        self.set_name(NAME)
+        self.set_version(VERSION)
+        self.set_copyright(COPYRIGHT)
+        self.set_comments(COMMENTS)
+        self.set_license(LICENSE)
+        self.set_wrap_license(True)
+        self.set_website(WEBSITE)
+        self.set_authors(AUTHORS)
+        self.set_artists(ARTISTS)
+        self.set_documenters(DOCUMENTERS)
+        self.set_logo(gtk.gdk.pixbuf_new_from_file(imagepath("alien.png")))
 
     def show(self):
-	self.run()
-	self.destroy()
+        self.run()
+        self.destroy()
 
 __neil__ = dict(
-	classes = [
-		AboutDialog,
-	]
+        classes = [
+                AboutDialog,
+        ]
 )
 
 __all__ = [

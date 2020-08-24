@@ -37,7 +37,7 @@ class Expression():
             old_name = model.get_value(active, 0)
         else:
             old_name = ''
-        name = gettext(self.dialog, "Enter the name of your expression", 
+        name = gettext(self.dialog, "Enter the name of your expression",
                        old_name)
         if name != None:
             name = name.replace(',', ' ')
@@ -146,18 +146,18 @@ class Expression():
                 return
             try:
                 def get_value(group, track, index, row):
-                    return plugin.get_pattern_value(pattern, group, 
+                    return plugin.get_pattern_value(pattern, group,
                                                     track, index, row)
                 def set_value(group, track, index, row, value):
-                    plugin.set_pattern_value(pattern, group, track, 
+                    plugin.set_pattern_value(pattern, group, track,
                                              index, row, value)
                 def get_param(group, track, index):
                     return plugin.get_parameter(group, track, index)
                 global_ = globals()
                 new_global = {
-                    '__builtins__' : global_['__builtins__'], 
-                    '__name__' : global_['__name__'], 
-                    '__doc__' : global_['__doc__'], 
+                    '__builtins__' : global_['__builtins__'],
+                    '__name__' : global_['__name__'],
+                    '__doc__' : global_['__doc__'],
                     '__package__' : global_['__package__'],
                     'get_value' : get_value,
                     'set_value' : set_value,

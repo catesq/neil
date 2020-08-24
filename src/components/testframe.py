@@ -22,31 +22,30 @@ import gtk
 import neil.com as com
 
 class TestDialog(gtk.Dialog):
-	"""
-	A test dialog for testing embedded views.
-	"""
-	__neil__ = dict(
-		id = 'neil.test.dialog',
-		singleton = False,
-		categories = [
-		]
-	)
-	
-	def __init__(self, embed=None, destroy_on_close=True):
-		gtk.Dialog.__init__(self)
-		self.set_title("Test Dialog")
-		if destroy_on_close:
-			self.connect('destroy', self.on_destroy)
-		if embed:
-			self.vbox.add(embed)
-		self.show_all()
-		
-	def on_destroy(self, event):
-		gtk.main_quit()
+    """
+    A test dialog for testing embedded views.
+    """
+    __neil__ = dict(
+            id = 'neil.test.dialog',
+            singleton = False,
+            categories = [
+            ]
+    )
+
+    def __init__(self, embed=None, destroy_on_close=True):
+        gtk.Dialog.__init__(self)
+        self.set_title("Test Dialog")
+        if destroy_on_close:
+            self.connect('destroy', self.on_destroy)
+        if embed:
+            self.vbox.add(embed)
+        self.show_all()
+
+    def on_destroy(self, event):
+        gtk.main_quit()
 
 __neil__ = dict(
-	classes = [
-		TestDialog,
-	],
+        classes = [
+                TestDialog,
+        ],
 )
-

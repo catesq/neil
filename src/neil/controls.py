@@ -21,4 +21,3 @@
 """
 Contains refactored controls.
 """
-

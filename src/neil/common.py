@@ -31,83 +31,83 @@ MARGIN2 = 12
 MARGIN3 = 18
 
 class PluginInfo(object):
-	"""
-	Encapsulates data associated with a plugin.
-	"""
-	def __init__(self, plugin):
-		self.plugin = plugin
-		self.muted = False
-		self.bypassed = False		
-		self.cpu = -9999.0
-		self.pattern_position = (0, 0, 0, 0, 0)
-		self.selection = None
-		self.songplugin = True
-		self.plugingfx = None
-		self.patterngfx = {}
-		self.amp = -9999.0
-		self.octave = 3
-		
-	def reset_patterngfx(self):
-		self.patterngfx = {}
-		
-	def reset_plugingfx(self):
-		self.plugingfx = None
-		self.amp = -9999.0
-		self.cpu = -9999.0
-		
-class PluginInfoCollection:
-	"""
-	Manages plugin infos.
-	"""
-	def __init__(self):
-		self.plugin_info = {}
-		self.update()
-		
-	def reset(self):
-		self.plugin_info = {}
-		
-	def __getitem__(self, k):
-		return self.plugin_info.__getitem__(k)
-		
-	def __delitem__(self, k):
-		return self.plugin_info.__delitem__(k)
-		
-	def keys(self):
-		return self.plugin_info.keys()
-		
-	def get(self, k):
-		if not k in self.plugin_info:
-			self.add_plugin(k)
-		return self.plugin_info.__getitem__(k)
-		
-	def iteritems(self):
-		return self.plugin_info.iteritems()
-		
-	def reset_plugingfx(self):
-		for k,v in self.plugin_info.iteritems():
-			v.reset_plugingfx()
-			
-	def add_plugin(self, mp):
-		self.plugin_info[mp] = PluginInfo(mp)
+    """
+    Encapsulates data associated with a plugin.
+    """
+    def __init__(self, plugin):
+        self.plugin = plugin
+        self.muted = False
+        self.bypassed = False
+        self.cpu = -9999.0
+        self.pattern_position = (0, 0, 0, 0, 0)
+        self.selection = None
+        self.songplugin = True
+        self.plugingfx = None
+        self.patterngfx = {}
+        self.amp = -9999.0
+        self.octave = 3
 
-	def update(self):
-		previous = dict(self.plugin_info)
-		self.plugin_info.clear()
-		for mp in com.get('neil.core.player').get_plugin_list():
-			if mp in previous:
-				self.plugin_info[mp] = previous[mp]
-			else:
-				self.plugin_info[mp] = PluginInfo(mp)
+    def reset_patterngfx(self):
+        self.patterngfx = {}
+
+    def reset_plugingfx(self):
+        self.plugingfx = None
+        self.amp = -9999.0
+        self.cpu = -9999.0
+
+class PluginInfoCollection:
+    """
+    Manages plugin infos.
+    """
+    def __init__(self):
+        self.plugin_info = {}
+        self.update()
+
+    def reset(self):
+        self.plugin_info = {}
+
+    def __getitem__(self, k):
+        return self.plugin_info.__getitem__(k)
+
+    def __delitem__(self, k):
+        return self.plugin_info.__delitem__(k)
+
+    def keys(self):
+        return self.plugin_info.keys()
+
+    def get(self, k):
+        if not k in self.plugin_info:
+            self.add_plugin(k)
+        return self.plugin_info.__getitem__(k)
+
+    def iteritems(self):
+        return self.plugin_info.iteritems()
+
+    def reset_plugingfx(self):
+        for k,v in self.plugin_info.iteritems():
+            v.reset_plugingfx()
+
+    def add_plugin(self, mp):
+        self.plugin_info[mp] = PluginInfo(mp)
+
+    def update(self):
+        previous = dict(self.plugin_info)
+        self.plugin_info.clear()
+        for mp in com.get('neil.core.player').get_plugin_list():
+            if mp in previous:
+                self.plugin_info[mp] = previous[mp]
+            else:
+                self.plugin_info[mp] = PluginInfo(mp)
 
 collection = None
 
 def get_plugin_infos():
-	global collection
-	if not collection:
-		collection = PluginInfoCollection()
-	return collection
+    global collection
+    if not collection:
+        collection = PluginInfoCollection()
+    return collection
 
 if __name__ == '__main__':
-	com.load_packages()
-	col = PluginInfoCollection()
-	del col[5]
+    com.load_packages()
+    col = PluginInfoCollection()
+    del col[5]

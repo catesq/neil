@@ -38,39 +38,39 @@ import neil.errordlg as errordlg
 import neil.com as com
 
 def shutdown():
-  gtk.main_quit()
+    gtk.main_quit()
 
 def init_neil():
-  """
-  Loads the categories neccessary to visualize neil.
-  """
-  com.get_from_category('driver')	
-  com.get_from_category('rootwindow')
+    """
+    Loads the categories neccessary to visualize neil.
+    """
+    com.get_from_category('driver')
+    com.get_from_category('rootwindow')
 
 def run(argv, initfunc = init_neil):
-  """
-  Starts the application and runs the mainloop.
+    """
+    Starts the application and runs the mainloop.
 
-  @param argv: command line arguments as passed by sys.argv.
-  @type argv: str list
-  @param initfunc: a function to call before gtk.main() is called.
-  @type initfunc: callable()
-  """
-  contextlog.init()
-  errordlg.install()
-  com.init()
-  options = com.get('neil.core.options')
-  options.parse_args(argv)
-  eventbus = com.get('neil.core.eventbus')
-  eventbus.shutdown += shutdown
-  options = com.get('neil.core.options')
-  app_options, app_args = options.get_options_args()
-  initfunc()
-  if app_options.profile:
-    import cProfile
-    cProfile.runctx('gtk.main()', globals(), locals(), app_options.profile)
-  else:
-    gtk.main()
+    @param argv: command line arguments as passed by sys.argv.
+    @type argv: str list
+    @param initfunc: a function to call before gtk.main() is called.
+    @type initfunc: callable()
+    """
+    contextlog.init()
+    errordlg.install()
+    com.init()
+    options = com.get('neil.core.options')
+    options.parse_args(argv)
+    eventbus = com.get('neil.core.eventbus')
+    eventbus.shutdown += shutdown
+    options = com.get('neil.core.options')
+    app_options, app_args = options.get_options_args()
+    initfunc()
+    if app_options.profile:
+        import cProfile
+        cProfile.runctx('gtk.main()', globals(), locals(), app_options.profile)
+    else:
+        gtk.main()
 
 __all__ = [
 'CancelException',
@@ -85,4 +85,4 @@ __all__ = [
 ]
 
 if __name__ == '__main__':
-  run(sys.argv)
+    run(sys.argv)

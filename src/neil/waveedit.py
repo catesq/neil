@@ -73,7 +73,7 @@ class WaveEditPanel(gtk.VBox):
         self.view.level.set_loop_start(begin)
         self.view.level.set_loop_end(end)
         player.history_commit("set loop range")
-        
+
     def on_xfade_range(self, widget):
         player = com.get('neil.core.player')
         if self.view.selection == None:
@@ -91,7 +91,7 @@ class WaveEditPanel(gtk.VBox):
         player = com.get('neil.core.player')
         self.view.level.normalize()
         self.update()
-        
+
 class WaveEditView(gtk.DrawingArea):
     """
     Envelope viewer.
@@ -128,7 +128,7 @@ class WaveEditView(gtk.DrawingArea):
         self.connect("expose_event", self.expose)
 
         self.context_menu = Menu()
-        
+
         self.menu_delete = self.context_menu.add_item("Delete", self.on_delete_range)
         self.menu_loop = self.context_menu.add_item("Loop", self.on_loop_range)
         self.menu_xfade = self.context_menu.add_item("XFade", self.on_xfade_range)
@@ -136,11 +136,11 @@ class WaveEditView(gtk.DrawingArea):
         player = com.get('neil.core.player')
 
         item, self.store_submenu = self.context_menu.add_submenu("Store")
-        
+
         self.context_menu.add_separator()
 
         self.menu_normalize = self.context_menu.add_item("Normalize", self.on_normalize)
-           
+
         self.loop_start = 0
         self.loop_end = 150
 
@@ -213,7 +213,7 @@ class WaveEditView(gtk.DrawingArea):
     def on_mousewheel(self, widget, event):
         """
         Callback that responds to mousewheeling in pattern view.
-        """     
+        """
         mx, my = int(event.x), int(event.y)
         s, a = self.client_to_sample(mx,my)
         b, e = self.range
@@ -412,7 +412,7 @@ class WaveEditView(gtk.DrawingArea):
         flags = flags | zzub.zzub_wave_flag_loop
         w.set_flags(flags)
         player.history_commit("set loop range")
-        
+
     def on_xfade_range(self, widget):
         player = com.get('neil.core.player')
         if self.selection == None:
@@ -434,7 +434,7 @@ class WaveEditView(gtk.DrawingArea):
         self.view_changed()
 
     def view_changed(self, *args):
-        self.fix_range()        
+        self.fix_range()
         self.update_digest()
         self.redraw()
 
@@ -641,7 +641,7 @@ class WaveEditView(gtk.DrawingArea):
         channels = 1
         if self.wave.get_flags() & zzub.zzub_wave_flag_stereo:
             channels = 2
-                
+
         for channel in range(channels):
             #self.update_digest(channel)
             minbuffer, maxbuffer, ampbuffer = \

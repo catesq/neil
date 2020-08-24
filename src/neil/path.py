@@ -354,7 +354,7 @@ class path(_base):
         whose names match the given pattern.  For example,
         d.files('*.pyc').
         """
-        
+
         return [p for p in self.listdir(pattern) if p.isfile()]
 
     def walk(self, pattern=None, errors='strict'):
@@ -968,4 +968,3 @@ class path(_base):
     if hasattr(os, 'startfile'):
         def startfile(self):
             os.startfile(self)
-

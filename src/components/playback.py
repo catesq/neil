@@ -38,7 +38,7 @@ class PlaybackInfo(gtk.Dialog):
     """
     This dialog show playback information.
     """
-    
+
     __neil__ = dict(
         id = 'neil.core.playback',
         singleton = True,
@@ -46,14 +46,14 @@ class PlaybackInfo(gtk.Dialog):
             'viewdialog',
             'view',
             ]
-	)
-    
+        )
+
     __view__ = dict(
         label = "Playback Info",
         order = 0,
         toggle = True,
-	)
-    
+        )
+
     def __init__(self):
         """
         Initializer.
@@ -123,6 +123,5 @@ __all__ = [
 __neil__ = dict(
     classes = [
         PlaybackInfo,
-	],
+        ],
     )
-

@@ -23,9 +23,9 @@ Provides a preference tab to organize components.
 """
 
 if __name__ == '__main__':
-	import os
-	os.system('../../bin/neil-combrowser neil.core.pref.components')
-	raise SystemExit
+    import os
+    os.system('../../bin/neil-combrowser neil.core.pref.components')
+    raise SystemExit
 
 import gtk
 import gobject
@@ -34,67 +34,66 @@ from neil.common import MARGIN, MARGIN2, MARGIN3
 from neil.utils import new_listview, add_scrollbars
 
 #OPTIONS = [
-#	'Module',
-#	'Name',
-#	'Description',
-#	'Icon',
-#	'Authors',
-#	'Copyright',
-#	'Website',
+#       'Module',
+#       'Name',
+#       'Description',
+#       'Icon',
+#       'Authors',
+#       'Copyright',
+#       'Website',
 
 class ComponentPanel(gtk.VBox):
-	"""
-	Panel which allows changing of general settings.
-	"""
-	
-	__neil__ = dict(
-		id = 'neil.core.pref.components',
-		categories = [
-			'neil.prefpanel',
-		]
-	)
-	
-	__prefpanel__ = dict(
-		label = "Components",
-	)
-	
-	def __init__(self):
-		"""
-		Initializing.
-		"""
-		gtk.VBox.__init__(self)
-		self.set_border_width(MARGIN)
-		
-		frame1 = gtk.Frame("Components")
-		fssizer = gtk.VBox(False, MARGIN)
-		fssizer.set_border_width(MARGIN)
-		frame1.add(fssizer)
-		self.compolist, store, columns = new_listview([
-			('Use', bool),
-			('Icon', str, dict(icon=True)),
-			('Name', str, dict(markup=True)),
-			(None, gobject.TYPE_PYOBJECT),
-		])
-		self.compolist.set_headers_visible(False)
-		def cmp_package(a,b):
-			return cmp(a.name.lower(), b.name.lower())
-		packages = sorted(com.get_packages(), cmp_package)
-		for package in packages:
-			text = '<b>' + package.name + '</b>' + '\n'
-			text += package.description
-			store.append([True, package.icon, text, package])
-		fssizer.pack_start(add_scrollbars(self.compolist))
-		self.add(frame1)
-		
-	def apply(self):
-		"""
-		Writes general config settings to file.
-		"""
-		pass
+    """
+    Panel which allows changing of general settings.
+    """
+
+    __neil__ = dict(
+            id = 'neil.core.pref.components',
+            categories = [
+                    'neil.prefpanel',
+            ]
+    )
+
+    __prefpanel__ = dict(
+            label = "Components",
+    )
+
+    def __init__(self):
+        """
+        Initializing.
+        """
+        gtk.VBox.__init__(self)
+        self.set_border_width(MARGIN)
+
+        frame1 = gtk.Frame("Components")
+        fssizer = gtk.VBox(False, MARGIN)
+        fssizer.set_border_width(MARGIN)
+        frame1.add(fssizer)
+        self.compolist, store, columns = new_listview([
+                ('Use', bool),
+                ('Icon', str, dict(icon=True)),
+                ('Name', str, dict(markup=True)),
+                (None, gobject.TYPE_PYOBJECT),
+        ])
+        self.compolist.set_headers_visible(False)
+        def cmp_package(a,b):
+            return cmp(a.name.lower(), b.name.lower())
+        packages = sorted(com.get_packages(), cmp_package)
+        for package in packages:
+            text = '<b>' + package.name + '</b>' + '\n'
+            text += package.description
+            store.append([True, package.icon, text, package])
+        fssizer.pack_start(add_scrollbars(self.compolist))
+        self.add(frame1)
+
+    def apply(self):
+        """
+        Writes general config settings to file.
+        """
+        pass
 
 __neil__ = dict(
-	classes = [
-		ComponentPanel,
-	],
+        classes = [
+                ComponentPanel,
+        ],
 )
-

@@ -34,9 +34,9 @@ class MidiDriver:
         singleton = True,
         categories = [
             'driver',
-        ],      
+        ],
     )
-    
+
     class MidiInitException(Exception):
         pass
     def __init__(self):
@@ -57,7 +57,7 @@ class MidiDriver:
         player = com.get('neil.core.player')
         zzub.Mididriver.close_all(player)
         self.enabled = False
-        
+
     def init(self):
         if self.enabled:
             self.destroy()
@@ -65,7 +65,7 @@ class MidiDriver:
         midioutputs = config.get_config().get_mididriver_outputs()
         player = com.get('neil.core.player')
         for i in range(zzub.Mididriver.get_count(player)):
-            drivername = zzub.Mididriver.get_name(player,i).strip() 
+            drivername = zzub.Mididriver.get_name(player,i).strip()
             if zzub.Mididriver.is_input(player,i) and drivername in midiinputs:
                 print "Opening MIDI input device '%s'..." % drivername
                 if zzub.Mididriver.open(player,i) != 0:
@@ -82,12 +82,12 @@ class AudioDriver:
         singleton = True,
         categories = [
             'driver',
-        ],      
+        ],
     )
-    
+
     class AudioInitException(Exception):
         pass
-    
+
     def __init__(self):
         self.enabled = False
         self.samplerate = 44100
@@ -101,29 +101,29 @@ class AudioDriver:
         except self.AudioInitException:
             self.init_failed = True
             error(None, "<b><big>Neil was unable to initialize audio output.</big></b>\n\nPlease check your audio settings in the preferences dialog.")
-        
+
     def destroy(self):
         if not self.enabled:
             return
         print "uninitializing audio driver..."
         self.driver.destroy()
         self.enabled = False
-        
+
     def get_cpu_load(self):
         return self.driver.get_cpu_load()
-        
+
     def get_latency(self):
         return float(self.buffersize) / float(self.samplerate)
-        
+
     def get_count(self):
         return self.driver.get_count()
-        
+
     def get_name(self, *args,**kargs):
         return self.driver.get_name(*args,**kargs)
-        
+
     def enable(self, *args,**kargs):
         self.driver.enable(*args,**kargs)
-        
+
     def init(self):
         if self.enabled:
             self.destroy()
@@ -152,10 +152,10 @@ class AudioDriver:
                 input = i
             if drivername == outputname:
                 output = i
-                
+
         # second round: if we didnt find them from the config,
         # pick good alternatives.
-        
+
         # regardless of what was chosen as input, if output
         # has an input as well, prefer that one first.
         # We also prefer the first device since it is usually the
@@ -172,8 +172,8 @@ class AudioDriver:
                 if self.driver.is_output(i):
                     output = i
                     break
-                    
-        # take output channel if it supports input      
+
+        # take output channel if it supports input
         if input == -1:
             for i in range(self.driver.get_count()):
                 if self.driver.is_input(i):

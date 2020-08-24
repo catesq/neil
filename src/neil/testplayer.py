@@ -33,62 +33,62 @@ _player = None
 event_handlers = []
 
 def player_callback(player, plugin, data):
-	"""
-	Default callback for ui events sent by zzub.
-	"""
-	result = False
-	for handler in event_handlers:
-		result = handler(player,plugin,data) or result
-	return result
+    """
+    Default callback for ui events sent by zzub.
+    """
+    result = False
+    for handler in event_handlers:
+        result = handler(player,plugin,data) or result
+    return result
 
 class TestWindow(gtk.Window):
-	def __init__(self):
-		gtk.Window.__init__(self)
-		self.event_handlers = event_handlers
-		self.resize(640,480)
-		self.connect('destroy', lambda widget: gtk.main_quit())
-		self.show_all()
-		get_player()
+    def __init__(self):
+        gtk.Window.__init__(self)
+        self.event_handlers = event_handlers
+        self.resize(640,480)
+        self.connect('destroy', lambda widget: gtk.main_quit())
+        self.show_all()
+        get_player()
 
 def get_player():
-	global _player
-	if _player:
-		return _player
-	import zzub, driver
-	player = common.get_player()
-	_player = player
-	player.set_callback(player_callback)
-	# load blacklist file and add blacklist entries
-	for name in get_plugin_blacklist():
-		player.blacklist_plugin(name)
-	# load aliases file and add aliases
-	for name,uri in get_plugin_aliases():
-		player.add_plugin_alias(name, uri)
-	pluginpaths = [
-		'/usr/local/lib64/zzub',
-		'/usr/local/lib/zzub',
-		'/usr/lib64/zzub',
-		'/usr/lib/zzub',
-	]
-	for pluginpath in pluginpaths:
-		player.add_plugin_path(pluginpath + '/')
-	inputname, outputname, samplerate, buffersize = config.get_config().get_audiodriver_config()
-	player.initialize(samplerate)
-	try:
-		driver.get_audiodriver().init()
-	except:
-		import traceback
-		traceback.print_exc()
-	try:
-		driver.get_mididriver().init()
-	except:
-		import traceback
-		traceback.print_exc()
-	def handle_events(player):
-		player.handle_events()
-		return True
-	gobject.timeout_add(1000/25, handle_events, player)
-	return player
+    global _player
+    if _player:
+        return _player
+    import zzub, driver
+    player = common.get_player()
+    _player = player
+    player.set_callback(player_callback)
+    # load blacklist file and add blacklist entries
+    for name in get_plugin_blacklist():
+        player.blacklist_plugin(name)
+    # load aliases file and add aliases
+    for name,uri in get_plugin_aliases():
+        player.add_plugin_alias(name, uri)
+    pluginpaths = [
+            '/usr/local/lib64/zzub',
+            '/usr/local/lib/zzub',
+            '/usr/lib64/zzub',
+            '/usr/lib/zzub',
+    ]
+    for pluginpath in pluginpaths:
+        player.add_plugin_path(pluginpath + '/')
+    inputname, outputname, samplerate, buffersize = config.get_config().get_audiodriver_config()
+    player.initialize(samplerate)
+    try:
+        driver.get_audiodriver().init()
+    except:
+        import traceback
+        traceback.print_exc()
+    try:
+        driver.get_mididriver().init()
+    except:
+        import traceback
+        traceback.print_exc()
+    def handle_events(player):
+        player.handle_events()
+        return True
+    gobject.timeout_add(1000/25, handle_events, player)
+    return player
 
 if __name__ == '__main__':
-	player = get_player()
+    player = get_player()

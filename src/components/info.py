@@ -39,8 +39,8 @@ class InfoPanel(gtk.VBox):
         categories = [
             'neil.viewpanel',
             'view',
-	    ]
-        )		
+            ]
+        )
 
     __view__ = dict(
         label = "Info",
@@ -50,67 +50,67 @@ class InfoPanel(gtk.VBox):
         )
 
     def __init__(self, *args, **kwds):
-	"""
-	Initializer.
-	"""
-	gtk.VBox.__init__(self, False, MARGIN)
-	self.set_border_width(MARGIN)
-	self.view = InfoView()
-	self.pack_start(add_scrollbars(self.view))
+        """
+        Initializer.
+        """
+        gtk.VBox.__init__(self, False, MARGIN)
+        self.set_border_width(MARGIN)
+        self.view = InfoView()
+        self.pack_start(add_scrollbars(self.view))
         eventbus = com.get('neil.core.eventbus')
         eventbus.document_loaded += self.update_all
 
     def handle_focus(self):
-	self.view.grab_focus()
+        self.view.grab_focus()
 
     def reset(self):
-	"""
-	Resets the router view. Used when
-	a new song is being loaded.
-	"""
-	self.view.reset()
+        """
+        Resets the router view. Used when
+        a new song is being loaded.
+        """
+        self.view.reset()
 
     def update_all(self):
-	self.view.update()
+        self.view.update()
 
 class InfoView(gtk.TextView):
     """
     Allows to enter and view text saved with the module.
-    """	
+    """
 
     def __init__(self):
-	"""
-	Initializer.
-	"""
-	gtk.TextView.__init__(self)
-	self.set_wrap_mode(gtk.WRAP_WORD)
-	self.get_buffer().connect('changed', self.on_edit)
+        """
+        Initializer.
+        """
+        gtk.TextView.__init__(self)
+        self.set_wrap_mode(gtk.WRAP_WORD)
+        self.get_buffer().connect('changed', self.on_edit)
         self.modify_font(pango.FontDescription('monospace 8'))
 
     def on_edit(self, buffer_):
-	"""
-	Handler for text changes.
+        """
+        Handler for text changes.
 
-	@param event: Event
-	@type event: wx.Event
-	"""
-	player = com.get('neil.core.player')
+        @param event: Event
+        @type event: wx.Event
+        """
+        player = com.get('neil.core.player')
         text = self.get_buffer().get_property('text')
-	player.set_infotext(text)
+        player.set_infotext(text)
 
     def reset(self):
-	"""
-	Resets the view.
-	"""
-	self.get_buffer().set_property('text', '')
+        """
+        Resets the view.
+        """
+        self.get_buffer().set_property('text', '')
 
     def update(self):
-	"""
-	Updates the view.
-	"""
-	player = com.get('neil.core.player')
-	text = player.get_infotext()
-	self.get_buffer().set_property('text', text)
+        """
+        Updates the view.
+        """
+        player = com.get('neil.core.player')
+        text = player.get_infotext()
+        self.get_buffer().set_property('text', text)
 
 
 _all__ = [
@@ -122,7 +122,7 @@ __neil__ = dict(
     classes = [
         InfoPanel,
         InfoView,
-	],
+        ],
     )
 
 
