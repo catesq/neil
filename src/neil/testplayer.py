@@ -26,7 +26,7 @@ from gi.repository import Gtk
 from gi.repository import GObject
 import config
 from config import get_plugin_aliases, get_plugin_blacklist
-import common
+from . import common
 
 _player = None
 

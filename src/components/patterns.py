@@ -284,7 +284,7 @@ class PatternToolBar(Gtk.HBox):
         plugins = self.get_plugin_source()
         active = -1
         if player.active_plugins != []:
-            for plugin, i in zip(plugins, range(len(plugins))):
+            for plugin, i in zip(plugins, list(range(len(plugins)))):
                 if plugin[1] == player.active_plugins[0]:
                     active = i
         model = self.pluginselect.get_model()
@@ -547,7 +547,7 @@ def key_to_note(k):
         k = chr(k).lower().upper()
     else:
         k = chr(k)
-    for row, index in zip(rows, range(len(rows))):
+    for row, index in zip(rows, list(range(len(rows)))):
         if k in row:
             note = row.index(k)
             return index + (note / 12), note % 12
@@ -902,14 +902,14 @@ class PatternView(Gtk.DrawingArea):
                                                  [(row, value)])
             except KeyError:
                 values[(group, track, index)] = [(row, value)]
-        for key in values.iterkeys():
+        for key in list(values.keys()):
             group = key[0]
             track = key[1]
             index = key[2]
             param = self.plugin.get_parameter(group, track, index)
             output = effect.transform([value[1] for value in values[key]],
                                       param)
-            for (row, value), i in zip(values[key], range(len(output))):
+            for (row, value), i in zip(values[key], list(range(len(output)))):
                 self.plugin.set_pattern_value(self.pattern, group, track, index,
                                               row, output[i])
             player = com.get('neil.core.player')
@@ -981,7 +981,7 @@ class PatternView(Gtk.DrawingArea):
             self.parameter_width = []
             self.parameter_type = []
             self.track_width = []
-            for group in xrange(3):
+            for group in range(3):
                 if (group == 0) and not self.plugin.get_input_connection_count():
                     group_parameter_count = 0
                 else:
@@ -991,7 +991,7 @@ class PatternView(Gtk.DrawingArea):
                 # parameter widths in columns
                 widths = []
                 types = []
-                for group_param in xrange(group_parameter_count):
+                for group_param in range(group_parameter_count):
                     param = self.plugin.get_parameter(group, 0, group_param)
                     paramtype = param.get_type()
                     paramwidth = get_length_from_param(param)
@@ -1586,7 +1586,7 @@ class PatternView(Gtk.DrawingArea):
         data = get_clipboard_text()
         try:
             gen = self.unpack_clipboard_data(data.strip())
-            mode = gen.next()
+            mode = next(gen)
             assert (mode >= 0) and (mode <= SEL_ALL)
             for r, g, t, i, v in gen:
                 r = self.row + r
@@ -2043,7 +2043,7 @@ class PatternView(Gtk.DrawingArea):
         elif k == 'Insert' or k == 'KP_Insert':
             indices = []
             for index in range(1):
-                for i in xrange(self.plugin.get_parameter_count(self.group,
+                for i in range(self.plugin.get_parameter_count(self.group,
                                                                 self.track)):
                     indices += [self.group, self.track, i]
                 self.lines[self.group][self.track].insert(self.row + index, "")
@@ -2058,7 +2058,7 @@ class PatternView(Gtk.DrawingArea):
             indices = []
             for index in range(1):
                 self.lines[self.group][self.track].append('')
-                for i in xrange(self.plugin.get_parameter_count(self.group,
+                for i in range(self.plugin.get_parameter_count(self.group,
                                                                 self.track)):
                     indices += [self.group, self.track, i]
                 self.update_line(self.row_count - 1 + index - 1)
@@ -2556,7 +2556,7 @@ class PatternView(Gtk.DrawingArea):
                 for t in range(tc):
                     s = ' '.join([get_str_from_param(self.plugin.get_parameter(g, t, i),
                                                      self.plugin.get_pattern_value(self.pattern, g, t, i, row))
-                                                    for i in xrange(self.parameter_count[g])])
+                                                    for i in range(self.parameter_count[g])])
                     # values = [self.plugin.get_pattern_value(self.pattern, g, t, i, row) != self.plugin.get_parameter(g, t, i).get_value_none()
                     #                                         for i in range(self.parameter_count[g])]
                     try:
@@ -2630,7 +2630,7 @@ class PatternView(Gtk.DrawingArea):
         rows = self.row_count
         # Draw the row numbers
         num_rows = min(rows - row, (h - self.row_height) / self.row_height + 1)
-        s = '\n'. join([str(i) for i in xrange(row, row + num_rows)])
+        s = '\n'. join([str(i) for i in range(row, row + num_rows)])
         layout.set_text(s)
         px, py = layout.get_pixel_size()
         drawable.draw_layout(gc, x - 5 - px, y, layout)
@@ -2729,7 +2729,7 @@ class PatternView(Gtk.DrawingArea):
             """Draw the parameter values for a range of rows"""
             x, y = self.pattern_to_pos(row, group, track, 0)
             s = '\n'.join([self.lines[group][track][i]
-                           for i in xrange(row, row + num_rows)])
+                           for i in range(row, row + num_rows)])
             # w = self.column_width * len(self.lines[group][track][row])
             layout.set_text(s)
             px, py = layout.get_pixel_size()

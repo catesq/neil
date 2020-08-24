@@ -28,11 +28,11 @@ import zzub
 import webbrowser
 
 import neil.com as com
-from utils import prepstr, buffersize_to_latency, filepath, error, add_scrollbars, new_listview
-import utils
+from .utils import prepstr, buffersize_to_latency, filepath, error, add_scrollbars, new_listview
+from . import utils
 import config
-import common
-from common import MARGIN, MARGIN2, MARGIN3
+from . import common
+from .common import MARGIN, MARGIN2, MARGIN3
 
 class SelectControllerDialog(Gtk.Dialog):
     """
@@ -165,9 +165,9 @@ def learn_controller(parent):
 
 if __name__ == '__main__':
     import testplayer, gobject
-    from testplayer import TestWindow
+    from .testplayer import TestWindow
     window = TestWindow()
     def show_dialog(rootwindow):
-        print learn_controller(rootwindow, rootwindow)
+        print(learn_controller(rootwindow, rootwindow))
     GObject.timeout_add(100, show_dialog, window)
     Gtk.main()

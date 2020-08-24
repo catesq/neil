@@ -26,14 +26,14 @@ from gi.repository import Gtk
 from gi.repository import GObject
 import cairo
 import pangocairo
-from utils import prepstr, filepath, db2linear, linear2db, is_debug, filenameify, \
+from .utils import prepstr, filepath, db2linear, linear2db, is_debug, filenameify, \
         get_item_count, question, error, new_listview, add_scrollbars, get_clipboard_text, set_clipboard_text, \
         gettext, new_stock_image_button, diff, file_filter
 import config
 import zzub
 import sys,os
-from preset import PresetCollection, Preset
-import common
+from .preset import PresetCollection, Preset
+from . import common
 import neil.com as com
 
 class PresetView(Gtk.VBox):
@@ -131,7 +131,7 @@ class PresetView(Gtk.VBox):
                         preset.apply(self.plugin, dryrun=True)
                     except AssertionError:
                         txt = "This preset file seems intended for a different plugin."
-                        print txt
+                        print(txt)
                         error(self, txt)
                         return
                 # If they're all ok, add them
@@ -142,7 +142,7 @@ class PresetView(Gtk.VBox):
                 self.update_presets()
             except:
                 import traceback
-                print traceback.format_exc()
+                print(traceback.format_exc())
 
     def on_row_activate(self, treeview, path, view_column):
         preset = self.presets.presets[path[0]]
@@ -158,7 +158,7 @@ class PresetView(Gtk.VBox):
 
 
 if __name__ == '__main__':
-    import testplayer, utils
+    from . import testplayer, utils
     player = testplayer.get_player()
     player.load_ccm(utils.filepath('test.ccm'))
     window = testplayer.TestWindow()

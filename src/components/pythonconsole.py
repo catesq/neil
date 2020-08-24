@@ -43,7 +43,7 @@ MARGIN = 6
 VIEW_CLASS = Gtk.TextView
 BUFFER_CLASS = Gtk.TextBuffer
 
-import thread
+import _thread
 import time
 import code
 
@@ -144,11 +144,11 @@ class PythonConsoleDialog(Gtk.Dialog):
 
     def list_categories(self):
         for category in com.categories:
-            print category
+            print(category)
 
     def list_factories(self):
-        for factory,item in com.factories.iteritems():
-            print factory,'=',item['classobj']
+        for factory,item in list(com.factories.items()):
+            print((factory,'=',item['classobj']))
 
     def list_plugins(self, pattern='*'):
         uris = []
@@ -169,7 +169,7 @@ class PythonConsoleDialog(Gtk.Dialog):
         anchor = self.buffer.create_child_anchor(self.buffer.get_end_iter())
         self.consoleview.add_child_at_anchor(widget, anchor)
         widget.show_all()
-        print
+        print()
 
     def push_text(self, text):
         if self.compiler.push(text):
@@ -177,7 +177,7 @@ class PythonConsoleDialog(Gtk.Dialog):
             self.entry.get_child().select_region(99,-1)
 
     def command(self, text):
-        print '>>> ' + text
+        print(('>>> ' + text))
         GObject.timeout_add(50, self.push_text, text)
 
     def on_entry_activate(self, widget):

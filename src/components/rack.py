@@ -34,11 +34,11 @@ import sys,os
 import fnmatch
 import ctypes
 import time
-import Queue
+import queue
 import neil.common as common
 import neil.preset as preset_module
 from neil.common import MARGIN, MARGIN2, MARGIN3, MARGIN0
-import cPickle
+import pickle
 import config
 import neil.com as com
 
@@ -327,22 +327,26 @@ class ParameterView(Gtk.VBox):
     def get_title(self):
         return self._title
 
-    def on_drag_data_get(self, btn, context, selection_data, info, time, (g,t,i)):
+    def on_drag_data_get(self, btn, context, selection_data, info, time, xxx_todo_changeme):
+        (g,t,i) = xxx_todo_changeme
         if info == self.DROP_TARGET_CTRL_SLIDER:
-            text = cPickle.dumps((self.plugin.get_id(), g, t, i))
+            text = pickle.dumps((self.plugin.get_id(), g, t, i))
             selection_data.set(selection_data.target, 8, text)
 
-    def on_drag_data_delete(self, btn, context, data, (g,t,i)):
+    def on_drag_data_delete(self, btn, context, data, xxx_todo_changeme1):
+        (g,t,i) = xxx_todo_changeme1
         pass
 
-    def on_drag_drop(self, w, context, x, y, time, (g,t,i)):
+    def on_drag_drop(self, w, context, x, y, time, xxx_todo_changeme2):
+        (g,t,i) = xxx_todo_changeme2
         return True
 
-    def on_drag_end(self, w, context, (g,t,i)):
+    def on_drag_end(self, w, context, xxx_todo_changeme3):
+        (g,t,i) = xxx_todo_changeme3
         self.update_namelabel(g, t, i)
 
     def find_event_connection(self, source):
-        for index in xrange(self.plugin.get_input_connection_count()):
+        for index in range(self.plugin.get_input_connection_count()):
             conn = self.plugin.get_input_connection_plugin(index)
             connectiontype = self.plugin.get_input_connection_type(index)
             if connectiontype == zzub.zzub_connection_type_event:
@@ -362,11 +366,12 @@ class ParameterView(Gtk.VBox):
         self.plugin.add_event_connection_binding(source, si,tg,tt,ti)
         self.update_namelabel(tg,tt,ti)
 
-    def on_drag_data_received(self, w, context, x, y, data, info, time, (g,t,i)):
+    def on_drag_data_received(self, w, context, x, y, data, info, time, xxx_todo_changeme4):
+        (g,t,i) = xxx_todo_changeme4
         player = com.get('neil.core.player')
         try:
             if data and data.format == 8:
-                plugin_id, sg, st, si = cPickle.loads(data.data)
+                plugin_id, sg, st, si = pickle.loads(data.data)
                 for plugin in player.get_plugin_list():
                     if plugin.get_id() == plugin_id:
                         self.connect_controller(plugin, sg, st, si, g, t, i)
@@ -379,19 +384,21 @@ class ParameterView(Gtk.VBox):
             traceback.print_exc()
         context.finish(False, False, time)
 
-    def on_unbind(self, widget, (g,t,i)):
+    def on_unbind(self, widget, xxx_todo_changeme5):
         """
         Unbinds all midi controllers from the selected parameter.
         """
+        (g,t,i) = xxx_todo_changeme5
         player = com.get('neil.core.player')
         player.remove_midimapping(self.plugin, g, t, i)
         self.update_namelabel(g,t,i)
         player.history_commit("remove MIDI mapping")
 
-    def on_unbind_event_connection_binding(self, widget, (g,t,i)):
+    def on_unbind_event_connection_binding(self, widget, xxx_todo_changeme6):
         """
         Unbinds all event connection bindings from the selected parameter.
         """
+        (g,t,i) = xxx_todo_changeme6
         conns = []
         while True:
             result = self.get_event_connection_bindings(g,t,i)
@@ -408,11 +415,12 @@ class ParameterView(Gtk.VBox):
                 conn.get_output().delete_input(conn.get_input())
         self.update_namelabel(g,t,i)
 
-    def on_learn_controller(self, widget, (g, t, i)):
+    def on_learn_controller(self, widget, xxx_todo_changeme7):
         """
         Handles the learn entry from the context menu. Associates
         a controller with a plugin parameter.
         """
+        (g, t, i) = xxx_todo_changeme7
         import neil.controller as controller
         player = com.get('neil.core.player')
         res = controller.learn_controller(self)
@@ -422,11 +430,13 @@ class ParameterView(Gtk.VBox):
             player.history_commit("add MIDI mapping")
         self.update_namelabel(g, t, i)
 
-    def on_bind_controller(self, widget, (g, t, i), (name, channel, ctrlid)):
+    def on_bind_controller(self, widget, xxx_todo_changeme8, xxx_todo_changeme9):
         """
         Handles clicks on controller names in the context menu. Associates
         a controller with a plugin parameter.
         """
+        (g, t, i) = xxx_todo_changeme8
+        (name, channel, ctrlid) = xxx_todo_changeme9
         player = com.get('neil.core.player')
         # FIXME: commented-out for now, because midi controllers crash neil
         # after closing and reopening a rack.
@@ -444,7 +454,7 @@ class ParameterView(Gtk.VBox):
             for conn in self.plugin.get_output_connection_list():
                 if conn.get_type() == zzub.zzub_connection_type_event:
                     cv = conn.get_event_connection()
-                    for c in xrange(cv.get_binding_count()):
+                    for c in range(cv.get_binding_count()):
                         binding = cv.get_binding(c)
                         if binding.get_controller() == i:
                             result.append((conn,c))
@@ -453,7 +463,7 @@ class ParameterView(Gtk.VBox):
             for conn in self.plugin.get_input_connection_list():
                 if conn.get_type() == zzub.zzub_connection_type_event:
                     cv = conn.get_event_connection()
-                    for c in xrange(cv.get_binding_count()):
+                    for c in range(cv.get_binding_count()):
                         binding = cv.get_binding(c)
                         if (binding.get_group() == g) and (binding.get_track() == t) and (binding.get_column() == i):
                             result.append((conn,c))
@@ -474,13 +484,14 @@ class ParameterView(Gtk.VBox):
                 break
         nl.set_markup(markup)
 
-    def on_context_menu(self, widget, event, (g,t,i)):
+    def on_context_menu(self, widget, event, xxx_todo_changeme10):
         """
         Event handler for requests to show the context menu.
 
         @param event: event.
         @type event: wx.Event
         """
+        (g,t,i) = xxx_todo_changeme10
         player = com.get('neil.core.player')
         if event.button == 1:
             nl,s,vl = self.pid2ctrls[(g,t,i)]
@@ -732,10 +743,11 @@ class ParameterView(Gtk.VBox):
             info.run()
             info.destroy()
 
-    def on_key_down(self, widget, event, (g,t,i)):
+    def on_key_down(self, widget, event, xxx_todo_changeme11):
         """
         Callback that responds to key stroke.
         """
+        (g,t,i) = xxx_todo_changeme11
         kv = event.keyval
         if (kv >= ord('0')) and (kv <= ord('9')):
             p = self.pluginloader.get_parameter(g,i)
@@ -773,11 +785,12 @@ class ParameterView(Gtk.VBox):
 #                       player.remove_midimapping(plugin, m.get_group(), m.get_track(), m.get_column())
 #                       player.history_commit("remove MIDI mapping")
 
-    def on_button_press(self, widget, event, (g,t,i)):
+    def on_button_press(self, widget, event, xxx_todo_changeme12):
         """
         Buttons press on slider
         Used to reset value to default on double click
         """
+        (g,t,i) = xxx_todo_changeme12
         if event.type == Gdk._2BUTTON_PRESS:
             p = self.plugin.get_parameter(g,t,i)
             v = p.get_value_default()
@@ -791,13 +804,14 @@ class ParameterView(Gtk.VBox):
             # s.emit_stop_by_name('button-press-event')
 
 
-    def on_mousewheel(self, widget, event, (g,t,i)):
+    def on_mousewheel(self, widget, event, xxx_todo_changeme13):
         """
         Sent when the mousewheel is used on a slider.
 
         @param event: A mouse event.
         @type event: wx.MouseEvent
         """
+        (g,t,i) = xxx_todo_changeme13
         nl,s,vl = self.pid2ctrls[(g,t,i)]
         v = self.plugin.get_parameter_value(g,t,i)
         p = self.plugin.get_parameter(g,t,i)
@@ -833,13 +847,14 @@ class ParameterView(Gtk.VBox):
             text = "%i" % v
         vl.set_label(text)
 
-    def on_scroll_changed(self, widget, scroll, value, (g,t,i)):
+    def on_scroll_changed(self, widget, scroll, value, xxx_todo_changeme14):
         """
         Event handler for changes in slider movements.
 
         @param event: A scroll event.
         @type event: wx.ScrollEvent
         """
+        (g,t,i) = xxx_todo_changeme14
         nl,s,vl = self.pid2ctrls[(g,t,i)]
         p = self.plugin.get_parameter(g,t,i)
         minv = p.get_value_min()
@@ -854,10 +869,11 @@ class DataEntry(Gtk.Dialog):
     """
     A data entry control meant for numerical input of slider values.
     """
-    def __init__(self, (minval,maxval,v), parent):
+    def __init__(self, xxx_todo_changeme15, parent):
         """
         Initializer.
         """
+        (minval,maxval,v) = xxx_todo_changeme15
         GObject.GObject.__init__(self,
                 "Edit Value",
                 parent.get_toplevel(),
@@ -932,8 +948,8 @@ class RackPanel(Gtk.VBox):
         """
         Updates the full view.
         """
-        print "rack:update_all"
-        addlist, rmlist = diff(self.panels.keys(), common.get_plugin_infos().keys())
+        print("rack:update_all")
+        addlist, rmlist = diff(list(self.panels.keys()), list(common.get_plugin_infos().keys()))
         for plugin in rmlist:
             self.panels[plugin].destroy()
             del self.panels[plugin]

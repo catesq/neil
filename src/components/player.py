@@ -140,7 +140,7 @@ class NeilPlayer(Player, PropertyEventHandler):
         self.__event_stats = False
         # enumerate zzub_event_types and prepare unwrappers for the different types
         self.event_id_to_name = {}
-        for enumname, cfg in self._event_types_.iteritems():
+        for enumname, cfg in list(self._event_types_.items()):
             val = getattr(zzub, enumname)
             #assert val not in self.event_id_to_name, "value %s (%s) already registered." % (val, eventname)
             # where is eventname defined?
@@ -168,7 +168,7 @@ class NeilPlayer(Player, PropertyEventHandler):
         else:
             pluginpaths = []
             paths = os.environ.get('LD_LIBRARY_PATH', None)  # todo or PATH on mswindows
-            print paths
+            print(paths)
             if paths:
                 paths = paths.split(os.pathsep)
             else:
@@ -182,9 +182,9 @@ class NeilPlayer(Player, PropertyEventHandler):
             for path in [os.path.join(path, 'zzub') for path in paths]:
                 if os.path.exists(path) and not path in pluginpaths:
                     pluginpaths.append(path)
-            print pluginpaths
+            print(pluginpaths)
         for pluginpath in pluginpaths:
-            print 'plugin path:', pluginpath
+            print('plugin path:', pluginpath)
             self.add_plugin_path(pluginpath + os.sep)
 
         inputname, outputname, samplerate, buffersize = config.get_audiodriver_config()
@@ -232,10 +232,10 @@ class NeilPlayer(Player, PropertyEventHandler):
         for pluginloader in self.get_pluginloader_list():
             if is_streamer(pluginloader):
                 uri = pluginloader.get_uri()
-                for j in xrange(pluginloader.get_stream_format_count()):
+                for j in range(pluginloader.get_stream_format_count()):
                     ext = '.' + pluginloader.get_stream_format_ext(j)
                     if ext in self.__stream_ext_uri_mappings:
-                        print >> sys.stderr, "Found another mapping for " + ext + "! Skipping " + uri
+                        print("Found another mapping for " + ext + "! Skipping " + uri, file=sys.stderr)
                         continue
                     self.__stream_ext_uri_mappings[ext] = uri
         #print "supported sample formats: " + ', '.join(sorted(self.__stream_ext_uri_mappings.keys()))
@@ -262,12 +262,12 @@ class NeilPlayer(Player, PropertyEventHandler):
             return
         loader = self.get_pluginloader_by_name('@zzub.org/recorder/file')
         if not loader:
-            print >> sys.stderr, "Can't find file recorder plugin loader."
+            print("Can't find file recorder plugin loader.", file=sys.stderr)
             return
         flags = zzub.zzub_plugin_flag_no_undo | zzub.zzub_plugin_flag_no_save
         self.__streamrecorder = zzub.Player.create_plugin(self, None, 0, "_RecorderPlugin", loader, flags)
         if not self.__streamrecorder:
-            print >> sys.stderr, "Can't create file recorder plugin instance."
+            print("Can't create file recorder plugin instance.", file=sys.stderr)
             return
         master = self.get_plugin(0)
         self.__streamrecorder.add_input(master, zzub.zzub_connection_type_audio)
@@ -285,13 +285,13 @@ class NeilPlayer(Player, PropertyEventHandler):
 
         loader = self.get_pluginloader_by_name(uri)
         if not loader:
-            print >> sys.stderr, "Can't find streamplayer plugin loader."
+            print("Can't find streamplayer plugin loader.", file=sys.stderr)
             return
 
         flags = zzub.zzub_plugin_flag_no_undo | zzub.zzub_plugin_flag_no_save
         self.__streamplayer = zzub.Player.create_plugin(self, None, 0, "_PreviewPlugin", loader, flags)
         if not self.__streamplayer:
-            print >> sys.stderr, "Can't create streamplayer plugin instance."
+            print("Can't create streamplayer plugin instance.", file=sys.stderr)
             return
         self.get_plugin(0).add_input(self.__streamplayer, zzub.zzub_connection_type_audio)
         self.set_machine_non_song(self.__streamplayer, True)
@@ -424,7 +424,7 @@ class NeilPlayer(Player, PropertyEventHandler):
         self._hevcalls += 1
         t = time.time()
         if self.__event_stats and ((t - self._cbtime) > 1):
-            print self._hevcalls, self._cbcalls, "%.2fms" % (self._hevtime * 1000)
+            print(self._hevcalls, self._cbcalls, "%.2fms" % (self._hevtime * 1000))
             self._cbcalls = 0
             self._hevcalls = 0
             self._hevtime = 0
@@ -490,7 +490,7 @@ class NeilPlayer(Player, PropertyEventHandler):
             aname = a[0].get_pattern_name(a[1])
             bname = b[0].get_pattern_name(b[1])
             return cmp(aname.lower(), bname.lower())
-        patterns = sorted([(plugin, i) for i in xrange(plugin.get_pattern_count())], cmp_func)
+        patterns = sorted([(plugin, i) for i in range(plugin.get_pattern_count())], cmp_func)
         if not patterns:
             return
         if direction == -1:
@@ -584,7 +584,7 @@ class NeilPlayer(Player, PropertyEventHandler):
         """
         Returns a list of sequences
         """
-        return [self.get_sequence(i) for i in xrange(self.get_sequence_track_count())]
+        return [self.get_sequence(i) for i in range(self.get_sequence_track_count())]
 
     def get_current_sequencer(self):
         return self
@@ -597,13 +597,13 @@ class NeilPlayer(Player, PropertyEventHandler):
 
         # return if lunar is missing
         if not pc:
-            print >> sys.stderr, "lunar plugin collection not found, not supporting lunar."
+            print("lunar plugin collection not found, not supporting lunar.", file=sys.stderr)
             return
 
         config = com.get('neil.core.config')
         userlunarpath = os.path.join(config.get_settings_folder(), 'lunar')
         if not os.path.isdir(userlunarpath):
-            print "folder %s does not exist, creating..." % userlunarpath
+            print("folder %s does not exist, creating..." % userlunarpath)
             os.makedirs(userlunarpath)
         pc.configure("local_storage_dir", userlunarpath)
 
@@ -691,7 +691,7 @@ class NeilPlayer(Player, PropertyEventHandler):
                 # if we have a context plugin, prepend connections
                 inplugs = []
                 # first, record all connections
-                for index in xrange(plugin.get_input_connection_count()):
+                for index in range(plugin.get_input_connection_count()):
                     if plugin.get_input_connection_type(index) != zzub.zzub_connection_type_audio:
                         continue
                     input = plugin.get_input_connection_plugin(index)
@@ -741,7 +741,7 @@ class NeilPlayer(Player, PropertyEventHandler):
         inplugs = []
         outplugs = []
         # record all input connections
-        for index in xrange(plugin.get_input_connection_count()):
+        for index in range(plugin.get_input_connection_count()):
             if plugin.get_input_connection_type(index) != zzub.zzub_connection_type_audio:
                 continue
             input = plugin.get_input_connection_plugin(index)
@@ -749,7 +749,7 @@ class NeilPlayer(Player, PropertyEventHandler):
             pan = plugin.get_parameter_value(zzub.zzub_parameter_group_connection, index, 1)
             inplugs.append((input, amp, pan))
         # record all output connections
-        for index in xrange(plugin.get_output_connection_count()):
+        for index in range(plugin.get_output_connection_count()):
             if plugin.get_output_connection_type(index) != zzub.zzub_connection_type_audio:
                 continue
             output = plugin.get_output_connection_plugin(index)

@@ -26,13 +26,13 @@ from gi.repository import Gtk
 from gi.repository import Pango
 import pangocairo
 import os, sys
-from utils import prepstr, db2linear, linear2db, note2str, file_filter
-from utils import read_int, write_int, add_scrollbars, new_image_button,\
+from .utils import prepstr, db2linear, linear2db, note2str, file_filter
+from .utils import read_int, write_int, add_scrollbars, new_image_button,\
      filepath, add_hscrollbar, error, message, Menu, wave_names_generator
 import zzub
 import config
-import common
-from common import MARGIN, MARGIN2, MARGIN3
+from . import common
+from .common import MARGIN, MARGIN2, MARGIN3
 
 import neil.com as com
 
@@ -272,7 +272,7 @@ class WaveEditView(Gtk.DrawingArea):
                 else:
                     end = self.peaks[i+1]
                 filepath = "%s%03i%s" % (filename, i, fileext)
-                print filepath
+                print(filepath)
                 self.wave.save_sample_range(0, filepath, x, end)
 
     def on_enter(self, widget, event):
@@ -538,7 +538,7 @@ class WaveEditView(Gtk.DrawingArea):
         width, height = self.get_client_size()
         begin, end = self.range
         if self.level.get_wave().get_flags() & zzub.zzub_wave_flag_loop:
-            print self.loop_start, self.loop_end
+            print(self.loop_start, self.loop_end)
             if self.start_loop_dragging:
                 loop_start = self.loop_start
             else:
@@ -650,9 +650,9 @@ class WaveEditView(Gtk.DrawingArea):
             ctx.set_source_rgb(0.7, 0.9, 0.7)
             hm = (h / (2 * channels) - 1) * (1 + channel * 2)
             ctx.move_to(0, hm)
-            for x in xrange(0, w):
+            for x in range(0, w):
                 ctx.line_to(x, hm - (h / channels) * maxbuffer[x] * 0.4)
-            for x in xrange(0, w):
+            for x in range(0, w):
                 ctx.line_to(w - x, hm - (h / channels) * minbuffer[w - x - 1] * 0.4)
             ctx.fill_preserve()
             ctx.set_source_rgb(*pen)

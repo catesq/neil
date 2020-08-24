@@ -84,7 +84,7 @@ def get_peaks(f, tolerance=0.01, maxd=0.01, mapfunc=map_coords_linear):
     x0,y0 = 0.0,0.0
     t0 = -9999.0
     i0 = 0
-    for i in xrange(int(corners)):
+    for i in range(int(corners)):
         p = i*yc
         a = f(p)
         x,y = mapfunc(p, a)
@@ -385,7 +385,7 @@ class Knob(Gtk.VBox):
             ctx.save()
             ctx.set_source_rgb(*hls_to_rgb(*self.legend_hls))
             dots = self.segments
-            for i in xrange(dots):
+            for i in range(dots):
                 s = float(i)/(dots-1)
                 a = startangle + self.angle*s
                 ctx.save()
@@ -402,7 +402,7 @@ class Knob(Gtk.VBox):
             ctx.set_source_rgb(*hls_to_rgb(*self.legend_hls))
             dots = self.segments
             n = ps2*(kh-1)
-            for i in xrange(dots):
+            for i in range(dots):
                 s = float(i)/(dots-1)
                 a = startangle + self.angle*s
                 ctx.save()
@@ -457,7 +457,7 @@ class Knob(Gtk.VBox):
                 dsize = lsize-ps2*2
                 seg = self.angle/dots
                 endangle = startangle + self.angle
-                for i in xrange(dots):
+                for i in range(dots):
                     s = float(i)/(dots-1)
                     a = startangle + self.angle*s
                     if ((a-seg*0.5) > angle) or (angle == startangle):
@@ -701,7 +701,7 @@ class DecoBox(Gtk.VBox):
         self.draw(self.context)
         return False
 
-import lcdfont
+from . import lcdfont
 
 LCD_CHARWIDTH = 5 # lcd character width in tiles
 LCD_CHARHEIGHT = 7 # lcd character height in tiles
@@ -742,7 +742,7 @@ class LCD(Gtk.DrawingArea):
         # make tiles
         self.chars = []
         BITMASK = lcdfont.BITMASK
-        for i in xrange(256):
+        for i in range(256):
             x,y,w,h = 0, 0, self.charwidth, self.charheight
             pm = Gdk.Pixmap(self.window, w, h, -1)
             self.chars.append(pm)
@@ -753,10 +753,10 @@ class LCD(Gtk.DrawingArea):
             tcolor = hls_to_rgb(*self.fg_hls) + (1.0 -self.contrast,)
             ctx.push_group()
             ctx.save()
-            for cy in xrange(LCD_CHARHEIGHT):
+            for cy in range(LCD_CHARHEIGHT):
                 ctx.save()
                 bm = self.font[i]
-                for cx in xrange(LCD_CHARWIDTH):
+                for cx in range(LCD_CHARWIDTH):
                     if bm & (BITMASK>>(cy+(8*cx))):
                         color = tcolor
                     else:
@@ -813,7 +813,7 @@ class LCD(Gtk.DrawingArea):
         self.refresh()
 
     def clear_text(self):
-        self.buffer = [[' ' for x in xrange(self.columns)] for y in xrange(self.rows)]
+        self.buffer = [[' ' for x in range(self.columns)] for y in range(self.rows)]
 
     def set_text(self, text, x=0, y=0):
         for c in text:

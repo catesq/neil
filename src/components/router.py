@@ -454,7 +454,7 @@ class VolumeSlider(Gtk.Window):
         layout.set_markup("<small>%.1f dB</small>" % (self.amp * -48.0))
         drawable.draw_layout(gc, 2, 2, layout)
 
-    def display(self, (mx, my), mp, index):
+    def display(self, xxx_todo_changeme, mp, index):
         """
         Called by the router view to show the control.
 
@@ -465,6 +465,7 @@ class VolumeSlider(Gtk.Window):
         @param conn: Connection to control.
         @type conn: zzub.Connection
         """
+        (mx, my) = xxx_todo_changeme
         self.y = VOLBARHEIGHT / 2
         self.plugin = mp
         self.index = index
@@ -700,7 +701,7 @@ class RouteView(Gtk.DrawingArea):
                 menu = com.get('neil.core.contextmenu', 'router', point)
         menu.popup(self, event)
 
-    def float_to_pixel(self, (x, y)):
+    def float_to_pixel(self, xxx_todo_changeme1):
         """
         Converts a router coordinate to an on-screen pixel coordinate.
 
@@ -711,12 +712,13 @@ class RouteView(Gtk.DrawingArea):
         @return: A tuple returning the pixel coordinate.
         @rtype: (int,int)
         """
+        (x, y) = xxx_todo_changeme1
         rect = self.get_allocation()
         w, h = rect.width, rect.height
         cx, cy = w * 0.5, h * 0.5
         return cx * (1 + x), cy * (1 + y)
 
-    def pixel_to_float(self, (x, y)):
+    def pixel_to_float(self, xxx_todo_changeme2):
         """
         Converts an on-screen pixel coordinate to a router coordinate.
 
@@ -727,12 +729,13 @@ class RouteView(Gtk.DrawingArea):
         @return: A tuple returning the router coordinate.
         @rtype: (float, float)
         """
+        (x, y) = xxx_todo_changeme2
         rect = self.get_allocation()
         w, h = rect.width, rect.height
         cx, cy = w * 0.5, h * 0.5
         return (x / cx) - 1, (y / cy) - 1
 
-    def get_connection_at(self, (mx, my)):
+    def get_connection_at(self, xxx_todo_changeme3):
         """
         Finds the connection arrow at a specific position.
 
@@ -743,6 +746,7 @@ class RouteView(Gtk.DrawingArea):
         @return: A connection item or None.
         @rtype: zzub.Connection or None
         """
+        (mx, my) = xxx_todo_changeme3
         player = com.get('neil.core.player')
         rect = self.get_allocation()
         w, h = rect.width, rect.height
@@ -752,7 +756,7 @@ class RouteView(Gtk.DrawingArea):
             return cx * (1 + x), cy * (1 + y)
         for mp in player.get_plugin_list():
             rx, ry = get_pixelpos(*mp.get_position())
-            for index in xrange(mp.get_input_connection_count()):
+            for index in range(mp.get_input_connection_count()):
                 crx, cry = get_pixelpos(*mp.get_input_connection_plugin(index).get_position())
                 cpx, cpy = (crx + rx) * 0.5, (cry + ry) * 0.5
                 dx, dy = cpx - mx, cpy - my
@@ -760,7 +764,7 @@ class RouteView(Gtk.DrawingArea):
                 if length <= 14:  # why exactly 14?
                     return mp, index
 
-    def get_plugin_at(self, (x, y)):
+    def get_plugin_at(self, xxx_todo_changeme4):
         """
         Finds a plugin at a specific position.
 
@@ -771,6 +775,7 @@ class RouteView(Gtk.DrawingArea):
         @return: A connection item, exact pixel position and area (AREA_ANY, AREA_PANNING, AREA_LED) or None.
         @rtype: (zzub.Plugin,(int,int),int) or None
         """
+        (x, y) = xxx_todo_changeme4
         rect = self.get_allocation()
         w, h = rect.width, rect.height
         cx, cy = w * 0.5, h * 0.5
@@ -1298,7 +1303,7 @@ class RouteView(Gtk.DrawingArea):
                 if self.dragging and mp in player.active_plugins:
                     pinfo = self.get_plugin_info(mp)
                     rx, ry = get_pixelpos(*pinfo.dragpos)
-                for index in xrange(mp.get_input_connection_count()):
+                for index in range(mp.get_input_connection_count()):
                     targetmp = mp.get_input_connection_plugin(index)
                     pi = common.get_plugin_infos().get(targetmp)
                     if not pi.songplugin:

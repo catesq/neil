@@ -114,11 +114,11 @@ def add_syntax_path(path_or_list):
         for i in range(len(path_or_list)):
             SYNTAX_PATH.insert(0, path_or_list[-i])
     # handle single string
-    elif isinstance(path_or_list, basestring):
+    elif isinstance(path_or_list, str):
         SYNTAX_PATH.insert(0, path_or_list)
     # handle attr-error
     else:
-        raise TypeError, "Argument must be path-string or list of strings"
+        raise TypeError("Argument must be path-string or list of strings")
 
 
 
@@ -154,7 +154,7 @@ class Pattern:
 
         # compile re
         try: self._regexp = re.compile(regexp, flag)
-        except re.error, e:
+        except re.error as e:
             raise Exception("Invalid regexp \"%s\": %s"%(regexp,str(e)))
 
         self._group  = group
@@ -209,7 +209,7 @@ class String:
             string. """
         try:
             self._starts  = re.compile(starts)
-        except re.error, e:
+        except re.error as e:
             raise Exception("Invalid regexp \"%s\": %s"%(regexp,str(e)))
 
         if escape:
@@ -220,7 +220,7 @@ class String:
 
         try:
             self._ends    = re.compile(end_exp)
-        except re.error, e:
+        except re.error as e:
             raise Exception("Invalid regexp \"%s\": %s"%(regexp,str(e)))
 
         self.tag_name = style
@@ -333,7 +333,7 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
         # search for syntax-files:
         fname = None
         for syntax_dir in SYNTAX_PATH:
-            print syntax_dir
+            print(syntax_dir)
             fname = os.path.join(syntax_dir, "%s.xml"%lang_name)
             if os.path.isfile(fname): break
 
@@ -379,8 +379,8 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
         self.__group   = 0
         self.__flags   = ''
         self.__style   = attr['style']
-        if 'group' in attr.keys(): self.__group = int(attr['group'])
-        if 'flags' in attr.keys(): self.__flags = attr['flags']
+        if 'group' in list(attr.keys()): self.__group = int(attr['group'])
+        if 'flags' in list(attr.keys()): self.__flags = attr['flags']
 
     def end_pattern(self):
         rule = Pattern(self.__pattern, self.__style, self.__group, self.__flags)
@@ -398,9 +398,9 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
     def start_keywordlist(self, attr):
         self.__style = "keyword"
         self.__flags = ""
-        if 'style' in attr.keys():
+        if 'style' in list(attr.keys()):
             self.__style = attr['style']
-        if 'flags' in attr.keys():
+        if 'flags' in list(attr.keys()):
             self.__flags = attr['flags']
         self.__keywords = []
 
@@ -428,9 +428,9 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
     def start_string(self, attr):
         self.__style = "string"
         self.__escape = None
-        if 'escape' in attr.keys():
+        if 'escape' in list(attr.keys()):
             self.__escape = attr['escape']
-        if 'style' in attr.keys():
+        if 'style' in list(attr.keys()):
             self.__style = attr['style']
         self.__start_pattern = ""
         self.__end_pattern = ""
@@ -472,22 +472,22 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
             pass
 
         elif self.__style_prop_name == 'variant':
-            if not value in self.style_variant_table.keys():
+            if not value in list(self.style_variant_table.keys()):
                 Exception("Unknown style-variant: %s"%value)
             value = self.style_variant_table[value]
 
         elif self.__style_prop_name == 'underline':
-            if not value in self.style_underline_table.keys():
+            if not value in list(self.style_underline_table.keys()):
                 Exception("Unknown underline-style: %s"%value)
             value = self.style_underline_table[value]
 
         elif self.__style_prop_name == 'scale':
-            if not value in self.style_scale_table.keys():
+            if not value in list(self.style_scale_table.keys()):
                 Exception("Unknown scale-style: %s"%value)
             value = self.style_scale_table[value]
 
         elif self.__style_prop_name == 'weight':
-            if not value in self.style_weight_table.keys():
+            if not value in list(self.style_weight_table.keys()):
                 Exception("Unknown style-weight: %s"%value)
             value = self.style_weight_table[value]
 
@@ -535,7 +535,7 @@ class CodeBuffer(Gtk.TextBuffer):
         self.styles.update(styles)
 
         # create tags
-        for name, props in self.styles.items():
+        for name, props in list(self.styles.items()):
             style = dict(self.styles['DEFAULT'])    # take default
             style.update(props)                     # and update with props
             self.create_tag(name, **style)
@@ -666,7 +666,7 @@ class CodeBuffer(Gtk.TextBuffer):
         self.styles.update(styles)
 
         table = self.get_tag_table()
-        for name, props in styles.items():
+        for name, props in list(styles.items()):
             style = self.styles['DEFAULT']
             style.update(props)
             # if tagname is unknown:
@@ -676,4 +676,4 @@ class CodeBuffer(Gtk.TextBuffer):
             else: # update tag
                 tag = table.lookup(name)
                 _log_debug("Update tag %s with (%s)"%(name, style))
-                map(lambda i: tag.set_property(i[0],i[1]), style.items())
+                list(map(lambda i: tag.set_property(i[0],i[1]), list(style.items())))

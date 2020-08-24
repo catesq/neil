@@ -103,7 +103,7 @@ class Expression():
         self.selector.connect('changed', self.active_expression_changed)
         # Fill in the combobox expression selector with entries
         model = self.selector.get_model()
-        for name, expression in self.expressions.items():
+        for name, expression in list(self.expressions.items()):
             model.append([name])
         add_button = new_stock_image_button(Gtk.STOCK_OPEN, "Add Expression")
         del_button = new_stock_image_button(Gtk.STOCK_REMOVE, "Remove Expression")
@@ -164,7 +164,7 @@ class Expression():
                     'get_param' : get_param,
                     'n' : plugin.get_pattern_length(pattern),
                     }
-                exec expr in new_global
+                exec(expr, new_global)
             except Exception as e:
                 error(self.dialog, "There was a problem with your expression!", details=str(e))
 

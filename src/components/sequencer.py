@@ -51,7 +51,7 @@ import neil.com as com
 import zzub
 
 SEQKEYS = '0123456789abcdefghijklmnopqrstuvwxyz'
-SEQKEYMAP = dict(zip(SEQKEYS, range(0x10, len(SEQKEYS) + 0x10)))
+SEQKEYMAP = dict(list(zip(SEQKEYS, list(range(0x10, len(SEQKEYS) + 0x10)))))
 SEQKEYMAP[chr(45)] = 0x00
 SEQKEYMAP[chr(44)] = 0x01
 
@@ -393,7 +393,7 @@ class SequencerPanel(Gtk.VBox):
         """
         self.update_list()
         self.toolbar.update_all()
-        for k, v in self.view.plugin_info.iteritems():
+        for k, v in list(self.view.plugin_info.items()):
             v.patterngfx = {}
         self.view.update()
         self.seqview.set_cursor_pos(0, 0)
@@ -514,7 +514,7 @@ class SequencerView(Gtk.DrawingArea):
         eventbus.document_loaded += self.redraw
         set_clipboard_text("invalid_clipboard_data")
 
-    def track_row_to_pos(self, (track, row)):
+    def track_row_to_pos(self, xxx_todo_changeme):
         """
         Converts track and row to a pixel coordinate.
 
@@ -525,6 +525,7 @@ class SequencerView(Gtk.DrawingArea):
         @return: Pixel coordinate.
         @rtype: (int, int)
         """
+        (track, row) = xxx_todo_changeme
         if row == -1:
             x = 0
         else:
@@ -537,7 +538,7 @@ class SequencerView(Gtk.DrawingArea):
                  self.seq_top_margin)
         return x, y
 
-    def pos_to_track_row(self, (x, y)):
+    def pos_to_track_row(self, xxx_todo_changeme1):
         """
         Converts pixel coordinate to a track and row.
 
@@ -548,6 +549,7 @@ class SequencerView(Gtk.DrawingArea):
         @return: Tuple containing track and row index.
         @rtype: (int, int)
         """
+        (x, y) = xxx_todo_changeme1
         if x < self.seq_left_margin:
             row = -1
         else:
@@ -734,7 +736,7 @@ class SequencerView(Gtk.DrawingArea):
             p = m.create_pattern(patternsize)
             p.set_name(name)
             m.add_pattern(p)
-            for i in xrange(m.get_pattern_count()):
+            for i in range(m.get_pattern_count()):
                 pattern = m.get_pattern(i)
                 if pattern.get_name() == name:
                     t.set_event(start[1], 0x10 + i)
@@ -789,16 +791,16 @@ class SequencerView(Gtk.DrawingArea):
                                      1, m.get_track_count()]
                 for time, pattern in eventlist:
                     t.set_event(time, -1)
-                    for r in xrange(pattern.get_row_count()):
+                    for r in range(pattern.get_row_count()):
                         rowtime = time - start[1] + r
                         for g in range(3):
-                            for ti in xrange(group_track_count[g]):
-                                for i in xrange(m.get_pluginloader().\
+                            for ti in range(group_track_count[g]):
+                                for i in range(m.get_pluginloader().\
                                                     get_parameter_count(g)):
                                     p.set_value(rowtime, g, ti, i,
                                                 pattern.get_value(r, g, ti, i))
                 m.add_pattern(p)
-                for i in xrange(m.get_pattern_count()):
+                for i in range(m.get_pattern_count()):
                     if m.get_pattern(i).get_name() == name:
                         t.set_event(start[1], 0x10 + i)
                         break
@@ -890,12 +892,12 @@ class SequencerView(Gtk.DrawingArea):
         player = com.get('neil.core.player')
         loader = player.get_pluginloader_by_name('@zzub.org/recorder/wavetable')
         if not loader:
-            print >> sys.stderr, "Can't find instrument recorder plugin loader."
+            print("Can't find instrument recorder plugin loader.", file=sys.stderr)
             return
         flags = zzub.zzub_plugin_flag_no_undo | zzub.zzub_plugin_flag_no_save
         recorder = zzub.Player.create_plugin(player, None, 0, "_IRecorder", loader, flags)
         if not recorder:
-            print >> sys.stderr, "Can't create instrument recorder plugin instance."
+            print("Can't create instrument recorder plugin instance.", file=sys.stderr)
             return
         master = player.get_plugin(0)
         recorder.add_input(master, zzub.zzub_connection_type_audio)
@@ -1634,7 +1636,7 @@ class SequencerView(Gtk.DrawingArea):
             plugin_info = self.plugin_info.get(plugin)
             # Draw the pattern boxes
             event_list = list(track.get_event_list())
-            for (position, value), index in zip(event_list, range(len(event_list))):
+            for (position, value), index in zip(event_list, list(range(len(event_list)))):
                 pattern = None
                 if value >= 0x10:
                     pattern = plugin.get_pattern(value - 0x10)
@@ -1716,7 +1718,7 @@ class SequencerView(Gtk.DrawingArea):
                     drawable.draw_line(ctx, x, y + 2, x, y + self.seq_track_size - 1)
                     ctx.line_width = 1
                 else:
-                    print "Weird pattern id value: ", value
+                    print(("Weird pattern id value: ", value))
             # Draw the track name boxes.
             name = plugin.get_name()
             title = prepstr(name)

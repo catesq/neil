@@ -128,12 +128,12 @@ class CPUMonitorDialog(Gtk.Dialog):
                 if ref.valid():
                     path = ref.get_path()
                     self.pluginlist.remove(self.pluginlist.get_iter(path))
-            for ref,value in un.newvalues.iteritems():
+            for ref,value in list(un.newvalues.items()):
                 if ref.valid():
                     path = ref.get_path()
                     self.pluginlist.set_value(self.pluginlist.get_iter(path), 1, value)
 
-            for k,v in cpu_loads.iteritems():
+            for k,v in list(cpu_loads.items()):
                 k = prepstr(k)
                 relperc = v * 100.0
                 self.pluginlist.append([k, "%.1f%%" % relperc])

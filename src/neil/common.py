@@ -73,7 +73,7 @@ class PluginInfoCollection:
         return self.plugin_info.__delitem__(k)
 
     def keys(self):
-        return self.plugin_info.keys()
+        return list(self.plugin_info.keys())
 
     def get(self, k):
         if not k in self.plugin_info:
@@ -81,10 +81,10 @@ class PluginInfoCollection:
         return self.plugin_info.__getitem__(k)
 
     def iteritems(self):
-        return self.plugin_info.iteritems()
+        return iter(self.plugin_info.items())
 
     def reset_plugingfx(self):
-        for k,v in self.plugin_info.iteritems():
+        for k,v in self.plugin_info.items():
             v.reset_plugingfx()
 
     def add_plugin(self, mp):

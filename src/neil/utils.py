@@ -78,7 +78,7 @@ def etcpath(path):
     @return: Absolute path to file.
     @rtype: str
     """
-    from pathconfig import path_cfg
+    from .pathconfig import path_cfg
     return path_cfg.get_path('etc', path)
 
 def iconpath(path):
@@ -91,7 +91,7 @@ def iconpath(path):
     @return: Absolute path to file.
     @rtype: str
     """
-    from pathconfig import path_cfg
+    from .pathconfig import path_cfg
     return path_cfg.get_path('icons_neil', path)
 
 def hicoloriconpath(path):
@@ -104,7 +104,7 @@ def hicoloriconpath(path):
     @return: Absolute path to file.
     @rtype: str
     """
-    from pathconfig import path_cfg
+    from .pathconfig import path_cfg
     return path_cfg.get_path('icons_hicolor', path)
 
 
@@ -118,7 +118,7 @@ def imagepath(path):
     @return: Absolute path to file.
     @rtype: str
     """
-    from pathconfig import path_cfg
+    from .pathconfig import path_cfg
     return path_cfg.get_path('pixmaps', path)
 
 def sharedpath(path):
@@ -131,7 +131,7 @@ def sharedpath(path):
     @return: Absolute path to file.
     @rtype: str
     """
-    from pathconfig import path_cfg
+    from .pathconfig import path_cfg
     return path_cfg.get_path('share', path)
 
 def docpath(path):
@@ -139,7 +139,7 @@ def docpath(path):
     Translates a path relative to the doc directory in to an absolute
     path.
     """
-    from pathconfig import path_cfg
+    from .pathconfig import path_cfg
     return path_cfg.get_path('doc', path)
 
 def filepath(path):
@@ -519,8 +519,8 @@ def run_function_with_progress(parent, msg, allow_cancel, func, *args):
         if func(dlg, *args) and dlg._response == None:
             dlg.response(Gtk.ResponseType.OK)
     GObject.timeout_add(50, update_progress, dialog)
-    import thread
-    thread.start_new_thread(run_function, (dialog,func,args))
+    import _thread
+    _thread.start_new_thread(run_function, (dialog,func,args))
     response = dialog.run()
     dialog.destroy()
     return response
@@ -866,7 +866,7 @@ def diff(oldlist, newlist):
 
 def wave_names_generator():
     player = com.get('neil.core.player')
-    for i in xrange(player.get_wave_count()):
+    for i in range(player.get_wave_count()):
         w = player.get_wave(i)
         name = "%02X. %s" % ((i + 1), prepstr(w.get_name()))
         yield name
@@ -1100,7 +1100,7 @@ class Menu(Gtk.Menu):
 
     def add_image_item(self, label, icon_or_path, func, *args):
         item = Gtk.ImageMenuItem(stock_id=label)
-        if isinstance(icon_or_path, basestring):
+        if isinstance(icon_or_path, str):
             image = Gtk.Image()
             image.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file(icon_or_path))
         elif isinstance(icon_or_path, Gtk.Image):
@@ -1175,7 +1175,7 @@ def generate_ui_method(class_, membername, kwargs):
             vtype = kwargs.get('vtype', type(default))
         else:
             vtype = kwargs['vtype']
-            default = {float: 0.0, int:0, long:0, str:'', unicode:u'', bool:False}.get(vtype, None)
+            default = {float: 0.0, int:0, int:0, str:'', str:'', bool:False}.get(vtype, None)
         getter = lambda self,defvalue=kwargs.get(default,False): self.getter(membername,kwargs)
         setter = lambda self,value: self.setter(membername,kwargs,value)
 
@@ -1195,7 +1195,7 @@ def generate_ui_method(class_, membername, kwargs):
 
 def generate_ui_methods(class_, memberlist):
     # build getters and setters based on the options map
-    for membername,kwargs in memberlist.iteritems():
+    for membername,kwargs in memberlist.items():
         generate_ui_method(class_, membername, kwargs)
 
 def refresh_gui():
@@ -1269,7 +1269,7 @@ class AcceleratorMap:
         ref = None
         funcname = None
         if hasattr(func, 'im_self'):
-            ref = weakref.ref(func.im_self)
+            ref = weakref.ref(func.__self__)
             funcname = func.__name__
         else:
             ref = weakref.ref(func)
@@ -1286,7 +1286,7 @@ class AcceleratorMap:
         name = Gtk.accelerator_name(event.keyval, key_mod)
         if name == None:
             return False
-        for shortcut, (ref,funcname,args,kargs) in self.__keymap.iteritems():
+        for shortcut, (ref,funcname,args,kargs) in self.__keymap.items():
             if shortcut == name:
                 if funcname:
                     func = getattr(ref(), funcname)
@@ -1355,21 +1355,21 @@ if __name__ == '__main__':
     oldlist = [1,2,6,3,4,5]
     newlist = [1,3,4,5,2]
     def insert_entry(i,o):
-        print "insert",i,o
+        print("insert",i,o)
         oldlist.insert(i,o)
     def del_entry(i):
-        print "del",i
+        print("del",i)
         del oldlist[i]
     def swap_entry(i,j):
-        print "swap",i,j
+        print("swap",i,j)
         a,b = oldlist[i],oldlist[j]
         del oldlist[j]
         del oldlist[i]
         oldlist.insert(i,b)
         oldlist.insert(j,a)
-    print oldlist, newlist
+    print(oldlist, newlist)
     synchronize_list(oldlist,newlist,insert_entry,del_entry,swap_entry)
-    print oldlist, newlist
+    print(oldlist, newlist)
 
 
 class ImageToggleButton(Gtk.ToggleButton):

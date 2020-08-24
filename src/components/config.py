@@ -28,7 +28,7 @@ import os, glob, re
 
 from neil.utils import filepath, camelcase_to_unixstyle, etcpath, imagepath, iconpath, sharedpath, filenameify
 import neil.preset as preset
-import ConfigParser
+import configparser
 import new
 
 CONFIG_OPTIONS = dict(
@@ -193,7 +193,7 @@ DEFAULT_THEME = {
     'PT Background' : 0xe0e0e0,
     }
 
-class NeilConfig(object, ConfigParser.ConfigParser):
+class NeilConfig(object, configparser.ConfigParser):
     """
     Streamlines access to the applications configuration. You should
     set all applications to and retrieve them from the config object.
@@ -208,7 +208,7 @@ class NeilConfig(object, ConfigParser.ConfigParser):
         """
         Initializer.
         """
-        ConfigParser.ConfigParser.__init__(self)
+        configparser.ConfigParser.__init__(self)
         self.filename = os.path.join(self.get_settings_folder(),'settings.cfg')
         self.read([self.filename])
         self._section = ''
@@ -361,10 +361,10 @@ class NeilConfig(object, ConfigParser.ConfigParser):
                 assert m, "invalid line for theme %s: %s" % (name,line)
                 key = m.group(1)
                 value = int(m.group(2),16)
-                if key in self.current_theme.keys():
+                if key in list(self.current_theme.keys()):
                     self.current_theme[key] = value
                 else:
-                    print "no such key: %s" % key
+                    print(("no such key: %s" % key))
         self.active_theme = name
 
     def get_float_color(self, name):
@@ -600,7 +600,7 @@ class NeilConfig(object, ConfigParser.ConfigParser):
         name = filenameify(pluginloader.get_name())
         #presetpath = os.path.join(sharedpath('presets'))
         presetpath = os.path.join(self.get_settings_folder(),'presets')
-        print presetpath
+        print(presetpath)
         presetfilepaths = [
                 os.path.join(presetpath, uri + '.prs'),
                 os.path.join(presetpath, name + '.prs'),
@@ -609,14 +609,14 @@ class NeilConfig(object, ConfigParser.ConfigParser):
         ]
         presets = preset.PresetCollection()
         for path in presetfilepaths:
-            print "searching preset '%s'..." % path
+            print(("searching preset '%s'..." % path))
             if os.path.isfile(path):
                 try:
                     presets = preset.PresetCollection(path)
                     break
                 except:
                     import traceback
-                    print traceback.format_exc()
+                    print((traceback.format_exc()))
         return presets
 
     def save_window_pos(self, windowid, window):
@@ -777,7 +777,7 @@ def generate_config_method(section, option, kwargs):
             vtype = kwargs.get('vtype', type(default))
         else:
             vtype = kwargs['vtype']
-            default = {float: 0.0, int:0, long:0, str:'', unicode:u'', bool:False}[vtype]
+            default = {float: 0.0, int:0, int:0, str:'', str:'', bool:False}[vtype]
         getter = lambda self,defvalue=kwargs.get(default,False): self.getter(section,option,vtype,onget,default)
         setter = lambda self,value: self.setter(section,option,vtype,onset,value)
 
@@ -795,8 +795,8 @@ def generate_config_method(section, option, kwargs):
 
 def generate_config_methods():
     # build getters and setters based on the options map
-    for section,options in CONFIG_OPTIONS.iteritems():
-        for option,kwargs in options.iteritems():
+    for section,options in list(CONFIG_OPTIONS.items()):
+        for option,kwargs in list(options.items()):
             generate_config_method(section, option, kwargs)
 
 generate_config_methods()
@@ -860,19 +860,19 @@ __neil__ = dict(
 
 if __name__ == '__main__':
     cfg = get_config()
-    print cfg.get_enabled_extensions()
-    print cfg.get_plugin_icon_path("matilde")
-    print cfg.packages
+    print((cfg.get_enabled_extensions()))
+    print((cfg.get_plugin_icon_path("matilde")))
+    print((cfg.packages))
     cfg.set_sample_preview_volume(-6.0)
-    print "prop1:",cfg.sample_preview_volume
+    print(("prop1:",cfg.sample_preview_volume))
     cfg.sample_preview_volume = -9.0
-    print cfg.active_theme
-    print "prop2:",cfg.sample_preview_volume
-    print "volume:",cfg.get_sample_preview_volume()
+    print((cfg.active_theme))
+    print(("prop2:",cfg.sample_preview_volume))
+    print(("volume:",cfg.get_sample_preview_volume()))
     cfg.set_sample_preview_volume(-12.0)
-    print cfg.get_audiodriver_config()
-    print "DEFAULT_THEME = {"
+    print((cfg.get_audiodriver_config()))
+    print("DEFAULT_THEME = {")
     for k in sorted(DEFAULT_THEME.keys()):
         v = DEFAULT_THEME[k]
-        print '\t%r: 0x%06x,' % (k,int(cfg.get_color(k).replace('#',''),16))
-    print "}"
+        print(('\t%r: 0x%06x,' % (k,int(cfg.get_color(k).replace('#',''),16))))
+    print("}")

@@ -25,12 +25,12 @@ Provides dialogs, classes and controls to display/load/save envelopes
 from gi.repository import Gtk
 import os, sys
 import math
-from utils import prepstr, db2linear, linear2db, note2str
-from utils import read_int, write_int
+from .utils import prepstr, db2linear, linear2db, note2str
+from .utils import read_int, write_int
 import zzub
 import config
-import common
-from common import MARGIN, MARGIN2, MARGIN3
+from . import common
+from .common import MARGIN, MARGIN2, MARGIN3
 
 import neil.com as com
 
@@ -648,7 +648,7 @@ class EnvelopeView(Gtk.DrawingArea):
         points = self.get_translated_points()
         envp = None
         ctx.move_to(*self.env_to_pixel(0, 0))
-        for i in xrange(len(points)):
+        for i in range(len(points)):
             pt1 = points[max(i, 0)]
             ctx.line_to(pt1[0], pt1[1])
             if pt1[2] & zzub.zzub_envelope_flag_sustain:
@@ -666,7 +666,7 @@ class EnvelopeView(Gtk.DrawingArea):
             ctx.stroke()
             ctx.set_dash([], 0.0)
         if self.showpoints:
-            for i in reversed(range(len(points))):
+            for i in reversed(list(range(len(points)))):
                 pt1 = points[max(i, 0)]
                 pt2 = points[min(i + 1, len(points) - 1)]
                 if i == self.currentpoint:
@@ -722,5 +722,5 @@ def save_envelope(path, points, sustainindex=-1):
 
 if __name__ == '__main__':
     import sys, utils
-    from main import run
+    from .main import run
     run(sys.argv)

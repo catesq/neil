@@ -252,7 +252,7 @@ class PackageBrowserDialog(Gtk.Dialog):
             # print reference to stdout so devs can click the line from
             # within SciTE.
             contextlog.clean_next_line()
-            print "%s:%s:%r" % (filepath, line, obj)
+            print(("%s:%s:%r" % (filepath, line, obj)))
         insert('File "%s", Line %s\n\n' % (filepath, line), 'i')
         if inspect.ismethod(obj):
             docstr = ""
@@ -264,7 +264,7 @@ class PackageBrowserDialog(Gtk.Dialog):
                 defaults = []
             if len(defaults) < args:
                 defaults = [None] * (len(args) - len(defaults)) + list(defaults)
-            insert(obj.im_func.func_name, funcc)
+            insert(obj.__func__.__name__, funcc)
             insert("(")
             index = 0
             for arg, df in zip(args, defaults):

@@ -278,7 +278,7 @@ class WavetablePanel(Gtk.VBox):
             try:
                 self.libpanel.set_current_folder(currentpath)
             except:
-                print "couldn't set current sample browser path: '%s'." % currentpath
+                print(("couldn't set current sample browser path: '%s'." % currentpath))
 
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_wave_allocated += self.update_samplelist
@@ -493,7 +493,7 @@ class WavetablePanel(Gtk.VBox):
         try:
             v = int(self.edloopstart.get_text())
         except ValueError:
-            print "invalid value."
+            print("invalid value.")
             return
         player = com.get('neil.core.player')
         for i in self.get_sample_selection():
@@ -515,7 +515,7 @@ class WavetablePanel(Gtk.VBox):
         try:
             v = int(self.edloopend.get_text())
         except ValueError:
-            print "invalid value."
+            print("invalid value.")
             return
         player = com.get('neil.core.player')
         for i in self.get_sample_selection():
@@ -888,7 +888,7 @@ class WavetablePanel(Gtk.VBox):
         k = Gdk.keyval_name(event.keyval)
         mask = event.get_state()
         kv = event.keyval
-        print k, kv
+        print((k, kv))
         if k == 'Escape':
             #this doesn't seem to do anything, and set_current_page
             #doesn't exist!

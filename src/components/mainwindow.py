@@ -69,7 +69,7 @@ class FramePanel(Gtk.Notebook):
         pages = sorted(com.get_from_category('neil.viewpanel'), cmp=cmp_view)
         for index, panel in enumerate(pages):
             if not hasattr(panel, '__view__'):
-                print "panel",panel,"misses attribute __view__"
+                print(("panel",panel,"misses attribute __view__"))
                 continue
             options = panel.__view__
             stockid = options['stockid']
@@ -96,7 +96,7 @@ class FramePanel(Gtk.Notebook):
         self.show_all()
 
     def select_viewpanel(self, panel):
-        for index in xrange(self.get_n_pages()):
+        for index in range(self.get_n_pages()):
             if self.get_nth_page(index) == panel:
                 self.set_current_page(index)
                 if hasattr(panel, 'handle_focus'):
@@ -151,7 +151,7 @@ class ViewMenu(Menu):
         accel = com.get('neil.core.accelerators')
         for view in views:
             if not hasattr(view, '__view__'):
-                print "view",view,"misses attribute __view__"
+                print(("view",view,"misses attribute __view__"))
                 continue
             options = view.__view__
             label = options['label']
@@ -405,16 +405,16 @@ class NeilFrame(Gtk.Window):
         pos = player.history_get_position()
         historysize = player.history_get_size()
         if not historysize:
-            print "no history."
+            print("no history.")
             return
-        print "----"
-        for index in xrange(historysize):
+        print("----")
+        for index in range(historysize):
             desc = str(player.history_get_description(index))
             s = '#%i: "%s"' % (index,desc)
             if pos == index:
                 s += ' <-'
-            print s
-        print "----"
+            print(s)
+        print("----")
 
     def can_activate_undo(self, *args):
         """
@@ -500,7 +500,7 @@ class NeilFrame(Gtk.Window):
         """
         Returns the active panel view.
         """
-        for pindex,(ctrlid,(panel,menuitem)) in self.pages.iteritems():
+        for pindex,(ctrlid,(panel,menuitem)) in list(self.pages.items()):
             if panel.window and panel.window.is_visible() and hasattr(panel,'view'):
                 return panel.view
 
@@ -723,7 +723,7 @@ class NeilFrame(Gtk.Window):
                         if not os.path.isfile(newpath):
                             break
                         i += 1
-                    print '%s => %s' % (filename, newpath)
+                    print(('%s => %s' % (filename, newpath)))
                     os.rename(filename, newpath)
                 else:
                     # store one backup copy
@@ -732,7 +732,7 @@ class NeilFrame(Gtk.Window):
                     newpath = os.path.join(path,"%s%s.bak" % (basename,ext))
                     if os.path.isfile(newpath):
                         os.remove(newpath)
-                    print '%s => %s' % (filename, newpath)
+                    print(('%s => %s' % (filename, newpath)))
                     os.rename(filename, newpath)
             base,ext = os.path.splitext(filename)
             result = player.save_ccm(filename)

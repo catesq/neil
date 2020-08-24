@@ -219,7 +219,7 @@ class TrackView(View):
             elif value == 0x01:
                 name,length = "<", 1
             else:
-                print "unknown value:",value
+                print(("unknown value:",value))
                 name,length = "???",0
             # first visible tick
             offset = int(self.hadjustment.get_value()+0.5)
@@ -428,7 +428,7 @@ class TrackViewPanel(Gtk.VBox):
         tracklist = list(player.get_sequence_list())
 
         def insert_track(i,track):
-            print "insert",i,track
+            print(("insert",i,track))
             trackview = com.get('neil.core.track', track, self.hscroll.get_adjustment())
             self.trackviews.pack_start(trackview, False, False)
             self.trackviews.reorder_child(trackview, i)
@@ -436,7 +436,7 @@ class TrackViewPanel(Gtk.VBox):
             trackview.show_all()
 
         def del_track(i):
-            print "del",i
+            print(("del",i))
             trackview = self.trackviews.get_children()[i]
             trackview.track = None
             self.sizegroup.remove_widget(trackview.header)
@@ -444,7 +444,7 @@ class TrackViewPanel(Gtk.VBox):
             trackview.destroy()
 
         def swap_track(i,j):
-            print "swap",i,j
+            print(("swap",i,j))
             pass
 
         tracks = [trackview.track for trackview in self.trackviews]
