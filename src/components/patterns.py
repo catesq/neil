@@ -252,16 +252,20 @@ class PatternToolBar(gtk.HBox):
         self.btnhelp.set_tooltip_text("Machine help page")
         self.btnhelp.connect('clicked', self.on_button_help)
 
+        vsep_a = gtk.VSeparator()
+        vsep_b = gtk.VSeparator()
         self.pack_start(self.pluginselect, expand=False)
         self.pack_start(self.patternselect, expand=False)
         self.pack_start(self.waveselect, expand=False)
-        self.pack_start(gtk.VSeparator(), expand=False)
+
+        self.pack_start(vsep_a, expand=False)
         self.pack_start(self.octavelabel, expand=False)
         self.pack_start(self.octaveselect, expand=False)
         self.pack_start(self.edit_step_label, expand=False)
         self.pack_start(self.edit_step_box, expand=False)
         self.pack_start(self.playnotes, expand=False)
-        self.pack_start(gtk.VSeparator(), expand=False)
+        
+        self.pack_start(vsep_b, expand=False)
         self.pack_start(self.btnhelp, expand=False)
 
     def on_button_help(self, *args):
@@ -443,19 +447,22 @@ class PatternPanel(gtk.VBox):
         self.statuslabels = []
 
         label = gtk.Label()
+        vsep = gtk.VSeparator()
         self.statuslabels.append(label)
         self.statusbar.pack_start(label, expand=False)
-        self.statusbar.pack_start(gtk.VSeparator(), expand=False)
+        self.statusbar.pack_start(vsep, expand=False)
 
         label = gtk.Label()
+        vsep = gtk.VSeparator()
         self.statuslabels.append(label)
         self.statusbar.pack_start(label, expand=False)
-        self.statusbar.pack_start(gtk.VSeparator(), expand=False)
+        self.statusbar.pack_start(vsep, expand=False)
 
         label = gtk.Label()
+        vsep = gtk.VSeparator()
         self.statuslabels.append(label)
         self.statusbar.pack_start(label, expand=False)
-        self.statusbar.pack_start(gtk.VSeparator(), expand=False)
+        self.statusbar.pack_start(vsep, expand=False)
 
         label = gtk.Label()
         self.statuslabels.append(label)

@@ -80,9 +80,12 @@ class CPUMonitorDialog(gtk.Dialog):
         self.tvload.set_sort_column_id(1)
         self.labeltotal = gtk.Label("100%")
         self.gaugetotal = gtk.ProgressBar()
+        
+        scrollbars = add_scrollbars(self.pluginlistview)
         sizer = gtk.VBox(False, MARGIN)
         sizer.set_border_width(MARGIN)
-        sizer.pack_start(add_scrollbars(self.pluginlistview))
+        sizer.pack_start(scrollbars)
+        
         hsizer = gtk.HBox(False, MARGIN)
         hsizer.pack_start(self.gaugetotal)
         hsizer.pack_start(self.labeltotal, expand=False)

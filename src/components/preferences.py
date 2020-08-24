@@ -172,6 +172,7 @@ class DriverPanel(gtk.VBox):
         self.cbsamplerate = gtk.combo_box_new_text()
         self.cblatency = gtk.combo_box_new_text()
         size_group = gtk.SizeGroup(gtk.SIZE_GROUP_HORIZONTAL)
+
         def add_row(c1, c2):
             row = gtk.HBox(False, MARGIN)
             size_group.add_widget(c1)
@@ -182,9 +183,13 @@ class DriverPanel(gtk.VBox):
 
         sizer1 = gtk.Frame("Audio Output")
         vbox = gtk.VBox(False, MARGIN)
-        vbox.pack_start(add_row(gtk.Label("Driver"), self.cboutput), expand=False)
-        vbox.pack_start(add_row(gtk.Label("Samplerate"), self.cbsamplerate), expand=False)
-        vbox.pack_start(add_row(gtk.Label("Latency"), self.cblatency), expand=False)
+        driver_row = add_row(gtk.Label("Driver"), self.cboutput)
+        samp_rate_row = add_row(gtk.Label("Samplerate"), self.cbsamplerate)
+        latency_row = add_row(gtk.Label("Latency"), self.cblatency)
+        
+        vbox.pack_start(driver_row, expand=False)
+        vbox.pack_start(samp_rate_row, expand=False)
+        vbox.pack_start(latency_row, expand=False)
         vbox.set_border_width(MARGIN)
         sizer1.add(vbox)
         inputname, outputname, samplerate, buffersize = config.get_config().get_audiodriver_config()

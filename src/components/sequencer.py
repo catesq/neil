@@ -434,14 +434,18 @@ class SequencerPanel(gtk.VBox):
         """
         # begin wxGlade: SequencerFrame.__set_properties
         self.statuslabels = []
+        
         label = gtk.Label()
+        vsep = gtk.VSeparator()
         self.statuslabels.append(label)
         self.statusbar.pack_start(label, expand=False)
-        self.statusbar.pack_start(gtk.VSeparator(), expand=False)
+        self.statusbar.pack_start(vsep, expand=False)
+        
         label = gtk.Label()
+        vsep = gtk.VSeparator()
         self.statuslabels.append(label)
         self.statusbar.pack_start(label, expand=False)
-        self.statusbar.pack_start(gtk.VSeparator(), expand=False)
+        self.statusbar.pack_start(vsep, expand=False)
         # end wxGlade
 
     def __do_layout(self):

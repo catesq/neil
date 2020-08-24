@@ -54,9 +54,10 @@ class InfoPanel(gtk.VBox):
         Initializer.
         """
         gtk.VBox.__init__(self, False, MARGIN)
+        scrollbars = add_scrollbars(self.view)
         self.set_border_width(MARGIN)
         self.view = InfoView()
-        self.pack_start(add_scrollbars(self.view))
+        self.pack_start(scrollbars)
         eventbus = com.get('neil.core.eventbus')
         eventbus.document_loaded += self.update_all
 

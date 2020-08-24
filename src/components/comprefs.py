@@ -83,7 +83,9 @@ class ComponentPanel(gtk.VBox):
             text = '<b>' + package.name + '</b>' + '\n'
             text += package.description
             store.append([True, package.icon, text, package])
-        fssizer.pack_start(add_scrollbars(self.compolist))
+            
+        scrollbars = add_scrollbars(self.compolist)
+        fssizer.pack_start(scrollbars)
         self.add(frame1)
 
     def apply(self):

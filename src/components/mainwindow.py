@@ -78,11 +78,13 @@ class FramePanel(gtk.Notebook):
             if options.get('default'):
                 defaultpanel = panel
             panel.show_all()
+            
+            theme_img = new_theme_image(stockid, gtk.ICON_SIZE_MENU)
             header = gtk.VBox()
             labelwidget = gtk.Label(label)
             labelwidget.set_angle(90)
             header.pack_start(labelwidget)
-            header.pack_start(new_theme_image(stockid, gtk.ICON_SIZE_MENU))
+            header.pack_start(theme_img)
             header.show_all()
             if key:
                 header.set_tooltip_text("%s (%s)" % (label, key))

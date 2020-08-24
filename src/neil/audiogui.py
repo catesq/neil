@@ -916,21 +916,29 @@ if __name__ == '__main__':
     vb.set_bg_color(0.0, 0.9, 0.0)
     vb.set_fg_color(0.0, 1.0, 0.0)
     vb.set_alpha(0.8)
+    
     def wrap_vb(vb):
         vbox = gtk.VBox()
         vbox.pack_start(vb, expand=False)
         return vbox
-    hbox.pack_start(wrap_vb(vb), expand=False)
+
+    wrapped_vb = wrap_vb(vb)
+    hbox.pack_start(wrapped_vb, expand=False)
+    
     def wrap_border(knob):
         hbox = gtk.HBox()
         hbox.pack_start(knob, expand=False)
         hbox.set_border_width(6)
         return hbox
+    
     knob = new_knob(64, 0.0, 0.0, 0.1, 9)
     knob.set_legend_scale(False)
     knob.set_marker(MARKER_DOT)
-    hb.pack_start(wrap_border(knob), expand=False)
-    hb.pack_start(wrap_border(new_knob(64, 0.0, 0.0, 0.1, 9)), expand=False)
+    bordered_knob = wrap_border(knob)
+    hb.pack_start(bordered_knob, expand=False)
+    
+    bordered_new_knob = wrap_border(new_knob(64, 0.0, 0.0, 0.1, 9))
+    hb.pack_start(bordered_new_knob, expand=False)
     titles = ["LOL", "ROFL", "WTF", "YBG"]
     for x,i in enumerate((0.1, 0.2, 0.4, 0.6)):
         title = titles.pop()
@@ -942,7 +950,8 @@ if __name__ == '__main__':
         vb.set_bg_color(0.0, 0.4, s)
         vb.set_fg_color(0.0, 1.0, 1.0)
         vb.set_alpha(0.9)
-        hbox.pack_start(wrap_vb(vb), expand=False)
+        wrapped_vb = wrap_vb(vb)
+        hbox.pack_start(wrapped_vb, expand=False)
         knob = new_knob(48, 0.1, i, 1.0, 6)
         knob.set_border_width(9)
         knob.set_angle(math.pi)
@@ -979,7 +988,8 @@ if __name__ == '__main__':
             knob.set_legend(LEGEND_RULER)
             knob.set_legend_line_width(2)
             knob.set_segments(7)
-        hb.pack_start(wrap_border(knob), expand=False)
+        bordered_knob = wrap_border(knob)
+        hb.pack_start(bordered_knob, expand=False)
     vb, hb = new_vbox("BRB")
     vb.set_roundness(6, 6, 6, 6)
     vb.set_tab_size(16,6)
@@ -1002,10 +1012,12 @@ if __name__ == '__main__':
     lcd.set_text("Slider 2\n 41 CC12  1  U12")
     vbox.pack_start(lcd, expand=False)
     hbox.pack_start(vbox, expand=False)
-    hb.pack_start(new_knob(32, 0.0, 0.6, 0.1, 3), expand=False)
-    hb.pack_start(new_knob(32, 0.0, 0.6, 0.1, 3), expand=False)
-    hb.pack_start(new_knob(32, 0.0, 0.6, 0.1, 3), expand=False)
-    hb.pack_start(new_knob(32, 1.0, 0.6, 0.1, 3), expand=False)
+    
+    knobs = (new_knob(32, 0.0, 0.6, 0.1, 3), new_knob(32, 0.0, 0.6, 0.1, 3), new_knob(32, 0.0, 0.6, 0.1, 3), new_knob(32, 1.0, 0.6, 0.1, 3))
+    hb.pack_start(knobs[0], expand=False)
+    hb.pack_start(knobs[1], expand=False)
+    hb.pack_start(knobs[2], expand=False)
+    hb.pack_start(knobs[3], expand=False)
     window.add(hbox)
     window.show_all()
     gobject.timeout_add(150, scroller, lcd1, scrollinfo1())
