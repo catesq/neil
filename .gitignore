@@ -27,3 +27,9 @@
 *.bak
 *.pyc
 
+.sconf_temp/
+.sconsign.dblite
+libneil/REVISION
+libneil/options.conf
+options.conf
+
