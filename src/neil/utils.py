@@ -1377,7 +1377,6 @@ class ImageToggleButton(Gtk.ToggleButton):
     GTK ToggleButton with Image
     """
     def __init__(self, path, tooltip=None, width=20, height=20):
-        from gtk import ToggleButton, Image
         self.image = Gtk.Image()
         self.image.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size(path, width, height))
         GObject.GObject.__init__(self)
