@@ -110,8 +110,8 @@ KEYMAPS = {
     'en' : 'ZSXDCVGBHNJM,|Q2W3ER5T6Y7UI9O0P',
     'de' : 'YSXDCVGBHNJM,|Q2W3ER5T6Z7UI9O0P',
     'dv' : ';OQEJKIXDBHMW|\'2,3.P5Y6F7GC9R0L',
-    'fr' : 'WSXDCVGBHNJ,;|AÈZ"ER(T-YËUIÁO‡P',
-    'neo': '¸IˆA‰POZSBNM,|X2V3LC5W6K7HG9F0Q',
+    'fr' : 'WSXDCVGBHNJ,;|A√©Z"ER(T-Y√®UI√ßO√†P',
+    'neo': '√ºI√∂A√§POZSBNM,|X2V3LC5W6K7HG9F0Q',
 }
 
 DEFAULT_THEME = {
@@ -795,7 +795,7 @@ def generate_config_method(section, option, kwargs):
 
 def generate_config_methods():
     # build getters and setters based on the options map
-    for section,options in list(CONFIG_OPTIONS.items()):
+    for section,options in CONFIG_OPTIONS.items():
         for option,kwargs in list(options.items()):
             generate_config_method(section, option, kwargs)
 
