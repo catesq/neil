@@ -796,7 +796,7 @@ def generate_config_method(section, option, kwargs):
 def generate_config_methods():
     # build getters and setters based on the options map
     for section,options in CONFIG_OPTIONS.items():
-        for option,kwargs in list(options.items()):
+        for option,kwargs in options.items():
             generate_config_method(section, option, kwargs)
 
 generate_config_methods()

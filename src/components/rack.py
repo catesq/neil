@@ -335,7 +335,6 @@ class ParameterView(Gtk.VBox):
 
     def on_drag_data_delete(self, btn, context, data, xxx_todo_changeme1):
         (g,t,i) = xxx_todo_changeme1
-        pass
 
     def on_drag_drop(self, w, context, x, y, time, xxx_todo_changeme2):
         (g,t,i) = xxx_todo_changeme2
@@ -949,7 +948,7 @@ class RackPanel(Gtk.VBox):
         Updates the full view.
         """
         print("rack:update_all")
-        addlist, rmlist = diff(list(self.panels.keys()), list(common.get_plugin_infos().keys()))
+        addlist, rmlist = diff(self.panels.keys(), common.get_plugin_infos().keys())
         for plugin in rmlist:
             self.panels[plugin].destroy()
             del self.panels[plugin]

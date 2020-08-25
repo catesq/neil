@@ -284,7 +284,7 @@ class PatternToolBar(Gtk.HBox):
         plugins = self.get_plugin_source()
         active = -1
         if player.active_plugins != []:
-            for plugin, i in zip(plugins, list(range(len(plugins)))):
+            for plugin, i in zip(plugins, range(len(plugins))):
                 if plugin[1] == player.active_plugins[0]:
                     active = i
         model = self.pluginselect.get_model()
@@ -547,7 +547,7 @@ def key_to_note(k):
         k = chr(k).lower().upper()
     else:
         k = chr(k)
-    for row, index in zip(rows, list(range(len(rows)))):
+    for row, index in zip(rows, range(len(rows))):
         if k in row:
             note = row.index(k)
             return index + (note / 12), note % 12
@@ -902,7 +902,7 @@ class PatternView(Gtk.DrawingArea):
                                                  [(row, value)])
             except KeyError:
                 values[(group, track, index)] = [(row, value)]
-        for key in list(values.keys()):
+        for key in values.keys():
             group = key[0]
             track = key[1]
             index = key[2]

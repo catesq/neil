@@ -103,7 +103,7 @@ class Expression():
         self.selector.connect('changed', self.active_expression_changed)
         # Fill in the combobox expression selector with entries
         model = self.selector.get_model()
-        for name, expression in list(self.expressions.items()):
+        for name, expression in self.expressions.items():
             model.append([name])
         add_button = new_stock_image_button(Gtk.STOCK_OPEN, "Add Expression")
         del_button = new_stock_image_button(Gtk.STOCK_REMOVE, "Remove Expression")

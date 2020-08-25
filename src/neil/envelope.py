@@ -666,7 +666,7 @@ class EnvelopeView(Gtk.DrawingArea):
             ctx.stroke()
             ctx.set_dash([], 0.0)
         if self.showpoints:
-            for i in reversed(list(range(len(points)))):
+            for i in reversed(range(len(points))):
                 pt1 = points[max(i, 0)]
                 pt2 = points[min(i + 1, len(points) - 1)]
                 if i == self.currentpoint:

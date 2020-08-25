@@ -246,7 +246,7 @@ class SearchPluginsDialog(Gtk.Window):
                 return "Root"
             else:
                 return "Other"
-        for pl in sorted(list(plugins.values()), cmp_child):
+        for pl in sorted(plugins.values(), cmp_child):
             name = prepstr(pl.get_name())
             text = '<b>' + name + '</b>\n<small>' + get_type_text(pl) + '</small>'
             pixbuf = None

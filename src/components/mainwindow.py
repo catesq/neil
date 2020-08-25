@@ -500,7 +500,7 @@ class NeilFrame(Gtk.Window):
         """
         Returns the active panel view.
         """
-        for pindex,(ctrlid,(panel,menuitem)) in list(self.pages.items()):
+        for pindex,(ctrlid,(panel,menuitem)) in self.pages.items():
             if panel.window and panel.window.is_visible() and hasattr(panel,'view'):
                 return panel.view
 

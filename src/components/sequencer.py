@@ -51,7 +51,7 @@ import neil.com as com
 import zzub
 
 SEQKEYS = '0123456789abcdefghijklmnopqrstuvwxyz'
-SEQKEYMAP = dict(list(zip(SEQKEYS, list(range(0x10, len(SEQKEYS) + 0x10)))))
+SEQKEYMAP = dict(zip(SEQKEYS, range(0x10, len(SEQKEYS) + 0x10)))
 SEQKEYMAP[chr(45)] = 0x00
 SEQKEYMAP[chr(44)] = 0x01
 
@@ -393,7 +393,7 @@ class SequencerPanel(Gtk.VBox):
         """
         self.update_list()
         self.toolbar.update_all()
-        for k, v in list(self.view.plugin_info.items()):
+        for k, v in self.view.plugin_info.items():
             v.patterngfx = {}
         self.view.update()
         self.seqview.set_cursor_pos(0, 0)
@@ -1636,7 +1636,7 @@ class SequencerView(Gtk.DrawingArea):
             plugin_info = self.plugin_info.get(plugin)
             # Draw the pattern boxes
             event_list = list(track.get_event_list())
-            for (position, value), index in zip(event_list, list(range(len(event_list)))):
+            for (position, value), index in zip(event_list, range(len(event_list))):
                 pattern = None
                 if value >= 0x10:
                     pattern = plugin.get_pattern(value - 0x10)

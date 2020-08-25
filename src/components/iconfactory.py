@@ -73,7 +73,7 @@ class IconLibrary:
                     iconsizes = icons.get(key, {})
                     iconsizes[(w,h)] = pixbuf
                     icons[key] = iconsizes
-        for key,iconsizes in list(icons.items()):
+        for key,iconsizes in icons.items():
             for size in sizenames:
                 w,h = Gtk.icon_size_lookup(size)
                 if (w,h) in iconsizes:
@@ -82,7 +82,7 @@ class IconLibrary:
                     bestw = 999999
                     pixbuf = None
                     c = w*w + h*h
-                    for (iw,ih),icon in list(iconsizes.items()):
+                    for (iw,ih),icon in iconsizes.items():
                         l = iw*iw + ih*ih
                         d = abs(l - c)
                         if d < bestw:

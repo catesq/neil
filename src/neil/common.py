@@ -80,7 +80,7 @@ class PluginInfoCollection:
             self.add_plugin(k)
         return self.plugin_info.__getitem__(k)
 
-    def iteritems(self):
+    def items(self):
         return iter(self.plugin_info.items())
 
     def reset_plugingfx(self):

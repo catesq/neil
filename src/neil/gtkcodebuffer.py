@@ -379,8 +379,12 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
         self.__group   = 0
         self.__flags   = ''
         self.__style   = attr['style']
-        if 'group' in list(attr.keys()): self.__group = int(attr['group'])
-        if 'flags' in list(attr.keys()): self.__flags = attr['flags']
+
+        if 'group' in attr.keys(): 
+            self.__group = int(attr['group'])
+
+        if 'flags' in attr.keys(): 
+            self.__flags = attr['flags']
 
     def end_pattern(self):
         rule = Pattern(self.__pattern, self.__style, self.__group, self.__flags)
@@ -398,10 +402,13 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
     def start_keywordlist(self, attr):
         self.__style = "keyword"
         self.__flags = ""
-        if 'style' in list(attr.keys()):
+
+        if 'style' in attr.keys():
             self.__style = attr['style']
-        if 'flags' in list(attr.keys()):
+
+        if 'flags' in attr.keys():
             self.__flags = attr['flags']
+
         self.__keywords = []
 
     def end_keywordlist(self):
@@ -472,22 +479,22 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
             pass
 
         elif self.__style_prop_name == 'variant':
-            if not value in list(self.style_variant_table.keys()):
+            if not value in self.style_variant_table.keys():
                 Exception("Unknown style-variant: %s"%value)
             value = self.style_variant_table[value]
 
         elif self.__style_prop_name == 'underline':
-            if not value in list(self.style_underline_table.keys()):
+            if not value in self.style_underline_table.keys():
                 Exception("Unknown underline-style: %s"%value)
             value = self.style_underline_table[value]
 
         elif self.__style_prop_name == 'scale':
-            if not value in list(self.style_scale_table.keys()):
+            if not value in self.style_scale_table.keys():
                 Exception("Unknown scale-style: %s"%value)
             value = self.style_scale_table[value]
 
         elif self.__style_prop_name == 'weight':
-            if not value in list(self.style_weight_table.keys()):
+            if not value in self.style_weight_table.keys():
                 Exception("Unknown style-weight: %s"%value)
             value = self.style_weight_table[value]
 
@@ -535,7 +542,7 @@ class CodeBuffer(Gtk.TextBuffer):
         self.styles.update(styles)
 
         # create tags
-        for name, props in list(self.styles.items()):
+        for name, props in self.styles.items():
             style = dict(self.styles['DEFAULT'])    # take default
             style.update(props)                     # and update with props
             self.create_tag(name, **style)
@@ -666,7 +673,7 @@ class CodeBuffer(Gtk.TextBuffer):
         self.styles.update(styles)
 
         table = self.get_tag_table()
-        for name, props in list(styles.items()):
+        for name, props in styles.items():
             style = self.styles['DEFAULT']
             style.update(props)
             # if tagname is unknown:

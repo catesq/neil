@@ -1268,7 +1268,7 @@ class AcceleratorMap:
         shortcut = Gtk.accelerator_name(km_key, km_mod)
         ref = None
         funcname = None
-        if hasattr(func, 'im_self'):
+        if hasattr(func, '__self__'):
             ref = weakref.ref(func.__self__)
             funcname = func.__name__
         else:

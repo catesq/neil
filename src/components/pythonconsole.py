@@ -147,7 +147,7 @@ class PythonConsoleDialog(Gtk.Dialog):
             print(category)
 
     def list_factories(self):
-        for factory,item in list(com.factories.items()):
+        for factory,item in com.factories.items():
             print((factory,'=',item['classobj']))
 
     def list_plugins(self, pattern='*'):

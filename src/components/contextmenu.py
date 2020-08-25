@@ -254,8 +254,8 @@ class PluginContextMenu(Gtk.Menu):
                 return tree
 
         def populate_from_tree(menu, tree):
-            for key, value in list(tree.items()):
-                if type(value) is not type({}):
+            for key, value in tree.items():
+                if isinstance(value, dict):
                     icon = Gtk.Image()
                     filename = get_icon_name(value)
                     if os.path.isfile(filename):
@@ -281,7 +281,7 @@ class PluginContextMenu(Gtk.Menu):
         item, add_machine_menu = menu.add_submenu("Add machine")
         for pluginloader in player.get_pluginloader_list():
             plugins[pluginloader.get_uri()] = pluginloader
-        for uri, loader in list(plugins.items()):
+        for uri, loader in plugins.items():
             try:
                 path = self.plugin_tree[uri]
                 if connection and (path[0] not in ["Effects", "Analyzers"]):
