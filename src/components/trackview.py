@@ -84,7 +84,7 @@ class View(Gtk.DrawingArea):
         self.patterngfx = {}
         self.hadjustment = hadjustment
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
-        self.connect("expose_event", self.expose)
+        self.connect("draw", self.expose)
         if hadjustment:
             self.hadjustment.connect('value-changed', self.on_adjustment_value_changed)
             self.hadjustment.connect('changed', self.on_adjustment_changed)
@@ -116,6 +116,9 @@ class View(Gtk.DrawingArea):
     def get_client_size(self):
         rect = self.get_allocation()
         return rect.width, rect.height
+
+    def expose(self, ctx, widget):
+        pass # overriden im subclasses which pylint is unaware of
 
 class TimelineView(View):
     """

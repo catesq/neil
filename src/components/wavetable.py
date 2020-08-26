@@ -243,7 +243,7 @@ class WavetablePanel(Gtk.VBox):
         self.instrpanel.add2(sampleprops)
         self.instrpanel.set_position(250)
 
-        #self.connect("expose_event", self.expose)
+        #self.connect("draw", self.expose)
 
         self.ohg.connect(self.samplelist.get_selection(), 'changed', self.on_samplelist_select)
         self.ohg.connect(self.samplelist, 'button-press-event', self.on_samplelist_click)
@@ -307,10 +307,10 @@ class WavetablePanel(Gtk.VBox):
         self.envelope.update()
         self.waveedit.update()
 
-    def expose(self, widget, *args):
-        if self.needfocus:
-            self.samplelist.grab_focus()
-            self.needfocus = False
+    # def expose(self, widget, ):
+    #     if self.needfocus:
+    #         self.samplelist.grab_focus()
+    #         self.needfocus = False
 
     def handle_focus(self):
         self.samplelist.grab_focus()
