@@ -28,6 +28,7 @@
 *.pyc
 .env
 
+*.code-workspace
 .sconf_temp/
 .sconsign.dblite
 libneil/REVISION
