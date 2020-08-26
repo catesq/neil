@@ -422,9 +422,7 @@ class SequencerPanel(Gtk.VBox):
         @param event: Event.
         @type event: wx.Event
         """
-        if not self.splitter.window:
-            return
-        if not self.splitter.window.is_visible():
+        if not self.splitter.is_visible():
             return
         config.get_config().save_window_pos("SequencerSplitter", self.splitter)
 
@@ -1311,7 +1309,7 @@ class SequencerView(Gtk.DrawingArea):
         @param event: Mouse event
         @type event: wx.MouseEvent
         """
-        x, y, state = self.window.get_pointer()
+        x, y, state = self.get_window().get_pointer()
         x = max(int(x), self.seq_left_margin)
         if self.dragging:
             select_track, select_row = self.pos_to_track_row((x, y))
@@ -1343,15 +1341,15 @@ class SequencerView(Gtk.DrawingArea):
             self.grab_focus()
             self.needfocus = False
         self.adjust_scrollbars()
-        self.context = widget.window.new_gc()
+        self.context = widget.get_window().new_gc()
         self.draw(self.context)
         self.panel.update_list()
         return False
 
     def redraw(self, *args):
-        if self.window and self.window.is_visible():
+        if self.is_visible():
             rect = self.get_allocation()
-            self.window.invalidate_rect((0, 0, rect.width, rect.height), False)
+            self.get_window().invalidate_rect((0, 0, rect.width, rect.height), False)
 
     def on_left_up(self, widget, event):
         """
@@ -1483,13 +1481,13 @@ class SequencerView(Gtk.DrawingArea):
         @param dc: wx device context.
         @type dc: wx.PaintDC
         """
-        if not self.window:
+        if not self.is_visible():
             return
         player = com.get('neil.core.player')
-        gc = self.window.new_gc()
-        cr = self.window.cairo_create()
+        gc = self.get_window().new_gc()
+        cr = self.get_window().cairo_create()
         colormap = gc.get_colormap()
-        # drawable = self.window
+        # drawable = self.get_window()
         width, height = self.get_client_size()
         red = colormap.alloc_color('#ff0000')
         # white = colormap.alloc_color('#ffffff')
@@ -1529,13 +1527,13 @@ class SequencerView(Gtk.DrawingArea):
                 cr.fill()
 
     def draw_playpos(self):
-        if not self.window:
+        if not self.is_visible():
             return
         # player = com.get('neil.core.player')
-        gc = self.window.new_gc()
+        gc = self.get_window().new_gc()
         colormap = gc.get_colormap()
         white = colormap.alloc_color('#ffffff')
-        drawable = self.window
+        drawable = self.get_window()
         width, height = self.get_client_size()
         if self.playpos >= self.startseqtime:
             gc.set_foreground(white)
@@ -1588,7 +1586,7 @@ class SequencerView(Gtk.DrawingArea):
         """
         Draw the vertical lines every few bars.
         """
-        drawable = self.window
+        drawable = self.get_window()
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
         layout = Pango.Layout(self.get_pango_context())
@@ -1621,7 +1619,7 @@ class SequencerView(Gtk.DrawingArea):
         Draw tracks and pattern boxes.
         """
         player = com.get('neil.core.player')
-        drawable = self.window
+        drawable = self.get_window()
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
         layout = Pango.Layout(self.get_pango_context())
@@ -1762,14 +1760,14 @@ class SequencerView(Gtk.DrawingArea):
             # Draw the horizontal lines separating tracks
             ctx.set_foreground(colors['Weak Line'])
             drawable.draw_line(ctx, self.seq_left_margin + 1, y, width - 1, y)
-        cr = self.window.cairo_create()
+        cr = self.get_window().cairo_create()
         cr.rectangle(self.seq_left_margin, 0, 5, height)
         cr.set_source_rgba(0.0, 0.0, 0.0, 0.15)
         cr.fill()
 
     def draw_loop_points(self, ctx, colors):
         player = com.get('neil.core.player')
-        drawable = self.window
+        drawable = self.get_window()
         width, height = self.get_client_size()
         ctx.line_width = 1
         loop_start, loop_end = player.get_loop()
@@ -1803,7 +1801,7 @@ class SequencerView(Gtk.DrawingArea):
         Draws the pattern view graphics.
         """
         colormap = ctx.get_colormap()
-        drawable = self.window
+        drawable = self.get_window()
         width, height = self.get_client_size()
         cfg = config.get_config()
         colors = {

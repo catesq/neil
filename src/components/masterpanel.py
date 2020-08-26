@@ -79,8 +79,8 @@ class AmpView(Gtk.DrawingArea):
         self.peaks[:self.hold] = [self.amp - std] * self.hold
 
         rect = self.get_allocation()
-        if self.window:
-            self.window.invalidate_rect((0, 0, rect.width, rect.height), False)
+        if self.is_visible():
+            self.get_window().invalidate_rect((0, 0, rect.width, rect.height), False)
         return True
 
     def draw(self, ctx):
@@ -162,7 +162,7 @@ class AmpView(Gtk.DrawingArea):
         self.linear.add_color_stop_rgb(1, 0, .3, 0)
 
     def expose(self, widget, event):
-        context = widget.window.cairo_create()
+        context = widget.get_window().cairo_create()
         self.draw(context)
         return False
 

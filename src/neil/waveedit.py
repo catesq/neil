@@ -144,7 +144,7 @@ class WaveEditView(Gtk.DrawingArea):
         self.loop_end = 150
 
     def expose(self, widget, event):
-        self.context = widget.window.cairo_create()
+        self.context = widget.get_window().cairo_create()
         self.draw(self.context)
         return False
 
@@ -162,9 +162,9 @@ class WaveEditView(Gtk.DrawingArea):
             self.sample_changed()
 
     def redraw(self):
-        if self.window:
+        if self.is_visible():
             w, h = self.get_client_size()
-            self.window.invalidate_rect((0, 0, w, h), False)
+            self.get_window().invalidate_rect((0, 0, w, h), False)
 
     def update_digest(self, channel=0):
         if self.level == None:
@@ -476,11 +476,11 @@ class WaveEditView(Gtk.DrawingArea):
             self.near_start_loop_marker(mx, my) or
             self.near_end_loop_marker(mx, my)):
             resizer = Gdk.Cursor.new(Gdk.SB_H_DOUBLE_ARROW)
-            self.window.set_cursor(resizer)
+            self.get_window().set_cursor(resizer)
         else:
             if (not self.dragging) and (not self.start_loop_dragging) and (not self.end_loop_dragging):
                 arrow = Gdk.Cursor.new(Gdk.CursorType.ARROW)
-                self.window.set_cursor(arrow)
+                self.get_window().set_cursor(arrow)
         if self.dragging == True:
             if s < self.startpos:
                 self.set_selection(s, self.startpos)

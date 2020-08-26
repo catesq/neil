@@ -137,7 +137,7 @@ class HDRecorderDialog(Gtk.Dialog):
         Called by timer event. Updates controls according to current
         state of recording.
         """
-        if self.window and self.window.is_visible():
+        if self.is_visible():
             player = com.get('neil.core.player')
             master = player.get_plugin(0)
             bpm = master.get_parameter_value(1, 0, 1)

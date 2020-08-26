@@ -99,7 +99,7 @@ class CPUMonitorDialog(Gtk.Dialog):
         """
         player = com.get('neil.core.player')
         driver = com.get('neil.core.driver.audio')
-        if self.window and self.window.is_visible():
+        if self.is_visible():
             cpu = 0.0
             cpu_loads = {}
             cpu = driver.get_cpu_load()

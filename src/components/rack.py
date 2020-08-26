@@ -752,7 +752,7 @@ class ParameterView(Gtk.VBox):
             minv = p.get_value_min()
             maxv = p.get_value_max()
             data_entry = DataEntry((minv,maxv,chr(kv)), self)
-            x,y,state = self.window.get_toplevel().get_pointer()
+            x,y,state = self.get_toplevel().get_pointer()
             px,py = self.get_toplevel().get_position()
             data_entry.move(px+x, py+y)
             if data_entry.run() == Gtk.ResponseType.OK:
