@@ -340,7 +340,7 @@ class NeilFrame(Gtk.Window):
         vbox.pack_start(self.transport, False, True, 0)
 
         self.update_title()
-        Gtk.window_set_default_icon_list(
+        Gtk.Window_set_default_icon_list(
                 GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("48x48/apps/neil.png")),
                 GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("32x32/apps/neil.png")),
                 GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("24x24/apps/neil.png")),
@@ -501,7 +501,7 @@ class NeilFrame(Gtk.Window):
         Returns the active panel view.
         """
         for pindex,(ctrlid,(panel,menuitem)) in self.pages.items():
-            if panel.window and panel.window.is_visible() and hasattr(panel,'view'):
+            if panel.is_visible() and hasattr(panel,'view'):
                 return panel.view
 
     def on_copy(self, event):
