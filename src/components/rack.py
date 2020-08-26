@@ -25,7 +25,6 @@ Contains all classes and functions needed to render the rack view.
 from gi.repository import Gtk, Gdk
 from gi.repository import GObject
 import cairo
-import pangocairo
 from neil.utils import prepstr, filepath, db2linear, linear2db, is_debug, filenameify, \
         get_item_count, question, error, new_listview, add_scrollbars, get_clipboard_text, set_clipboard_text, \
         gettext, new_stock_image_button, diff, show_machine_manual

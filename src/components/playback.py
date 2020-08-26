@@ -24,6 +24,8 @@ Provides dialog class for cpu monitor.
 
 from gi.repository import Gtk
 from gi.repository import GObject
+from gi.repository import Pango
+
 from neil.utils import prepstr, add_scrollbars
 import neil.utils as utils, os, stat
 import neil.common as common
@@ -63,7 +65,6 @@ class PlaybackInfo(Gtk.Dialog):
         sg1 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
         sg2 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
         def add_row(name):
-            from gi.repository import Pango
             c1 = Gtk.Label()
             c1.modify_font(Pango.FontDescription("Monospace 10"))
             c1.set_markup("<b>%s</b>" % name)

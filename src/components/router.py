@@ -32,6 +32,8 @@ if __name__ == '__main__':
 import neil.com as com
 from gi.repository import Gtk, Gdk
 from gi.repository import GObject
+from gi.repository import Pango
+
 
 from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS,\
      GENERATOR_PLUGIN_FLAGS, EFFECT_PLUGIN_FLAGS,\
@@ -447,7 +449,6 @@ class VolumeSlider(Gtk.Window):
 
         black = cm.alloc_color(Gdk.color_parse("black"))
         gc.set_foreground(black)
-        from gi.repository import Pango
         layout = Pango.Layout(self.get_pango_context())
         font = Pango.FontDescription("sans 6")
         layout.set_font_description(font)
@@ -1005,7 +1006,6 @@ class RouteView(Gtk.DrawingArea):
         cm = gc.get_colormap()
         #cfg = config.get_config()
         rect = self.get_allocation()
-        from gi.repository import Pango
         layout = Pango.Layout(self.get_pango_context())
         #~ layout.set_font_description(self.fontdesc)
         layout.set_width(-1)

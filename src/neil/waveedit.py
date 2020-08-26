@@ -23,8 +23,7 @@ Provides dialogs, classes and controls to edit samples.
 """
 
 from gi.repository import Gtk, Gdk
-from gi.repository import Pango
-import pangocairo
+from gi.repository import Pango, PangoCairo
 import os, sys
 from .utils import prepstr, db2linear, linear2db, note2str, file_filter
 from .utils import read_int, write_int, add_scrollbars, new_image_button,\
@@ -610,7 +609,7 @@ class WaveEditView(Gtk.DrawingArea):
             ctx.move_to(x, 0)
             ctx.line_to(x, h)
             ctx.move_to(x + 2, 0)
-            pango_ctx = pangocairo.CairoContext(ctx)
+            pango_ctx = PangoCairo.CairoContext(ctx)
             layout = pango_ctx.create_layout()
             layout.set_width(-1)
             layout.set_font_description(Pango.FontDescription("sans 8"))
@@ -629,7 +628,7 @@ class WaveEditView(Gtk.DrawingArea):
         # Show wave file name at the top left corner
         ctx.move_to(2, 14)
         ctx.set_source_rgba(0.4, 0.4, 0.4, 1.0)
-        pango_ctx = pangocairo.CairoContext(ctx)
+        pango_ctx = PangoCairo.CairoContext(ctx)
         layout = pango_ctx.create_layout()
         layout.set_width(-1)
         layout.set_font_description(Pango.FontDescription("sans 8"))
