@@ -646,7 +646,7 @@ class NeilConfig(object, configparser.ConfigParser):
         elif isinstance(window, Gtk.Paned):
             self.write_value("SashPosition", str(window.get_position()))
         else:
-            if window.window and window.get_property('visible'):
+            if window.window and window.is_visible():
                 visible = 'true'
             else:
                 visible = 'false'

@@ -70,7 +70,7 @@ class ParameterView(Gtk.VBox):
         @type plugin: zzub.Plugin
         """
         GObject.GObject.__init__(self)
-        self.set_flags(Gtk.CAN_FOCUS)
+        self.set_can_focus(true)
         self.plugin = plugin
         self.tooltips=Gtk.Tooltips()
         name = prepstr(self.plugin.get_name())
@@ -153,7 +153,7 @@ class ParameterView(Gtk.VBox):
         @type data: zzub_event_data_t
         """
         # exit if this is called and dialog is hidden
-        if not self.flags() & Gtk.VISIBLE:
+        if not self.is_visible():
             return
 
         if plugin == self.plugin:
