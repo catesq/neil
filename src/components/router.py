@@ -30,7 +30,7 @@ if __name__ == '__main__':
     raise SystemExit
 
 import neil.com as com
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from gi.repository import GObject
 
 from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS,\

@@ -28,7 +28,7 @@ from neil.utils import new_image_button, new_image_toggle_button, imagepath
 from neil.utils import ObjectHandlerGroup
 import config
 from gi.repository import GObject
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 import neil.com as com
 import zzub
 

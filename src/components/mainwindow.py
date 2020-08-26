@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk, GdkPixbuf
 from neil.utils import format_time, ticks_to_time, prepstr, linear2db, db2linear, filepath, \
         is_debug, question, error, add_scrollbars, file_filter, new_stock_image_toggle_button, \
         new_stock_image_button, message, refresh_gui, show_manual

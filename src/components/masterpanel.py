@@ -23,7 +23,7 @@ if __name__ == '__main__':
     os.system('../../bin/neil-combrowser neil.core.panel.master')
     raise SystemExit
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 import cairo
 from neil.common import MARGIN
 from gi.repository import GObject

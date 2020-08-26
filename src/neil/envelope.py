@@ -22,7 +22,7 @@
 Provides dialogs, classes and controls to display/load/save envelopes
 """
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 import os, sys
 import math
 from .utils import prepstr, db2linear, linear2db, note2str

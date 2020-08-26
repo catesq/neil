@@ -22,7 +22,7 @@ if __name__ == '__main__':
     import os
     os.environ['NEIL_BASE_PATH'] = '/home/paniq/devel/neil'
 import neil.com as com
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk, GdkPixbuf
 
 import glob, os
 from neil.utils import filepath, get_root_folder_path, iconpath, imagepath

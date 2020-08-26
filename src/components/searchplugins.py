@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk, GdkPixbuf
 from gi.repository import GObject
 import neil.utils as utils, os, stat
 from neil.utils import new_stock_image_toggle_button, ObjectHandlerGroup

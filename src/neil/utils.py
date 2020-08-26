@@ -26,7 +26,7 @@ which have no specific module or class they belong to.
 import time, sys, math, os, zzub, imp
 from string import ascii_letters, digits
 import struct
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk, GdkPixbuf
 from gi.repository import GObject
 import weakref
 import neil.com as com

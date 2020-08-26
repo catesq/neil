@@ -22,7 +22,7 @@
 Contains all classes and functions needed to render the rack view.
 """
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from gi.repository import GObject
 import cairo
 import pangocairo

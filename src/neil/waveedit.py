@@ -22,7 +22,7 @@
 Provides dialogs, classes and controls to edit samples.
 """
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from gi.repository import Pango
 import pangocairo
 import os, sys

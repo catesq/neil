@@ -24,7 +24,7 @@ Provides controls usually found on front panels of audio hardware.
 See the bottom for some examples.
 """
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from gi.repository import Pango
 from gi.repository import GObject
 import cairo
@@ -865,10 +865,10 @@ if __name__ == '__main__':
         y = 0
 
     class scrollinfo2:
-        text = "Dies ist ein deutscher Text, der präsentieren soll, " \
-        "dass dank dem ASCII-Zeichensatz auch Umlaute unterstützt werden. " \
+        text = "Dies ist ein deutscher Text, der prï¿½sentieren soll, " \
+        "dass dank dem ASCII-Zeichensatz auch Umlaute unterstï¿½tzt werden. " \
         "Ausserdem scrollt er ein wenig schneller, um zu demonstrieren, " \
-        "dass Zeilen auch unabhängig voneinander aktualisiert werden können."
+        "dass Zeilen auch unabhï¿½ngig voneinander aktualisiert werden kï¿½nnen."
         x = 0
         y = 1
 

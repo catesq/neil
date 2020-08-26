@@ -24,7 +24,7 @@ Contains the information displayed in the about box.
 
 import sys
 from neil.utils import prepstr
-from gi.repository import Gtk
+from gi.repository import Gtk, GdkPixbuf
 
 NAME = "Neil"
 VERSION = "0.9"

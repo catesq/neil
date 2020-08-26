@@ -28,7 +28,7 @@ if __name__ == '__main__':
     os.system('../../bin/neil-combrowser neil.core.trackviewpanel')
     raise SystemExit
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from gi.repository import Pango
 from gi.repository import GObject
 from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS, \

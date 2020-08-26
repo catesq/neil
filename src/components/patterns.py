@@ -29,7 +29,7 @@ if __name__ == '__main__':
     raise SystemExit
 
 import neil.com as com
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from gi.repository import GObject
 from gi.repository import Pango
 
