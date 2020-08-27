@@ -207,7 +207,7 @@ class Knob(Gtk.VBox):
         self.lscale = False
         self.set_double_buffered(True)
         self.connect('realize', self.on_realize)
-        self.connect('expose-event', self.on_expose)
+        self.connect('draw', self.on_draw)
 
     def format_value(self, value):
         return ("%%.%if" % self.digits) % value
@@ -363,7 +363,7 @@ class Knob(Gtk.VBox):
         for peak in peaks[1:]:
             ctx.line_to(*peak)
 
-    def draw(self, ctx):
+    def on_draw(self, widget, ctx):
         if not self.knobshape:
             self.update_knobshape()
         startangle = math.pi*1.5 - self.angle*0.5
@@ -543,11 +543,6 @@ class Knob(Gtk.VBox):
         if self.is_visible():
             self.get_window().invalidate_rect(rect, False)
         return True
-
-    def on_expose(self, widget, event):
-        self.context = self.get_window().cairo_create()
-        self.draw(self.context)
-        return False
 
 class DecoBox(Gtk.VBox):
     def __init__(self):
