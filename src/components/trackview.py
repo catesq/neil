@@ -254,7 +254,7 @@ class TrackView(View):
 
             random.seed(mname + name)
             hue = random.random()
-            
+
             ctx.set_source_rbg(*from_hsb(hue, 1.0, colors['bg_brightness'] * 0.7))
             ctx.rectangle(0, 0, psize-2, bbh-2)
             ctx.fill()
@@ -272,15 +272,15 @@ class TrackView(View):
         colors = {}
 
         colors['bg'] = cfg.get_float_color('SE BG')
-        colors['bg_brightness'] = max(to_hsb(*bg_color)[2], 0.1)
+        colors['bg_brightness'] = max(to_hsb(*colors['bg'])[2], 0.1)
         colors['events'] = (cfg.get_float_color('SE Mute'), cfg.get_float_color('SE Break'))
-        colors['select'] = cfg.get_float_color('SE Sel BG')
-        colors['vline'] = cfg.get_float_color('SE BG Dark')
+        # colors['select'] = cfg.get_float_color('SE Sel BG')
+        # colors['vline'] = cfg.get_float_color('SE BG Dark')
         colors['pen1'] = cfg.get_float_color('SE BG Very Dark')
         colors['pen2'] = cfg.get_float_color('SE BG Dark')
-        colors['pen'] = cfg.get_float_color('SE Line')
-        colors['loop'] = cfg.get_float_color('SE Loop Line')
-        colors['inv'] = (1.0, 1.0, 1.0)
+        # colors['pen'] = cfg.get_float_color('SE Line')
+        # colors['loop'] = cfg.get_float_color('SE Loop Line')
+        # colors['inv'] = (1.0, 1.0, 1.0)
         colors['text'] = cfg.get_float_color('SE Text')
 
         return colors
