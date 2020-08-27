@@ -124,7 +124,7 @@ class WaveEditView(Gtk.DrawingArea):
         self.connect('enter-notify-event', self.on_enter)
         self.connect('leave-notify-event', self.on_leave)
         self.connect('scroll-event', self.on_mousewheel)
-        self.connect("expose_event", self.expose)
+        self.connect("draw", self.on_draw)
 
         self.context_menu = Menu()
 
@@ -142,11 +142,6 @@ class WaveEditView(Gtk.DrawingArea):
 
         self.loop_start = 0
         self.loop_end = 150
-
-    def expose(self, widget, event):
-        self.context = widget.get_window().cairo_create()
-        self.draw(self.context)
-        return False
 
     def get_client_size(self):
         rect = self.get_allocation()
@@ -569,7 +564,7 @@ class WaveEditView(Gtk.DrawingArea):
                 ctx.stroke_preserve()
                 ctx.fill()
 
-    def draw(self, ctx):
+    def on_draw(self, widget, ctx):
         """
         Overriding a L{Canvas} method that paints onto an offscreen buffer.
         Draws the envelope view graphics.
@@ -670,3 +665,5 @@ class WaveEditView(Gtk.DrawingArea):
                 ctx.fill()
         self.draw_loop_points(ctx)
         self.draw_zoom_indicator(ctx)
+
+        return False
