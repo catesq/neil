@@ -29,7 +29,7 @@ if __name__ == '__main__':
     raise SystemExit
 
 from gi.repository import Gtk, Gdk
-from gi.repository import Pango
+from gi.repository import Pango, PangoCairo
 from gi.repository import GObject
 from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS, \
         GENERATOR_PLUGIN_FLAGS, EFFECT_PLUGIN_FLAGS, CONTROLLER_PLUGIN_FLAGS
@@ -117,8 +117,8 @@ class View(Gtk.DrawingArea):
         rect = self.get_allocation()
         return rect.width, rect.height
 
-    def expose(self, ctx, widget):
-        pass # overriden im subclasses which pylint is unaware of
+    def expose(self, widget, ctx):
+        """overriden in TimelineView and TrackView"""
 
 class TimelineView(View):
     """
@@ -134,26 +134,26 @@ class TimelineView(View):
         View.__init__(self, hadjustment)
         self.set_size_request(-1, 16)
 
-    def expose(self, widget, *args):
+    def expose(self, widget, ctx):
         player = com.get('neil.core.player')
         w,h = self.get_client_size()
-        gc = self.get_window().new_gc()
-        cm = gc.get_colormap()
-        drawable = self.get_window()
+
         cfg = config.get_config()
-        bgbrush = cm.alloc_color(cfg.get_color('SE BG'))
-        pen1 = cm.alloc_color(cfg.get_color('SE BG Very Dark'))
-        pen2 = cm.alloc_color(cfg.get_color('SE BG Dark'))
-        textcolor = cm.alloc_color(cfg.get_color('SE Text'))
+        bg_color = cfg.get_float_color('SE BG')
+        pen1_color = cfg.get_float_color('SE BG Very Dark')
+        pen2_color = cfg.get_float_color('SE BG Dark')
+        text_color = cfg.get_float_color('SE Text')
 
-        gc.set_foreground(bgbrush)
-        gc.set_background(bgbrush)
-        drawable.draw_rectangle(gc, True, 0, 0, w, h)
+        # drawable.draw_rectangle(gc, True, 0, 0, w, h)
+        ctx.set_source_rgb(*bg_color)
+        ctx.rectangle(0, 0, w, h)
+        ctx.fill()
 
-        layout = Pango.Layout(self.get_pango_context())
-        desc = Pango.FontDescription('Sans 7.5')
-        layout.set_font_description(desc)
-        layout.set_width(-1)
+        pango_ctx = PangoCairo.CairoContext(ctx)
+        pango_ctx.set_source_rgb(*text_color)
+        pango_layout = ctx.create_layout()
+        pango_layout.set_font_description(Pango.setFontDescription('Sans 7.5'))
+        pango_layout.set_width(-1)
 
         # first visible tick
         start = int(self.hadjustment.get_value()+0.5)
@@ -175,14 +175,21 @@ class TimelineView(View):
         while i < end:
             x = int((i - start)/tpp + 0.5)
             if i == (i - i%(stepsize*4)):
-                gc.set_foreground(pen1)
+                ctx.set_source_rgb(*pen1_color)
             else:
-                gc.set_foreground(pen2)
-            drawable.draw_line(gc, x-1, 0, x-1, h)
-            gc.set_foreground(textcolor)
-            layout.set_text("%i" % i)
-            px,py = layout.get_pixel_size()
-            drawable.draw_layout(gc, x, h/2 - py/2, layout)
+                ctx.set_source_rgb(*pen2_color)
+            ctx.move_to(x-1, 0)
+            ctx.line_to(x-1, h)
+            ctx.stroke()
+
+            # layout.set_text("%i" % i)
+            pango_layout.set_text("%i" % i)
+            px,py = pango_layout.get_size()
+
+            pango_ctx.moveto(x, int((h-py) / 2))
+            pango_ctx.set_source_rgb(*text_color)
+            pango_ctx.show_layout(pango_layout)
+            pango_ctx.stroke()
             i += stepsize
 
 class TrackView(View):
