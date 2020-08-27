@@ -55,17 +55,12 @@ class SimpleEnvelope(Gtk.DrawingArea):
         self.connect('motion-notify-event', self.on_motion)
         self.connect('enter-notify-event', self.on_enter)
         self.connect('leave-notify-event', self.on_leave)
-        self.connect('expose_event', self.expose)
+        self.connect('draw', self.on_draw)
         self.context_menu = Gtk.Menu()
         self.reset = Gtk.MenuItem("Reset")
         self.reset.show()
         self.reset.connect('button-press-event', self.on_reset)
         self.context_menu.append(self.reset)
-
-    def expose(self, widget, event):
-        self.context = widget.get_window().cairo_create()
-        self.draw(self.context)
-        return False
 
     def get_client_size(self):
         rect = self.get_allocation()
@@ -227,7 +222,7 @@ class SimpleEnvelope(Gtk.DrawingArea):
         """
         return [self.env_to_pixel(x, y) for x, y in self.envelope]
 
-    def draw(self, ctx):
+    def on_draw(self, ctx):
         """
         Overriding a L{Canvas} method that paints onto an offscreen buffer.
         Draws the envelope view graphics.
@@ -280,6 +275,8 @@ class SimpleEnvelope(Gtk.DrawingArea):
                         int((DOTSIZE / 2.0) + 0.5), 0.0, math.pi * 2)
                 ctx.fill()
 
+        return False
+
 class EnvelopeView(Gtk.DrawingArea):
     """
     Envelope viewer.
@@ -303,7 +300,7 @@ class EnvelopeView(Gtk.DrawingArea):
         self.connect('motion-notify-event', self.on_motion)
         self.connect('enter-notify-event', self.on_enter)
         self.connect('leave-notify-event', self.on_leave)
-        self.connect('expose_event', self.expose)
+        self.connect('draw', self.on_draw)
 
         # Menu that get's activated when you click right mouse button.
         self.context_menu = Gtk.Menu()
@@ -357,11 +354,6 @@ class EnvelopeView(Gtk.DrawingArea):
         self.filter_.add_pattern("*.bef")
         self.open_dialog.add_filter(self.filter_)
         self.save_dialog.add_filter(self.filter_)
-
-    def expose(self, widget, event):
-        self.context = widget.get_window().cairo_create()
-        self.draw(self.context)
-        return False
 
     def get_client_size(self):
         rect = self.get_allocation()
@@ -602,7 +594,7 @@ class EnvelopeView(Gtk.DrawingArea):
         Gtk.DrawingArea.set_sensitive(self, enable)
         self.redraw()
 
-    def draw(self, ctx):
+    def on_draw(self, widget, ctx):
         """
         Overriding a L{Canvas} method that paints onto an offscreen buffer.
         Draws the envelope view graphics.
@@ -677,6 +669,8 @@ class EnvelopeView(Gtk.DrawingArea):
                 ctx.arc(pt1[0], pt1[1],
                         int((DOTSIZE / 2.0) + 0.5), 0.0, math.pi * 2)
                 ctx.fill()
+
+        return False
 
 def load_envelope(path):
     """
