@@ -30,6 +30,7 @@ if __name__ == '__main__':
 
 from gi.repository import Gtk, Gdk
 from gi.repository import Pango, PangoCairo
+import cairo
 from gi.repository import GObject
 from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS, \
         GENERATOR_PLUGIN_FLAGS, EFFECT_PLUGIN_FLAGS, CONTROLLER_PLUGIN_FLAGS
@@ -192,6 +193,8 @@ class TimelineView(View):
             pango_ctx.stroke()
             i += stepsize
 
+        return False
+
 class TrackView(View):
     """
     Track view. Displays the content of one track.
@@ -207,103 +210,95 @@ class TrackView(View):
         View.__init__(self, hadjustment)
         self.set_size_request(-1, 22)
 
-    def get_pattern_pixmap(self, gc, layout, pos, value):
-        bb = None #self.patterngfx.get(value, None)
-        w,h = self.get_client_size()
-        if not bb:
-            tpp = self.get_ticks_per_pixel()
+    def draw_pattern_event(self, ctx, pango_layout, evt, colors):
+        evt_pos, evt_value = evt
+        
+        m = self.track.get_plugin()
+        mname = m.get_name()
+        title = prepstr(mname)
 
-            cfg = config.get_config()
-            bghsb = to_hsb(*cfg.get_float_color('SE BG'))
-            bgb = max(bghsb[2],0.1)
-            cm = gc.get_colormap()
-            textcolor = cm.alloc_color(cfg.get_color('SE Text'))
-            m = self.track.get_plugin()
-            mname = m.get_name()
-            title = prepstr(mname)
-            if value >= 0x10:
-                pat = m.get_pattern(value-0x10)
-                name,length = prepstr(pat.get_name()), pat.get_row_count()
-            elif value == 0x00:
-                name,length = "X", 1
-            elif value == 0x01:
-                name,length = "<", 1
-            else:
-                print(("unknown value:",value))
-                name,length = "???",0
-            # first visible tick
-            offset = int(self.hadjustment.get_value()+0.5)
-            start = pos
-            end = pos + length
-            ps1 = int(((start-offset) / tpp) + 0.5)
-            ps2 = int(((end-offset) / tpp) + 0.5)
-            psize = max(ps2-ps1,2) # max(int(((SEQROWSIZE * length) / self.step) + 0.5),2)
-            bbh = h-2
-            bb = Gdk.Pixmap(self.get_window(), psize-1, bbh-1, -1)
-            self.patterngfx[value] = bb
-            if value < 0x10:
-                gc.set_foreground(sbrushes[value])
-                bb.draw_rectangle(gc, True, 0, 0, psize-1, bbh-1)
-            else:
-                random.seed(mname+name)
-                hue = random.random()
-                cb = 1.0
-                r,g,b = from_hsb(hue, 0.2, cb*bgb)
-                gc.set_foreground(cm.alloc_color('#%02X%02X%02X' % (int(r*255),int(g*255),int(b*255))))
-                bb.draw_rectangle(gc, True, 0,0, psize-2, bbh-2)
-                r,g,b = from_hsb(hue, 0.5, cb*bgb*0.5)
-                gc.set_foreground(cm.alloc_color('#%02X%02X%02X' % (int(r*255),int(g*255),int(b*255))))
-                pat = m.get_pattern(value-0x10)
-                bh = bbh-2-4
-                bw = max(psize-2-2, 1)
-                # 0.3: DEAD - no get_bandwidth_digest
-                #~ digest = pat.get_bandwidth_digest(bw)
-                #~ for evx,evh in enumerate(digest):
-                        #~ if evh:
-                                #~ evh = max(int(bh * (0.5 + evh*0.5) + 0.5), 1)
-                                #~ bb.draw_rectangle(gc, True, 1+evx, 2+bh-evh, 1, evh )
-                r,g,b = from_hsb(hue, 1.0, cb*bgb*0.7)
-                gc.set_foreground(cm.alloc_color('#%02X%02X%02X' % (int(r*255),int(g*255),int(b*255))))
-                bb.draw_rectangle(gc, False, 0, 0, psize-2, bbh-2)
-                ofs = 0
-                layout.set_text(name)
-                px,py = layout.get_pixel_size()
-                gc.set_foreground(textcolor)
-                bb.draw_layout(gc, 2, 0 + bbh/2 - py/2, layout)
-        return bb
+        if evt_value >= 0x10:
+            pat = m.get_pattern(evt_value - 0x10)
+            name, length = prepstr(pat.get_name()), pat.get_row_count()
+        elif evt_value == 0x00:
+            name, length = "X", 1
+        elif evt_value == 0x01:
+            name, length = "<", 1
+        else:
+            print(("unknown value:", evt_value))
+            name,length = "???",0
 
-    def expose(self, widget, *args):
-        player = com.get('neil.core.player')
-        w,h = self.get_client_size()
-        gc = self.get_window().new_gc()
-        cm = gc.get_colormap()
-        drawable = self.get_window()
-        cfg = config.get_config()
-        bghsb = to_hsb(*cfg.get_float_color('SE BG'))
-        bgb = max(bghsb[2],0.1)
-        bgbrush = cm.alloc_color(cfg.get_color('SE BG'))
-        sbrushes = [cm.alloc_color(cfg.get_color('SE Mute')), cm.alloc_color(cfg.get_color('SE Break'))]
-        select_brush = cm.alloc_color(cfg.get_color('SE Sel BG'))
-        vlinepen = cm.alloc_color(cfg.get_color('SE BG Dark'))
-        pen1 = cm.alloc_color(cfg.get_color('SE BG Very Dark'))
-        pen2 = cm.alloc_color(cfg.get_color('SE BG Dark'))
-        pen = cm.alloc_color(cfg.get_color('SE Line'))
-        loop_pen = cm.alloc_color(cfg.get_color('SE Loop Line'))
-        invbrush = cm.alloc_color('#ffffff')
-        textcolor = cm.alloc_color(cfg.get_color('SE Text'))
-
-        gc.set_foreground(bgbrush)
-        gc.set_background(bgbrush)
-        drawable.draw_rectangle(gc, True, 0, 0, w, h)
-
-        layout = Pango.Layout(self.get_pango_context())
-        #~ layout.set_font_description(self.fontdesc)
-        layout.set_width(-1)
+        w, h = self.get_client_size()
 
         # first visible tick
-        start = int(self.hadjustment.get_value()+0.5)
+        offset = int(self.hadjustment.get_value() + 0.5)
+
+        # start = pos
+        end = evt_pos + length
+        tpp = self.get_ticks_per_pixel()
+        start_x = int(((evt_pos - offset) / tpp) + 0.5)
+        end_x = int(((end - offset) / tpp) + 0.5)
+        psize = max(end_x - start_x, 2) # max(int(((SEQROWSIZE * length) / self.step) + 0.5),2)
+        bbh = h-2
+
+        if evt_value < 0x10:
+            if ((start_x + psize - 1) < 0) or (start_x > w):
+                return
+
+            ctx.set_source_rgb(*colors['events'][evt_value])
+            ctx.rectangle(0, 0, psize-1, bbh-1)
+            ctx.fill()
+        else:
+            if ((start_x + psize - 2) < 0) or (start_x > w):
+                return
+
+            random.seed(mname + name)
+            hue = random.random()
+            
+            ctx.set_source_rbg(*from_hsb(hue, 1.0, colors['bg_brightness'] * 0.7))
+            ctx.rectangle(0, 0, psize-2, bbh-2)
+            ctx.fill()
+
+            pango_layout.set_text(name)
+            px, py = pango_layout.get_pixel_size()
+            pango_ctx = pango_layout.get_context()
+            pango_ctx.move_to(2, 0 + bbh/2 - py / 2)
+            pango_ctx.show_layout(pango_layout)
+            pango_layout.stroke()
+
+
+    def get_colors(self):
+        cfg = config.get_config()
+        colors = {}
+
+        colors['bg'] = cfg.get_float_color('SE BG')
+        colors['bg_brightness'] = max(to_hsb(*bg_color)[2], 0.1)
+        colors['events'] = (cfg.get_float_color('SE Mute'), cfg.get_float_color('SE Break'))
+        colors['select'] = cfg.get_float_color('SE Sel BG')
+        colors['vline'] = cfg.get_float_color('SE BG Dark')
+        colors['pen1'] = cfg.get_float_color('SE BG Very Dark')
+        colors['pen2'] = cfg.get_float_color('SE BG Dark')
+        colors['pen'] = cfg.get_float_color('SE Line')
+        colors['loop'] = cfg.get_float_color('SE Loop Line')
+        colors['inv'] = (1.0, 1.0, 1.0)
+        colors['text'] = cfg.get_float_color('SE Text')
+
+        return colors
+
+    def expose(self, widget, ctx):
+        player = com.get('neil.core.player')
+        w, h = self.get_client_size()
+
+        colors = self.get_colors()
+
+        ctx.set_source_rgb(*colors['bg'])
+        ctx.rectangle(0, 0, w, h)
+        ctx.fill()
+
+        # first visible tick
+        start = int(self.hadjustment.get_value() + 0.5)
         # size of view
-        pagesize = int(self.hadjustment.page_size+0.5)
+        pagesize = int(self.hadjustment.page_size + 0.5)
         # last visible tick
         end = int(self.hadjustment.get_value() + self.hadjustment.page_size + 0.5)
 
@@ -311,7 +306,7 @@ class TrackView(View):
         tpp = self.get_ticks_per_pixel()
 
         # distance of indices to print
-        stepsize = int(4*self.step + 0.5)
+        stepsize = int(4 * self.step + 0.5)
 
         # first index to print
         startindex = (start / stepsize) * stepsize
@@ -319,21 +314,24 @@ class TrackView(View):
         # timeline
         i = startindex
         while i < end:
-            x = int((i - start)/tpp + 0.5)
-            if i == (i - i%(stepsize*4)):
-                gc.set_foreground(pen1)
+            x = int((i - start) / tpp + 0.5)
+            if i == (i - i%(stepsize * 4)):
+                ctx.set_source_rbg(*colors['pen1'])
             else:
-                gc.set_foreground(pen2)
-            drawable.draw_line(gc, x-1, 0, x-1, h)
+                ctx.set_source_rbg(*colors['pen2'])
+            ctx.move_to(x-1, 0)
+            ctx.line_to(x-1, h)
+            ctx.stroke()
             i += stepsize
 
-        sel = False
-        for pos, value in self.track.get_event_list():
-            bb = self.get_pattern_pixmap(gc, layout, pos, value)
-            bbw,bbh = bb.get_size()
-            x = int((pos - start)/tpp + 0.5)
-            if ((x+bbw) >= 0) and (x < w):
-                self.get_window().draw_drawable(gc, bb, 0, 0, x, 1, bbw, bbh)
+        pango_ctx = PangoCairo.CairoContext(ctx)
+        pango_ctx.set_source_rgb(*colors['text'])
+        pango_layout = pango_ctx.create_layout()
+        #~ layout.set_font_description(self.fontdesc)
+        pango_layout.set_width(-1)
+        for evt in self.track.get_event_list():
+            self.draw_pattern_event(ctx, pango_layout, evt, colors)
+
 
 #                               if intrack and (pos >= selstart[1]) and (pos <= selend[1]):
 #                                       gc.set_foreground(invbrush)
