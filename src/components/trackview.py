@@ -54,9 +54,9 @@ class Track(Gtk.HBox):
     Track header. Displays controls to mute or solo the track.
     """
     __neil__ = dict(
-            id = 'neil.core.track',
-            categories = [
-            ]
+        id = 'neil.core.track',
+        categories = [
+        ]
     )
 
     def __init__(self, track, hadjustment=None):
@@ -126,9 +126,9 @@ class TimelineView(View):
     timeline view. shows a horizontal sequencer timeline.
     """
     __neil__ = dict(
-            id = 'neil.core.timelineview',
-            categories = [
-            ]
+        id = 'neil.core.timelineview',
+        categories = [
+        ]
     )
 
     def __init__(self, hadjustment=None):
@@ -200,9 +200,9 @@ class TrackView(View):
     Track view. Displays the content of one track.
     """
     __neil__ = dict(
-            id = 'neil.core.trackview',
-            categories = [
-            ]
+        id = 'neil.core.trackview',
+        categories = [
+        ]
     )
 
     def __init__(self, track, hadjustment=None):
@@ -212,7 +212,7 @@ class TrackView(View):
 
     def draw_pattern_event(self, ctx, pango_layout, evt, colors):
         evt_pos, evt_value = evt
-        
+
         m = self.track.get_plugin()
         mname = m.get_name()
         title = prepstr(mname)
@@ -370,19 +370,19 @@ class TrackViewPanel(Gtk.VBox):
     Displays all the patterns available for the current track.
     """
     __neil__ = dict(
-            id = 'neil.core.trackviewpanel',
-            singleton = True,
-            categories = [
-                    'neil.viewpanel',
-                    'view',
-            ]
+        id = 'neil.core.trackviewpanel',
+        singleton = True,
+        categories = [
+                'neil.viewpanel',
+                'view',
+        ]
     )
 
     __view__ = dict(
-                    label = "Tracks",
-                    stockid = "neil_sequencer",
-                    shortcut = '<Shift>F4',
-                    order = 4,
+        label = "Tracks",
+        stockid = "neil_sequencer",
+        shortcut = '<Shift>F4',
+        order = 4,
     )
 
     def __init__(self):
@@ -459,10 +459,10 @@ class TrackViewPanel(Gtk.VBox):
         synchronize_list(tracks, tracklist, insert_track, del_track, swap_track)
 
 __neil__ = dict(
-        classes = [
-                TrackViewPanel,
-                Track,
-                TrackView,
-                TimelineView,
-        ],
+    classes = [
+        TrackViewPanel,
+        Track,
+        TrackView,
+        TimelineView,
+    ],
 )
