@@ -61,7 +61,7 @@ class AmpView(Gtk.DrawingArea):
         self.peaks = np.zeros(300)
         self.hold = 15
         self.set_size_request(20, -1)
-        self.connect("expose_event", self.expose)
+        self.connect("draw", self.on_draw)
         self.connect("configure_event", self.configure)
         GObject.timeout_add(33, self.on_update)
 
@@ -83,7 +83,7 @@ class AmpView(Gtk.DrawingArea):
             self.get_window().invalidate_rect((0, 0, rect.width, rect.height), False)
         return True
 
-    def draw(self, ctx):
+    def on_draw(self, widget, ctx):
         """
         Draws the VU bar client region.
         """
@@ -154,6 +154,8 @@ class AmpView(Gtk.DrawingArea):
             ctx.fill()
             self.emit('clip', self.amp)
 
+        return False
+
     def configure(self, widget, event):
         self.linear = cairo.LinearGradient(0, 0, 0, self.get_allocation().height)
         self.linear.add_color_stop_rgb(self.stops[0], 1, 0, 0)
@@ -161,10 +163,6 @@ class AmpView(Gtk.DrawingArea):
         self.linear.add_color_stop_rgb(self.stops[2], 0, 1, 0)
         self.linear.add_color_stop_rgb(1, 0, .3, 0)
 
-    def expose(self, widget, event):
-        context = widget.get_window().cairo_create()
-        self.draw(context)
-        return False
 
 
 class MasterPanel(Gtk.VBox):
