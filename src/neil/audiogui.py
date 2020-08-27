@@ -561,7 +561,7 @@ class DecoBox(Gtk.VBox):
         self.ratio = 0.382
         self.alpha = 1.0
         self.set_app_paintable(True)
-        self.connect('expose-event', self.on_expose)
+        self.connect('draw', self.on_draw)
         self.vbox = Gtk.VBox()
         hbox = Gtk.HBox()
         self.pack_start(hbox, False, True, 0)
@@ -690,10 +690,8 @@ class DecoBox(Gtk.VBox):
         ctx.pop_group_to_source()
         ctx.paint_with_alpha(self.alpha)
 
-    def on_expose(self, widget, event):
-        self.context = widget.get_window().cairo_create()
-        self.draw(self.context)
         return False
+
 
 from . import lcdfont
 
