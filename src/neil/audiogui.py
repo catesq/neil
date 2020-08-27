@@ -538,6 +538,8 @@ class Knob(Gtk.VBox):
             ctx.fill()
             ctx.restore()
 
+        return False
+
     def refresh(self):
         rect = self.get_allocation()
         if self.is_visible():
@@ -711,7 +713,7 @@ class LCD(Gtk.DrawingArea):
         self.border = 6
         self.scale = 1
         self.calc_size()
-        self.connect('expose-event', self.on_expose)
+        self.connect('draw', self.on_draw)
         self.connect('realize', self.on_realize)
 
     def calc_size(self):
@@ -791,11 +793,6 @@ class LCD(Gtk.DrawingArea):
         self.contrast = contrast
         self.refresh()
 
-    def on_expose(self, widget, event):
-        self.context = widget.get_window().cairo_create()
-        self.draw(self.context)
-        return False
-
     def set_fg_color(self, h,l,s):
         self.fg_hls = h,l,s
         self.refresh()
@@ -818,7 +815,7 @@ class LCD(Gtk.DrawingArea):
                 x += 1
         self.refresh()
 
-    def draw(self, ctx):
+    def on_draw(self, widget, ctx):
         gc = self.get_window().new_gc()
         chars = self.get_characters()
         rc = self.get_allocation()
@@ -834,6 +831,7 @@ class LCD(Gtk.DrawingArea):
                 self.get_window().draw_drawable(gc, chars[ord(c)], 0, 0, int(rx), int(ry), -1, -1)
                 rx += self.charwidth+1
             ry += self.charheight+1
+        return False
 
     def refresh(self):
         rc = self.get_allocation()
