@@ -391,12 +391,8 @@ class VolumeSlider(Gtk.Window):
         self.resize(VOLBARWIDTH, VOLBARHEIGHT)
         self.hide_all()
         self.drawingarea.connect('motion-notify-event', self.on_motion)
-        self.drawingarea.connect('expose-event', self.expose)
+        self.drawingarea.connect('draw', self.on_draw)
         self.drawingarea.connect('button-release-event', self.on_left_up)
-
-    def expose(self, widget, event):
-        self.draw()
-        return False
 
     def redraw(self):
         if self.is_visible() and self.drawingarea.get_window():
@@ -420,7 +416,7 @@ class VolumeSlider(Gtk.Window):
         self.redraw()
         return True
 
-    def draw(self):
+    def on_draw(self):
         """
         Event handler for paint requests.
         """
@@ -454,6 +450,8 @@ class VolumeSlider(Gtk.Window):
         layout.set_font_description(font)
         layout.set_markup("<small>%.1f dB</small>" % (self.amp * -48.0))
         drawable.draw_layout(gc, 2, 2, layout)
+
+        return False
 
     def display(self, xxx_todo_changeme, mp, index):
         """
@@ -554,7 +552,7 @@ class RouteView(Gtk.DrawingArea):
         self.connect('button-press-event', self.on_left_down)
         self.connect('button-release-event', self.on_left_up)
         self.connect('motion-notify-event', self.on_motion)
-        self.connect("expose_event", self.expose)
+        self.connect("draw", self.on_draw)
         self.connect('key-press-event', self.on_key_jazz, None)
         self.connect('key-release-event', self.on_key_jazz_release, None)
         self.connect('size-allocate', self.on_size_allocate)
@@ -984,11 +982,6 @@ class RouteView(Gtk.DrawingArea):
                 self.get_window().invalidate_rect((int(rx), int(ry), PLUGINWIDTH, PLUGINHEIGHT), False)
         return True
 
-    def expose(self, widget, event):
-        self.context = widget.get_window().cairo_create()
-        self.draw(self.context)
-        return False
-
     def redraw(self):
         if self.get_window():
             self.routebitmap = None
@@ -1157,7 +1150,7 @@ class RouteView(Gtk.DrawingArea):
             # flip plugin pixmap to screen
             self.get_window().draw_drawable(gc, pi.plugingfx, 0, 0, int(rx), int(ry), -1, -1)
 
-    def draw(self, ctx):
+    def on_draw(self, widget, ctx):
         """
         Draws plugins, connections and arrows to an offscreen buffer.
         """
@@ -1332,6 +1325,8 @@ class RouteView(Gtk.DrawingArea):
             rx, ry = self.connectpos
             draw_line(ctx, int(crx), int(cry), int(rx), int(ry))
         self.draw_leds()
+
+        return False
 
     # This method is not *just* for key-jazz, it handles all key-events in router. Rename?
     def on_key_jazz(self, widget, event, plugin):
