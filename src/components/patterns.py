@@ -734,7 +734,7 @@ class PatternView(Gtk.DrawingArea):
         self.accel_map.add_accelerator('<Control>minus',
                                        self.on_popup_delete_track)
         self.connect('key-press-event', self.accel_map.handle_key_press_event)
-        self.connect("expose_event", self.expose)
+        self.connect("draw", self.on_draw)
         self.connect('key-press-event', self.on_key_down)
         self.connect('key-release-event', self.on_key_up)
         self.connect('button-press-event', self.on_button_down)
@@ -1148,20 +1148,6 @@ class PatternView(Gtk.DrawingArea):
             self.subindex = 0
             return
         self.subindex = min(max(si, 0), self.subindex_count[self.group][self.index] - 1)
-
-    def expose(self, widget, *args):
-        self.context = widget.get_window().cairo_create()
-        if self.current_plugin != self.get_plugin():
-            self.pattern_changed()
-            self.current_plugin = self.get_plugin()
-        #player = com.get('neil.core.player')
-        #if not(player.spinbox_edit):
-        #    self.grab_focus()
-        if (self.needfocus):
-            self.grab_focus()
-            self.needfocus = False
-        self.draw(self.context)
-        return False
 
     def redraw(self, *args):
         if self.is_visible():
@@ -2837,11 +2823,18 @@ class PatternView(Gtk.DrawingArea):
         gc.set_foreground(cm.alloc_color(background))
         drawable.draw_rectangle(gc, True, 0, 0, w, h)
 
-    def draw(self, ctx):
+    def on_draw(self, widget, ctx):
         """
-        Overriding a L{Canvas} method that paints onto an offscreen buffer.
         Draws the pattern view graphics.
         """
+        if self.current_plugin != self.get_plugin():
+            self.pattern_changed()
+            self.current_plugin = self.get_plugin()
+            
+        if (self.needfocus):
+            self.grab_focus()
+            self.needfocus = False
+
         layout = Pango.Layout(self.get_pango_context())
         layout.set_font_description(self.fontdesc)
         layout.set_width(-1)
@@ -2852,6 +2845,8 @@ class PatternView(Gtk.DrawingArea):
         self.draw_cursor_xor()
         self.draw_pattern_background(ctx, layout)
         self.draw_playpos_xor()
+
+        return False
 
 __all__ = [
     'PatternDialog',
