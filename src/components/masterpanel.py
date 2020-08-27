@@ -18,11 +18,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-if __name__ == '__main__':
-    import os
-    os.system('../../bin/neil-combrowser neil.core.panel.master')
-    raise SystemExit
-
 from gi.repository import Gtk, Gdk
 import cairo
 from neil.common import MARGIN
@@ -296,3 +291,9 @@ __neil__ = dict(
                 MasterPanel,
         ],
 )
+
+
+if __name__ == '__main__':
+    import os, sys
+    os.system('../../bin/neil-combrowser neil.core.panel.master')
+    sys.exit()
