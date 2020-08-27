@@ -497,7 +497,7 @@ class SequencerView(Gtk.DrawingArea):
         GObject.GObject.__init__(self)
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.set_property('can-focus', True)
-        self.connect("expose_event", self.expose)
+        self.connect("draw", self.on_draw)
         self.connect('key-press-event', self.on_key_down)
         self.connect('button-press-event', self.on_left_down)
         self.connect('motion-notify-event', self.on_motion)
@@ -1335,17 +1335,6 @@ class SequencerView(Gtk.DrawingArea):
         rect = self.get_allocation()
         return rect.width, rect.height
 
-    def expose(self, widget, *args):
-        #player = com.get('neil.core.player')
-        if (self.needfocus):
-            self.grab_focus()
-            self.needfocus = False
-        self.adjust_scrollbars()
-        self.context = widget.get_window().new_gc()
-        self.draw(self.context)
-        self.panel.update_list()
-        return False
-
     def redraw(self, *args):
         if self.is_visible():
             rect = self.get_allocation()
@@ -1795,11 +1784,16 @@ class SequencerView(Gtk.DrawingArea):
             drawable.draw_line(ctx, x, 0, x, height)
         ctx.line_width = 1
 
-    def draw(self, ctx):
+    def on_draw(self, widget, ctx):
         """
         Overriding a L{Canvas} method that paints onto an offscreen buffer.
         Draws the pattern view graphics.
         """
+        if (self.needfocus):
+            self.grab_focus()
+            self.needfocus = False
+        self.adjust_scrollbars()
+
         colormap = ctx.get_colormap()
         drawable = self.get_window()
         width, height = self.get_client_size()
@@ -1822,7 +1816,7 @@ class SequencerView(Gtk.DrawingArea):
             'Effect Bg Mute': colormap.alloc_color(cfg.get_color('MV Effect Mute')),
             'Generator Bg Mute': colormap.alloc_color(cfg.get_color('MV Generator Mute')),
             'Controller Bg Mute': colormap.alloc_color(cfg.get_color('MV Controller Mute'))
-            }
+        }
         # Draw the background
         ctx.set_foreground(colors['Background'])
         drawable.draw_rectangle(ctx, True, 0, 0, width, height)
@@ -1834,6 +1828,8 @@ class SequencerView(Gtk.DrawingArea):
         # Draw the black border
         #ctx.set_foreground(colors['Border'])
         #drawable.draw_rectangle(ctx, False, 0, 0, width - 1, height - 1)
+        self.panel.update_list()
+        return False
 
 __all__ = [
 'PatternNotFoundException',
