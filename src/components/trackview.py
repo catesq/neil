@@ -23,29 +23,19 @@ Contains all classes and functions needed to render the sequence
 editor and its associated components.
 """
 
-if __name__ == '__main__':
-    import os
-    os.system('../../bin/neil-combrowser neil.core.trackviewpanel')
-    raise SystemExit
-
-from gi.repository import Gtk, Gdk
-from gi.repository import Pango, PangoCairo
-import cairo
-from gi.repository import GObject
-from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS, \
-        GENERATOR_PLUGIN_FLAGS, EFFECT_PLUGIN_FLAGS, CONTROLLER_PLUGIN_FLAGS
-from neil.utils import prepstr, from_hsb, to_hsb, get_item_count, \
-        get_clipboard_text, set_clipboard_text, add_scrollbars
-from neil.utils import is_effect,is_generator,is_controller,is_root, \
-        get_new_pattern_name, filepath, synchronize_list
 import random
+
+from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo
+
 import config
+import neil.com as com
 import neil.common as common
+from neil.utils import (from_hsb, prepstr, synchronize_list, to_hsb)
+
 MARGIN = common.MARGIN
 MARGIN2 = common.MARGIN2
 MARGIN3 = common.MARGIN3
 MARGIN0 = common.MARGIN0
-import neil.com as com
 
 SEQROWSIZE = 24
 
@@ -453,7 +443,6 @@ class TrackViewPanel(Gtk.VBox):
 
         def swap_track(i,j):
             print(("swap",i,j))
-            pass
 
         tracks = [trackview.track for trackview in self.trackviews]
         synchronize_list(tracks, tracklist, insert_track, del_track, swap_track)
@@ -466,3 +455,8 @@ __neil__ = dict(
         TimelineView,
     ],
 )
+
+if __name__ == '__main__':
+    import os, sys
+    os.system('../../bin/neil-combrowser neil.core.trackviewpanel')
+    sys.exit()
