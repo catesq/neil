@@ -85,7 +85,7 @@ class View(Gtk.DrawingArea):
         self.patterngfx = {}
         self.hadjustment = hadjustment
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
-        self.connect("draw", self.expose)
+        self.connect("draw", self.on_draw)
         if hadjustment:
             self.hadjustment.connect('value-changed', self.on_adjustment_value_changed)
             self.hadjustment.connect('changed', self.on_adjustment_changed)
@@ -118,7 +118,7 @@ class View(Gtk.DrawingArea):
         rect = self.get_allocation()
         return rect.width, rect.height
 
-    def expose(self, widget, ctx):
+    def on_draw(self, widget, ctx):
         """overriden in TimelineView and TrackView"""
 
 class TimelineView(View):
@@ -135,7 +135,7 @@ class TimelineView(View):
         View.__init__(self, hadjustment)
         self.set_size_request(-1, 16)
 
-    def expose(self, widget, ctx):
+    def on_draw(self, widget, ctx):
         player = com.get('neil.core.player')
         w,h = self.get_client_size()
 
@@ -285,7 +285,7 @@ class TrackView(View):
 
         return colors
 
-    def expose(self, widget, ctx):
+    def on_draw(self, widget, ctx):
         player = com.get('neil.core.player')
         w, h = self.get_client_size()
 
