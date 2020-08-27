@@ -143,7 +143,7 @@ class KnobTooltip:
         vbox2.set_border_width(2)
         vbox.add(vbox2)
         self.tooltip_window.add(vbox)
-        vbox.connect('expose-event', self.on_tooltip_expose)
+        vbox.connect('draw', self.on_tooltip_draw)
 
     def show_tooltip(self, knob):
         text = knob.format_value(knob.value)
@@ -164,15 +164,14 @@ class KnobTooltip:
     def hide_tooltip(self):
         self.tooltip_window.hide_all()
 
-    def on_tooltip_expose(self, widget, event):
-        ctx = widget.get_window().cairo_create()
-        rc = widget.get_allocation()
+    def on_tooltip_draw(self, ctx, widget):
+        (w, h) = self.get_allocation()
         ctx.set_source_rgb(*hls_to_rgb(0.0, 0.5, 1.0))
         ctx.paint()
         ctx.set_source_rgb(*hls_to_rgb(0.0, 1.0, 0.0))
         ctx.translate(0.5, 0.5)
         ctx.set_line_width(1)
-        ctx.rectangle(rc.x, rc.y,rc.width-1,rc.height-1)
+        ctx.rectangle(rc.x, rc.y, w, h)
         ctx.stroke()
         return False
 
