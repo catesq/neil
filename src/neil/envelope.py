@@ -665,7 +665,6 @@ class EnvelopeView(Gtk.DrawingArea):
                     ctx.set_source_rgb(*selectbrush)
                 else:
                     ctx.set_source_rgb(*dotbrush)
-                import math
                 ctx.arc(pt1[0], pt1[1],
                         int((DOTSIZE / 2.0) + 0.5), 0.0, math.pi * 2)
                 ctx.fill()
