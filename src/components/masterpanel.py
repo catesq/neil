@@ -166,8 +166,8 @@ class MasterPanel(Gtk.VBox):
     """
 
     __neil__ = dict(
-            id='neil.core.panel.master',
-            #singleton=True,
+        id='neil.core.panel.master',
+        #singleton=True,
     )
 
     def __init__(self):
@@ -287,9 +287,9 @@ class MasterPanel(Gtk.VBox):
         self.latency = com.get('neil.core.driver.audio').get_latency()
 
 __neil__ = dict(
-        classes=[
-                MasterPanel,
-        ],
+    classes=[
+            MasterPanel,
+    ],
 )
 
 
