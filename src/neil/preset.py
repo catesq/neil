@@ -163,7 +163,7 @@ class PresetCollection:
         self.version = 1
         self.name = ''
         if filepath:
-            f = file(filepath, 'rb')
+            f = open(filepath, 'rb')
             self.version = read_int(f)
             self.name = read_string(f)
             setcount = read_int(f)
@@ -178,7 +178,7 @@ class PresetCollection:
         @param filepath: Path to file.
         @type filepath: str
         """
-        f = file(filepath, 'wb')
+        f = open(filepath, 'wb')
         write_int(f, self.version)
         write_string(f, self.name)
         write_int(f, len(self.presets))

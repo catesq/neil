@@ -6,8 +6,8 @@ import os
 
 ret = os.system('./zidl --c-header test_zidl.h libzzub.zidl')
 if ret != 0:
-	raise SystemExit, 1
+	sys.exit(1)
 
-data = file("test_zidl.h","r").read()
+data = open("test_zidl.h","r").read()
 print data
 

@@ -319,7 +319,7 @@ class NeilConfig(object, configparser.ConfigParser):
         self.flush()
 
     def flush(self):
-        self.write(file(self.filename,'w'))
+        self.write(open(self.filename,'w'))
 
     def get_plugin_icon_path(self, name):
         """
@@ -354,7 +354,7 @@ class NeilConfig(object, configparser.ConfigParser):
             self.active_theme = ''
             return
         re_theme_attrib = re.compile('^([\w\s]+\w)\s+(\w+)$')
-        for line in file(sharedpath('themes/'+name+'.col'),'r'):
+        for line in open(sharedpath('themes/'+name+'.col'),'r'):
             line = line.strip()
             if line and not line.startswith('#'):
                 m = re_theme_attrib.match(line)
@@ -823,7 +823,7 @@ def get_plugin_blacklist():
     @return: A list of plugin uris.
     @rtype: [str,...]
     """
-    for line in file(filepath('blacklist.txt'), 'r'):
+    for line in open(filepath('blacklist.txt'), 'r'):
         line = line.strip()
         if line.startswith('#'):
             pass
@@ -837,7 +837,7 @@ def get_plugin_aliases():
     @return: A list of alias tuples (name,uri)
     @rtype: [(str,str),...]
     """
-    for line in file(filepath('aliases.txt'), 'r'):
+    for line in open(filepath('aliases.txt'), 'r'):
         line = line.strip()
         if line.startswith('#'):
             pass

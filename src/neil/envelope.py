@@ -682,7 +682,7 @@ def load_envelope(path):
     @return: A list of points and the index of the sustain point (or -1).
     @rtype: [(x,y),...]
     """
-    f = file(path, 'rb')
+    f = open(path, 'rb')
     count = read_int(f)
     sustainindex = read_int(f)
     if sustainindex == 0xffffffff:
@@ -705,7 +705,7 @@ def save_envelope(path, points, sustainindex=-1):
     @param sustainindex: Index of the sustain point (-1 for none).
     @type sustainindex: int
     """
-    f = file(path, 'wb')
+    f = open(path, 'wb')
     write_int(f, len(points))
     if sustainindex == -1:
         sustainindex = 0xffffffff
