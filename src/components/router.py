@@ -416,7 +416,7 @@ class VolumeSlider(Gtk.Window):
         self.redraw()
         return True
 
-    def on_draw(self):
+    def on_draw(self, widget, ctx):
         """
         Event handler for paint requests.
         """
@@ -548,14 +548,15 @@ class RouteView(Gtk.DrawingArea):
         self.update_colors()
         self.volume_slider = VolumeSlider(self)
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
-        self.set_property('can-focus', True)
+        self.set_can_focus(True)
         self.connect('button-press-event', self.on_left_down)
         self.connect('button-release-event', self.on_left_up)
         self.connect('motion-notify-event', self.on_motion)
         self.connect("draw", self.on_draw)
         self.connect('key-press-event', self.on_key_jazz, None)
         self.connect('key-release-event', self.on_key_jazz_release, None)
-        self.connect('size-allocate', self.on_size_allocate)
+        # self.connect('size-allocate', self.on_size_allocate)
+        self.connect('configure-event', self.on_configure_event)
         if config.get_config().get_led_draw() == True:
             GObject.timeout_add(100, self.on_draw_led_timer)
         self.drag_dest_set(0, DRAG_FORMATS, 0)
@@ -625,7 +626,7 @@ class RouteView(Gtk.DrawingArea):
         else:
             context.finish(False, False, time)
 
-    def on_size_allocate(self, widget, requisition):
+    def on_configure_event(self, widget, requisition):
         self.routebitmap = None
 
     def update_colors(self):
@@ -1151,6 +1152,10 @@ class RouteView(Gtk.DrawingArea):
             self.get_window().draw_drawable(gc, pi.plugingfx, 0, 0, int(rx), int(ry), -1, -1)
 
     def on_draw(self, widget, ctx):
+        self.draw(ctx)
+        return False
+
+    def draw(self, ctx):
         """
         Draws plugins, connections and arrows to an offscreen buffer.
         """
@@ -1325,8 +1330,6 @@ class RouteView(Gtk.DrawingArea):
             rx, ry = self.connectpos
             draw_line(ctx, int(crx), int(cry), int(rx), int(ry))
         self.draw_leds()
-
-        return False
 
     # This method is not *just* for key-jazz, it handles all key-events in router. Rename?
     def on_key_jazz(self, widget, event, plugin):

@@ -109,7 +109,8 @@ class View(Gtk.DrawingArea):
         return rect.width, rect.height
 
     def on_draw(self, widget, ctx):
-        """overriden in TimelineView and TrackView"""
+        self.draw(ctx)
+        return False
 
 class TimelineView(View):
     """
@@ -125,7 +126,7 @@ class TimelineView(View):
         View.__init__(self, hadjustment)
         self.set_size_request(-1, 16)
 
-    def on_draw(self, widget, ctx):
+    def draw(self, ctx):
         player = com.get('neil.core.player')
         w,h = self.get_client_size()
 
@@ -182,8 +183,6 @@ class TimelineView(View):
             pango_ctx.show_layout(pango_layout)
             pango_ctx.stroke()
             i += stepsize
-
-        return False
 
 class TrackView(View):
     """
@@ -275,7 +274,7 @@ class TrackView(View):
 
         return colors
 
-    def on_draw(self, widget, ctx):
+    def draw(self, ctx):
         player = com.get('neil.core.player')
         w, h = self.get_client_size()
 

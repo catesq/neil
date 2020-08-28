@@ -79,6 +79,10 @@ class AmpView(Gtk.DrawingArea):
         return True
 
     def on_draw(self, widget, ctx):
+        self.draw(ctx)
+        return False
+
+    def draw(self, ctx):
         """
         Draws the VU bar client region.
         """
@@ -149,7 +153,6 @@ class AmpView(Gtk.DrawingArea):
             ctx.fill()
             self.emit('clip', self.amp)
 
-        return False
 
     def configure(self, widget, event):
         self.linear = cairo.LinearGradient(0, 0, 0, self.get_allocation().height)

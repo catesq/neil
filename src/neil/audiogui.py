@@ -363,7 +363,12 @@ class Knob(Gtk.VBox):
         for peak in peaks[1:]:
             ctx.line_to(*peak)
 
+
     def on_draw(self, widget, ctx):
+        self.draw(ctx)
+        return False
+
+    def draw(self, ctx):
         if not self.knobshape:
             self.update_knobshape()
         startangle = math.pi*1.5 - self.angle*0.5
@@ -538,8 +543,6 @@ class Knob(Gtk.VBox):
             ctx.fill()
             ctx.restore()
 
-        return False
-
     def refresh(self):
         rect = self.get_allocation()
         if self.is_visible():
@@ -650,6 +653,10 @@ class DecoBox(Gtk.VBox):
         fo.set_hint_style(cairo.HINT_STYLE_NONE)
         fo.set_hint_metrics(cairo.HINT_METRICS_DEFAULT)
         ctx.set_font_options(fo)
+
+    def on_draw(self, widget, ctx):
+        self.draw(ctx)
+        return False
 
     def draw(self, ctx):
         rc = self.get_allocation()
@@ -816,6 +823,10 @@ class LCD(Gtk.DrawingArea):
         self.refresh()
 
     def on_draw(self, widget, ctx):
+        self.draw(ctx)
+        return False
+
+    def draw(self, ctx):
         gc = self.get_window().new_gc()
         chars = self.get_characters()
         rc = self.get_allocation()

@@ -2824,13 +2824,17 @@ class PatternView(Gtk.DrawingArea):
         drawable.draw_rectangle(gc, True, 0, 0, w, h)
 
     def on_draw(self, widget, ctx):
+        self.draw(ctx)
+        return False
+
+    def draw(self, ctx):
         """
         Draws the pattern view graphics.
         """
         if self.current_plugin != self.get_plugin():
             self.pattern_changed()
             self.current_plugin = self.get_plugin()
-            
+
         if (self.needfocus):
             self.grab_focus()
             self.needfocus = False
@@ -2846,7 +2850,6 @@ class PatternView(Gtk.DrawingArea):
         self.draw_pattern_background(ctx, layout)
         self.draw_playpos_xor()
 
-        return False
 
 __all__ = [
     'PatternDialog',

@@ -565,6 +565,10 @@ class WaveEditView(Gtk.DrawingArea):
                 ctx.fill()
 
     def on_draw(self, widget, ctx):
+        self.draw(ctx)
+        return False
+
+    def draw(self, widget, ctx):
         """
         Overriding a L{Canvas} method that paints onto an offscreen buffer.
         Draws the envelope view graphics.
@@ -666,4 +670,3 @@ class WaveEditView(Gtk.DrawingArea):
         self.draw_loop_points(ctx)
         self.draw_zoom_indicator(ctx)
 
-        return False

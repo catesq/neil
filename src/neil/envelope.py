@@ -595,6 +595,10 @@ class EnvelopeView(Gtk.DrawingArea):
         self.redraw()
 
     def on_draw(self, widget, ctx):
+        self.draw(ctx)
+        return False
+
+    def draw(self, ctx):
         """
         Overriding a L{Canvas} method that paints onto an offscreen buffer.
         Draws the envelope view graphics.
@@ -668,8 +672,6 @@ class EnvelopeView(Gtk.DrawingArea):
                 ctx.arc(pt1[0], pt1[1],
                         int((DOTSIZE / 2.0) + 0.5), 0.0, math.pi * 2)
                 ctx.fill()
-
-        return False
 
 def load_envelope(path):
     """

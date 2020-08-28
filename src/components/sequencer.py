@@ -1785,17 +1785,19 @@ class SequencerView(Gtk.DrawingArea):
         ctx.line_width = 1
 
     def on_draw(self, widget, ctx):
-        """
-        Overriding a L{Canvas} method that paints onto an offscreen buffer.
-        Draws the pattern view graphics.
-        """
         if (self.needfocus):
             self.grab_focus()
             self.needfocus = False
         self.adjust_scrollbars()
+        self.draw(ctx)
+        self.panel.update_list()
+        return False
 
-        colormap = ctx.get_colormap()
-        drawable = self.get_window()
+    def draw(self, ctx):
+        """
+        Overriding a L{Canvas} method that paints onto an offscreen buffer.
+        Draws the pattern view graphics.
+        """
         width, height = self.get_client_size()
         cfg = config.get_config()
         colors = {
@@ -1828,8 +1830,7 @@ class SequencerView(Gtk.DrawingArea):
         # Draw the black border
         #ctx.set_foreground(colors['Border'])
         #drawable.draw_rectangle(ctx, False, 0, 0, width - 1, height - 1)
-        self.panel.update_list()
-        return False
+
 
 __all__ = [
 'PatternNotFoundException',
