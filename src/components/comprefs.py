@@ -22,15 +22,10 @@
 Provides a preference tab to organize components.
 """
 
-if __name__ == '__main__':
-    import os
-    os.system('../../bin/neil-combrowser neil.core.pref.components')
-    raise SystemExit
-
 from gi.repository import Gtk
 from gi.repository import GObject
 import neil.com as com
-from neil.common import MARGIN, MARGIN2, MARGIN3
+from neil.common import MARGIN
 from neil.utils import new_listview, add_scrollbars
 
 #OPTIONS = [
@@ -48,21 +43,21 @@ class ComponentPanel(Gtk.VBox):
     """
 
     __neil__ = dict(
-            id = 'neil.core.pref.components',
-            categories = [
-                    'neil.prefpanel',
-            ]
+        id = 'neil.core.pref.components',
+        categories = [
+            'neil.prefpanel',
+        ]
     )
 
     __prefpanel__ = dict(
-            label = "Components",
+        label = "Components",
     )
 
     def __init__(self):
         """
         Initializing.
         """
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.set_border_width(MARGIN)
 
         frame1 = Gtk.Frame("Components")
@@ -76,9 +71,7 @@ class ComponentPanel(Gtk.VBox):
                 (None, GObject.TYPE_PYOBJECT),
         ])
         self.compolist.set_headers_visible(False)
-        def cmp_package(a,b):
-            return cmp(a.name.lower(), b.name.lower())
-        packages = sorted(com.get_packages(), cmp_package)
+        packages = sorted(com.get_packages(), key=lambda package: package.name.lower())
         for package in packages:
             text = '<b>' + package.name + '</b>' + '\n'
             text += package.description
@@ -92,10 +85,14 @@ class ComponentPanel(Gtk.VBox):
         """
         Writes general config settings to file.
         """
-        pass
 
 __neil__ = dict(
-        classes = [
-                ComponentPanel,
-        ],
+    classes = [
+        ComponentPanel,
+    ],
 )
+
+if __name__ == '__main__':
+    import os, sys
+    os.system('../../bin/neil-combrowser neil.core.pref.components')
+    sys.exit()
