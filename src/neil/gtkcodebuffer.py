@@ -301,8 +301,8 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
                              'bold':   Pango.Weight.BOLD,
                              'ultrabold': Pango.Weight.ULTRABOLD,
                              'heavy': Pango.Weight.HEAVY}
-    style_variant_table =   {'normal': Pango.VARIANT_NORMAL,
-                             'smallcaps': Pango.VARIANT_SMALL_CAPS}
+    style_variant_table =   {'normal': Pango.Variant.NORMAL,
+                             'smallcaps': Pango.Variant.SMALL_CAPS}
     style_underline_table = {'none': Pango.Underline.NONE,
                              'single': Pango.Underline.SINGLE,
                              'double': Pango.Underline.DOUBLE}
@@ -310,13 +310,13 @@ class SyntaxLoader(ContentHandler, LanguageDefinition):
                              'oblique': Pango.Style.OBLIQUE,
                              'italic': Pango.Style.ITALIC}
     style_scale_table =     {
-                            'xx_small': Pango.SCALE_XX_SMALL,
-                            'x_small':  Pango.SCALE_X_SMALL,
-                            'small':  Pango.SCALE_SMALL,
-                            'medium':  Pango.SCALE_MEDIUM,
-                            'large':  Pango.SCALE_LARGE,
-                            'x_large':  Pango.SCALE_X_LARGE,
-                            'xx_large': Pango.SCALE_XX_LARGE,
+                            'xx_small': 1 / (1.2 ** 3), # Pango.SCALE_XX_SMALL,
+                            'x_small':  1 / (1.2 ** 2), #Pango.SCALE_X_SMALL,
+                            'small':  1 / (1.2),        #Pango.SCALE_SMALL,
+                            'medium':  1.0,             #Pango.SCALE_MEDIUM,
+                            'large':  1.2,              #Pango.SCALE_LARGE,
+                            'x_large':  1.2 ** 2,       #Pango.SCALE_X_LARGE,
+                            'xx_large': 1.2 ** 3        #Pango.SCALE_XX_LARGE,
                             }
 
 
