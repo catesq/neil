@@ -29,7 +29,6 @@ import os, glob, re
 from neil.utils import filepath, camelcase_to_unixstyle, etcpath, imagepath, iconpath, sharedpath, filenameify
 import neil.preset as preset
 import configparser
-import new
 
 CONFIG_OPTIONS = dict(
     # insert all sections at this level, in the format
@@ -191,9 +190,9 @@ DEFAULT_THEME = {
     'PT Outer Border' : 0x606060,
     'PT Inner Border' : 0xf0f0f0,
     'PT Background' : 0xe0e0e0,
-    }
+}
 
-class NeilConfig(object, configparser.ConfigParser):
+class NeilConfig(configparser.ConfigParser):
     """
     Streamlines access to the applications configuration. You should
     set all applications to and retrieve them from the config object.
@@ -602,10 +601,10 @@ class NeilConfig(object, configparser.ConfigParser):
         presetpath = os.path.join(self.get_settings_folder(),'presets')
         print(presetpath)
         presetfilepaths = [
-                os.path.join(presetpath, uri + '.prs'),
-                os.path.join(presetpath, name + '.prs'),
-                filepath('presets/' + uri + '.prs'),
-                filepath('presets/' + name + '.prs'),
+            os.path.join(presetpath, uri + '.prs'),
+            os.path.join(presetpath, name + '.prs'),
+            filepath('presets/' + uri + '.prs'),
+            filepath('presets/' + name + '.prs'),
         ]
         presets = preset.PresetCollection()
         for path in presetfilepaths:
@@ -848,14 +847,14 @@ def get_plugin_aliases():
 
 
 __all__ = [
-'get_config',
-'get_plugin_aliases',
-]
+    'get_config',
+    'get_plugin_aliases',
+    ]
 
 __neil__ = dict(
-        classes = [
-                NeilConfigSingleton,
-        ],
+    classes = [
+        NeilConfigSingleton,
+    ],
 )
 
 if __name__ == '__main__':
