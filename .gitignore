@@ -4,6 +4,7 @@
 *.exe
 *.o
 *.so
+*.os
 
 # Packages #
 ############
@@ -30,6 +31,7 @@
 
 *.code-workspace
 .sconf_temp/
+doc/manual/
 .sconsign.dblite
 libneil/REVISION
 libneil/options.conf
