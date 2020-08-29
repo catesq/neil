@@ -78,8 +78,8 @@ def about_send_email(dialog, link, user_data):
     print(link)
     webbrowser.open_new('mailto:'+link)
 
-Gtk.about_dialog_set_url_hook(about_visit_website, None)
-Gtk.about_dialog_set_email_hook(about_send_email, None)
+# Gtk.about_dialog_set_url_hook(about_visit_website, None)
+# Gtk.about_dialog_set_email_hook(about_send_email, None)
 
 class AboutDialog(Gtk.AboutDialog):
     """
@@ -87,14 +87,14 @@ class AboutDialog(Gtk.AboutDialog):
     """
 
     __neil__ = dict(
-            id = "neil.core.dialog.about",
+        id = "neil.core.dialog.about",
     )
 
     def __init__(self, parent):
         """
         Initialization.
         """
-        GObject.GObject.__init__(self)
+        Gtk.AboutDialog.__init__(self)
         self.set_name(NAME)
         self.set_version(VERSION)
         self.set_copyright(COPYRIGHT)
@@ -112,9 +112,9 @@ class AboutDialog(Gtk.AboutDialog):
         self.destroy()
 
 __neil__ = dict(
-        classes = [
-                AboutDialog,
-        ]
+    classes = [
+            AboutDialog,
+    ]
 )
 
 __all__ = [
