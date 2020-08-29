@@ -54,8 +54,7 @@ class PythonConsoleDialog(Gtk.Dialog):
     )
 
     def __init__(self, hide_on_delete=True):
-        GObject.GObject.__init__(self,
-                "Python Console")
+        Gtk.Dialog.__init__(self, "Python Console")
         if hide_on_delete:
             self.connect('delete-event', self.hide_on_delete)
         self.resize(600,500)
