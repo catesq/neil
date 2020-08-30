@@ -29,6 +29,7 @@ import os, glob, re
 from neil.utils import filepath, camelcase_to_unixstyle, etcpath, imagepath, iconpath, sharedpath, filenameify
 import neil.preset as preset
 import configparser
+import neil.com
 
 CONFIG_OPTIONS = dict(
     # insert all sections at this level, in the format
@@ -812,7 +813,7 @@ def get_config(*args):
 
     @rtype: {NeilConfig}.
     """
-    import neil.com
+    neil.com.init()
     return neil.com.get(NeilConfigSingleton.__neil__['id'])
 
 def get_plugin_blacklist():
