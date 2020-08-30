@@ -79,7 +79,6 @@ class PythonConsoleDialog(Gtk.Dialog):
                 facts = self.list_factories,
                 cats = self.list_categories,
                 new = com.get,
-                gtk = gtk,
                 vbox = vpack,
                 hbox = hpack,
                 tool = self.add_tool,
@@ -93,7 +92,7 @@ class PythonConsoleDialog(Gtk.Dialog):
 
         buffer = BUFFER_CLASS()
 
-        view = VIEW_CLASS(buffer)
+        view = VIEW_CLASS(buffer=buffer)
         cfg = com.get('neil.core.config')
         # "ProFontWindows 9"
         view.modify_font(Pango.FontDescription(cfg.get_pattern_font('Monospace')))
@@ -101,7 +100,7 @@ class PythonConsoleDialog(Gtk.Dialog):
         view.set_wrap_mode(Gtk.WrapMode.WORD)
         self.consoleview = view
         self.buffer = buffer
-        self.entry = Gtk.combo_box_entry_new_text()
+        self.entry = Gtk.ComboBox.new_with_entry()
         self.entry.get_child().modify_font(Pango.FontDescription(cfg.get_pattern_font('Monospace')))
         renderer = self.entry.get_cells()[0]
         renderer.set_property('font-desc', Pango.FontDescription(cfg.get_pattern_font('Monospace')))
@@ -114,11 +113,11 @@ class PythonConsoleDialog(Gtk.Dialog):
         scrollwin.set_shadow_type(Gtk.ShadowType.IN)
         scrollwin.add(self.consoleview)
 
-        vpack.pack_start(self.shell, False)
+        vpack.pack_start(self.shell, False, False, 0)
         vpack.pack_start(scrollwin, True, True, 0)
-        vpack.pack_end(self.entry, False)
+        vpack.pack_end(self.entry, False, False, 0)
         hpack.pack_start(vpack, True, True, 0)
-        self.vbox.add(hpack)
+        self.get_content_area().add(hpack)
 
         GObject.timeout_add(50, self.update_output)
         self.log_buffer_pos = 0

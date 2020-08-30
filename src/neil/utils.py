@@ -649,10 +649,10 @@ def new_liststore(view, columns):
     """
     class ToggledHandler:
         def fixed_toggled(self, cell, path, model):
-            iter = model.get_iter((int(path),))
+            itr = model.get_iter((int(path),))
             checked = model.get_value(iter, self.column)
             checked = not checked
-            model.set(iter, self.column, checked)
+            model.set(itr, self.column, checked)
 
     liststore = Gtk.ListStore(*[col[1] for col in columns])
     view.set_model(liststore)

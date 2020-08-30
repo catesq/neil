@@ -19,8 +19,8 @@ def error(parent, msg, msg2=None, details=None, offer_quit=False):
     if msg2:
         dialog.format_secondary_text(msg2)
     if details:
-        expander = Gtk.Expander("Details")
-        dialog.vbox.pack_start(expander, expand=False, fill=True)
+        expander = Gtk.Expander(label="Details")
+        dialog.get_content_area().pack_start(expander, expand=False, fill=True, padding=0)
         label = Gtk.TextView()
         label.set_editable(False)
         label.get_buffer().set_property('text', details)

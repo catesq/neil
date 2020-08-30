@@ -60,9 +60,10 @@ class ComponentPanel(Gtk.VBox):
         Gtk.VBox.__init__(self)
         self.set_border_width(MARGIN)
 
-        frame1 = Gtk.Frame("Components")
-        fssizer = Gtk.VBox(False, MARGIN)
+        frame1 = Gtk.Frame(label="Components")
+        fssizer = Gtk.Box()
         fssizer.set_border_width(MARGIN)
+        fssizer.set_size_request(700, 880)
         frame1.add(fssizer)
         self.compolist, store, columns = new_listview([
                 ('Use', bool),
@@ -76,7 +77,7 @@ class ComponentPanel(Gtk.VBox):
             text = '<b>' + package.name + '</b>' + '\n'
             text += package.description
             store.append([True, package.icon, text, package])
-            
+
         scrollbars = add_scrollbars(self.compolist)
         fssizer.pack_start(scrollbars, True, True, 0)
         self.add(frame1)
