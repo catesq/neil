@@ -43,8 +43,8 @@ BUFFER_CLASS = Gtk.TextBuffer
 
 class PythonConsoleDialog(Gtk.Dialog):
     __neil__ = dict(
-            id = 'neil.pythonconsole.dialog',
-            singleton = True,
+        id = 'neil.pythonconsole.dialog',
+        singleton = True,
     )
 
     def __init__(self, hide_on_delete=True):
@@ -64,23 +64,23 @@ class PythonConsoleDialog(Gtk.Dialog):
             handler.register_locals(self.locals)
         player = com.get('neil.core.player')
         self.locals.update(dict(
-                __name__ = "__console__",
-                __doc__ = None,
-                com = com,
-                embed = self.embed,
-                factories = self.list_factories,
-                categories = self.list_categories,
-                facts = self.list_factories,
-                cats = self.list_categories,
-                new = com.get,
-                vbox = vpack,
-                hbox = hpack,
-                tool = self.add_tool,
-                plugins = self.list_plugins,
-                plugs = self.list_plugins,
-                player = player,
-                create_plugin = self.create_plugin,
-                newplug = self.create_plugin,
+            __name__ = "__console__",
+            __doc__ = None,
+            com = com,
+            embed = self.embed,
+            factories = self.list_factories,
+            categories = self.list_categories,
+            facts = self.list_factories,
+            cats = self.list_categories,
+            new = com.get,
+            vbox = vpack,
+            hbox = hpack,
+            tool = self.add_tool,
+            plugins = self.list_plugins,
+            plugs = self.list_plugins,
+            player = player,
+            create_plugin = self.create_plugin,
+            newplug = self.create_plugin,
         ))
         self.compiler = code.InteractiveConsole(self.locals)
 
@@ -196,11 +196,11 @@ class PythonConsoleDialog(Gtk.Dialog):
 
 class PythonConsoleMenuItem:
     __neil__ = dict(
-            id = 'neil.pythonconsole.menuitem',
-            singleton = True,
-            categories = [
-                    'menuitem.tool'
-            ],
+        id = 'neil.pythonconsole.menuitem',
+        singleton = True,
+        categories = [
+                'menuitem.tool'
+        ],
     )
 
     def __init__(self, menu):
@@ -217,8 +217,8 @@ class PythonConsoleMenuItem:
 
 __neil__ = dict(
         classes = [
-                PythonConsoleDialog,
-                PythonConsoleMenuItem,
+            PythonConsoleDialog,
+            PythonConsoleMenuItem,
         ],
 )
 
