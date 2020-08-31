@@ -24,28 +24,22 @@ A view that allows browsing available extension interfaces and documentation.
 This module can also be executed standalone.
 """
 
-from gi.repository import Gtk
-from gi.repository import GObject
-GObject.threads_init()
-import os
-import inspect
+import code
+import fnmatch
+
+from gi.repository import GObject, Gtk, Pango
 
 import neil.com as com
-import neil.utils as utils
-
 import neil.contextlog as contextlog
 
-from gi.repository import Pango
-import fnmatch
+GObject.threads_init()
+
 
 MARGIN = 6
 
 VIEW_CLASS = Gtk.TextView
 BUFFER_CLASS = Gtk.TextBuffer
 
-import _thread
-import time
-import code
 
 class PythonConsoleDialog(Gtk.Dialog):
     __neil__ = dict(
@@ -141,11 +135,11 @@ class PythonConsoleDialog(Gtk.Dialog):
         self.command(cmd)
 
     def list_categories(self):
-        for category in com.categories:
+        for category in com.get_categories():
             print(category)
 
     def list_factories(self):
-        for factory,item in com.factories.items():
+        for factory,item in com.get_factories().items():
             print((factory,'=',item['classobj']))
 
     def list_plugins(self, pattern='*'):
@@ -229,9 +223,8 @@ __neil__ = dict(
 )
 
 if __name__ == '__main__': # extension mode
-    import contextlog
     contextlog.init()
-    com.load_packages()
+    com.init()
     # running standalone
     browser = com.get('neil.pythonconsole.dialog', False)
     browser.connect('destroy', lambda widget: Gtk.main_quit())
