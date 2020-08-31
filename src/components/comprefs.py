@@ -66,10 +66,10 @@ class ComponentPanel(Gtk.VBox):
         fssizer.set_size_request(700, 880)
         frame1.add(fssizer)
         self.compolist, store, columns = new_listview([
-                ('Use', bool),
-                ('Icon', str, dict(icon=True)),
-                ('Name', str, dict(markup=True)),
-                (None, GObject.TYPE_PYOBJECT),
+            ('Use', bool),
+            ('Icon', str, dict(icon=True)),
+            ('Name', str, dict(markup=True)),
+            (None, GObject.TYPE_PYOBJECT),
         ])
         self.compolist.set_headers_visible(False)
         packages = sorted(com.get_packages(), key=lambda package: package.name.lower())

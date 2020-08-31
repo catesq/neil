@@ -23,13 +23,17 @@
 Provides an object which eases access to the applications configuration.
 """
 
-from gi.repository import Gtk
-import os, glob, re
-
-from neil.utils import filepath, camelcase_to_unixstyle, etcpath, imagepath, iconpath, sharedpath, filenameify
-import neil.preset as preset
 import configparser
+import glob
+import os
+import re
+
+from gi.repository import Gtk
+
 import neil.com
+import neil.preset as preset
+from neil.utils import (camelcase_to_unixstyle, etcpath, filenameify, filepath,
+                        iconpath, imagepath, sharedpath)
 
 CONFIG_OPTIONS = dict(
     # insert all sections at this level, in the format
@@ -213,7 +217,7 @@ class NeilConfig(configparser.ConfigParser):
         self.read([self.filename])
         self._section = ''
         try:
-            self.select_theme(self.get_active_theme())
+            self.select_theme(self.get_active_theme()) # pylint: disable=no-member
         except:
             import traceback
             traceback.print_exc()
@@ -286,7 +290,7 @@ class NeilConfig(configparser.ConfigParser):
         assert self._section
         if not self.has_section(self._section):
             return []
-        return sorted(self.items(self._section), lambda a,b: cmp(a[0],b[0]))
+        return sorted(self.items(self._section), key=lambda section: section[0])
 
     def read_int_value(self, name, default=0):
         assert self._section
@@ -353,7 +357,7 @@ class NeilConfig(configparser.ConfigParser):
         if not name:
             self.active_theme = ''
             return
-        re_theme_attrib = re.compile('^([\w\s]+\w)\s+(\w+)$')
+        re_theme_attrib = re.compile('^([\w\s]+\w)\s+(\w+)$')  # pylint: disable=anomalous-backslash-in-string
         for line in open(sharedpath('themes/'+name+'.col'),'r'):
             line = line.strip()
             if line and not line.startswith('#'):
@@ -454,7 +458,7 @@ class NeilConfig(configparser.ConfigParser):
         returns a keymap for the pattern editor, to be used
         for note input.
         """
-        return KEYMAPS.get(self.get_keymap_language(), KEYMAPS['en'])
+        return KEYMAPS.get(self.get_keymap_language(), KEYMAPS['en']) # pylint: disable=no-member
 
     def get_credentials(self, service):
         """
@@ -760,14 +764,14 @@ class NeilConfig(configparser.ConfigParser):
 
 def generate_config_method(section, option, kwargs):
     funcname = kwargs.get('func', camelcase_to_unixstyle(option))
-    doc = kwargs.get('doc', '')
-    if not doc:
-        doc = 'section %s, option %s, default %s, type %s.' % (section, option, default, vtype)
+
 
     onset = kwargs.get('onset', None)
     onget = kwargs.get('onget', None)
+    default = None
 
     if kwargs.get('list', False):
+
         vtype = kwargs['vtype']
         getter = lambda self: self.listgetter(section,option,vtype,onget)
         setter = lambda self,value: self.listsetter(section,option,vtype,onset,value)
@@ -780,6 +784,13 @@ def generate_config_method(section, option, kwargs):
             default = {float: 0.0, int:0, int:0, str:'', str:'', bool:False}[vtype]
         getter = lambda self,defvalue=kwargs.get(default,False): self.getter(section,option,vtype,onget,default)
         setter = lambda self,value: self.setter(section,option,vtype,onset,value)
+
+    doc = kwargs.get('doc', '')
+    if not doc:
+        if default is None:
+            doc = 'section %s, option %s, type %s.' % (section, option, vtype)
+        else:
+            doc = 'section %s, option %s, default %s, type %s.' % (section, option, default, vtype)
 
     getter.__name__ = 'get_' + funcname
     getter.__doc__ = 'Returns ' + doc
@@ -803,8 +814,8 @@ generate_config_methods()
 
 class NeilConfigSingleton(NeilConfig):
     __neil__ = dict(
-            id = 'neil.core.config',
-            singleton = True,
+        id = 'neil.core.config',
+        singleton = True,
     )
 
 def get_config(*args):
@@ -850,7 +861,7 @@ def get_plugin_aliases():
 __all__ = [
     'get_config',
     'get_plugin_aliases',
-    ]
+]
 
 __neil__ = dict(
     classes = [

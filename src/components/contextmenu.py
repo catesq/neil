@@ -25,14 +25,15 @@ such as plugins, patterns, and so on. based on the context object currently
 selected, items can choose to append themselves or not.
 """
 
-from gi.repository import Gtk
-import neil.common as common
-from neil.com import com
-import zzub
 import os.path
 
-from neil.utils import is_generator, is_root, is_effect, prepstr, Menu, gettext
-from neil.utils import iconpath, show_machine_manual, filenameify
+from gi.repository import Gtk
+
+import neil.common as common
+import zzub
+from neil.com import com
+from neil.utils import (Menu, filenameify, gettext, iconpath, is_effect,
+                        is_generator, is_root, prepstr, show_machine_manual)
 
 
 class ContextMenu(Menu):
@@ -108,8 +109,6 @@ class PluginContextMenu(Gtk.Menu):
                        ['Synthesizers', 'Other'],
                    '@rift.dk/generator/Matilde+Tracker;1.5':
                        ['Samplers'],
-                   '@libneil/mrmonkington/effect/mcp_chorus':
-                       ['Effects', 'Time based'],
                    '@trac.zeitherrschaft.org/aldrin/lunar/effect/delay;1':
                        ['Effects', 'Time based'],
                    '@trac.zeitherrschaft.org/aldrin/lunar/effect/phaser;1':
@@ -455,8 +454,9 @@ class PluginContextMenu(Gtk.Menu):
         manager = com.get('neil.core.parameterdialog.manager')
         manager.show(mp, widget)
 
-    def on_popup_new_plugin(self, widget, pluginloader, kargs={}):
+    def on_popup_new_plugin(self, widget, pluginloader, kargs={}): #pylint: disable=dangerous-default-value
         """
+
         Event handler for "new plugin" context menu options.
         """
         player = com.get('neil.core.player')
@@ -498,8 +498,8 @@ class PluginContextMenu(Gtk.Menu):
             player.autoconnect_target = plugin
 
 __neil__ = dict(
-        classes = [
-                ContextMenu,
-                PluginContextMenu,
-        ],
+    classes = [
+        ContextMenu,
+        PluginContextMenu,
+    ],
 )
