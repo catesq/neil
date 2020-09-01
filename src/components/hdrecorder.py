@@ -25,7 +25,8 @@ Provides dialog class for hd recorder control.
 
 from gi.repository import Gtk
 from gi.repository import GObject
-import neil.utils as utils, os, stat
+from neil import utils as utils
+import os, stat
 from neil.utils import new_stock_image_toggle_button, ObjectHandlerGroup
 import neil.common as common
 import neil.com as com
@@ -194,7 +195,7 @@ __neil__ = dict(
 )
 
 if __name__ == '__main__':
-    import testplayer, utils
+    from neil import testplayer
     player = testplayer.get_player()
     player.load_ccm(utils.filepath('demosongs/paniq-knark.ccm'))
     window = testplayer.TestWindow()
