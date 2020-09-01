@@ -88,7 +88,7 @@ class HDRecorderDialog(Gtk.Dialog):
         sizer2.pack_start(chkauto, False, True, 0)
         sizer.pack_start(sizer2, True, True, 0)
         sizer.set_border_width(MARGIN)
-        self.vbox.add(sizer)
+        self.get_content_area().add(sizer)
         self.filename = ''
         GObject.timeout_add(100, self.on_timer)
         eventbus = com.get('neil.core.eventbus')
