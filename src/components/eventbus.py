@@ -200,7 +200,7 @@ class NeilEventBus(EventBus):
     names = EVENTS
 
 __all__ = [
-'GlobalEventBus',
+
 ]
 
 __neil__ = dict(
