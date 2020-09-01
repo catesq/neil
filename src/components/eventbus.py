@@ -193,8 +193,8 @@ class EventBus(object):
 
 class NeilEventBus(EventBus):
     __neil__ = dict(
-            id = 'neil.core.eventbus',
-            singleton = True,
+        id = 'neil.core.eventbus',
+        singleton = True,
     )
 
     names = EVENTS
@@ -204,9 +204,9 @@ __all__ = [
 ]
 
 __neil__ = dict(
-        classes = [
-                NeilEventBus,
-        ],
+    classes = [
+        NeilEventBus,
+    ],
 )
 
 if __name__ == '__main__':
