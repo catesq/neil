@@ -33,13 +33,13 @@ class Expression():
     def add_expression(self, widget):
         model = self.selector.get_model()
         active = self.selector.get_active_iter()
-        if active != None:
+        if active is not None:
             old_name = model.get_value(active, 0)
         else:
             old_name = ''
         name = gettext(self.dialog, "Enter the name of your expression",
                        old_name)
-        if name != None:
+        if name is not None:
             name = name.replace(',', ' ')
             self.expressions[name] = self.text.get_buffer().get_property('text')
             if name != old_name:
@@ -50,7 +50,7 @@ class Expression():
     def del_expression(self, widget):
         model = self.selector.get_model()
         active = self.selector.get_active_iter()
-        if active == None:
+        if active is None:
             return
         name = model.get_value(active, 0)
         model.remove(active)
@@ -64,13 +64,13 @@ class Expression():
     def mov_expression(self, widget):
         model = self.selector.get_model()
         active = self.selector.get_active_iter()
-        if active != None:
+        if active is not None:
             old_name = model.get_value(active, 0)
         else:
             return
         new_name = gettext(self.dialog, "Enter new name for your expression",
                            old_name)
-        if new_name != None:
+        if new_name is not None:
             new_name = new_name.replace(',', ' ')
             name = model.get_value(active, 0)
             self.expressions[new_name] = str(self.expressions[name])
@@ -82,7 +82,7 @@ class Expression():
     def active_expression_changed(self, combobox):
         model = combobox.get_model()
         active = combobox.get_active_iter()
-        if active != None:
+        if active is not None:
             name = model.get_value(active, 0)
             self.text.get_buffer().set_text(self.expressions[name])
 
@@ -138,7 +138,7 @@ class Expression():
         if response:
             model = self.selector.get_model()
             active = self.selector.get_active_iter()
-            if active != None:
+            if active is not None:
                 old_name = model.get_value(active, 0)
                 self.expressions[old_name] = expr
                 self.write_expressions()
