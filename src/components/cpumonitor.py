@@ -22,13 +22,12 @@
 Provides dialog class for cpu monitor.
 """
 
-from gi.repository import Gtk
-from gi.repository import GObject
-from neil.utils import prepstr, add_scrollbars
-import neil.utils as utils, os, stat
-import neil.common as common
-from neil.common import MARGIN, MARGIN2, MARGIN3
+from gi.repository import GObject, Gtk
+
 import neil.com as com
+from neil.common import MARGIN
+from neil.utils import add_scrollbars, prepstr
+
 
 class CPUMonitorDialog(Gtk.Dialog):
     """
