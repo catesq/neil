@@ -127,8 +127,8 @@ class Expression():
         self.text = Gtk.TextView(buff)
         scrolled_window.add(self.text)
         scrolled_window.set_size_request(500, 300)
-        self.dialog.vbox.pack_start(hbox, False, True, 0)
-        self.dialog.vbox.pack_start(scrolled_window, True, True, 0)
+        self.dialog.get_content_area().pack_start(hbox, False, True, 0)
+        self.dialog.get_content_area().pack_start(scrolled_window, True, True, 0)
         if self.selector.get_model().get_iter_first():
             self.selector.set_active(0)
         self.dialog.show_all()
