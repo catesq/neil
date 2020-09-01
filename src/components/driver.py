@@ -134,8 +134,8 @@ class AudioDriver:
         if not self.driver.get_count():
             raise self.AudioInitException
         print("available drivers:")
-        input = -1
-        output = -1
+        input_id = -1
+        output_id = -1
         for i in range(self.driver.get_count()):
             io = ''
             if self.driver.is_output(i):
@@ -149,9 +149,9 @@ class AudioDriver:
             drivername = self.driver.get_name(i)
             print(("#%i: %s [%s]" % (i,drivername, io)))
             if drivername == inputname:
-                input = i
+                input_id = i
             if drivername == outputname:
-                output = i
+                output_id = i
 
         # second round: if we didnt find them from the config,
         # pick good alternatives.
@@ -161,34 +161,34 @@ class AudioDriver:
         # We also prefer the first device since it is usually the
         # default system device. Unfortunately, the armstrong api
         # does not provide us a default value.
-        if (output == -1 and input == -1):
+        if (output_id == -1 and input_id == -1):
             for i in range(self.driver.get_count()):
                 if (self.driver.is_output(i) and self.driver.is_input(i)):
-                    output = i
-                    input = i
+                    output_id = i
+                    input_id = i
                     break
-        if output == -1:
+        if output_id == -1:
             for i in range(self.driver.get_count()):
                 if self.driver.is_output(i):
-                    output = i
+                    output_id = i
                     break
 
         # take output channel if it supports input
-        if input == -1:
+        if input_id == -1:
             for i in range(self.driver.get_count()):
                 if self.driver.is_input(i):
-                    input = i
+                    input_id = i
                     break
-            if self.driver.is_input(output):
-                input = output
+            if self.driver.is_input(output_id):
+                input_id = output_id
 
-        if output == -1:
+        if output_id == -1:
             raise self.AudioInitException
         print("best input/output pick:")
-        print((self.driver.get_name(input),"/",self.driver.get_name(output)))
+        print((self.driver.get_name(input_id),"/",self.driver.get_name(output_id)))
         self.driver.set_samplerate(samplerate)
         self.driver.set_buffersize(buffersize)
-        initres = self.driver.create_device(input, output)
+        initres = self.driver.create_device(input_id, output_id)
         if initres != 0:
             raise self.AudioInitException
         self.driver.enable(1)
