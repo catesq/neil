@@ -171,7 +171,7 @@ class EventBus(object):
 
     def __init__(self):
         self.handlers = []
-        for name in self.names:
+        for name in self.names: #pylint: disable=no-member
             attrname = name.replace('-','_')
             self.handlers.append(attrname)
             setattr(self, attrname, EventHandlerList(name))
@@ -220,13 +220,13 @@ if __name__ == '__main__':
     handler1 = MyHandler()
     handler2 = MyHandler()
     eventbus = NeilEventBus()
-    eventbus.ping += handler1.on_bang, 50
-    eventbus.ping += handler2.on_bang, 60
-    eventbus.ping += on_bang, 70
+    eventbus.ping += handler1.on_bang, 50 #pylint: disable=no-member
+    eventbus.ping += handler2.on_bang, 60 #pylint: disable=no-member
+    eventbus.ping += on_bang, 70 #pylint: disable=no-member
     eventbus.print_mapping()
     print("* 3 bangs:")
-    eventbus.ping(25)
+    eventbus.ping(25) #pylint: disable=no-member
     del handler1
     del on_bang
     print("* 1 bang:")
-    eventbus.ping(25)
+    eventbus.ping(25) #pylint: disable=no-member
