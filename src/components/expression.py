@@ -164,7 +164,7 @@ class Expression():
                     'get_param' : get_param,
                     'n' : plugin.get_pattern_length(pattern),
                     }
-                exec(expr, new_global)
+                exec(expr, new_global) #pylint: disable=exec-used
             except Exception as e:
                 error(self.dialog, "There was a problem with your expression!", details=str(e))
 
