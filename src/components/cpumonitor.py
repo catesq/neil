@@ -36,18 +36,18 @@ class CPUMonitorDialog(Gtk.Dialog):
     """
 
     __neil__ = dict(
-            id = 'neil.core.cpumonitor',
-            singleton = True,
-            categories = [
-                    'viewdialog',
-                    'view',
-            ]
+        id = 'neil.core.cpumonitor',
+        singleton = True,
+        categories = [
+            'viewdialog',
+            'view',
+        ]
     )
 
     __view__ = dict(
-                    label = "CPU Monitor",
-                    order = 0,
-                    toggle = True,
+        label = "CPU Monitor",
+        order = 0,
+        toggle = True,
     )
 
     def __init__(self):
@@ -79,12 +79,12 @@ class CPUMonitorDialog(Gtk.Dialog):
         self.tvload.set_sort_column_id(1)
         self.labeltotal = Gtk.Label(label="100%")
         self.gaugetotal = Gtk.ProgressBar()
-        
+
         scrollbars = add_scrollbars(self.pluginlistview)
         sizer = Gtk.VBox(False, MARGIN)
         sizer.set_border_width(MARGIN)
         sizer.pack_start(scrollbars, True, True, 0)
-        
+
         hsizer = Gtk.HBox(False, MARGIN)
         hsizer.pack_start(self.gaugetotal, True, True, 0)
         hsizer.pack_start(self.labeltotal, False, True, 0)
@@ -140,11 +140,11 @@ class CPUMonitorDialog(Gtk.Dialog):
         return True
 
 __all__ = [
-'CPUMonitorDialog',
+    'CPUMonitorDialog',
 ]
 
 __neil__ = dict(
-        classes = [
-                CPUMonitorDialog,
-        ],
+    classes = [
+        CPUMonitorDialog,
+    ],
 )
