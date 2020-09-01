@@ -204,5 +204,5 @@ __neil__ = dict(
 )
 
 if __name__ == '__main__':
-    com.load_packages()
+    com.init()
     com.get_from_category('driver')
