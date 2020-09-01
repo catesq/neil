@@ -1,13 +1,11 @@
-from gi.repository import Gtk
-from gi.repository import GObject
 import os
 import pickle
-import neil.com as com
-from neil.utils import roundint, bn2mn, mn2bn, new_stock_image_button
-from neil.utils import gettext, error
-from random import *
-from math import *
-from neil.gtkcodebuffer import CodeBuffer, SyntaxLoader, add_syntax_path
+
+from gi.repository import Gtk
+
+from neil.gtkcodebuffer import CodeBuffer, SyntaxLoader
+from neil.utils import error, gettext, new_stock_image_button
+
 
 class Expression():
     __neil__ = dict(
@@ -91,10 +89,7 @@ class Expression():
             self.read_expressions()
         except IOError:
             self.expressions = {}
-        self.dialog = Gtk.Dialog(
-                "Expression",
-                buttons=(Gtk.STOCK_OK, True, Gtk.STOCK_CANCEL, False)
-                )
+        self.dialog = Gtk.Dialog( "Expression", buttons=(Gtk.STOCK_OK, True, Gtk.STOCK_CANCEL, False) )
         hbox = Gtk.HBox()
         self.selector = Gtk.ComboBox(Gtk.ListStore(str))
         cell = Gtk.CellRendererText()
