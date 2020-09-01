@@ -90,7 +90,7 @@ class CPUMonitorDialog(Gtk.Dialog):
         hsizer.pack_start(self.gaugetotal, True, True, 0)
         hsizer.pack_start(self.labeltotal, False, True, 0)
         sizer.pack_start(hsizer, False, True, 0)
-        self.vbox.add(sizer)
+        self.get_content_area().add(sizer)
         GObject.timeout_add(1000, self.on_timer)
 
     def on_timer(self):
