@@ -33,7 +33,7 @@ from gi.repository import Gtk
 import neil.com
 import neil.preset as preset
 from neil.utils import (camelcase_to_unixstyle, etcpath, filenameify, filepath,
-                        iconpath, imagepath, sharedpath)
+                        iconpath, sharedpath)
 
 CONFIG_OPTIONS = dict(
     # insert all sections at this level, in the format
@@ -238,7 +238,7 @@ class NeilConfig(configparser.ConfigParser):
     def setter(self, section, option, vtype, onset, value):
         if onset:
             value = onset(value)
-        assert type(value) == vtype
+        assert isinstance(value, vtype)
         if vtype == bool:
             if value:
                 value = 'true'
@@ -269,7 +269,7 @@ class NeilConfig(configparser.ConfigParser):
         for i,value in enumerate(values):
             if onset:
                 value = onset(value)
-            assert type(value) == vtype
+            assert isinstance(value, vtype)
             if vtype == bool:
                 if value:
                     value = 'true'

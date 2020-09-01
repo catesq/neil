@@ -106,6 +106,7 @@ class PythonConsoleDialog(Gtk.Dialog):
         scrollwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         scrollwin.set_shadow_type(Gtk.ShadowType.IN)
         scrollwin.add(self.consoleview)
+        scrollwin.set_vexpand(True)
 
         vpack.pack_start(self.shell, False, False, 0)
         vpack.pack_start(scrollwin, True, True, 0)
@@ -199,7 +200,7 @@ class PythonConsoleMenuItem:
         id = 'neil.pythonconsole.menuitem',
         singleton = True,
         categories = [
-                'menuitem.tool'
+            'menuitem.tool'
         ],
     )
 
