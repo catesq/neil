@@ -25,6 +25,8 @@ Provides dialog class for hd recorder control.
 
 from gi.repository import Gtk
 from gi.repository import GObject
+from gi.repository import GLib
+
 from neil import utils as utils
 import os, stat
 from neil.utils import new_stock_image_toggle_button, ObjectHandlerGroup
@@ -54,33 +56,35 @@ class HDRecorderDialog(Gtk.Dialog):
                     toggle = True,
     )
 
-    def __init__(self):
+    def __init__(self, parent=None):
         """
         Initializer.
         """
-        GObject.GObject.__init__(self,
-                "Hard Disk Recorder")
-        self.connect('delete-event', self.hide_on_delete)
+        if parent is None:
+            parent = com.get('neil.core.window.root')
+
+        Gtk.Dialog.__init__(self, title="Hard Disk Recorder", transient_for=parent, flags=0)
+        self.connect('delete-event', lambda widget, evt: self.hide_on_delete)
         #self.add_button(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE)
         #self.set_size_request(250,-1)
         self.set_resizable(False)
-        btnsaveas = Gtk.Button(stock=Gtk.STOCK_SAVE_AS)
+        btnsaveas = Gtk.Button.new_with_mnemonic("_Save As")
         btnsaveas.connect("clicked", self.on_saveas)
         textposition = Gtk.Label(label="")
         self.hgroup = ObjectHandlerGroup()
         self.btnrecord = new_stock_image_toggle_button(Gtk.STOCK_MEDIA_RECORD)
         self.hgroup.connect(self.btnrecord, 'clicked', self.on_toggle_record)
-        chkauto = Gtk.CheckButton("_Auto start/stop")
+        chkauto = Gtk.CheckButton.new_with_mnemonic("_Auto start/stop")
         chkauto.connect("toggled", self.on_autostartstop)
         self.btnsaveas = btnsaveas
         self.textposition = textposition
         self.chkauto = chkauto
         # 0.3: DEAD
         #self.chkauto.set_active(self.master.get_auto_write())
-        sizer = Gtk.VBox(False, MARGIN)
+        sizer = Gtk.VBox(homogeneous=False, spacing=MARGIN)
         sizer.pack_start(btnsaveas, False, True, 0)
         sizer.pack_start(textposition, False, True, 0)
-        sizer2 = Gtk.HBox(False,MARGIN)
+        sizer2 = Gtk.HBox(homogeneous=False, spacing=MARGIN)
         sizer3 = Gtk.HButtonBox()
         sizer3.set_spacing(MARGIN)
         sizer3.set_layout(Gtk.ButtonBoxStyle.START)
@@ -91,7 +95,7 @@ class HDRecorderDialog(Gtk.Dialog):
         sizer.set_border_width(MARGIN)
         self.get_content_area().add(sizer)
         self.filename = ''
-        GObject.timeout_add(100, self.on_timer)
+        GLib.timeout_add(100, self.on_timer)
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         self.update_label()
@@ -99,6 +103,7 @@ class HDRecorderDialog(Gtk.Dialog):
 
     def on_zzub_parameter_changed(self,plugin,group,track,param,value):
         player = com.get('neil.core.player')
+        print("parameter changed")
         recorder = player.get_stream_recorder()
         if plugin == recorder:
             if (group,track,param) == (zzub.zzub_parameter_group_global,0,0):
@@ -115,10 +120,11 @@ class HDRecorderDialog(Gtk.Dialog):
         self.btnrecord.set_active(value)
         self.chkauto.set_active(not recorder.get_attribute_value(0))
 
+    # todo: the paramter change eveny should be received when the filename and save as is selected. why isn't it?
     def update_label(self):
         player = com.get('neil.core.player')
         recorder = player.get_stream_recorder()
-        self.btnsaveas.set_label(recorder.describe_value(zzub.zzub_parameter_group_global, 0, 0))
+        self.btnsaveas.set_label(str(recorder.describe_value(zzub.zzub_parameter_group_global, 0, 0), 'ascii'))
 
     def on_autostartstop(self, widget):
         """
@@ -174,6 +180,7 @@ class HDRecorderDialog(Gtk.Dialog):
             #self.btnsaveas.set_label(self.filename)
             recorder = player.get_stream_recorder()
             recorder.configure('wavefilepath', self.filename)
+
         dlg.destroy()
 
     def on_toggle_record(self, widget):
@@ -196,6 +203,7 @@ __neil__ = dict(
 
 if __name__ == '__main__':
     from neil import testplayer
+    # player = com.get('neil.core.player')
     player = testplayer.get_player()
     player.load_ccm(utils.filepath('demosongs/paniq-knark.ccm'))
     window = testplayer.TestWindow()
