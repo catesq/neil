@@ -107,7 +107,7 @@ class EventHandlerList:
     def __add__(self, funcargs):
         func = None
         args = ()
-        if isinstance(funcargs, list) or isinstance(funcargs, tuple):
+        if isinstance(funcargs, (list, tuple)):
             if len(funcargs) >= 2:
                 func,args = funcargs[0],funcargs[1:]
             else:

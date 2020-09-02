@@ -23,16 +23,18 @@ Provides a test player for testcases.
 """
 
 from gi.repository import Gtk
-from gi.repository import GObject
+from gi.repository import GLib
 import config
 from config import get_plugin_aliases, get_plugin_blacklist
 from . import common
+import neil.com as com
+import zzub
 
 _player = None
 
 event_handlers = []
 
-def player_callback(player, plugin, data):
+def player_callback(player, plugin, data, tag):
     """
     Default callback for ui events sent by zzub.
     """
@@ -41,9 +43,10 @@ def player_callback(player, plugin, data):
         result = handler(player,plugin,data) or result
     return result
 
+
 class TestWindow(Gtk.Window):
     def __init__(self):
-        GObject.GObject.__init__(self)
+        Gtk.Window.__init__(self, title="Test player")
         self.event_handlers = event_handlers
         self.resize(640,480)
         self.connect('destroy', lambda widget: Gtk.main_quit())
@@ -51,44 +54,27 @@ class TestWindow(Gtk.Window):
         get_player()
 
 def get_player():
+    com.init()
     global _player
-    if _player:
+    if _player is not None:
         return _player
-    import zzub, driver
-    player = common.get_player()
-    _player = player
-    player.set_callback(player_callback)
-    # load blacklist file and add blacklist entries
-    for name in get_plugin_blacklist():
-        player.blacklist_plugin(name)
-    # load aliases file and add aliases
-    for name,uri in get_plugin_aliases():
-        player.add_plugin_alias(name, uri)
-    pluginpaths = [
-            '/usr/local/lib64/zzub',
-            '/usr/local/lib/zzub',
-            '/usr/lib64/zzub',
-            '/usr/lib/zzub',
-    ]
-    for pluginpath in pluginpaths:
-        player.add_plugin_path(pluginpath + '/')
-    inputname, outputname, samplerate, buffersize = config.get_config().get_audiodriver_config()
-    player.initialize(samplerate)
-    try:
-        driver.get_audiodriver().init()
-    except:
-        import traceback
-        traceback.print_exc()
-    try:
-        driver.get_mididriver().init()
-    except:
-        import traceback
-        traceback.print_exc()
+
+    _player = com.get('neil.core.player')
+
+    _player.set_callback(zzub.zzub_callback_t(player_callback), 2)
+
     def handle_events(player):
-        player.handle_events()
+        _player.handle_events()
         return True
-    GObject.timeout_add(1000/25, handle_events, player)
-    return player
+
+    GLib.timeout_add(1000/25, handle_events, _player)
+
+    return _player
+
+__all__ = [
+    'get_player',
+    'TestWindow'
+]
 
 if __name__ == '__main__':
     player = get_player()
