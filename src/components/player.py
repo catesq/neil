@@ -508,7 +508,7 @@ class NeilPlayer(Player, PropertyEventHandler):
         will be chosen. if direction is 1, the following plugin will be chosen.
         """
         plugins = sorted(
-            self.get_plugin_list(), key=lamnbda plugin: plugin.name().lower())
+            self.get_plugin_list(), key=lambda plugin: plugin.name().lower())
         if not plugins:
             return
         if direction == -1:
