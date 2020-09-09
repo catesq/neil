@@ -120,7 +120,7 @@ class HDRecorderDialog(Gtk.Dialog):
         self.btnrecord.set_active(value)
         self.chkauto.set_active(not recorder.get_attribute_value(0))
 
-    # todo: the paramter change eveny should be received when the filename and save as is selected. why isn't it?
+    # todo: the paramter change eveny should be received when new filename selected. todo: find out and fix it';kn X                                                                                                                            ?
     def update_label(self):
         player = com.get('neil.core.player')
         recorder = player.get_stream_recorder()
@@ -163,8 +163,8 @@ class HDRecorderDialog(Gtk.Dialog):
         Handler for the "Save As..." button.
         """
         dlg = Gtk.FileChooserDialog(title="Save", parent=self, action=Gtk.FileChooserAction.SAVE,
-                buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK)
         )
+        dlg.add_buttons( "_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.OK)
         player = com.get('neil.core.player')
         dlg.set_do_overwrite_confirmation(True)
         ffwav = Gtk.FileFilter()

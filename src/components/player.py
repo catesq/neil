@@ -486,11 +486,7 @@ class NeilPlayer(Player, PropertyEventHandler):
             plugin = self.active_plugins[0]
             index = None
 
-        def cmp_func(a, b):
-            aname = a[0].get_pattern_name(a[1])
-            bname = b[0].get_pattern_name(b[1])
-            return cmp(aname.lower(), bname.lower())
-        patterns = sorted([(plugin, i) for i in range(plugin.get_pattern_count())], cmp_func)
+        patterns = sorted([(plugin, i) for i in range(plugin.get_pattern_count())], key=lambda plugin, ptn_id: plugin.get_pattern_name(ptn_id).lower())
         if not patterns:
             return
         if direction == -1:
@@ -511,9 +507,8 @@ class NeilPlayer(Player, PropertyEventHandler):
         activated plugin name. if direction is -1, the preceeding plugin
         will be chosen. if direction is 1, the following plugin will be chosen.
         """
-        def cmp_func(a, b):
-            return cmp(a.get_name().lower(), b.get_name().lower())
-        plugins = sorted(list(self.get_plugin_list()), cmp_func)
+        plugins = sorted(
+            self.get_plugin_list(), key=lamnbda plugin: plugin.name().lower())
         if not plugins:
             return
         if direction == -1:
