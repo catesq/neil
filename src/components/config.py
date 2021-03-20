@@ -796,10 +796,11 @@ def generate_config_method(section, option, kwargs):
     if kwargs.get('list', False):
 
         vtype = kwargs['vtype']
-        def getter(self): return self.listgetter(section, option, vtype, onget)
+        def getter(self):
+            return self.listgetter(section, option, vtype, onget)
 
-        def setter(self, value): return self.listsetter(
-            section, option, vtype, onset, value)
+        def setter(self, value):
+            return self.listsetter(section, option, vtype, onset, value)
     else:
         if 'default' in kwargs:
             default = kwargs['default']
@@ -809,10 +810,10 @@ def generate_config_method(section, option, kwargs):
             default = {float: 0.0, int: 0, int: 0,
                        str: '', str: '', bool: False}[vtype]
 
-        def getter(self, defvalue=kwargs.get(default, False)): return self.getter(
-            section, option, vtype, onget, default)
-        def setter(self, value): return self.setter(
-            section, option, vtype, onset, value)
+        def getter(self, defvalue=kwargs.get(default, False)):
+            return self.getter( section, option, vtype, onget, default)
+        def setter(self, value):
+            return self.setter( section, option, vtype, onset, value)
 
     doc = kwargs.get('doc', '')
     if not doc:
