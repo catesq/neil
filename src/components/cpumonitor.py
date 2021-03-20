@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -21,8 +19,10 @@
 """
 Provides dialog class for cpu monitor.
 """
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import GLib, Gtk
 
-from gi.repository import GObject, Gtk
 
 import neil.com as com
 from neil.common import MARGIN
@@ -54,7 +54,7 @@ class CPUMonitorDialog(Gtk.Dialog):
         """
         Initializer.
         """
-        GObject.GObject.__init__(self)
+        Gtk.Dialog.__init__(self)
         self.connect('delete-event', self.hide_on_delete)
         self.set_size_request(200,300)
         self.set_title("CPU Monitor")
@@ -90,7 +90,7 @@ class CPUMonitorDialog(Gtk.Dialog):
         hsizer.pack_start(self.labeltotal, False, True, 0)
         sizer.pack_start(hsizer, False, True, 0)
         self.get_content_area().add(sizer)
-        GObject.timeout_add(1000, self.on_timer)
+        GLib.timeout_add(1000, self.on_timer)
 
     def on_timer(self):
         """
