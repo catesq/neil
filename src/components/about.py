@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -22,9 +20,11 @@
 Contains the information displayed in the about box.
 """
 
-import sys
-from neil.utils import prepstr
-from gi.repository import Gtk, GdkPixbuf
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+from neil.utils import imagepath
 
 NAME = "Neil"
 VERSION = "0.9"
@@ -65,21 +65,6 @@ DOCUMENTERS = [
     'Phed',
 ]
 
-#AUTHORS = [prepstr(x) for x in AUTHORS]
-
-from neil.utils import filepath, imagepath
-
-def about_visit_website(dialog, link, user_data):
-    import webbrowser
-    webbrowser.open_new(link)
-
-def about_send_email(dialog, link, user_data):
-    import webbrowser
-    print(link)
-    webbrowser.open_new('mailto:'+link)
-
-# Gtk.about_dialog_set_url_hook(about_visit_website, None)
-# Gtk.about_dialog_set_email_hook(about_send_email, None)
 
 class AboutDialog(Gtk.AboutDialog):
     """
@@ -105,7 +90,12 @@ class AboutDialog(Gtk.AboutDialog):
         self.set_authors(AUTHORS)
         self.set_artists(ARTISTS)
         self.set_documenters(DOCUMENTERS)
-        self.set_logo(GdkPixbuf.Pixbuf.new_from_file(imagepath("alien.png")))
+        self.set_logo(self.get_pixbuf(imagepath("alien.png")))
+
+    def get_pixbuf(self, filename):
+        image = Gtk.Image()
+        image.set_from_file(filename)
+        return image.get_pixbuf()
 
     def show(self):
         self.run()
@@ -113,7 +103,7 @@ class AboutDialog(Gtk.AboutDialog):
 
 __neil__ = dict(
     classes = [
-            AboutDialog,
+        AboutDialog,
     ]
 )
 
