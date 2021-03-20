@@ -25,20 +25,24 @@ import configparser
 import glob
 import os
 import re
+
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 import neil.com
 import neil.preset as preset
+
 from neil.utils import (camelcase_to_unixstyle, etcpath, filenameify, filepath,
                         iconpath, sharedpath)
+
+
 
 CONFIG_OPTIONS = dict(
     # insert all sections at this level, in the format
     #
     # <section name> = <descriptor dict>
-    Global = dict(
+    Global=dict(
         # insert options at this level, in the format
         #
         # <option name> = <descriptor dict>
@@ -72,35 +76,51 @@ CONFIG_OPTIONS = dict(
         # for the setting below, SamplePreviewVolume, the default funcname is sample_preview_volume,
         # and so you can access config.get_sample_preview_volume([default]), config.set_sample_preview_volume(value),
         # and config.sample_preview_volume as a property.
-        SamplePreviewVolume = dict(default=-12.0,doc="the volume with which samples shall be previewed."),
-        Theme = dict(func='active_theme',default=None,vtype=str,onget=lambda v:v or None,doc="the name of the currently active theme."),
-        KeymapLanguage = dict(default='en',onset=lambda s:s.lower(),onget=lambda s:s.lower(),doc="the current keymap language."),
-        IncrementalSaving = dict(default=True, doc="the incremental saving option."),
-        PatternFontName = dict(func='pattern_font',default='Monospace 8',doc="the font used in the pattern editor."),
-        LedDraw = dict(default=True,doc="the led draw option."),
-        PatNoteOff = dict(func='pattern_noteoff',default=False,doc="pattern noteoff option."),
-        CurveArrows = dict(default=False,doc="the draw connection curves option."),
-        ),
-    PluginListBrowser = dict(
-        SearchTerm = dict(func='pluginlistbrowser_search_term',default='',vtype=str,doc="the current plugin search mask."),
-        ShowGenerators = dict(func='pluginlistbrowser_show_generators',default='true',vtype=bool,doc="Show generators."),
-        ShowEffects = dict(func='pluginlistbrowser_show_effects',default='true',vtype=bool,doc="Show effects."),
-        ShowControllers = dict(func='pluginlistbrowser_show_controllers',default='true',vtype=bool,doc="Show controllers."),
-        ShowNonNative = dict(func='pluginlistbrowser_show_nonnative',default='false',vtype=bool,doc="Show non-native plugins."),
-        ),
-    WavetablePaths = dict(
-        Path = dict(list=True,func='wavetable_paths',vtype=str,doc="the list of wavetable paths."),
-        ),
-    Extensions = dict(
-        URI = dict(list=True,func='enabled_extensions',vtype=str,doc="the current list of enabled extension uris."),
-        ),
-    Packages = dict(
-        package = dict(list=True,func='packages',vtype=str,doc="the list of python packages to be loaded."),
-        ),
-    Debug = dict(
-        Commands = dict(list=True,func='debug_commands',vtype=str,doc="the current list of debug commands for the python console."),
-        ),
-    )
+        SamplePreviewVolume=dict(
+            default=-12.0, doc="the volume with which samples shall be previewed."),
+        Theme=dict(func='active_theme', default=None, vtype=str,
+                   onget=lambda v: v or None, doc="the name of the currently active theme."),
+        KeymapLanguage=dict(default='en', onset=lambda s: s.lower(
+        ), onget=lambda s: s.lower(), doc="the current keymap language."),
+        IncrementalSaving=dict(
+            default=True, doc="the incremental saving option."),
+        PatternFontName=dict(func='pattern_font', default='Monospace 8',
+                             doc="the font used in the pattern editor."),
+        LedDraw=dict(default=True, doc="the led draw option."),
+        PatNoteOff=dict(func='pattern_noteoff', default=False,
+                        doc="pattern noteoff option."),
+        CurveArrows=dict(
+            default=False, doc="the draw connection curves option."),
+    ),
+    PluginListBrowser=dict(
+        SearchTerm=dict(func='pluginlistbrowser_search_term', default='',
+                        vtype=str, doc="the current plugin search mask."),
+        ShowGenerators=dict(func='pluginlistbrowser_show_generators',
+                            default='true', vtype=bool, doc="Show generators."),
+        ShowEffects=dict(func='pluginlistbrowser_show_effects',
+                         default='true', vtype=bool, doc="Show effects."),
+        ShowControllers=dict(func='pluginlistbrowser_show_controllers',
+                             default='true', vtype=bool, doc="Show controllers."),
+        ShowNonNative=dict(func='pluginlistbrowser_show_nonnative',
+                           default='false', vtype=bool, doc="Show non-native plugins."),
+    ),
+    WavetablePaths=dict(
+        Path=dict(list=True, func='wavetable_paths', vtype=str,
+                  doc="the list of wavetable paths."),
+    ),
+    Extensions=dict(
+        URI=dict(list=True, func='enabled_extensions', vtype=str,
+                 doc="the current list of enabled extension uris."),
+    ),
+    Packages=dict(
+        package=dict(list=True, func='packages', vtype=str,
+                     doc="the list of python packages to be loaded."),
+    ),
+    Debug=dict(
+        Commands=dict(list=True, func='debug_commands', vtype=str,
+                      doc="the current list of debug commands for the python console."),
+    ),
+)
 
 # the key of this dictionary is the language code associated with the keyboard. the
 # value is a series of keyboard characters associated with each note, in the order
@@ -110,10 +130,10 @@ CONFIG_OPTIONS = dict(
 # there is a dialog class named "KeyboardPanel", containing another KEYMAPS list,
 # associating the dict codes with readable names.
 KEYMAPS = {
-    'en' : 'ZSXDCVGBHNJM,|Q2W3ER5T6Y7UI9O0P',
-    'de' : 'YSXDCVGBHNJM,|Q2W3ER5T6Z7UI9O0P',
-    'dv' : ';OQEJKIXDBHMW|\'2,3.P5Y6F7GC9R0L',
-    'fr' : 'WSXDCVGBHNJ,;|AéZ"ER(T-YèUIçOàP',
+    'en': 'ZSXDCVGBHNJM,|Q2W3ER5T6Y7UI9O0P',
+    'de': 'YSXDCVGBHNJM,|Q2W3ER5T6Z7UI9O0P',
+    'dv': ';OQEJKIXDBHMW|\'2,3.P5Y6F7GC9R0L',
+    'fr': 'WSXDCVGBHNJ,;|AéZ"ER(T-YèUIçOàP',
     'neo': 'üIöAäPOZSBNM,|X2V3LC5W6K7HG9F0Q',
 }
 
@@ -164,15 +184,15 @@ DEFAULT_THEME = {
     'SA Amp Line': 0xffffff,
     'SA Freq BG': 0x007d5d,
     'SA Freq Line': 0xffffff,
-    'SE Background' : 0xffffff,
-    'SE Border' : 0x000000,
-    'SE Strong Line' : 0xa0a0a0,
-    'SE Weak Line' : 0xe0e0e0,
-    'SE Text' : 0x000000,
-    'SE Track Background' : 0xcccc99,
-    'SE Track Foreground' : 0xf0f0f0,
-    'SE Loop Line' : 0x000000,
-    'SE End Marker' : 0xff0000,
+    'SE Background': 0xffffff,
+    'SE Border': 0x000000,
+    'SE Strong Line': 0xa0a0a0,
+    'SE Weak Line': 0xe0e0e0,
+    'SE Text': 0x000000,
+    'SE Track Background': 0xcccc99,
+    'SE Track Foreground': 0xf0f0f0,
+    'SE Loop Line': 0x000000,
+    'SE End Marker': 0xff0000,
     'EE Line': 0x6060c0,
     'EE Fill': 0xe0e0ff,
     'EE Dot': 0x6060c0,
@@ -191,10 +211,11 @@ DEFAULT_THEME = {
     'WE Slice Bar': 0xFF0080,
     'WE Wakeup Peaks': 0xff0080,
     'WE Sleep Peaks': 0x8000ff,
-    'PT Outer Border' : 0x606060,
-    'PT Inner Border' : 0xf0f0f0,
-    'PT Background' : 0xe0e0e0,
+    'PT Outer Border': 0x606060,
+    'PT Inner Border': 0xf0f0f0,
+    'PT Background': 0xe0e0e0,
 }
+
 
 class NeilConfig(configparser.ConfigParser):
     """
@@ -207,16 +228,18 @@ class NeilConfig(configparser.ConfigParser):
 
     On Linux, most settings will be saved in ~/.neil/settings.cfg
     """
+
     def __init__(self):
         """
         Initializer.
         """
         configparser.ConfigParser.__init__(self)
-        self.filename = os.path.join(self.get_settings_folder(),'settings.cfg')
+        self.filename = os.path.join(
+            self.get_settings_folder(), 'settings.cfg')
         self.read([self.filename])
         self._section = ''
         try:
-            self.select_theme(self.get_active_theme()) # pylint: disable=no-member
+            self.select_theme(self.get_active_theme())  # pylint: disable=no-member
         except:
             import traceback
             traceback.print_exc()
@@ -250,7 +273,7 @@ class NeilConfig(configparser.ConfigParser):
     def listgetter(self, section, option, vtype, onget):
         self.set_section(section)
         values = []
-        for i,(name,value) in enumerate(self.get_values()):
+        for i, (name, value) in enumerate(self.get_values()):
             if name.lower().startswith(option.lower()):
                 if vtype == bool:
                     if value == 'true':
@@ -265,7 +288,7 @@ class NeilConfig(configparser.ConfigParser):
     def listsetter(self, section, option, vtype, onset, values):
         self.delete_section(section)
         self.set_section(section)
-        for i,value in enumerate(values):
+        for i, value in enumerate(values):
             if onset:
                 value = onset(value)
             assert isinstance(value, vtype)
@@ -274,7 +297,7 @@ class NeilConfig(configparser.ConfigParser):
                     value = 'true'
                 else:
                     value = 'false'
-            self.write_value('%s%04i' % (option,i), value)
+            self.write_value('%s%04i' % (option, i), value)
         self.flush()
 
     def set_section(self, section):
@@ -311,18 +334,18 @@ class NeilConfig(configparser.ConfigParser):
         assert self._section
         if not self.has_section(self._section):
             self.add_section(self._section)
-        self.set(self._section,name,value)
+        self.set(self._section, name, value)
         self.flush()
 
     def write_int_value(self, name, value):
         assert self._section
         if not self.has_section(self._section):
             self.add_section(self._section)
-        self.set(self._section,name,str(value))
+        self.set(self._section, name, str(value))
         self.flush()
 
     def flush(self):
-        self.write(open(self.filename,'w'))
+        self.write(open(self.filename, 'w'))
 
     def get_plugin_icon_path(self, name):
         """
@@ -356,14 +379,15 @@ class NeilConfig(configparser.ConfigParser):
         if not name:
             self.active_theme = ''
             return
-        re_theme_attrib = re.compile('^([\w\s]+\w)\s+(\w+)$')  # pylint: disable=anomalous-backslash-in-string
-        for line in open(sharedpath('themes/'+name+'.col'),'r'):
+        re_theme_attrib = re.compile(
+            '^([\w\s]+\w)\s+(\w+)$')  # pylint: disable=anomalous-backslash-in-string
+        for line in open(sharedpath('themes/'+name+'.col'), 'r'):
             line = line.strip()
             if line and not line.startswith('#'):
                 m = re_theme_attrib.match(line)
-                assert m, "invalid line for theme %s: %s" % (name,line)
+                assert m, "invalid line for theme %s: %s" % (name, line)
                 key = m.group(1)
-                value = int(m.group(2),16)
+                value = int(m.group(2), 16)
                 if key in list(self.current_theme.keys()):
                     self.current_theme[key] = value
                 else:
@@ -386,7 +410,7 @@ class NeilConfig(configparser.ConfigParser):
         """
         color = self.current_theme[name]
         r = ((color >> 16) & 0xff) * 257
-        g = ((color >> 8) & 0xff)  * 257
+        g = ((color >> 8) & 0xff) * 257
         b = (color & 0xff) * 257
         return r, g, b
 
@@ -457,7 +481,7 @@ class NeilConfig(configparser.ConfigParser):
         returns a keymap for the pattern editor, to be used
         for note input.
         """
-        return KEYMAPS.get(self.get_keymap_language(), KEYMAPS['en']) # pylint: disable=no-member
+        return KEYMAPS.get(self.get_keymap_language(), KEYMAPS['en'])  # pylint: disable=no-member
 
     def get_credentials(self, service):
         """
@@ -471,8 +495,8 @@ class NeilConfig(configparser.ConfigParser):
         stores the credentials required for a service (username/password).
         """
         self.set_section('Credentials/'+service)
-        self.write_value('Username',username)
-        self.write_value('Password',password)
+        self.write_value('Username', username)
+        self.write_value('Password', password)
 
     def get_index_path(self):
         """
@@ -487,7 +511,7 @@ class NeilConfig(configparser.ConfigParser):
         @rtype: str
         """
         indexpath = etcpath('index.xml')
-        userindexpath = os.path.join(self.get_settings_folder(),'index.xml')
+        userindexpath = os.path.join(self.get_settings_folder(), 'index.xml')
         if userindexpath and os.path.isfile(userindexpath):
             return userindexpath
         else:
@@ -502,7 +526,7 @@ class NeilConfig(configparser.ConfigParser):
         """
         self.set_section('MIDI/Inputs')
         inputlist = []
-        for i,(name,value) in enumerate(self.get_values()):
+        for i, (name, value) in enumerate(self.get_values()):
             inputlist.append(value)
         return inputlist
 
@@ -527,7 +551,7 @@ class NeilConfig(configparser.ConfigParser):
         @rtype: (str, str, int, int)
         """
         self.set_section('AudioDevice')
-        return self.read_value('InputName',''), self.read_value('OutputName','') or self.read_value('Name',''), self.read_int_value('SampleRate',44100), self.read_int_value('BufferSize',2048)
+        return self.read_value('InputName', ''), self.read_value('OutputName', '') or self.read_value('Name', ''), self.read_int_value('SampleRate', 44100), self.read_int_value('BufferSize', 2048)
 
     def set_audiodriver_config(self, inputname, outputname, samplerate, buffersize):
         """
@@ -543,8 +567,8 @@ class NeilConfig(configparser.ConfigParser):
         self.set_section('AudioDevice')
         self.write_value('InputName', inputname)
         self.write_value('OutputName', outputname)
-        self.write_int_value('SampleRate',samplerate)
-        self.write_int_value('BufferSize',buffersize)
+        self.write_int_value('SampleRate', samplerate)
+        self.write_int_value('BufferSize', buffersize)
         self.flush()
 
     def get_mididriver_outputs(self):
@@ -556,7 +580,7 @@ class NeilConfig(configparser.ConfigParser):
         """
         self.set_section('MIDI/Outputs')
         outputlist = []
-        for i,(name,value) in enumerate(self.get_values()):
+        for i, (name, value) in enumerate(self.get_values()):
             outputlist.append(value)
         return outputlist
 
@@ -584,10 +608,10 @@ class NeilConfig(configparser.ConfigParser):
         """
         uri = filenameify(pluginloader.get_uri())
         name = filenameify(pluginloader.get_name())
-        presetpath = os.path.join(self.get_settings_folder(),'presets')
+        presetpath = os.path.join(self.get_settings_folder(), 'presets')
         if not os.path.isdir(presetpath):
             os.makedirs(presetpath)
-        filename = os.path.join(presetpath,name + '.prs')
+        filename = os.path.join(presetpath, name + '.prs')
         presets.save(filename)
 
     def get_plugin_presets(self, pluginloader):
@@ -602,7 +626,7 @@ class NeilConfig(configparser.ConfigParser):
         uri = filenameify(pluginloader.get_uri())
         name = filenameify(pluginloader.get_name())
         #presetpath = os.path.join(sharedpath('presets'))
-        presetpath = os.path.join(self.get_settings_folder(),'presets')
+        presetpath = os.path.join(self.get_settings_folder(), 'presets')
         print(presetpath)
         presetfilepaths = [
             os.path.join(presetpath, uri + '.prs'),
@@ -634,8 +658,8 @@ class NeilConfig(configparser.ConfigParser):
         self.delete_section('Layout/'+windowid)
         self.set_section('Layout/'+windowid)
         if isinstance(window, Gtk.Window):
-            x,y = window.get_position()
-            w,h = window.get_size()
+            x, y = window.get_position()
+            w, h = window.get_size()
             self.write_value("X", str(x))
             self.write_value("Y", str(y))
             self.write_value("W", str(w))
@@ -678,9 +702,9 @@ class NeilConfig(configparser.ConfigParser):
                 return
             window.move(x, y)
             window.resize(w, h)
-            #~ if hasattr(window, 'IsMaximized'):
-                #~ if self.read_value("Maximize") == 'true':
-                    #~ window.Maximize()
+            # ~ if hasattr(window, 'IsMaximized'):
+            # ~ if self.read_value("Maximize") == 'true':
+            #~ window.Maximize()
         elif isinstance(window, Gtk.Paned):
             try:
                 window.set_position(int(self.read_value("SashPosition")))
@@ -706,8 +730,9 @@ class NeilConfig(configparser.ConfigParser):
         self.delete_section('MIDIControllers')
         self.set_section('MIDIControllers')
         for i in range(len(ctrllist)):
-            name,channel,ctrlid = ctrllist[i]
-            self.write_value('Controller%i' % i, "%s|%i|%i" % (name.replace('|',''),channel,ctrlid))
+            name, channel, ctrlid = ctrllist[i]
+            self.write_value('Controller%i' % i, "%s|%i|%i" %
+                             (name.replace('|', ''), channel, ctrlid))
         self.flush()
 
     def get_midi_controllers(self):
@@ -719,9 +744,9 @@ class NeilConfig(configparser.ConfigParser):
         """
         self.set_section('MIDIControllers')
         ctrllist = []
-        for i,(name,value) in enumerate(self.get_values()):
-            name,channel,ctrlid = value.split('|')
-            ctrllist.append((name,int(channel),int(ctrlid)))
+        for i, (name, value) in enumerate(self.get_values()):
+            name, channel, ctrlid = value.split('|')
+            ctrllist.append((name, int(channel), int(ctrlid)))
         return ctrllist
 
     def get_recent_files_config(self):
@@ -733,7 +758,7 @@ class NeilConfig(configparser.ConfigParser):
         """
         recent_files = []
         self.set_section('RecentFiles')
-        for i,(name,value) in enumerate(self.get_values()):
+        for i, (name, value) in enumerate(self.get_values()):
             if os.path.isfile(value):
                 recent_files.append(value)
         return recent_files
@@ -764,7 +789,6 @@ class NeilConfig(configparser.ConfigParser):
 def generate_config_method(section, option, kwargs):
     funcname = kwargs.get('func', camelcase_to_unixstyle(option))
 
-
     onset = kwargs.get('onset', None)
     onget = kwargs.get('onget', None)
     default = None
@@ -772,24 +796,31 @@ def generate_config_method(section, option, kwargs):
     if kwargs.get('list', False):
 
         vtype = kwargs['vtype']
-        getter = lambda self: self.listgetter(section,option,vtype,onget)
-        setter = lambda self,value: self.listsetter(section,option,vtype,onset,value)
+        def getter(self): return self.listgetter(section, option, vtype, onget)
+
+        def setter(self, value): return self.listsetter(
+            section, option, vtype, onset, value)
     else:
         if 'default' in kwargs:
             default = kwargs['default']
             vtype = kwargs.get('vtype', type(default))
         else:
             vtype = kwargs['vtype']
-            default = {float: 0.0, int:0, int:0, str:'', str:'', bool:False}[vtype]
-        getter = lambda self,defvalue=kwargs.get(default,False): self.getter(section,option,vtype,onget,default)
-        setter = lambda self,value: self.setter(section,option,vtype,onset,value)
+            default = {float: 0.0, int: 0, int: 0,
+                       str: '', str: '', bool: False}[vtype]
+
+        def getter(self, defvalue=kwargs.get(default, False)): return self.getter(
+            section, option, vtype, onget, default)
+        def setter(self, value): return self.setter(
+            section, option, vtype, onset, value)
 
     doc = kwargs.get('doc', '')
     if not doc:
         if default is None:
             doc = 'section %s, option %s, type %s.' % (section, option, vtype)
         else:
-            doc = 'section %s, option %s, default %s, type %s.' % (section, option, default, vtype)
+            doc = 'section %s, option %s, default %s, type %s.' % (
+                section, option, default, vtype)
 
     getter.__name__ = 'get_' + funcname
     getter.__doc__ = 'Returns ' + doc
@@ -803,19 +834,23 @@ def generate_config_method(section, option, kwargs):
     prop = property(getter, setter, doc=doc)
     setattr(NeilConfig, funcname, prop)
 
+
 def generate_config_methods():
     # build getters and setters based on the options map
-    for section,options in CONFIG_OPTIONS.items():
-        for option,kwargs in options.items():
+    for section, options in CONFIG_OPTIONS.items():
+        for option, kwargs in options.items():
             generate_config_method(section, option, kwargs)
+
 
 generate_config_methods()
 
+
 class NeilConfigSingleton(NeilConfig):
     __neil__ = dict(
-        id = 'neil.core.config',
-        singleton = True,
+        id='neil.core.config',
+        singleton=True,
     )
+
 
 def get_config(*args):
     """
@@ -825,6 +860,7 @@ def get_config(*args):
     """
     neil.com.init()
     return neil.com.get(NeilConfigSingleton.__neil__['id'])
+
 
 def get_plugin_blacklist():
     """
@@ -839,6 +875,7 @@ def get_plugin_blacklist():
             pass
         elif line:
             yield line
+
 
 def get_plugin_aliases():
     """
@@ -856,14 +893,13 @@ def get_plugin_aliases():
             yield line[:sep].strip(), line[sep+1:].strip()
 
 
-
 __all__ = [
     'get_config',
     'get_plugin_aliases',
 ]
 
 __neil__ = dict(
-    classes = [
+    classes=[
         NeilConfigSingleton,
     ],
 )
@@ -874,15 +910,15 @@ if __name__ == '__main__':
     print((cfg.get_plugin_icon_path("matilde")))
     print((cfg.packages))
     cfg.set_sample_preview_volume(-6.0)
-    print(("prop1:",cfg.sample_preview_volume))
+    print(("prop1:", cfg.sample_preview_volume))
     cfg.sample_preview_volume = -9.0
     print((cfg.active_theme))
-    print(("prop2:",cfg.sample_preview_volume))
-    print(("volume:",cfg.get_sample_preview_volume()))
+    print(("prop2:", cfg.sample_preview_volume))
+    print(("volume:", cfg.get_sample_preview_volume()))
     cfg.set_sample_preview_volume(-12.0)
     print((cfg.get_audiodriver_config()))
     print("DEFAULT_THEME = {")
     for k in sorted(DEFAULT_THEME.keys()):
         v = DEFAULT_THEME[k]
-        print(('\t%r: 0x%06x,' % (k,int(cfg.get_color(k).replace('#',''),16))))
+        print(('\t%r: 0x%06x,' % (k, int(cfg.get_color(k).replace('#', ''), 16))))
     print("}")
