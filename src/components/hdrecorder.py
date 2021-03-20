@@ -22,18 +22,17 @@
 Provides dialog class for hd recorder control.
 """
 
-
+import os, stat
+import gi
+import zzub
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-from gi.repository import GObject
 from gi.repository import GLib
 
-from neil import utils as utils
-import os, stat
-from neil.utils import new_stock_image_toggle_button, ObjectHandlerGroup
-import neil.common as common
+from neil.utils import filepath, new_stock_image_toggle_button, ObjectHandlerGroup
+from neil.common import MARGIN
 import neil.com as com
-import zzub
-from neil.common import MARGIN, MARGIN2, MARGIN3
+
 
 class HDRecorderDialog(Gtk.Dialog):
     """
@@ -42,18 +41,18 @@ class HDRecorderDialog(Gtk.Dialog):
     """
 
     __neil__ = dict(
-            id = 'neil.core.hdrecorder',
-            singleton = True,
-            categories = [
-                    'viewdialog',
-                    'view',
-            ]
+        id = 'neil.core.hdrecorder',
+        singleton = True,
+        categories = [
+            'viewdialog',
+            'view',
+        ]
     )
 
     __view__ = dict(
-                    label = "Hard Disk Recorder",
-                    order = 0,
-                    toggle = True,
+        label = "Hard Disk Recorder",
+        order = 0,
+        toggle = True,
     )
 
     def __init__(self, parent=None):
@@ -115,7 +114,7 @@ class HDRecorderDialog(Gtk.Dialog):
         block = self.hgroup.autoblock()
         player = com.get('neil.core.player')
         recorder = player.get_stream_recorder()
-        if value == None:
+        if value is None:
             value = recorder.get_parameter_value(zzub.zzub_parameter_group_global, 0, 1)
         self.btnrecord.set_active(value)
         self.chkauto.set_active(not recorder.get_attribute_value(0))
@@ -162,8 +161,7 @@ class HDRecorderDialog(Gtk.Dialog):
         """
         Handler for the "Save As..." button.
         """
-        dlg = Gtk.FileChooserDialog(title="Save", parent=self, action=Gtk.FileChooserAction.SAVE,
-        )
+        dlg = Gtk.FileChooserDialog(title="Save", parent=self, action=Gtk.FileChooserAction.SAVE, )
         dlg.add_buttons( "_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.OK)
         player = com.get('neil.core.player')
         dlg.set_do_overwrite_confirmation(True)
@@ -175,7 +173,7 @@ class HDRecorderDialog(Gtk.Dialog):
         result = dlg.run()
         if result == Gtk.ResponseType.OK:
             self.filename = dlg.get_filename()
-            if (dlg.get_filter() == ffwav) and not (self.filename.endswith('.wav')):
+            if (dlg.get_filter() == ffwav) and not self.filename.endswith('.wav'):
                 self.filename += '.wav'
             #self.btnsaveas.set_label(self.filename)
             recorder = player.get_stream_recorder()
@@ -192,20 +190,20 @@ class HDRecorderDialog(Gtk.Dialog):
         recorder.set_parameter_value_direct(zzub.zzub_parameter_group_global, 0, 1, widget.get_active(), False)
 
 __all__ = [
-'HDRecorderDialog',
+    'HDRecorderDialog',
 ]
 
 __neil__ = dict(
-        classes = [
-                HDRecorderDialog,
-        ],
+    classes = [
+        HDRecorderDialog,
+    ],
 )
 
 if __name__ == '__main__':
-    from neil import testplayer
+    from neil import testplayer # pylint: disable = ungrouped-imports
     # player = com.get('neil.core.player')
     player = testplayer.get_player()
-    player.load_ccm(utils.filepath('demosongs/paniq-knark.ccm'))
+    player.load_ccm(filepath('demosongs/paniq-knark.ccm'))
     window = testplayer.TestWindow()
     window.show_all()
     dlg = HDRecorderDialog(window)
