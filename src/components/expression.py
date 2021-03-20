@@ -1,11 +1,13 @@
 import os
 import pickle
 
+import gi
 from gi.repository import Gtk
 
 from neil.gtkcodebuffer import CodeBuffer, SyntaxLoader
 from neil.utils import error, gettext, new_stock_image_button
 
+gi.require_version("Gtk", "3.0")
 
 class Expression():
     __neil__ = dict(
