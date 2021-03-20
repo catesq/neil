@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -38,10 +36,10 @@ from neil.utils import (Menu, filenameify, gettext, iconpath, is_effect,
 
 class ContextMenu(Menu):
     __neil__ = dict(
-            id = 'neil.core.contextmenu',
-            singleton = False,
-            categories = [
-            ],
+        id = 'neil.core.contextmenu',
+        singleton = False,
+        categories = [
+        ],
     )
 
     def __init__(self, contextid, context):
@@ -74,8 +72,8 @@ class ContextMenu(Menu):
 
 class PluginContextMenu(Gtk.Menu):
     __neil__ = dict(id='neil.core.popupmenu',
-                      singleton=True,
-                      categories=['contextmenu.handler'])
+                    singleton=True,
+                    categories=['contextmenu.handler'])
 
     plugin_tree = {'@krzysztof_foltman/generator/infector;1':
                        ['Synthesizers', 'Subtractive'],
@@ -321,7 +319,7 @@ class PluginContextMenu(Gtk.Menu):
                                 self.on_popup_solo, mp)
 
         menu.add_check_item("_Bypass", mp.get_bypass(),
-                                self.on_popup_bypass, mp)
+                            self.on_popup_bypass, mp)
         menu.add_separator()
         menu.add_item("_Parameters...", self.on_popup_show_params, mp)
         menu.add_item("_Attributes...", self.on_popup_show_attribs, mp)
