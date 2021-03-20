@@ -166,7 +166,7 @@ class EventHandlerList:
                 funcname = func.__self__.__class__.__name__ + '.' + funcname
             print((" => %s(%s)" % (funcname,','.join([repr(x) for x in args]))))
 
-class EventBus(object):
+class EventBus:
     __readonly__ = False
 
     def __init__(self):
