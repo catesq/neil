@@ -20,7 +20,7 @@
 
 from neil.utils import is_generator, is_effect, is_streamer, PropertyEventHandler, generate_ui_methods, refresh_gui
 from zzub import Player
-from gi.repository import GObject
+from gi.repository import GLib
 import neil.com as com
 import neil.common as common
 import os
@@ -78,56 +78,56 @@ DOCUMENT_UI = dict(
 
 class NeilPlayer(Player, PropertyEventHandler):
     __neil__ = dict(
-            id='neil.core.player',
-            singleton=True,
-            categories=[
-                    'pythonconsole.locals',
-            ],
+        id='neil.core.player',
+        singleton=True,
+        categories=[
+            'pythonconsole.locals',
+        ],
     )
 
     _exclude_event_debug_ = [
-            zzub.zzub_event_type_parameter_changed,
+        zzub.zzub_event_type_parameter_changed,
     ]
 
     _event_types_ = dict(
-            zzub_event_type_double_click = dict(args=None),
-            zzub_event_type_new_plugin = dict(args='new_plugin'),
-            zzub_event_type_delete_plugin = dict(args='delete_plugin'),
-            zzub_event_type_pre_delete_plugin = dict(args='delete_plugin'),
-            zzub_event_type_disconnect = dict(args='disconnect_plugin'),
-            zzub_event_type_connect = dict(args='connect_plugin'),
-            zzub_event_type_plugin_changed = dict(args='plugin_changed'),
-            zzub_event_type_parameter_changed = dict(args='change_parameter'),
-            zzub_event_type_set_tracks = dict(args=None),
-            zzub_event_type_set_sequence_tracks = dict(args='set_sequence_tracks'),
-            zzub_event_type_set_sequence_event = dict(args='set_sequence_event'),
-            zzub_event_type_new_pattern = dict(args='new_pattern'),
-            zzub_event_type_delete_pattern = dict(args='delete_pattern'),
-            zzub_event_type_pre_delete_pattern = dict(args='delete_pattern'),
-            zzub_event_type_edit_pattern = dict(args='edit_pattern'),
-            zzub_event_type_pattern_changed = dict(args='pattern_changed'),
-            zzub_event_type_pattern_insert_rows = dict(args='pattern_insert_rows'),
-            zzub_event_type_pattern_remove_rows = dict(args='pattern_remove_rows'),
-            zzub_event_type_sequencer_add_track = dict(args=None),
-            zzub_event_type_sequencer_remove_track = dict(args=None),
-            zzub_event_type_sequencer_changed = dict(args=None),
-            zzub_event_type_pre_disconnect = dict(args=None),
-            zzub_event_type_pre_connect = dict(args=None),
-            zzub_event_type_post_connect = dict(args=None),
-            zzub_event_type_pre_set_tracks = dict(args=None),
-            zzub_event_type_post_set_tracks = dict(args=None),
-            zzub_event_type_envelope_changed = dict(args=None),
-            zzub_event_type_slices_changed = dict(args=None),
-            zzub_event_type_wave_changed = dict(args='change_wave'),
-            zzub_event_type_delete_wave = dict(args='delete_wave'),
-            zzub_event_type_load_progress = dict(args=None),
-            zzub_event_type_midi_control = dict(args='midi_message'),
-            zzub_event_type_wave_allocated = dict(args='allocate_wavelevel'),
-            zzub_event_type_player_state_changed = dict(args='player_state_changed'),
-            zzub_event_type_osc_message = dict(args='osc_message'),
-            zzub_event_type_vu = dict(args='vu'),
-            zzub_event_type_custom = dict(args='custom'),
-            zzub_event_type_all = dict(args='all'),
+        zzub_event_type_double_click = dict(args=None),
+        zzub_event_type_new_plugin = dict(args='new_plugin'),
+        zzub_event_type_delete_plugin = dict(args='delete_plugin'),
+        zzub_event_type_pre_delete_plugin = dict(args='delete_plugin'),
+        zzub_event_type_disconnect = dict(args='disconnect_plugin'),
+        zzub_event_type_connect = dict(args='connect_plugin'),
+        zzub_event_type_plugin_changed = dict(args='plugin_changed'),
+        zzub_event_type_parameter_changed = dict(args='change_parameter'),
+        zzub_event_type_set_tracks = dict(args=None),
+        zzub_event_type_set_sequence_tracks = dict(args='set_sequence_tracks'),
+        zzub_event_type_set_sequence_event = dict(args='set_sequence_event'),
+        zzub_event_type_new_pattern = dict(args='new_pattern'),
+        zzub_event_type_delete_pattern = dict(args='delete_pattern'),
+        zzub_event_type_pre_delete_pattern = dict(args='delete_pattern'),
+        zzub_event_type_edit_pattern = dict(args='edit_pattern'),
+        zzub_event_type_pattern_changed = dict(args='pattern_changed'),
+        zzub_event_type_pattern_insert_rows = dict(args='pattern_insert_rows'),
+        zzub_event_type_pattern_remove_rows = dict(args='pattern_remove_rows'),
+        zzub_event_type_sequencer_add_track = dict(args=None),
+        zzub_event_type_sequencer_remove_track = dict(args=None),
+        zzub_event_type_sequencer_changed = dict(args=None),
+        zzub_event_type_pre_disconnect = dict(args=None),
+        zzub_event_type_pre_connect = dict(args=None),
+        zzub_event_type_post_connect = dict(args=None),
+        zzub_event_type_pre_set_tracks = dict(args=None),
+        zzub_event_type_post_set_tracks = dict(args=None),
+        zzub_event_type_envelope_changed = dict(args=None),
+        zzub_event_type_slices_changed = dict(args=None),
+        zzub_event_type_wave_changed = dict(args='change_wave'),
+        zzub_event_type_delete_wave = dict(args='delete_wave'),
+        zzub_event_type_load_progress = dict(args=None),
+        zzub_event_type_midi_control = dict(args='midi_message'),
+        zzub_event_type_wave_allocated = dict(args='allocate_wavelevel'),
+        zzub_event_type_player_state_changed = dict(args='player_state_changed'),
+        zzub_event_type_osc_message = dict(args='osc_message'),
+        zzub_event_type_vu = dict(args='vu'),
+        zzub_event_type_custom = dict(args='custom'),
+        zzub_event_type_all = dict(args='all'),
     )
 
     def __init__(self):
@@ -138,6 +138,7 @@ class NeilPlayer(Player, PropertyEventHandler):
         self._hevtime = 0
         self.__lazy_commits = False
         self.__event_stats = False
+        self.solo_pplugin=None
         # enumerate zzub_event_types and prepare unwrappers for the different types
         self.event_id_to_name = {}
         for enumname, cfg in self._event_types_.items():
@@ -174,11 +175,11 @@ class NeilPlayer(Player, PropertyEventHandler):
             else:
                 paths = []
             paths.extend([
-                            '/usr/local/lib64',
-                            '/usr/local/lib',
-                            '/usr/lib64',
-                            '/usr/lib',
-                    ])
+                '/usr/local/lib64',
+                '/usr/local/lib',
+                '/usr/lib64',
+                '/usr/lib',
+            ])
             for path in [os.path.join(path, 'zzub') for path in paths]:
                 if os.path.exists(path) and not path in pluginpaths:
                     pluginpaths.append(path)
@@ -203,7 +204,7 @@ class NeilPlayer(Player, PropertyEventHandler):
         eventbus.zzub_pre_delete_pattern += self.on_pre_delete_pattern
         self._callback = zzub.zzub_callback_t(self.handle_event)
         self.set_callback(self._callback, None)
-        GObject.timeout_add(int(1000 / 50), self.on_handle_events)
+        GLib.timeout_add(int(1000 / 50), self.on_handle_events)
         # event queue disabling count for overlapping disable calls
         self.__disable_level = 0
 
@@ -342,8 +343,8 @@ class NeilPlayer(Player, PropertyEventHandler):
 
     def register_locals(self, locs):
         locs.update(dict(
-                lazy_commits = self._enable_lazy_commits,
-                event_stats = self._enable_event_stats,
+            lazy_commits = self._enable_lazy_commits,
+            event_stats = self._enable_event_stats,
         ))
 
     def _enable_event_stats(self, enable=True):
@@ -495,7 +496,7 @@ class NeilPlayer(Player, PropertyEventHandler):
         elif direction == 1:
             failsafe = 0
             offset = 1
-        if index == None:
+        if index is None:
             self.active_patterns = [patterns[failsafe]]
         else:
             pindex = patterns.index(self.active_patterns[0])
@@ -570,7 +571,7 @@ class NeilPlayer(Player, PropertyEventHandler):
     def can_redo(self):
         pos = self.history_get_position()
         historysize = self.history_get_size()
-        return (pos < historysize)
+        return pos < historysize
 
     def document_changed(self):
         return self.last_history_pos != self.history_get_position()
@@ -604,7 +605,7 @@ class NeilPlayer(Player, PropertyEventHandler):
 
     def solo(self, plugin):
 
-        if not plugin or plugin == self.solo_plugin:
+        if not plugin or plugin == self.solo_plugin: # pylint: disable=access-member-before-definition
             # soloing deactived so apply muted states
             self.solo_plugin = None
             for plugin in self.get_plugin_list():
@@ -665,23 +666,23 @@ class NeilPlayer(Player, PropertyEventHandler):
         if is_generator(mp) and \
                 (pluginloader.get_parameter_count(1) or pluginloader.get_parameter_count(2)):
 
-            pattern = mp.create_pattern(self.sequence_step)
+            pattern = mp.create_pattern(self.sequence_step) #pylint: disable=no-member
             pattern.set_name('00')
             mp.add_pattern(pattern)
             active_plugins = [mp]
             active_patterns = [(mp, 0)]
             t = self.create_sequence(mp, zzub.zzub_sequence_type_pattern)
             t.set_event(0, 16)
-            if self.autoconnect_target:
-                self.autoconnect_target.add_input(mp, zzub.zzub_connection_type_audio)
+            if self.autoconnect_target: #pylint: disable=no-member
+                self.autoconnect_target.add_input(mp, zzub.zzub_connection_type_audio) #pylint: disable=no-member
 
         # position the plugin at the default location
-        mp.set_position(*self.plugin_origin)
+        mp.set_position(*self.plugin_origin)  #pylint: disable=no-member
 
         ##Following code is only needed for dragging machines from
         ##search plugins context box onto target effects.
 
-        if plugin and not self.autoconnect_target:
+        if plugin and not self.autoconnect_target: #pylint: disable=no-member
             if not is_generator(mp):
                 # if we have a context plugin, prepend connections
                 inplugs = []
@@ -769,12 +770,11 @@ class NeilPlayer(Player, PropertyEventHandler):
 generate_ui_methods(NeilPlayer, DOCUMENT_UI)
 
 __neil__ = dict(
-        classes = [
-                NeilPlayer,
-        ],
+    classes = [
+        NeilPlayer,
+    ],
 )
 
 if __name__ == '__main__':
-    com.load_packages()
     player = com.get('neil.core.player')
     player.octave = 3
