@@ -19,6 +19,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import gi
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from neil.utils import format_time, ticks_to_time, prepstr, linear2db, db2linear, filepath, \
         is_debug, question, error, add_scrollbars, file_filter, new_stock_image_toggle_button, \
@@ -27,7 +29,7 @@ import zzub
 from gi.repository import GObject
 import config
 import neil.errordlg as errordlg
-
+from neil import com
 import neil.common as common
 MARGIN = common.MARGIN
 MARGIN2 = common.MARGIN2
@@ -43,31 +45,29 @@ show_preferences = preferences.show_preferences
 
 from neil.utils import CancelException
 
-import neil.com as com
-
-def cmp_view(a,b):
+def cmp_view(a, b):
     a_order = (hasattr(a, '__view__') and a.__view__.get('order',0)) or 0
     b_order = (hasattr(b, '__view__') and b.__view__.get('order',0)) or 0
-    return cmp(a_order, b_order)
+    return a_order <= b_order
 
 class FramePanel(Gtk.Notebook):
     __neil__ = dict(
-            id = 'neil.core.framepanel',
-            singleton = True,
-            categories = [
-            ],
+        id = 'neil.core.framepanel',
+        singleton = True,
+        categories = [
+        ],
     )
 
     def __init__(self):
-        GObject.GObject.__init__(self)
+        Gtk.Notebook.__init__(self)
         self.set_tab_pos(Gtk.PositionType.LEFT)
         self.set_show_border(True)
         self.set_border_width(1)
         self.set_show_tabs(True)
         com.get("neil.core.icons") # make sure theme icons are loaded
         defaultpanel = None
-        pages = sorted(com.get_from_category('neil.viewpanel'), cmp=cmp_view)
-        for index, panel in enumerate(pages):
+        self.pages = sorted(com.get_from_category('neil.viewpanel'), key=cmp_view)
+        for index, panel in enumerate(self.pages):
             if not hasattr(panel, '__view__'):
                 print(("panel",panel,"misses attribute __view__"))
                 continue
@@ -106,14 +106,13 @@ class FramePanel(Gtk.Notebook):
 class Accelerators(Gtk.AccelGroup):
 
     __neil__ = dict(
-            id = 'neil.core.accelerators',
-            singleton = True,
-            categories = [
-            ],
+        id = 'neil.core.accelerators',
+        singleton = True,
+        categories = [],
     )
 
     def __init__(self):
-        GObject.GObject.__init__(self)
+        Gtk.AccelGroup.__init__(self)
 
     def add_accelerator(self, shortcut, widget, signal="activate"):
         key, modifier = Gtk.accelerator_parse(shortcut)
@@ -122,10 +121,10 @@ class Accelerators(Gtk.AccelGroup):
 
 class ViewMenu(Menu):
     __neil__ = dict(
-            id = 'neil.core.viewmenu',
-            singleton = True,
-            categories = [
-            ],
+        id = 'neil.core.viewmenu',
+        singleton = True,
+        categories = [
+        ],
     )
 
     def on_check_item(self, menuitem, view):
@@ -170,6 +169,8 @@ class ViewMenu(Menu):
                 accel.add_accelerator(shortcut, item)
         if 0:
             # TODO: themes
+            neil_frame =  com.get('neil.core.accelerators')
+            # main_frame = get_root_window()
             tempsubmenu = Gtk.Menu()
             defaultitem = Gtk.RadioMenuItem(label="Default")
             tempsubmenu.append(defaultitem)
@@ -177,12 +178,12 @@ class ViewMenu(Menu):
             cfg = config.get_config()
             if not cfg.get_active_theme():
                 defaultitem.set_active(True)
-            defaultitem.connect('toggled', self.on_select_theme, None)
+            defaultitem.connect('toggled', neil_frame.on_select_theme, None)
             for name in sorted(cfg.get_theme_names()):
                 item = Gtk.RadioMenuItem(label=prepstr(name), group=defaultitem)
                 if name == cfg.get_active_theme():
                     item.set_active(True)
-                item.connect('toggled', self.on_select_theme, name)
+                item.connect('toggled', neil_frame.on_select_theme, name)
                 tempsubmenu.append(item)
             self.append(make_submenu_item(tempsubmenu, "Themes"))
 
@@ -226,19 +227,19 @@ class NeilFrame(Gtk.Window):
     """
 
     __neil__ = dict(
-            id = 'neil.core.window.root',
-            singleton = True,
-            categories = [
-                    'rootwindow',
-            ],
+        id = 'neil.core.window.root',
+        singleton = True,
+        categories = [
+            'rootwindow',
+        ],
     )
 
     OPEN_SONG_FILTER = [
-            file_filter("CCM Songs (*.ccm)", "*.ccm"),
+        file_filter("CCM Songs (*.ccm)", "*.ccm"),
     ]
 
     SAVE_SONG_FILTER = [
-            file_filter("CCM Songs (*.ccm)","*.ccm"),
+        file_filter("CCM Songs (*.ccm)","*.ccm"),
     ]
 
     DEFAULT_EXTENSION = '.ccm'
@@ -248,30 +249,50 @@ class NeilFrame(Gtk.Window):
 
     event_to_name = dict([(getattr(zzub,x),x) for x in dir(zzub) if \
                           x.startswith('zzub_event_type_')])
+    pages = {}
 
     def __init__(self):
         """
         Initializer.
         """
 
-        GObject.GObject.__init__(self, Gtk.WindowType.TOPLEVEL)
+        Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
 
         import ctypes
         com.get('neil.core.player').set_host_info(1,1,ctypes.c_void_p(hash(self)))
 
         errordlg.install(self)
-        self.set_geometry_hints(self,600,400)
+        geometry = Gdk.Geometry()
+        geometry.min_height = 400
+        geometry.min_width = 600
+        hints = Gdk.WindowHints(3) # WindowHints.POS + WindowsHints.Min_SIZE
+
+        self.set_geometry_hints(self, geometry, hints)
         self.set_position(Gtk.WindowPosition.CENTER)
 
-        self.open_dlg = Gtk.FileChooserDialog(title="Open", parent=self, action=Gtk.FileChooserAction.OPEN,
-                buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-        )
+        self.open_dlg = Gtk.FileChooserDialog(title="Open",
+                                              parent=self,
+                                              action=Gtk.FileChooserAction.OPEN,
+                                              buttons=(
+                                                  Gtk.STOCK_CANCEL,
+                                                  Gtk.ResponseType.CANCEL,
+                                                  Gtk.STOCK_OPEN,
+                                                  Gtk.ResponseType.OK
+                                              )
+                        )
         self.open_dlg.add_shortcut_folder(filepath('demosongs'))
         for filefilter in self.OPEN_SONG_FILTER:
             self.open_dlg.add_filter(filefilter)
-        self.save_dlg = Gtk.FileChooserDialog(title="Save", parent=self, action=Gtk.FileChooserAction.SAVE,
-                buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK)
-        )
+        self.save_dlg = Gtk.FileChooserDialog(title="Save",
+                                              parent=self,
+                                              action=Gtk.FileChooserAction.SAVE,
+                                              buttons=(
+                                                  Gtk.STOCK_CANCEL,
+                                                  Gtk.ResponseType.CANCEL,
+                                                  Gtk.STOCK_SAVE,
+                                                  Gtk.ResponseType.OK
+                                              )
+                        )
         self.save_dlg.set_do_overwrite_confirmation(True)
         for filefilter in self.SAVE_SONG_FILTER:
             self.save_dlg.add_filter(filefilter)
@@ -341,11 +362,12 @@ class NeilFrame(Gtk.Window):
 
         self.update_title()
         Gtk.Window_set_default_icon_list(
-                GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("48x48/apps/neil.png")),
-                GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("32x32/apps/neil.png")),
-                GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("24x24/apps/neil.png")),
-                GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("22x22/apps/neil.png")),
-                GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("16x16/apps/neil.png")))
+            GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("48x48/apps/neil.png")),
+            GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("32x32/apps/neil.png")),
+            GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("24x24/apps/neil.png")),
+            GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("22x22/apps/neil.png")),
+            GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("16x16/apps/neil.png"))
+        )
         self.resize(750, 550)
 
         self.connect('key-press-event', self.on_key_down)
@@ -618,8 +640,9 @@ class NeilFrame(Gtk.Window):
             return False
         return True
 
-    def on_activate_page(self, widget, unused, page_num):
-        self.select_page(page_num)
+    # TODO probabley replace by framepanel
+    # def on_activate_page(self, widget, unused, page_num):
+        # self.select_page(page_num)
 
     def open_recent_file(self, widget, filename):
         """
@@ -672,7 +695,7 @@ class NeilFrame(Gtk.Window):
             progBar.set_size_request(300, 40)
             progBar.set_fraction(0)
             progBar.show()
-            dlg.vbox.pack_start(progBar, True, True, 0)
+            dlg.get_content_area().pack_start(progBar, True, True, 0)
             dlg.show()
             done = False
             def progress_callback():
@@ -861,7 +884,8 @@ class NeilFrame(Gtk.Window):
             cfg.select_theme(None)
         else:
             cfg.select_theme(data)
-        self.document_changed()
+        player = com.get('neil.core.player')
+        player.document_changed()
 
     def stop(self, *args):
         """
@@ -885,10 +909,12 @@ class NeilFrame(Gtk.Window):
             text = "<big><b>Save changes to <i>%s</i>?</b></big>" % os.path.basename(player.document_path)
         else:
             text = "<big><b>Save changes?</b></big>"
+
         response = question(self, text)
         if response == int(Gtk.ResponseType.CANCEL) or response == int(Gtk.ResponseType.DELETE_EVENT):
             raise CancelException
-        elif response == int(Gtk.ResponseType.YES):
+
+        if response == int(Gtk.ResponseType.YES):
             self.save()
 
     def new(self, *args):
@@ -930,7 +956,7 @@ class NeilFrame(Gtk.Window):
         self.save_view()
         try:
             self.save_changes()
-            self.hide_all()
+            self.hide()
             return False
         except CancelException:
             return True
@@ -938,14 +964,14 @@ class NeilFrame(Gtk.Window):
 
 
 __neil__ = dict(
-        classes = [
-                FramePanel,
-                ViewMenu,
-                Accelerators,
-                NeilFrame,
-                #NeilStatusbar,
-                #~NeilToolbar,
-        ],
+    classes = [
+        FramePanel,
+        ViewMenu,
+        Accelerators,
+        NeilFrame,
+        #NeilStatusbar,
+        #~NeilToolbar,
+    ],
 )
 
 if __name__ == '__main__':

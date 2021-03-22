@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -21,12 +19,13 @@
 """
 Provides an info view which allows to enter text.
 """
-
+import gi
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 from gi.repository import Pango
 import neil.common as common
 from neil.utils import add_scrollbars
-from neil.common import MARGIN, MARGIN0, MARGIN2, MARGIN3
+from neil.common import MARGIN
 import neil.com as com
 
 class InfoPanel(Gtk.VBox):
@@ -53,26 +52,26 @@ class InfoPanel(Gtk.VBox):
         """
         Initializer.
         """
-        GObject.GObject.__init__(self, False, MARGIN)
-        scrollbars = add_scrollbars(self.view)
+        Gtk.VBox.__init__(self, False, MARGIN)
+        # scrollbars = add_scrollbars(self.view)
         self.set_border_width(MARGIN)
-        self.view = InfoView()
-        self.pack_start(scrollbars, True, True, 0)
+        self.info_view = InfoView()
+        self.pack_start(self.info_view, True, True, 0)
         eventbus = com.get('neil.core.eventbus')
         eventbus.document_loaded += self.update_all
 
     def handle_focus(self):
-        self.view.grab_focus()
+        self.info_view.grab_focus()
 
     def reset(self):
         """
         Resets the router view. Used when
         a new song is being loaded.
         """
-        self.view.reset()
+        self.info_view.reset()
 
     def update_all(self):
-        self.view.update()
+        self.info_view.update()
 
 class InfoView(Gtk.TextView):
     """
@@ -83,7 +82,7 @@ class InfoView(Gtk.TextView):
         """
         Initializer.
         """
-        GObject.GObject.__init__(self)
+        Gtk.TextView.__init__(self)
         self.set_wrap_mode(Gtk.WrapMode.WORD)
         self.get_buffer().connect('changed', self.on_edit)
         self.modify_font(Pango.FontDescription('monospace 8'))
@@ -117,7 +116,7 @@ class InfoView(Gtk.TextView):
 _all__ = [
     'InfoPanel',
     'InfoView',
-    ]
+]
 
 __neil__ = dict(
     classes = [
@@ -129,6 +128,6 @@ __neil__ = dict(
 
 if __name__ == '__main__':
     import sys
-    from main import run
+    from neil.main import run
     #sys.argv.append(filepath('demosongs/test.bmx'))
     run(sys.argv)
