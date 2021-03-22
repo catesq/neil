@@ -21,12 +21,11 @@
 import os
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import Gtk, Gdk, GdkPixbuf, GLib
 from neil.utils import format_time, ticks_to_time, prepstr, linear2db, db2linear, filepath, \
         is_debug, question, error, add_scrollbars, file_filter, new_stock_image_toggle_button, \
         new_stock_image_button, message, refresh_gui, show_manual
 import zzub
-from gi.repository import GObject
 import config
 import neil.errordlg as errordlg
 from neil import com
@@ -78,7 +77,7 @@ class FramePanel(Gtk.Notebook):
             if options.get('default'):
                 defaultpanel = panel
             panel.show_all()
-            
+
             theme_img = new_theme_image(stockid, Gtk.IconSize.MENU)
             header = Gtk.VBox()
             labelwidget = Gtk.Label(label=label)
@@ -279,7 +278,7 @@ class NeilFrame(Gtk.Window):
                                                   Gtk.STOCK_OPEN,
                                                   Gtk.ResponseType.OK
                                               )
-                        )
+                                            )
         self.open_dlg.add_shortcut_folder(filepath('demosongs'))
         for filefilter in self.OPEN_SONG_FILTER:
             self.open_dlg.add_filter(filefilter)
@@ -292,7 +291,7 @@ class NeilFrame(Gtk.Window):
                                                   Gtk.STOCK_SAVE,
                                                   Gtk.ResponseType.OK
                                               )
-                        )
+                                            )
         self.save_dlg.set_do_overwrite_confirmation(True)
         for filefilter in self.SAVE_SONG_FILTER:
             self.save_dlg.add_filter(filefilter)
@@ -376,7 +375,7 @@ class NeilFrame(Gtk.Window):
 
         self.framepanel.connect('switch-page', self.page_select)
 
-        GObject.timeout_add(500, self.update_title)
+        GLib.timeout_add(500, self.update_title)
         self.activated=0
 
         self.show_all()
@@ -392,7 +391,7 @@ class NeilFrame(Gtk.Window):
             self.open_file(args[1])
         for driver in com.get_from_category('driver'):
             if driver.init_failed:
-                GObject.timeout_add(50, show_preferences, self, 1)
+                GLib.timeout_add(50, show_preferences, self, 1)
                 break
 
     def on_undo(self, *args):
@@ -688,7 +687,7 @@ class NeilFrame(Gtk.Window):
         self.clear()
         player = com.get('neil.core.player')
         base,ext = os.path.splitext(filename)
-        if ext.lower() in ('.ccm'):
+        if ext.lower() in ('.ccm',):
             dlg = Gtk.Dialog('Neil', parent=self, flags=Gtk.DialogFlags.MODAL)
             progBar = Gtk.ProgressBar()
             progBar.set_text('Loading CCM Song...')
@@ -703,7 +702,7 @@ class NeilFrame(Gtk.Window):
                 return not done
             progBar.pulse()
             refresh_gui()
-            GObject.timeout_add(50, progress_callback)
+            GLib.timeout_add(50, progress_callback)
             player.load_ccm(filename)
             done = True
             # The following loads sequencer step size.
