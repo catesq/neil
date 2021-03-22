@@ -487,11 +487,11 @@ def run_function_with_progress(parent, msg, allow_cancel, func, *args):
         buttons = (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
     else:
         buttons = None
-    dialog = Gtk.Dialog(
-            '',
-            parent and parent.get_toplevel(),
-            Gtk.DialogFlags.DESTROY_WITH_PARENT,
-            buttons)
+    dialog = Gtk.Dialog('',
+                        parent and parent.get_toplevel(),
+                        Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                        buttons
+                    )
     label = Gtk.Label()
     label.set_markup(msg)
     label.set_alignment(0,0.5)
@@ -505,7 +505,7 @@ def run_function_with_progress(parent, msg, allow_cancel, func, *args):
     dialog.markup = msg
     dialog._response = None
     dialog.fraction = 0.0
-    dialog.vbox.add(vbox)
+    dialog.get_content_area().add(vbox, True, True, 0)
     dialog.show_all()
     def update_progress(dlg):
         dlg._progress.set_fraction(dlg.fraction)
@@ -544,7 +544,7 @@ def gettext(parent, msg, text=''):
     vbox.set_border_width(6)
     vbox.pack_start(label, True, True, 0)
     vbox.pack_end(entry, False, True, 0)
-    dialog.vbox.add(vbox)
+    dialog.get_content_area().add(vbox)
     dialog.show_all()
     response = dialog.run()
     text = entry.get_text()
@@ -582,7 +582,7 @@ def error(parent, msg, msg2=None, details=None):
         dialog.format_secondary_text(msg2)
     if details:
         expander = Gtk.Expander("Details")
-        dialog.vbox.pack_start(expander, False, False, 0)
+        dialog.get_content_area().pack_start(expander, False, False, 0)
         label = Gtk.TextView()
         label.set_editable(False)
         label.get_buffer().set_property('text', details)
@@ -1346,10 +1346,11 @@ __all__ = [
         'is_streamer',
         'get_new_pattern_name',
         'new_theme_image',
-        'add_accelerator',
         'camelcase_to_unixstyle',
-        'show_plugin_manual',
         ]
+# TODO: these used to exists at some point. why not now?
+# 'add_accelerator',
+# 'show_plugin_manual',
 
 if __name__ == '__main__':
     oldlist = [1,2,6,3,4,5]
