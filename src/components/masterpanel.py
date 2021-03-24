@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -17,22 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-from gi.repository import Gtk, Gdk
+import array
 import cairo
-from neil.common import MARGIN
-from gi.repository import GObject
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, GObject
+
+import numpy as np
 import neil.utils as utils
 import neil.com as com
-import array
-import numpy as np
+from neil.common import MARGIN
 
-
-pattern = cairo.SurfacePattern(cairo.ImageSurface.create_for_data(
-          array.array('B', [0, 0, 0, 255] * 2 + [0, 0, 0, 0] * 4),
-          cairo.FORMAT_ARGB32, 1, 6, 4))
+# pylint: disable=no-member
+pattern = cairo.SurfacePattern(
+    cairo.ImageSurface.create_for_data(
+        array.array('B', [0, 0, 0, 255] * 2 + [0, 0, 0, 0] * 4),
+        cairo.FORMAT_ARGB32, 1, 6, 4)
+    )
 pattern.set_extend(cairo.EXTEND_REPEAT)
-
+# pylint: enable=no-member
 
 class AmpView(Gtk.DrawingArea):
     """
@@ -40,14 +41,14 @@ class AmpView(Gtk.DrawingArea):
     """
 
     __gsignals__ = {
-       'clip': (GObject.SignalFlags.RUN_LAST, None, (GObject.TYPE_FLOAT,))
+        'clip': (GObject.SignalFlags.RUN_LAST, None, (GObject.TYPE_FLOAT,))
     }
 
     def __init__(self, parent, channel):
         """
         Initializer.
         """
-        GObject.GObject.__init__(self)
+        Gtk.DrawingArea.__init__(self)
         self.linear = None
         self.range = 80
         self.amp = 0.0
@@ -75,14 +76,14 @@ class AmpView(Gtk.DrawingArea):
 
         rect = self.get_allocation()
         if self.is_visible():
-            self.get_window().invalidate_rect((0, 0, rect.width, rect.height), False)
+            self.get_window().invalidate_rect(Gdk.Rectangle(0, 0, rect.width, rect.height), False)
         return True
 
     def on_draw(self, widget, ctx):
-        self.draw(ctx)
+        self.draw_all(ctx)
         return False
 
-    def draw(self, ctx):
+    def draw_all(self, ctx):
         """
         Draws the VU bar client region.
         """
@@ -155,7 +156,7 @@ class AmpView(Gtk.DrawingArea):
 
 
     def configure(self, widget, event):
-        self.linear = cairo.LinearGradient(0, 0, 0, self.get_allocation().height)
+        self.linear = cairo.LinearGradient(0, 0, 0, self.get_allocation().height) # pylint: disable=no-member
         self.linear.add_color_stop_rgb(self.stops[0], 1, 0, 0)
         self.linear.add_color_stop_rgb(self.stops[1], 1, 1, 0)
         self.linear.add_color_stop_rgb(self.stops[2], 0, 1, 0)
@@ -174,7 +175,7 @@ class MasterPanel(Gtk.VBox):
     )
 
     def __init__(self):
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.latency = 0
         self.ohg = utils.ObjectHandlerGroup()
         eventbus = com.get('neil.core.eventbus')
@@ -197,9 +198,9 @@ class MasterPanel(Gtk.VBox):
 
         hbox = Gtk.HBox()
         hbox.set_border_width(MARGIN)
-        hbox.pack_start(self.ampl, True, True, 0)
-        hbox.pack_start(self.masterslider, True, True, 0)
-        hbox.pack_start(self.ampr, True, True, 0)
+        hbox.pack_start(self.ampl, expand=True, fill=True, padding=0)
+        hbox.pack_start(self.masterslider, expand=True, fill=True, padding=0)
+        hbox.pack_start(self.ampr, expand=True, fill=True, padding=0)
         vbox = Gtk.VBox()
 
         self.clipbtn = Gtk.Button()
@@ -208,11 +209,11 @@ class MasterPanel(Gtk.VBox):
 
         self.volumelabel = Gtk.Label()
 
-        vbox.pack_start(self.clipbtn, expand=False, fill=False)
-        vbox.pack_start(hbox, expand=True, fill=True)
-        vbox.pack_start(self.volumelabel, expand=False, fill=False)
+        vbox.pack_start(self.clipbtn, expand=False, fill=False, padding=0)
+        vbox.pack_start(hbox, expand=True, fill=True, padding=0)
+        vbox.pack_start(self.volumelabel, expand=False, fill=False, padding=0)
 
-        self.pack_start(vbox, True, True, 0)
+        self.pack_start(vbox, expand=True, fill=True, padding=0)
 
         self.update_all()
 
@@ -222,7 +223,7 @@ class MasterPanel(Gtk.VBox):
         self.connect('realize', self.on_realize)
 
     def on_realize(self, widget):
-        self.clipbtn_org_color = self.clipbtn.get_style().bg[Gtk.StateType.NORMAL]
+        self.clipbtn_org_color = self.clipbtn.get_style_context().get_background_color(Gtk.StateType.NORMAL)
 
     def on_zzub_parameter_changed(self, plugin, group, track, param, value):
         player = com.get('neil.core.player')
@@ -291,7 +292,7 @@ class MasterPanel(Gtk.VBox):
 
 __neil__ = dict(
     classes=[
-            MasterPanel,
+        MasterPanel,
     ],
 )
 
