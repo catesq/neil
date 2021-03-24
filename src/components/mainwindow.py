@@ -122,8 +122,7 @@ class ViewMenu(Menu):
     __neil__ = dict(
         id = 'neil.core.viewmenu',
         singleton = True,
-        categories = [
-        ],
+        categories = [],
     )
 
     def on_check_item(self, menuitem, view):
@@ -503,7 +502,7 @@ class NeilFrame(Gtk.Window):
         """
         for item in self.filemenu:
             item.destroy()
-        self.filemenu.append(make_stock_menu_item(Gtk.STOCK_NEW, self.new, frame=self, shortcut="<Control>N"))
+        self.filemenu.append(make_stock_menu_item(Gtk.STOCK_NEW, self.on_new_file, frame=self, shortcut="<Control>N"))
         self.filemenu.append(make_stock_menu_item(Gtk.STOCK_OPEN, self.on_open, frame=self, shortcut="<Control>O"))
         self.filemenu.append(make_stock_menu_item(Gtk.STOCK_SAVE, self.on_save, frame=self, shortcut="<Control>S"))
         self.filemenu.append(make_stock_menu_item(Gtk.STOCK_SAVE_AS, self.on_save_as))
@@ -916,7 +915,7 @@ class NeilFrame(Gtk.Window):
         if response == int(Gtk.ResponseType.YES):
             self.save()
 
-    def new(self, *args):
+    def on_new_file(self, *args):
         """
         Event handler triggered by the "New" menu option.
 
