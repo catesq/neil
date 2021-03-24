@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -18,12 +16,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import optparse, sys
+import optparse
 
 class OptionParser(optparse.OptionParser):
     __neil__ = dict(
-            id = 'neil.core.options',
-            singleton = True,
+        id = 'neil.core.options',
+        singleton = True,
     )
 
     def __init__(self):
@@ -39,7 +37,7 @@ class OptionParser(optparse.OptionParser):
         return self._options, self._args
 
 __neil__ = dict(
-        classes = [
-                OptionParser,
-        ],
+    classes = [
+        OptionParser,
+    ],
 )
