@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -22,11 +20,6 @@
 Contains all classes and functions needed to render the pattern
 editor and its associated dialogs.
 """
-
-if __name__ == '__main__':
-    import os
-    os.system('../../bin/neil-combrowser neil.core.patternpanel')
-    raise SystemExit
 
 import neil.com as com
 from gi.repository import Gtk, Gdk
@@ -70,11 +63,12 @@ class PatternDialog(Gtk.Dialog):
         """
         Initialization.
         """
-        GObject.GObject.__init__(self,
-                "Pattern Properties",
-                parent.get_toplevel(),
-                Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                None
+        Gtk.Dialog.__init__(
+            self,
+            "Pattern Properties",
+            parent.get_toplevel(),
+            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+            None
         )
         vbox = Gtk.VBox(False, MARGIN)
         vbox.set_border_width(MARGIN)
@@ -104,7 +98,7 @@ class PatternDialog(Gtk.Dialog):
         vbox.pack_start(self.chkswitch, False, True, 0)
         self.edtname.connect('activate', self.on_enter)
         self.lengthbox.get_child().connect('activate', self.on_enter)
-        self.vbox.add(vbox)
+        self.get_content_area().add(vbox)
         self.show_all()
 
     def on_enter(self, widget):
@@ -150,7 +144,7 @@ def show_pattern_dialog(parent, name, length, dlgmode, letswitch=True):
     dlg.edtname.select_region(0, -1)
     dlg.edtname.grab_focus()
     response = dlg.run()
-    dlg.hide_all()
+    dlg.hide()
     result = None
     if response == Gtk.ResponseType.OK:
         switch = int(dlg.chkswitch.get_active())
@@ -173,7 +167,7 @@ class PatternToolBar(Gtk.HBox):
         Initialization.
         """
         player = com.get('neil.core.player')
-        GObject.GObject.__init__(self, False, MARGIN)
+        Gtk.HBox.__init__(self, False, MARGIN)
         self.pattern_view = pattern_view
         self.set_border_width(MARGIN)
         eventbus = com.get('neil.core.eventbus')
@@ -264,7 +258,6 @@ class PatternToolBar(Gtk.HBox):
         self.pack_start(self.edit_step_label, False, True, 0)
         self.pack_start(self.edit_step_box, False, True, 0)
         self.pack_start(self.playnotes, False, True, 0)
-        
         self.pack_start(vsep_b, False, True, 0)
         self.pack_start(self.btnhelp, False, True, 0)
 
@@ -337,15 +330,13 @@ class PatternToolBar(Gtk.HBox):
     def get_plugin_source(self):
         player = com.get('neil.core.player')
 
-        def cmp_func(a, b):
-            return cmp(a.get_name().lower(), b.get_name().lower())
-        plugins = sorted(list(player.get_plugin_list()), cmp_func)
+        plugins = sorted(list(player.get_plugin_list()), key=str.lower)
         return [(plugin.get_name(), plugin) for plugin in plugins]
 
     def get_plugin_sel(self):
         player = com.get('neil.core.player')
         sel = player.active_plugins
-        sel = sel and sel[0] or None
+        sel = (sel[0] if sel else None)
         return sel
 
     def set_plugin_sel(self, *args):
@@ -386,13 +377,12 @@ class PatternToolBar(Gtk.HBox):
     def get_pattern_sel(self):
         player = com.get('neil.core.player')
         sel = player.active_patterns
-        return sel and sel[0] or None
+        return sel[0] if sel else None
 
     def set_pattern_sel(self, sel):
         player = com.get('neil.core.player')
         try:
-            sel = (player.active_plugins[0],
-                   self.patternselect.get_active())
+            sel = (player.active_plugins[0], self.patternselect.get_active())
         except IndexError:
             return
         if sel[1] >= 0:
@@ -420,26 +410,26 @@ class PatternPanel(Gtk.VBox):
     Panel containing the pattern toolbar and pattern view.
     """
     __neil__ = dict(
-            id = 'neil.core.patternpanel',
-            singleton = True,
-            categories = [
-                    'neil.viewpanel',
-                    'view',
-            ]
+        id = 'neil.core.patternpanel',
+        singleton = True,
+        categories = [
+            'neil.viewpanel',
+            'view',
+        ]
     )
 
     __view__ = dict(
-                    label = "Patterns",
-                    stockid = "neil_pattern",
-                    shortcut = 'F2',
-                    order = 2,
+        label = "Patterns",
+        stockid = "neil_pattern",
+        shortcut = 'F2',
+        order = 2,
     )
 
     def __init__(self):
         """
         Initialization.
         """
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.statusbar = Gtk.HBox(False, MARGIN)
         self.statusbar.set_border_width(MARGIN0)
         vscroll = Gtk.VScrollbar()
@@ -684,7 +674,7 @@ class PatternView(Gtk.DrawingArea):
         self.factors = None
         self.play_notes = True
         self.current_plugin = ""
-        GObject.GObject.__init__(self)
+        Gtk.DrawingArea.__init__(self)
         # "Bitstream Vera Sans Mono"
         self.update_font()
         # implements horizontal scrolling
@@ -1002,9 +992,9 @@ class PatternView(Gtk.DrawingArea):
                 self.parameter_type.append(types)
             # group positions
             self.group_position = [
-                    0,
-                    (self.track_width[0] * self.group_track_count[0]),
-                    (self.track_width[0] * self.group_track_count[0]) + (self.track_width[1] * self.group_track_count[1])
+                0,
+                (self.track_width[0] * self.group_track_count[0]),
+                (self.track_width[0] * self.group_track_count[0]) + (self.track_width[1] * self.group_track_count[1])
             ]
             # parameter positions, relative to track start
             self.parameter_position = []
@@ -1120,10 +1110,10 @@ class PatternView(Gtk.DrawingArea):
         if row >= 0:
             w, h = self.get_client_size()
             endrow = (((h - self.top_margin) / self.row_height * 1) + self.start_row) - 1
-            if (row < self.start_row):
+            if row < self.start_row:
                 self.start_row = row
                 self.redraw()
-            elif (row >= endrow):
+            elif row >= endrow:
                 self.start_row = row - (endrow - self.start_row)
                 self.redraw()
 
@@ -1618,18 +1608,18 @@ class PatternView(Gtk.DrawingArea):
         Callback that responds to mousewheeling in pattern view.
         """
         mask = event.get_state()
-        if mask & Gdk.ModifierType.CONTROL_MASK:
-            if event.direction == Gdk.ScrollDirection.UP:
-                self.change_resolution(True)
-            elif event.direction == Gdk.ScrollDirection.DOWN:
-                self.change_resolution(False)
-        else:
-            if event.direction == Gdk.ScrollDirection.UP:
-                self.move_up(self.edit_step)
-                self.adjust_scrollbars()
-            elif event.direction == Gdk.ScrollDirection.DOWN:
-                self.move_down(self.edit_step)
-                self.adjust_scrollbars()
+        # if mask & Gdk.ModifierType.CONTROL_MASK:
+        #     if event.direction == Gdk.ScrollDirection.UP:
+        #         self.change_resolution(True)
+        #     elif event.direction == Gdk.ScrollDirection.DOWN:
+        #         self.change_resolution(False)
+        # else:
+        if event.direction == Gdk.ScrollDirection.UP:
+            self.move_up(self.edit_step)
+            self.adjust_scrollbars()
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            self.move_down(self.edit_step)
+            self.adjust_scrollbars()
 
     def on_button_down(self, widget, event):
         """
@@ -2871,3 +2861,8 @@ __neil__ = dict(
         PatternView,
         ],
     )
+
+if __name__ == '__main__':
+    import os, sys
+    os.system('../../bin/neil-combrowser neil.core.patternpanel')
+    sys.exit(0)
