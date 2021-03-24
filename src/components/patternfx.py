@@ -1,14 +1,11 @@
+import gi
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-from gi.repository import GObject
-import os
-import pickle
-import neil.com as com
-from neil.utils import roundint, bn2mn, mn2bn, new_stock_image_button
-from neil.utils import gettext, warning
+from neil.utils import warning
 from neil.envelope import SimpleEnvelope
-from random import *
-from math import *
-from neil.gtkcodebuffer import CodeBuffer, SyntaxLoader, add_syntax_path
+from random import randint
+# from math import *
+# from neil.gtkcodebuffer import CodeBuffer, SyntaxLoader, add_syntax_path
 
 class SimpleRandom():
     __neil__ = dict(
@@ -42,30 +39,36 @@ class RandomWalk():
         dialog = Gtk.Dialog(
             "Random Walk",
             buttons=(Gtk.STOCK_OK, True, Gtk.STOCK_CANCEL, False)
-            )
+        )
         grid = Gtk.Table(3, 2, True)
         grid.attach(Gtk.Label(label="Start:"), 0, 1, 0, 1)
         grid.attach(Gtk.Label(label="Min Step:"), 0, 1, 1, 2)
         grid.attach(Gtk.Label(label="Max Step:"), 0, 1, 2, 3)
-        start_box = Gtk.SpinButton(Gtk.Adjustment(
+        start_box = Gtk.SpinButton(
+            Gtk.Adjustment(
                 parameter.get_value_min(),
                 parameter.get_value_min(),
                 parameter.get_value_max(),
-                1))
-        min_box = Gtk.SpinButton(Gtk.Adjustment(
+                1)
+            )
+        min_box = Gtk.SpinButton(
+            Gtk.Adjustment(
                 1,
                 1,
                 parameter.get_value_max(),
-                1))
-        max_box = Gtk.SpinButton(Gtk.Adjustment(
+                1)
+            )
+        max_box = Gtk.SpinButton(
+            Gtk.Adjustment(
                 1,
                 1,
                 parameter.get_value_max(),
-                1))
+                1)
+            )
         grid.attach(start_box, 1, 2, 0, 1)
         grid.attach(min_box, 1, 2, 1, 2)
         grid.attach(max_box, 1, 2, 2, 3)
-        dialog.vbox.add(grid)
+        dialog.get_content_area().add(grid)
         dialog.show_all()
         response = dialog.run()
         start = start_box.get_value()
@@ -114,13 +117,13 @@ class LinearTransform():
         mul.set_text("1.0")
         grid.attach(add, 1, 2, 0, 1)
         grid.attach(mul, 1, 2, 1, 2)
-        dialog.vbox.add(grid)
+        dialog.get_content_area().add(grid)
         dialog.show_all()
         response = dialog.run()
         try:
             add = int(add.get_text())
             mul = float(mul.get_text())
-        except(ValueError):
+        except ValueError:
             return data
         dialog.destroy()
         if response:
@@ -179,7 +182,7 @@ class Envelope():
             envelope.envelope = [point for index, point in enumerate(points)
                                  if index not in to_delete]
         envelope.set_size_request(600, 200)
-        dialog.vbox.pack_start(envelope, True, True, 0)
+        dialog.get_content_area().pack_start(envelope, True, True, 0)
         dialog.show_all()
         response = dialog.run()
         dialog.destroy()
