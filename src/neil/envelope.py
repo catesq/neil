@@ -21,8 +21,9 @@
 """
 Provides dialogs, classes and controls to display/load/save envelopes
 """
-
-from gi.repository import Gtk, Gdk
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, GObject
 import os, sys
 import math
 from .utils import prepstr, db2linear, linear2db, note2str
@@ -48,7 +49,7 @@ class SimpleEnvelope(Gtk.DrawingArea):
         self.currentpoint = None
         self.dragging = False
         self.showpoints = False
-        GObject.GObject.__init__(self)
+        Gtk.DrawingArea.__init__(self)
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.connect('button-press-event', self.on_button_down)
         self.connect('button-release-event', self.on_button_up)
@@ -293,7 +294,7 @@ class EnvelopeView(Gtk.DrawingArea):
         self.currentpoint = None
         self.dragging = False
         self.showpoints = False
-        GObject.GObject.__init__(self)
+        Gtk.DrawingArea.__init__(self)
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.connect('button-press-event', self.on_button_down)
         self.connect('button-release-event', self.on_button_up)
