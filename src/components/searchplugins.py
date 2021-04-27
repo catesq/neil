@@ -33,6 +33,7 @@ from neil.utils import prepstr, filepath, db2linear, linear2db,\
 import neil.common as common
 import neil.com as com
 import zzub
+from functools import cmp_to_key
 
 DRAG_FORMAT_PLUGIN_URI = 0
 
@@ -58,7 +59,7 @@ class SearchPluginsDialog(Gtk.Window):
         )
 
     def __init__(self):
-        GObject.GObject.__init__(self)
+        Gtk.Window.__init__(self)
         self.set_default_size(250, -1)
         self.vbox = Gtk.VBox()
         self.add(self.vbox)
@@ -77,8 +78,8 @@ class SearchPluginsDialog(Gtk.Window):
 
         # checkboxes
         self.check_containers = [Gtk.HBox() for i in range(2)]
-        self.vbox.pack_end(self.check_containers[1], False, False)
-        self.vbox.pack_end(self.check_containers[0], False, False)
+        self.vbox.pack_end(self.check_containers[1], False, False, 0)
+        self.vbox.pack_end(self.check_containers[0], False, False, 0)
 
         self.show_generators_button = Gtk.CheckButton(label="Generators")
         self.check_containers[0].add(self.show_generators_button)
@@ -102,7 +103,7 @@ class SearchPluginsDialog(Gtk.Window):
         self.populate()
         scrollbars = add_scrollbars(self.treeview)
         self.vbox.pack_start(scrollbars, True, True, 0)
-        self.vbox.pack_end(self.searchbox, False, False)
+        self.vbox.pack_end(self.searchbox, False, False, 0)
         self.searchbox.connect("changed", self.on_entry_changed)
         self.filter = self.store.filter_new()
         self.filter.set_visible_func(self.filter_item, data=None)
@@ -224,6 +225,8 @@ class SearchPluginsDialog(Gtk.Window):
                 return 2
             else:
                 return 3
+        def cmp(a, b):
+            return int(a > b) - int(a < b)
         def cmp_child(a,b):
             c = cmp(get_type_rating(a), get_type_rating(b))
             if c != 0:
@@ -246,7 +249,7 @@ class SearchPluginsDialog(Gtk.Window):
                 return "Root"
             else:
                 return "Other"
-        for pl in sorted(plugins.values(), cmp_child):
+        for pl in sorted(plugins.values(), key=cmp_to_key(cmp_child)):
             name = prepstr(pl.get_name())
             text = '<b>' + name + '</b>\n<small>' + get_type_text(pl) + '</small>'
             pixbuf = None
