@@ -144,7 +144,7 @@ class ViewMenu(Menu):
 
     def __init__(self):
         Menu.__init__(self)
-        views = sorted(views = com.get_from_category('view'), key=cmp_to_key(cmp_view))
+        views = sorted(com.get_from_category('view'), key=cmp_to_key(cmp_view))
         com.get("neil.core.icons") # make sure theme icons are loaded
         accel = com.get('neil.core.accelerators')
         for view in views:
