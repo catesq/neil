@@ -21,7 +21,7 @@
 if __name__ == '__main__':
     import os
     os.system('../../bin/neil-combrowser neil.core.panel.transport')
-    raise SystemExit
+    raise SystemExit()
 
 from neil.common import MARGIN, MARGIN0
 from neil.utils import new_image_button, new_image_toggle_button, imagepath
@@ -56,7 +56,7 @@ class TransportPanel(Gtk.HBox):
         """
         Initializer.
         """
-        GObject.GObject.__init__(self)
+        Gtk.HBox.__init__(self)
         self.master_controls = com.get('neil.core.panel.master')
         self.master_control_window = Gtk.Window()
         self.master_control_window.add(self.master_controls)
