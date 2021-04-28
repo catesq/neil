@@ -26,6 +26,8 @@ which have no specific module or class they belong to.
 import time, sys, math, os, zzub, imp
 from string import ascii_letters, digits
 import struct
+import gi
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from gi.repository import GObject
 import weakref
@@ -235,7 +237,7 @@ def prepstr(s, fix_underscore=False):
     @return: Correctly encoded text.
     @rtype: str
     """
-    s = s.decode('latin-1')
+    # s = s.decode('latin-1')
     if fix_underscore:
         s = s.replace('_','__')
     return s
@@ -849,12 +851,12 @@ def format_filesize(size):
         return "%i bytes" % size
 
 def set_clipboard_text(data):
-    clipboard = Gtk.clipboard_get()
+    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
     clipboard.set_text(data, len(data))
     clipboard.store()
 
 def get_clipboard_text():
-    clipboard = Gtk.clipboard_get()
+    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
     return clipboard.wait_for_text()
 
 def diff(oldlist, newlist):
