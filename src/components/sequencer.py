@@ -106,7 +106,7 @@ class SequencerToolBar(Gtk.HBox):
                       48, 52, 56, 60, 64]
         stepstore = Gtk.ListStore(int)
         for step in self.steps:
-            stepstore.append(step)
+            stepstore.append([step])
         self.stepselect = Gtk.ComboBox.new_with_model(stepstore)
         
         self.stepselect.connect('changed', self.on_stepselect)
@@ -144,14 +144,11 @@ class SequencerToolBar(Gtk.HBox):
         Updates the step selection choice box.
         """
         player = com.get('neil.core.player')
-        self.stepselect.get_model().clear()
-        for i in self.steps:
-            self.stepselect.append_text("%i" % i)
         try:
-            self.stepselect.set_active(self.steps.index(self.parent.view.step))
+            self.stepselect.set_active(self.steps.index(self.seqview.step))
             config.get_config().set_default_int('SequencerStep',
-                                                self.parent.view.step)
-            player.sequence_step = self.parent.view.step
+                                                self.seqview.step)
+            player.sequence_step = self.seqview.step
         except ValueError:
             pass
         self.seqview.adjust_scrollbars()
