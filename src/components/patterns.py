@@ -1,4 +1,4 @@
-# Neil
+ # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
 #
@@ -21,11 +21,13 @@ Contains all classes and functions needed to render the pattern
 editor and its associated dialogs.
 """
 
-import neil.com as com
+import gi
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
 from gi.repository import GObject
 from gi.repository import Pango
 
+import neil.com as com
 from neil.utils import prepstr
 from neil.utils import get_clipboard_text, set_clipboard_text
 from neil.utils import error, get_new_pattern_name
@@ -64,7 +66,7 @@ class PatternDialog(Gtk.Dialog):
         Initialization.
         """
         Gtk.Dialog.__init__(
-            self,
+                self,
             "Pattern Properties",
             parent.get_toplevel(),
             Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
@@ -72,16 +74,18 @@ class PatternDialog(Gtk.Dialog):
         )
         vbox = Gtk.VBox(False, MARGIN)
         vbox.set_border_width(MARGIN)
-        self.btnok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
-        self.btncancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
-        self.namelabel = Gtk.Label(label="Name")
-        self.edtname = Gtk.Entry()
-        self.lengthlabel = Gtk.Label(label="Length")
-        self.lengthbox = Gtk.combo_box_entry_new_text()
-        self.chkswitch = Gtk.CheckButton('Switch to new pattern')
+        
+        self.btn_ok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        self.btn_cancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+        self.name_label = Gtk.Label(label="Name")
+        self.edt_name = Gtk.Entry()
+        self.length_label = Gtk.Label(label="Length")
+        self.lengtbox = Gtk.combo_box_entry_new_text()
+        self.sitch = Gtk.CheckButton('Switch to new pattern')
         for size in patternsizes:
             self.lengthbox.append_text(str(size))
         self.rowslabel = Gtk.Label(label="Rows")
+
         sgroup1 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
         sgroup2 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
 
@@ -150,7 +154,7 @@ def show_pattern_dialog(parent, name, length, dlgmode, letswitch=True):
         switch = int(dlg.chkswitch.get_active())
         config.get_config().set_default_int('SwitchToNewPattern', switch)
         length = int(dlg.lengthbox.get_child().get_text())
-        result = str(dlg.edtname.get_text()), length, switch
+        result = (str(dlg.edtname.get_text()), length, switch)
     dlg.destroy()
     return result
 
@@ -171,7 +175,6 @@ class PatternToolBar(Gtk.HBox):
         self.pattern_view = pattern_view
         self.set_border_width(MARGIN)
         eventbus = com.get('neil.core.eventbus')
-
         self.pluginselect = Gtk.ComboBoxText()
         self.pluginselect.set_size_request(100, 0)
         self.pluginselect_handler =\
@@ -2421,19 +2424,19 @@ class PatternView(Gtk.DrawingArea):
         self.adjust_scrollbars()
         self.update_font()
 
-    def create_xor_gc(self):
-        if self.pattern == -1:
-            return
-        if not self.is_visible():
-            return
-        gc = self.get_window().new_gc()
-        cm = gc.get_colormap()
-        w, h = self.get_client_size()
-        bbrush = cm.alloc_color('#ffffff')
-        gc.set_function(Gdk.XOR)
-        gc.set_foreground(bbrush)
-        gc.set_background(bbrush)
-        self.xor_gc = gc
+    # def create_xor_gc(self):
+    #     if self.pattern == -1:
+    #         return
+    #     if not self.is_visible():
+    #         return
+    #     gc = self.get_window().new_gc()
+    #     cm = gc.get_colormap()
+    #     w, h = self.get_client_size()
+    #     bbrush = cm.alloc_color('#ffffff')
+    #     gc.set_function(Gdk.XOR)
+    #     gc.set_foreground(bbrush)
+    #     gc.set_background(bbrush)
+    #     self.xor_gc = gc
 
     def draw_cursor_xor(self):
         if self.pattern == -1:
@@ -2805,19 +2808,15 @@ class PatternView(Gtk.DrawingArea):
 
     def draw_background(self, ctx):
         w, h = self.get_client_size()
-        drawable = self.get_window()
-        gc = drawable.new_gc()
-        cm = gc.get_colormap()
-        cfg = config.get_config()
+        # drawable = self.get_window()
+        # gc = drawable.new_gc()
+        # cm = gc.get_colormap()
+        # cfg = config.get_config()
         background = cm.alloc_color(cfg.get_color('PE BG'))
         gc.set_foreground(cm.alloc_color(background))
         drawable.draw_rectangle(gc, True, 0, 0, w, h)
 
     def on_draw(self, widget, ctx):
-        self.draw(ctx)
-        return False
-
-    def draw(self, ctx):
         """
         Draws the pattern view graphics.
         """
@@ -2840,6 +2839,8 @@ class PatternView(Gtk.DrawingArea):
         self.draw_pattern_background(ctx, layout)
         self.draw_playpos_xor()
 
+        return False
+
 
 __all__ = [
     'PatternDialog',
@@ -2859,8 +2860,8 @@ __neil__ = dict(
         PatternToolBar,
         PatternPanel,
         PatternView,
-        ],
-    )
+    ],
+)
 
 if __name__ == '__main__':
     import os, sys
