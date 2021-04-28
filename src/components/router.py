@@ -401,9 +401,10 @@ class VolumeSlider(Gtk.Window):
 
     def redraw(self):
         if self.is_visible() and self.drawingarea.get_window():
-            rect = self.drawingarea.get_allocation()
+            alloc_rect = self.drawingarea.get_allocation()
             window = self.drawingarea.get_window()
-            window.invalidate_rect((0, 0, rect.width, rect.height), False)
+            rect = Gdk.Rectangle(0, 0, alloc_rect.width, alloc_rect.height)
+            window.invalidate_rect(rect, False)
 
     def on_motion(self, widget, event):
         """
@@ -985,14 +986,16 @@ class RouteView(Gtk.DrawingArea):
             PW, PH = PLUGINWIDTH / 2, PLUGINHEIGHT / 2
             for mp, (rx, ry) in ((mp, get_pixelpos(*mp.get_position())) for mp in player.get_plugin_list()):
                 rx, ry = rx - PW, ry - PH
-                self.get_window().invalidate_rect((int(rx), int(ry), PLUGINWIDTH, PLUGINHEIGHT), False)
+                rect = Gdk.Rectangle(int(rx), int(ry), PLUGINWIDTH, PLUGINHEIGHT)
+                self.get_window().invalidate_rect(rect, False)
         return True
 
     def redraw(self):
         if self.get_window():
             self.routebitmap = None
-            rect = self.get_allocation()
-            self.self.get_window().invalidate_rect((0, 0, rect.width, rect.height), False)
+            alloc_rect = self.get_allocation()
+            rect = Gdk.Rectangle(0, 0, alloc_rect.width, alloc_rect.height)
+            self.get_window().invalidate_rect(rect, False)
 
     def draw_leds(self):
         """
