@@ -1,4 +1,4 @@
-# Neil
+#!/env # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
 #
@@ -32,7 +32,7 @@ pattern = cairo.SurfacePattern(
         array.array('B', [0, 0, 0, 255] * 2 + [0, 0, 0, 0] * 4),
         cairo.FORMAT_ARGB32, 1, 6, 4)
     )
-pattern.set_extend(cairo.EXTEND_REPEAT)
+# pattern.set_extend(cairo.EXTEND_REPEAT)
 # pylint: enable=no-member
 
 class AmpView(Gtk.DrawingArea):
