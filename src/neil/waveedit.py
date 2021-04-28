@@ -45,12 +45,12 @@ NEXT = 1
 
 class WaveEditPanel(Gtk.VBox):
     def __init__(self, wavetable):
-        GObject.GObject.__init__(self, False, MARGIN)
+        Gtk.VBox.__init__(self, False, MARGIN)
         self.wavetable = wavetable
         self.view = WaveEditView(wavetable)
         self.viewport = Gtk.Viewport()
         self.viewport.add(self.view)
-        self.pack_start(self.viewport, True, True, 0)
+        self.add(self.viewport)
         self.set_border_width(MARGIN)
 
     def update(self, *args):
@@ -116,7 +116,7 @@ class WaveEditView(Gtk.DrawingArea):
         self.right_dragging = False
         self.right_drag_start = 0
         self.stretching = False
-        GObject.GObject.__init__(self)
+        Gtk.DrawingArea.__init__(self)
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.connect('button-press-event', self.on_button_down)
         self.connect('button-release-event', self.on_button_up)
