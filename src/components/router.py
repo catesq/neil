@@ -35,6 +35,9 @@ import neil.com as com
 from gi.repository import Gtk, Gdk
 from gi.repository import GObject
 from gi.repository import Pango
+# from cairo import Context
+from gi.repository import cairo
+import cairo
 
 
 from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS,\
@@ -42,7 +45,7 @@ from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS,\
      CONTROLLER_PLUGIN_FLAGS
 from neil.utils import is_effect, is_generator, is_controller, is_root
 from neil.utils import prepstr, db2linear, linear2db, error, new_listview, add_scrollbars
-from neil.utils import blend
+from neil.utils import blend, blend_float
 import config
 import zzub
 # import sys
@@ -57,14 +60,6 @@ from neil.common import MARGIN, DRAG_TARGETS
 from rack import ParameterView
 from neil.presetbrowser import PresetView
 from patterns import key_to_note
-
-
-# DRAG_FORMAT_PLUGIN_URI = 0
-
-# DRAG_FORMATS = [
-    # ('application/x-neil-plugin-uri', 0, DRAG_FORMAT_PLUGIN_URI)
-# ]
-
 
 
 PLUGINWIDTH = 100
@@ -86,6 +81,103 @@ VOLKNOBHEIGHT = 16
 AREA_ANY = 0
 AREA_PANNING = 1
 AREA_LED = 2
+
+def draw_line(bmpctx, linepen, crx, cry, rx, ry):
+    vx, vy = (rx - crx), (ry - cry)
+    length = (vx * vx + vy * vy) ** 0.5
+    if not length:
+        return
+    vx, vy = vx / length, vy / length
+    bmpctx.move_to(crx, cry)
+    bmpctx.line_to(rx, ry)
+    bmpctx.set_source_rgb(*linepen)
+    bmpctx.stroke()
+
+def draw_line_arrow(bmpctx, clr, crx, cry, rx, ry, cfg):
+    vx, vy = (rx - crx), (ry - cry)
+    length = (vx * vx + vy * vy) ** 0.5
+    if not length:
+        return
+    vx, vy = vx / length, vy / length
+
+    cpx, cpy = crx + vx * (length * 0.5), cry + vy * (length * 0.5)
+
+    def make_triangle(radius):
+        ux, uy = vx, vy
+        if cfg.get_curve_arrows():
+            # bezier curve tangent
+            def dp(t, a, b, c, d):
+                return -3 * (1 - t) ** 2 * a + 3 * (1 - t) ** 2 * b - 6 * t * (1 - t) * b - 3 * (t ** 2) * c + 6 * t * (1 - t) * c + 3 * (t ** 2) * d
+            tx = dp(.5, crx, crx + vx * (length * 0.6), rx - vx * (length * 0.6), rx)
+            ty = dp(.5, cry, cry, ry, ry)
+            tl = (tx ** 2 + ty ** 2) ** .5
+            ux, uy = tx / tl, ty / tl
+
+        t1 = (int(cpx - ux * radius + uy * radius),
+                int(cpy - uy * radius - ux * radius))
+        t2 = (int(cpx + ux * radius),
+                int(cpy + uy * radius))
+        t3 = (int(cpx - ux * radius - uy * radius),
+                int(cpy - uy * radius + ux * radius))
+
+        return t1, t2, t3
+
+    def draw_triangle(t1, t2, t3):
+        bmpctx.move_to(*t1)
+        bmpctx.line_to(*t2)
+        bmpctx.line_to(*t3)
+        bmpctx.close_path()
+        
+    tri1 = make_triangle(ARROWRADIUS)
+
+    bmpctx.save()
+    bmpctx.translate(-0.5, -0.5)
+
+    # curve
+    if cfg.get_curve_arrows():
+        # bezier curve tanget
+        def dp(t, a, b, c, d):
+            return -3 * (1 - t) ** 2 * a + 3 * (1 - t) ** 2 * b - 6 * t * (1 - t) * b - 3 * (t ** 2) * c + 6 * t * (1 - t) * c + 3 * (t ** 2) * d
+        tx = dp(.5, crx, crx + vx * (length * 0.6), rx - vx * (length * 0.6), rx)
+        ty = dp(.5, cry, cry, ry, ry)
+        tl = (tx ** 2 + ty ** 2) ** .5
+        tx, ty = tx / tl, ty / tl
+
+        # stroke the triangle
+        draw_triangle(*tri1)
+        bmpctx.set_source_rgb(*[x * 0.5 for x in bgbrush])
+        bmpctx.set_line_width(1)
+        bmpctx.stroke()
+
+        bmpctx.move_to(crx, cry)
+        bmpctx.curve_to(crx + vx * (length * 0.6), cry,
+                        rx - vx * (length * 0.6), ry,
+                        rx, ry)
+
+        bmpctx.set_line_width(4)
+        bmpctx.stroke_preserve()
+        bmpctx.set_line_width(2.5)
+        bmpctx.set_source_rgb(*clr[0])
+        # bmpctx.set_source_rgb(*linepen)
+        bmpctx.stroke()
+
+        draw_triangle(*tri1)
+        bmpctx.fill()
+    # straight line
+    else:
+        bmpctx.set_line_width(1)
+        bmpctx.set_source_rgb(*linepen)
+        bmpctx.move_to(crx, cry)
+        bmpctx.line_to(rx, ry)
+        bmpctx.stroke()
+
+        bmpctx.set_source_rgb(*clr[0])
+        draw_triangle(*tri1)
+        bmpctx.fill_preserve()
+        bmpctx.set_source_rgb(*linepen)
+        bmpctx.stroke()
+
+    bmpctx.restore()
 
 
 class AttributesDialog(Gtk.Dialog):
@@ -380,7 +472,7 @@ class VolumeSlider(Gtk.Window):
     A temporary popup volume control for the router. Can
     only be summoned parametrically and will vanish when the
     left mouse button is being released.
-    """
+     """
     def __init__(self, parent):
         """
         Initializer.
@@ -490,7 +582,7 @@ class VolumeSlider(Gtk.Window):
         @type event: wx.MouseEvent
         """
         self.parent_window.redraw()
-        self.hide_all()
+        self.hide()
         self.drawingarea.grab_remove()
 
 
@@ -541,7 +633,7 @@ class RouteView(Gtk.DrawingArea):
         """
         Gtk.DrawingArea.__init__(self)
         self.panel = parent
-        self.routebitmap = None
+        self.surface = None
         # self.peaks = {}
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_connect += self.on_zzub_redraw_event
@@ -889,13 +981,8 @@ class RouteView(Gtk.DrawingArea):
                 player.active_plugins = []
 
     def on_motion(self, widget, event):
-        """
-        Event handler for mouse movements.
-
-        @param event: Mouse event.
-        @type event: wx.MouseEvent
-        """
-        x, y, state = self.get_window().get_pointer()
+        # x, y, state = self.get_window().get_pointer()
+        x, y, state = event.x, event.y, event.state
         if self.dragging:
             player = com.get('neil.core.player')
             ox, oy = self.dragoffset
@@ -1193,115 +1280,25 @@ class RouteView(Gtk.DrawingArea):
         def get_pixelpos(x, y):
             return cx * (1 + x), cy * (1 + y)
 
-        def draw_line(bmpctx, crx, cry, rx, ry):
-            vx, vy = (rx - crx), (ry - cry)
-            length = (vx * vx + vy * vy) ** 0.5
-            if not length:
-                return
-            vx, vy = vx / length, vy / length
-            bmpctx.move_to(crx, cry)
-            bmpctx.line_to(rx, ry)
-            bmpctx.set_source_rgb(*linepen)
-            bmpctx.stroke()
+        if not self.surface:
+            w = self.get_allocated_width()
+            h = self.get_allocated_height()
+            self.surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+            surfctx = cairo.Context(self.surface)
 
-        def draw_line_arrow(bmpctx, clr, crx, cry, rx, ry):
-            vx, vy = (rx - crx), (ry - cry)
-            length = (vx * vx + vy * vy) ** 0.5
-            if not length:
-                return
-            vx, vy = vx / length, vy / length
+            # self.routebitmap = Gdk.Pixmap(self.get_window(), w, h, -1)
+            # gc = self.routebitmap.new_gc()
+            # cm = gc.get_colormap()
+            # drawable = self.routebitmap
+            surfctx.translate(0.5, 0.5)
+            bg_color = cfg.get_float_color('MV Background')
+            surfctx.set_source_rgb(*bg_color)
+            surfctx.rectangle(0, 0, w, h)
+            surfctx.fill()
 
-            cpx, cpy = crx + vx * (length * 0.5), cry + vy * (length * 0.5)
+            # bmpctx = self.routebitmap.cairo_create()
 
-            def make_triangle(radius):
-                ux, uy = vx, vy
-                if cfg.get_curve_arrows():
-                    # bezier curve tangent
-                    def dp(t, a, b, c, d):
-                        return -3 * (1 - t) ** 2 * a + 3 * (1 - t) ** 2 * b - 6 * t * (1 - t) * b - 3 * (t ** 2) * c + 6 * t * (1 - t) * c + 3 * (t ** 2) * d
-                    tx = dp(.5, crx, crx + vx * (length * 0.6), rx - vx * (length * 0.6), rx)
-                    ty = dp(.5, cry, cry, ry, ry)
-                    tl = (tx ** 2 + ty ** 2) ** .5
-                    ux, uy = tx / tl, ty / tl
-
-                t1 = (int(cpx - ux * radius + uy * radius),
-                      int(cpy - uy * radius - ux * radius))
-                t2 = (int(cpx + ux * radius),
-                      int(cpy + uy * radius))
-                t3 = (int(cpx - ux * radius - uy * radius),
-                      int(cpy - uy * radius + ux * radius))
-
-                return t1, t2, t3
-
-            def draw_triangle(t1, t2, t3):
-                bmpctx.move_to(*t1)
-                bmpctx.line_to(*t2)
-                bmpctx.line_to(*t3)
-                bmpctx.close_path()
-            tri1 = make_triangle(ARROWRADIUS)
-
-            bmpctx.save()
-            bmpctx.translate(-0.5, -0.5)
-
-            # curve
-            if cfg.get_curve_arrows():
-                # bezier curve tanget
-                def dp(t, a, b, c, d):
-                    return -3 * (1 - t) ** 2 * a + 3 * (1 - t) ** 2 * b - 6 * t * (1 - t) * b - 3 * (t ** 2) * c + 6 * t * (1 - t) * c + 3 * (t ** 2) * d
-                tx = dp(.5, crx, crx + vx * (length * 0.6), rx - vx * (length * 0.6), rx)
-                ty = dp(.5, cry, cry, ry, ry)
-                tl = (tx ** 2 + ty ** 2) ** .5
-                tx, ty = tx / tl, ty / tl
-
-                # stroke the triangle
-                draw_triangle(*tri1)
-                bmpctx.set_source_rgb(*[x * 0.5 for x in bgbrush])
-                bmpctx.set_line_width(1)
-                bmpctx.stroke()
-
-                bmpctx.move_to(crx, cry)
-                bmpctx.curve_to(crx + vx * (length * 0.6), cry,
-                                rx - vx * (length * 0.6), ry,
-                                rx, ry)
-
-                bmpctx.set_line_width(4)
-                bmpctx.stroke_preserve()
-                bmpctx.set_line_width(2.5)
-                bmpctx.set_source_rgb(*clr[0])
-                # bmpctx.set_source_rgb(*linepen)
-                bmpctx.stroke()
-
-                draw_triangle(*tri1)
-                bmpctx.fill()
-            # straight line
-            else:
-                bmpctx.set_line_width(1)
-                bmpctx.set_source_rgb(*linepen)
-                bmpctx.move_to(crx, cry)
-                bmpctx.line_to(rx, ry)
-                bmpctx.stroke()
-
-                bmpctx.set_source_rgb(*clr[0])
-                draw_triangle(*tri1)
-                bmpctx.fill_preserve()
-                bmpctx.set_source_rgb(*linepen)
-                bmpctx.stroke()
-
-            bmpctx.restore()
-
-        if not self.routebitmap:
-            self.routebitmap = Gdk.Pixmap(self.get_window(), w, h, -1)
-            gc = self.routebitmap.new_gc()
-            cm = gc.get_colormap()
-            drawable = self.routebitmap
-            gc_bgbrush = cm.alloc_color(cfg.get_color('MV Background'))
-            gc.set_foreground(gc_bgbrush)
-            gc.set_background(gc_bgbrush)
-            drawable.draw_rectangle(gc, True, 0, 0, w, h)
-
-            bmpctx = self.routebitmap.cairo_create()
-            bmpctx.translate(0.5, 0.5)
-            bmpctx.set_line_width(1)
+            surfctx.set_line_width(1)
             mplist = [(mp, get_pixelpos(*mp.get_position()))
                       for mp in player.get_plugin_list()]
 
@@ -1319,25 +1316,28 @@ class RouteView(Gtk.DrawingArea):
                         pinfo = self.get_plugin_info(targetmp)
                         tmppos = pinfo.dragpos
                     crx, cry = get_pixelpos(*tmppos)
-                    if (mp.get_input_connection_type(index) !=
-                        zzub.zzub_connection_type_event):
+                    if (mp.get_input_connection_type(index) != zzub.zzub_connection_type_event):
                         amp = mp.get_parameter_value(0, index, 0)
                         amp /= 16384.0
                         amp = amp ** 0.5
                         #color = [amp, amp, amp]
                         #arrowcolors[zzub.zzub_connection_type_audio][0] = color
-                        c = blend(cm.alloc_color(cfg.get_color("MV Arrow")), Gdk.Color("#000"), amp)
-                        arrowcolors[zzub.zzub_connection_type_audio][0] = [c.red_float, c.green_float, c.blue_float]
+                        blended = blend_float(cfg.get_float_color("MV Arrow"), (0.0, 0.0, 0.0), amp)
+                        arrowcolors[zzub.zzub_connection_type_audio][0] = blended
 
-                    draw_line_arrow(bmpctx, arrowcolors[mp.get_input_connection_type(index)], int(crx), int(cry), int(rx), int(ry))
-        gc = self.get_window().new_gc()
-        self.get_window().draw_drawable(gc, self.routebitmap, 0, 0, 0, 0, -1, -1)
+                    draw_line_arrow(surfctx, arrowcolors[mp.get_input_connection_type(index)], int(crx), int(cry), int(rx), int(ry), cfg)
+            surfctx.translate(0.5, 0.5)
+            self.surface.flush()
+
+        # gc = self.get_window().new_gc()
+        # self.get_window().draw_drawable(gc, self.routebitmap, 0, 0, 0, 0, -1, -1)
+        ctx.set_source_surface(self.surface, 0.0, 0.0)
         if self.connecting:
             ctx.set_line_width(1)
             crx, cry = get_pixelpos(*player.active_plugins[0].get_position())
             rx, ry = self.connectpos
-            draw_line(ctx, int(crx), int(cry), int(rx), int(ry))
-        self.draw_leds()
+            draw_line(ctx, linepen, int(crx), int(cry), int(rx), int(ry))
+        # self.draw_leds()
 
     # This method is not *just* for key-jazz, it handles all key-events in router. Rename?
     def on_key_jazz(self, widget, event, plugin):
