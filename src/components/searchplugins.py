@@ -30,16 +30,10 @@ from neil.utils import prepstr, filepath, db2linear, linear2db,\
      new_listview, add_scrollbars, get_clipboard_text,\
      set_clipboard_text, gettext, new_stock_image_button,\
      new_liststore, add_vscrollbar
-import neil.common as common
+from neil.common import DRAG_TARGETS
 import neil.com as com
 import zzub
 from functools import cmp_to_key
-
-DRAG_FORMAT_PLUGIN_URI = 0
-
-DRAG_FORMATS = [
-        ('application/x-neil-plugin-uri', 0, DRAG_FORMAT_PLUGIN_URI)
-]
 
 class SearchPluginsDialog(Gtk.Window):
 
@@ -109,8 +103,11 @@ class SearchPluginsDialog(Gtk.Window):
         self.filter.set_visible_func(self.filter_item, data=None)
         self.treeview.set_model(self.filter)
         self.treeview.set_tooltip_column(3)
-        self.treeview.drag_source_set(Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK,
-                DRAG_FORMATS, Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
+        self.treeview.drag_source_set(
+            Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK,
+            DRAG_TARGETS, 
+            Gdk.DragAction.COPY | Gdk.DragAction.MOVE
+        )
         self.treeview.connect('drag_data_get', self.on_treeview_drag_data_get)
         cfg = com.get('neil.core.config')
         self.searchbox.set_text(cfg.pluginlistbrowser_search_term)
