@@ -121,7 +121,7 @@ class HDRecorderDialog(Gtk.Dialog):
     def update_label(self):
         player = com.get('neil.core.player')
         recorder = player.get_stream_recorder()
-        self.btnsaveas.set_label(str(recorder.describe_value(zzub.zzub_parameter_group_global, 0, 0), 'ascii'))
+        self.btnsaveas.set_label(recorder.describe_value(zzub.zzub_parameter_group_global, 0, 0))
 
     def on_autostartstop(self, widget):
         """
