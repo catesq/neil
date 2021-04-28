@@ -29,6 +29,8 @@ if __name__ == '__main__':
     os.system('../../bin/neil-combrowser neil.core.routerpanel')
     raise SystemExit
 
+import gi
+gi.require_version("Gtk", "3.0")
 import neil.com as com
 from gi.repository import Gtk, Gdk
 from gi.repository import GObject
@@ -51,10 +53,19 @@ import zzub
 # import random
 # from neil.preset import PresetCollection, Preset
 import neil.common as common
-from neil.common import MARGIN
+from neil.common import MARGIN, DRAG_TARGETS
 from rack import ParameterView
 from neil.presetbrowser import PresetView
 from patterns import key_to_note
+
+
+# DRAG_FORMAT_PLUGIN_URI = 0
+
+# DRAG_FORMATS = [
+    # ('application/x-neil-plugin-uri', 0, DRAG_FORMAT_PLUGIN_URI)
+# ]
+
+
 
 PLUGINWIDTH = 100
 PLUGINHEIGHT = 25
@@ -95,7 +106,7 @@ class AttributesDialog(Gtk.Dialog):
         @param plugin: Plugin object.
         @type plugin: wx.Plugin
         """
-        GObject.GObject.__init__(self,
+        Gtk.Dialog.__init__(self,
                 "Attributes",
                 parent.get_toplevel(),
                 Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
@@ -204,7 +215,7 @@ class ParameterDialog(Gtk.Dialog):
     )
 
     def __init__(self, manager, plugin, parent):
-        GObject.GObject.__init__(self, parent=parent.get_toplevel())
+        Gtk.Dialog.__init__(self, parent=parent.get_toplevel())
         self.plugin = plugin
         self.manager = manager
         self.manager.plugin_dialogs[plugin] = self
@@ -290,7 +301,7 @@ class PresetDialog(Gtk.Dialog):
     """
     def __init__(self, manager, plugin, parent):
         #GObject.GObject.__init__(self, parent=parent.get_toplevel())
-        GObject.GObject.__init__(self, parent=com.get('neil.core.window.root'))
+        Gtk.Dialog.__init__(self, parent=com.get('neil.core.window.root'))
         self.plugin = plugin
         self.manager = manager
         self.manager.preset_dialogs[plugin] = self
@@ -319,12 +330,6 @@ class PresetDialog(Gtk.Dialog):
         self.set_default_size(200, 400)
 
 
-DRAG_FORMAT_PLUGIN_URI = 0
-
-DRAG_FORMATS = [
-        ('application/x-neil-plugin-uri', 0, DRAG_FORMAT_PLUGIN_URI)
-]
-
 
 class RoutePanel(Gtk.VBox):
     """
@@ -351,7 +356,7 @@ class RoutePanel(Gtk.VBox):
         """
         Initializer.
         """
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.view = com.get('neil.core.router.view', self)
         self.add(self.view)
 
@@ -383,13 +388,13 @@ class VolumeSlider(Gtk.Window):
         self.parent_window = parent
         self.plugin = None
         self.index = -1
-        GObject.GObject.__init__(self, Gtk.WindowType.POPUP)
+        Gtk.Window.__init__(self, Gtk.WindowType.POPUP)
         self.drawingarea = Gtk.DrawingArea()
         self.add(self.drawingarea)
         self.drawingarea.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.drawingarea.set_property('can-focus', True)
         self.resize(VOLBARWIDTH, VOLBARHEIGHT)
-        self.hide_all()
+        self.hide()
         self.drawingarea.connect('motion-notify-event', self.on_motion)
         self.drawingarea.connect('draw', self.on_draw)
         self.drawingarea.connect('button-release-event', self.on_left_up)
@@ -533,7 +538,7 @@ class RouteView(Gtk.DrawingArea):
         @param rootwindow: Main window.
         @type rootwindow: NeilFrame
         """
-        GObject.GObject.__init__(self)
+        Gtk.DrawingArea.__init__(self)
         self.panel = parent
         self.routebitmap = None
         # self.peaks = {}
@@ -559,7 +564,7 @@ class RouteView(Gtk.DrawingArea):
         self.connect('configure-event', self.on_configure_event)
         if config.get_config().get_led_draw() == True:
             GObject.timeout_add(100, self.on_draw_led_timer)
-        self.drag_dest_set(0, DRAG_FORMATS, 0)
+        self.drag_dest_set(0, DRAG_TARGETS, 0)
         self.connect('drag_motion', self.on_drag_motion)
         self.connect('drag_drop', self.on_drag_drop)
         self.connect('drag_data_received', self.on_drag_data_received)
