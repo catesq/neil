@@ -70,7 +70,7 @@ class AddSequencerTrackDialog(Gtk.Dialog):
     This dialog is used to create a new track for an existing machine.
     """
     def __init__(self, parent, machines):
-        GObject.GObject.__init__(self,
+        Gtk.Dialog.__init__(self,
                 "Add track",
                 parent.get_toplevel(),
                 Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
@@ -97,14 +97,18 @@ class SequencerToolBar(Gtk.HBox):
         """
         Initialization.
         """
-        GObject.GObject.__init__(self, False, MARGIN)
+        Gtk.HBox.__init__(self, False, MARGIN)
         self.seqview = seqview
         self.set_border_width(MARGIN)
         self.steplabel = Gtk.Label()
         self.steplabel.set_text_with_mnemonic("_Step")
-        self.stepselect = Gtk.combo_box_entry_new_text()
         self.steps = [1, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44,
                       48, 52, 56, 60, 64]
+        stepstore = Gtk.ListStore(int)
+        for step in self.steps:
+            stepstore.append(step)
+        self.stepselect = Gtk.ComboBox.new_with_model(stepstore)
+        
         self.stepselect.connect('changed', self.on_stepselect)
         self.stepselect.connect('key_release_event', self.on_stepselect)
         self.stepselect.set_size_request(60, -1)
@@ -118,16 +122,16 @@ class SequencerToolBar(Gtk.HBox):
         self.pack_start(self.followsong, False, True, 0)
 
     def increase_step(self):
-        if self.parent.view.step < 64:
-            self.parent.view.step *= 2
+        if self.seqview.step < 64:
+            self.seqview.step *= 2
         self.update_stepselect()
-        self.parent.update_all()
+        self.seqview.update_all()
 
     def decrease_step(self):
-        if self.parent.view.step > 1:
-            self.parent.view.step /= 2
+        if self.seqview.step > 1:
+            self.seqview.step /= 2
         self.update_stepselect()
-        self.parent.update_all()
+        self.seqview.update_all()
 
     def update_all(self):
         """
@@ -150,7 +154,7 @@ class SequencerToolBar(Gtk.HBox):
             player.sequence_step = self.parent.view.step
         except ValueError:
             pass
-        self.parent.view.adjust_scrollbars()
+        self.seqview.adjust_scrollbars()
 
     def on_stepselect(self, widget, event=False):
         """
@@ -159,19 +163,19 @@ class SequencerToolBar(Gtk.HBox):
         try:
             step = int(widget.get_active_text())
         except:
-            self.parent.view_step = 1
+            self.seqview.step = 1
             return
         if widget.get_active() == -1 and event == False:
             return
-        if self.parent.view.step == step:
+        if self.seqview.step == step:
             return
         if (step > 128):
-            self.parent.view.step = 128
+            self.seqview.step = 128
         if (step < 1):
-            self.parent.view.step = 1
+            self.seqview.step = 1
         else:
-            self.parent.view.step = step
-        self.parent.update_all()
+            self.seqview.step = step
+        self.seqview.update_all()
         player = com.get('neil.core.player')
         player.set_seqstep(step)
 
@@ -202,7 +206,7 @@ class SequencerPanel(Gtk.VBox):
         """
         Initialization.
         """
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.splitter = Gtk.HPaned()
         self.seqliststore = Gtk.ListStore(str, str)
         self.seqpatternlist = Gtk.TreeView(self.seqliststore)
@@ -218,8 +222,8 @@ class SequencerPanel(Gtk.VBox):
         tvpname.set_resizable(True)
         cellkey = Gtk.CellRendererText()
         cellpname = Gtk.CellRendererText()
-        tvkey.pack_start(cellkey, True, True, 0)
-        tvpname.pack_start(cellpname, True, True, 0)
+        tvkey.pack_start(cellkey, True)
+        tvpname.pack_start(cellpname, True)
         tvkey.add_attribute(cellkey, 'text', 0)
         tvpname.add_attribute(cellpname, 'text', 1)
         self.seqpatternlist.append_column(tvkey)
@@ -494,7 +498,7 @@ class SequencerView(Gtk.DrawingArea):
         self.selection_start = None
         self.selection_end = None
         self.dragging = False
-        GObject.GObject.__init__(self)
+        Gtk.DrawingArea.__init__(self)
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.set_property('can-focus', True)
         self.connect("draw", self.on_draw)
