@@ -1,5 +1,6 @@
-# Neil
-# Modular Sequencer
+#! /usr/bin/env python3 
+
+# # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
 #
 # This program is free software; you can redistribute it and/or
@@ -27,7 +28,6 @@ import os
 import re
 
 import gi
-gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 import neil.com
@@ -409,9 +409,9 @@ class NeilConfig(configparser.ConfigParser):
         Returns a certain theme color as a 16-bit (r,g,b) tuple
         """
         color = self.current_theme[name]
-        r = ((color >> 16) & 0xff) * 257
-        g = ((color >> 8) & 0xff) * 257
-        b = (color & 0xff) * 257
+        r = ((color >> 16) & 0xff) * 255
+        g = ((color >> 8) & 0xff) * 255
+        b = (color & 0xff) * 255
         return r, g, b
 
     def get_color(self, name):
@@ -923,3 +923,6 @@ if __name__ == '__main__':
         v = DEFAULT_THEME[k]
         print(('\t%r: 0x%06x,' % (k, int(cfg.get_color(k).replace('#', ''), 16))))
     print("}")
+
+
+
