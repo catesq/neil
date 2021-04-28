@@ -59,6 +59,7 @@ def run(argv, initfunc = init_neil):
     contextlog.init()
     errordlg.install()
     com.init()
+    init_neil()
     options = com.get('neil.core.options')
     options.parse_args(argv)
     eventbus = com.get('neil.core.eventbus')
@@ -73,15 +74,8 @@ def run(argv, initfunc = init_neil):
         Gtk.main()
 
 __all__ = [
-'CancelException',
-'AboutDialog',
-'NeilFrame',
-'AmpView',
-'MasterPanel',
-'TimePanel',
-'NeilApplication',
-'main',
-'run',
+    'shutdown',
+    'run',
 ]
 
 if __name__ == '__main__':
