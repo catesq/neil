@@ -30,6 +30,7 @@ import config
 import neil.errordlg as errordlg
 from neil import com
 import neil.common as common
+from functools import cmp_to_key
 MARGIN = common.MARGIN
 MARGIN2 = common.MARGIN2
 MARGIN3 = common.MARGIN3
@@ -65,7 +66,7 @@ class FramePanel(Gtk.Notebook):
         self.set_show_tabs(True)
         com.get("neil.core.icons") # make sure theme icons are loaded
         defaultpanel = None
-        self.pages = sorted(com.get_from_category('neil.viewpanel'), key=cmp_view)
+        self.pages = sorted(com.get_from_category('neil.viewpanel'), key=cmp_to_key(cmp_view))
         for index, panel in enumerate(self.pages):
             if not hasattr(panel, '__view__'):
                 print(("panel",panel,"misses attribute __view__"))
@@ -143,7 +144,7 @@ class ViewMenu(Menu):
 
     def __init__(self):
         Menu.__init__(self)
-        views = sorted(com.get_from_category('view'), cmp=cmp_view)
+        views = sorted(views = com.get_from_category('view'), key=cmp_to_key(cmp_view))
         com.get("neil.core.icons") # make sure theme icons are loaded
         accel = com.get('neil.core.accelerators')
         for view in views:
@@ -255,7 +256,6 @@ class NeilFrame(Gtk.Window):
         """
 
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
-
         import ctypes
         com.get('neil.core.player').set_host_info(1,1,ctypes.c_void_p(hash(self)))
 
@@ -314,7 +314,6 @@ class NeilFrame(Gtk.Window):
         editmenuitem = make_submenu_item(self.editmenu, "_Edit")
         editmenuitem.connect('activate', self.update_editmenu)
         self.update_editmenu(None)
-
         self.neilframe_menubar.append(editmenuitem)
         tempmenu = com.get('neil.core.viewmenu')
         self.neilframe_menubar.append(make_submenu_item(tempmenu, "_View"))
@@ -345,7 +344,6 @@ class NeilFrame(Gtk.Window):
         # Menu item that launches the about box
         tempmenu.append(make_stock_menu_item(Gtk.STOCK_ABOUT, self.on_about))
         self.neilframe_menubar.append(make_submenu_item(tempmenu, "_Help"))
-
         self.master = com.get('neil.core.panel.master')
         self.transport = com.get('neil.core.panel.transport')
         self.playback_info = com.get('neil.core.playback')
@@ -359,13 +357,27 @@ class NeilFrame(Gtk.Window):
         vbox.pack_start(self.transport, False, True, 0)
 
         self.update_title()
-        Gtk.Window_set_default_icon_list(
-            GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("48x48/apps/neil.png")),
-            GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("32x32/apps/neil.png")),
-            GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("24x24/apps/neil.png")),
-            GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("22x22/apps/neil.png")),
-            GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("16x16/apps/neil.png"))
-        )
+        theme = Gtk.IconTheme.get_default()
+        # todo: why doesn't add_resource_path work with the app icon
+        # theme.add_resource_path(hicoloriconpath(""))
+
+        icons = []
+        icon_name=("neil")
+        for size in [48, 32, 24, 22, 16]:
+            theme.append_search_path(hicoloriconpath(f"{size}x{size}/apps"))
+
+        for size in [48, 32, 24, 22, 16]:
+            icon = theme.load_icon(icon_name, size, 0)
+            icons.append(icon)
+        self.set_icon_list(icons)
+
+        # Gtk.Window_set_default_icon_list(
+        #     GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("48x48/apps/neil.png")),
+        #     GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("32x32/apps/neil.png")),
+        #     GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("24x24/apps/neil.png")),
+        #     GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("22x22/apps/neil.png")),
+        #     GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("16x16/apps/neil.png"))
+        # )
         self.resize(750, 550)
 
         self.connect('key-press-event', self.on_key_down)
@@ -384,7 +396,6 @@ class NeilFrame(Gtk.Window):
         eventbus = com.get('neil.core.eventbus')
         eventbus.document_path_changed += self.on_document_path_changed
         eventbus.print_mapping()
-
         options, args = com.get('neil.core.options').get_options_args()
         if len(args) > 1:
             self.open_file(args[1])
