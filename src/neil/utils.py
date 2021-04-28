@@ -1101,7 +1101,8 @@ class Menu(Gtk.Menu):
         return item
 
     def add_image_item(self, label, icon_or_path, func, *args):
-        item = Gtk.ImageMenuItem(stock_id=label)
+        print("imagemenu.new_from_stock deprecated", label)
+        item = Gtk.ImageMenuItem.new_from_stock(stock_id=label)
         if isinstance(icon_or_path, str):
             image = Gtk.Image()
             image.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file(icon_or_path))
