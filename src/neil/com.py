@@ -59,12 +59,14 @@ class ComponentManager:
         self.clear()
 
     def clear(self):
+        self.is_loaded = False
         self.singletons = {}
         self.factories = {}
         self.categories = {}
         self.packages = []
 
     def load_packages(self):
+        self.is_loaded = True
         self.packages = []
         packages = []
         names = []
@@ -204,7 +206,8 @@ def get_factories():
 
 
 def init():
-    com.load_packages()
+    if not com.is_loaded:
+        com.load_packages()
 
 __all__ = [
     'com',
