@@ -24,11 +24,19 @@ Provides information used by all ui sections.
 
 import zzub
 import neil.com as com
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
 
 MARGIN0 = 3
 MARGIN = 6
 MARGIN2 = 12
 MARGIN3 = 18
+
+DRAG_TARGETS = [
+    Gtk.TargetEntry('application/x-neil-plugin-uri', Gtk.TargetFlags.SAME_APP, 1)
+]
 
 class PluginInfo(object):
     """
