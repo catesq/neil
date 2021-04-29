@@ -45,7 +45,7 @@ from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS,\
      CONTROLLER_PLUGIN_FLAGS
 from neil.utils import is_effect, is_generator, is_controller, is_root
 from neil.utils import prepstr, db2linear, linear2db, error, new_listview, add_scrollbars
-from neil.utils import blend, blend_float
+from neil.utils import blend, blend_float, box_contains
 import config
 import zzub
 # import sys
@@ -241,12 +241,11 @@ class AttributesDialog(Gtk.Dialog):
             ])
         self.btnset.connect('clicked', self.on_set)
         self.connect('response', self.on_ok)
-        self.attriblist.get_selection().connect('changed',
-                                                self.on_attrib_item_focused)
+        self.attriblist.get_selection().connect('changed', self.on_attrib_item_focused)
         if self.attribs:
             self.attriblist.grab_focus()
             self.attriblist.get_selection().select_path((0,))
-        self.vbox.add(vbox)
+        self.get_content_area().add(vbox)
         self.show_all()
 
     def get_focused_item(self):
@@ -313,7 +312,7 @@ class ParameterDialog(Gtk.Dialog):
         self.manager.plugin_dialogs[plugin] = self
         self.paramview = ParameterView(plugin)
         self.set_title(self.paramview.get_title())
-        self.vbox.add(self.paramview)
+        self.get_content_area().add(self.paramview)
         self.connect('destroy', self.on_destroy)
         self.connect('realize', self.on_realize)
         eventbus = com.get('neil.core.eventbus')
@@ -428,20 +427,20 @@ class RoutePanel(Gtk.VBox):
     Contains the view panel and manages parameter dialogs.
     """
     __neil__ = dict(
-            id = 'neil.core.routerpanel',
-            singleton = True,
-            categories = [
-                    'neil.viewpanel',
-                    'view',
-            ]
+        id = 'neil.core.routerpanel',
+        singleton = True,
+        categories = [
+                'neil.viewpanel',
+                'view',
+        ]
     )
 
     __view__ = dict(
-                    label = "Router",
-                    stockid = "neil_router",
-                    shortcut = 'F3',
-                    default = True,
-                    order = 3,
+        label = "Router",
+        stockid = "neil_router",
+        shortcut = 'F3',
+        default = True,
+        order = 3,
     )
 
     def __init__(self):
@@ -887,8 +886,10 @@ class RouteView(Gtk.DrawingArea):
                 continue
             x, y = mp.get_position()
             x, y = int(cx * (1 + x)), int(cy * (1 + y))
-            if (mx >= (x - PW)) and (mx <= (x + PW)) and (my >= (y - PH)) and (my <= (y + PH)):
-                if sum(tuple((x - PW + LEDOFSX, y - PH + LEDOFSY, LEDWIDTH, LEDHEIGHT).intersect((mx, my, 1, 1)))):
+            plugin_box = (x - PW, y - PH, x + PW, y + PH)
+            if box_contains(mx, my, plugin_box):
+                led_box = (x - PW + LEDOFSX, y - PH + LEDOFSY, LEDWIDTH, LEDHEIGHT)
+                if box_contains(mx, my, led_box):
                     area = AREA_LED
                 return mp, (x, y), area
 
