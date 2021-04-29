@@ -2594,39 +2594,47 @@ class PatternView(Gtk.DrawingArea):
             3: [12, 4],
             }.get(tpb, [16, 4])
 
-    def draw_pattern_background(self, ctx, layout):
+    def draw_pattern_background(self, ctx, pango_ctx, pango_layout):
         """ Draw the background, lines, borders and row numbers """
         w, h = self.get_client_size()
-        gc = self.get_window().new_gc()
-        cm = gc.get_colormap()
+        # gc = self.get_window().new_gc()
+        # cm = gc.get_colormap()
         cfg = config.get_config()
-        drawable = self.get_window()
-        background = cm.alloc_color(cfg.get_color('PE BG'))
-        pen = cm.alloc_color(cfg.get_color('PE Row Numbers'))
-        gc.set_foreground(background)
-        drawable.draw_rectangle(gc, True, 0, 0, w, self.row_height)
-        drawable.draw_rectangle(gc, True, 0, 0, PATLEFTMARGIN, h)
+        # drawable = self.get_window()
+        background = cfg.get_float_color('PE BG')
+        pen = cfg.get_float_color('PE Row Numbers')
+        ctx.set_source_rgb(*background)
+        ctx.rectangle(0, 0, w, self.row_height)
+        ctx.rectangle(0, 0, PATLEFTMARGIN, h)
+        ctx.fill()
+
         if self.lines == None:
             return
-        gc.set_foreground(pen)
+
+        ctx.set_source_rgb(*pen)
         #drawable.draw_rectangle(gc, False, 0, 0, w - 1, h - 1)
         x, y = PATLEFTMARGIN, self.row_height
         row = self.start_row
         rows = self.row_count
         # Draw the row numbers
         num_rows = min(rows - row, (h - self.row_height) / self.row_height + 1)
-        s = '\n'. join([str(i) for i in range(row, row + num_rows)])
-        layout.set_text(s)
-        px, py = layout.get_pixel_size()
-        drawable.draw_layout(gc, x - 5 - px, y, layout)
+        s = '\n'. join([str(i).rjust(4) for i in range(row, row + num_rows)])
+        pango_layout.set_text(s)
+        px, py = pango_layout.get_pixel_size()
+        ctx.move_to(x - 5 - px, y)
+        PangoCairo.show_layout(ctx, pango_layout)
+
         # Draw a black vertical separator line
         y = self.row_height - 1
-        drawable.draw_line(gc, x, y, x, h)
+        ctx.move_to(x, y) #draw_line(gc, x, y, x, h)
+        ctx.line_to(x, h)
+        ctx.stroke()
+        
         # Draw a black horizontal separator line
-        drawable.draw_line(gc, PATLEFTMARGIN, y, w, y)
+
         # The color of text as specified in config.py
-        text_color = cm.alloc_color(cfg.get_color('PE Track Numbers'))
-        gc.set_foreground(text_color)
+        text_color = cfg.get_float_color('PE Track Numbers')
+        ctx.set_source_rgb(*text_color)
         # Display track numbers in the middle of each track column at the to
         # For each existing track:
         for track in range(self.group_track_count[TRACK]):
@@ -2641,12 +2649,12 @@ class PatternView(Gtk.DrawingArea):
             # Get the width of the track being processed.
             width = self.track_width[TRACK] * self.column_width
             # Prepare the text.
-            layout.set_text(s)
+            pango_layout.set_text(s)
             # Get the size of the string when it will be displayed in pixels.
-            px, py = layout.get_pixel_size()
+            px, py = pango_layout.get_pixel_size()
             # And draw it so that it falls in the middle of the track column.
-            drawable.draw_layout(gc, x + width / 2 - px / 2,
-                                 self.row_height / 2 - (py / 2), layout)
+            ctx.move_to(x + int(width / 2 - px / 2), int(self.row_height / 2 - (py / 2)))
+            PangoCairo.show_layout(ctx, pango_layout)
 
     def draw_bar_marks(self, ctx):
         "Draw the horizontal bars every each fourth and eighth bar."
@@ -2659,10 +2667,8 @@ class PatternView(Gtk.DrawingArea):
             width = (self.track_width[group] - 1) * self.column_width
             height = self.row_height
             ctx.set_source_rgb(*color)
-            # gc.set_foreground(color)
             ctx.rectangle(x, y, width, height)
             
-            ctx.stroke()
             ctx.fill()
 
         cfg = config.get_config()
@@ -2844,7 +2850,7 @@ class PatternView(Gtk.DrawingArea):
         self.draw_parameter_values(ctx, pango_ctx, pango_layout)
         self.draw_selection(ctx)
         self.draw_cursor_xor(ctx)
-        # self.draw_pattern_background(ctx, layout)
+        self.draw_pattern_background(ctx, pango_ctx, pango_layout)
         # self.draw_playpos_xor()
 
         return False
