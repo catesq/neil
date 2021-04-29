@@ -361,7 +361,7 @@ class EnvelopeView(Gtk.DrawingArea):
         return rect.width, rect.height
 
     def redraw(self):
-        if self.is_visible():
+        if self.get_realized() and self.is_visible():
             w, h = self.get_client_size()
             self.get_window().invalidate_rect((0, 0, w, h), False)
 
