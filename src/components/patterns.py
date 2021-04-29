@@ -2446,23 +2446,21 @@ class PatternView(Gtk.DrawingArea):
     #     gc.set_background(bbrush)
     #     self.xor_gc = gc
 
-    def draw_cursor_xor(self):
+    def draw_cursor_xor(self, ctx):
         if self.pattern == -1:
             return
         if not self.is_visible():
             return
-        cr = self.get_window().cairo_create()
-        cx, cy = self.pattern_to_pos(self.row, self.group, self.track,
-                                     self.index, self.subindex)
+        cx, cy = self.pattern_to_pos(self.row, self.group, self.track, self.index, self.subindex)
         if (cx >= (PATLEFTMARGIN + 4)) and (cy >= self.top_margin):
             # Note that you have to add 0.5 to coordinates for cairo to properly
             # display lines of width 1.
-            cr.rectangle(cx + 0.5, cy + 0.5, self.column_width, self.row_height)
-            cr.set_source_rgba(1.0, 0.0, 0.0, 1.0)
-            cr.set_line_width(1)
-            cr.stroke_preserve()
-            cr.set_source_rgba(1.0, 0.0, 0.0, 0.3)
-            cr.fill()
+            ctx.rectangle(cx + 0.5, cy + 0.5, self.column_width, self.row_height)
+            ctx.set_source_rgba(1.0, 0.0, 0.0, 1.0)
+            ctx.set_line_width(1)
+            ctx.stroke_preserve()
+            ctx.set_source_rgba(1.0, 0.0, 0.0, 0.3)
+            ctx.fill()
 
     def draw_playpos_xor(self):
         if self.pattern == -1:
@@ -2845,7 +2843,7 @@ class PatternView(Gtk.DrawingArea):
         self.draw_bar_marks(ctx)
         self.draw_parameter_values(ctx, pango_ctx, pango_layout)
         self.draw_selection(ctx)
-        # self.draw_cursor_xor()
+        self.draw_cursor_xor(ctx)
         # self.draw_pattern_background(ctx, layout)
         # self.draw_playpos_xor()
 
