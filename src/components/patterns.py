@@ -66,7 +66,7 @@ class PatternDialog(Gtk.Dialog):
         Initialization.
         """
         Gtk.Dialog.__init__(
-                self,
+            self,
             "Pattern Properties",
             parent.get_toplevel(),
             Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
@@ -78,13 +78,13 @@ class PatternDialog(Gtk.Dialog):
         self.btn_ok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
         self.btn_cancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         self.name_label = Gtk.Label(label="Name")
-        self.edt_name = Gtk.Entry()
+        self.edtname = Gtk.Entry()
         self.length_label = Gtk.Label(label="Length")
-        self.lengtbox = Gtk.combo_box_entry_new_text()
-        self.sitch = Gtk.CheckButton('Switch to new pattern')
+        self.lengthbox = Gtk.ComboBoxText.new_with_entry()
+        self.chkswitch = Gtk.CheckButton('Switch to new pattern')
         for size in patternsizes:
             self.lengthbox.append_text(str(size))
-        self.rowslabel = Gtk.Label(label="Rows")
+        self.rows_label = Gtk.Label(label="Rows")
 
         sgroup1 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
         sgroup2 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
@@ -97,8 +97,9 @@ class PatternDialog(Gtk.Dialog):
             sgroup1.add_widget(c1)
             sgroup2.add_widget(c2)
             vbox.pack_start(row, False, True, 0)
-        add_row(self.namelabel, self.edtname)
-        add_row(self.rowslabel, self.lengthbox)
+        
+        add_row(self.name_label, self.edtname)
+        add_row(self.rows_label, self.lengthbox)
         vbox.pack_start(self.chkswitch, False, True, 0)
         self.edtname.connect('activate', self.on_enter)
         self.lengthbox.get_child().connect('activate', self.on_enter)
@@ -333,7 +334,7 @@ class PatternToolBar(Gtk.HBox):
     def get_plugin_source(self):
         player = com.get('neil.core.player')
 
-        plugins = sorted(list(player.get_plugin_list()), key=str.lower)
+        plugins = sorted(list(player.get_plugin_list()), key=lambda plugin: str.lower(plugin.get_name()))
         return [(plugin.get_name(), plugin) for plugin in plugins]
 
     def get_plugin_sel(self):
@@ -883,6 +884,7 @@ class PatternView(Gtk.DrawingArea):
         menu.add_check_item("Solo Plugin", issolo, self.on_popup_solo)
         menu.show_all()
         menu.attach_to_widget(self, None)
+        # menu.popup(self, event)
         menu.popup(self, event)
 
     def on_pattern_effect(self, item, effect):
@@ -1047,9 +1049,9 @@ class PatternView(Gtk.DrawingArea):
         else:
             self.vscroll.show()
         adj = self.hscroll.get_adjustment()
-        adj.set_all(self.start_col, 0, vw, 1, 1, pw)
+        adj.configure(self.start_col, 0, vw, 1, 1, pw)
         adj = self.vscroll.get_adjustment()
-        adj.set_all(self.start_row, 0, vh, 1, 1, ph)
+        adj.configure(self.start_row, 0, vh, 1, 1, ph)
 
     def set_octave(self, o):
         """
@@ -1145,7 +1147,7 @@ class PatternView(Gtk.DrawingArea):
     def redraw(self, *args):
         if self.is_visible():
             w, h = self.get_client_size()
-            self.get_window().invalidate_rect((0, 0, w, h), False)
+            self.get_window().invalidate_rect(Gdk.Rectangle(0, 0, w, h), False)
 
     def on_active_patterns_changed(self, selpatterns):
         if self.is_visible():
@@ -1638,7 +1640,7 @@ class PatternView(Gtk.DrawingArea):
         if event.button == 1:
             x, y = int(event.x), int(event.y)
             row, group, track, index, subindex = self.pos_to_pattern((x, y))
-            if event.type == Gdk._2BUTTON_PRESS:
+            if event.type == Gdk.EventType._2BUTTON_PRESS:
                 self.selection.mode = SEL_COLUMN
                 self.selection.begin = 0
                 self.selection.end = self.row_count
@@ -1658,15 +1660,14 @@ class PatternView(Gtk.DrawingArea):
                 self.adjust_selection()
                 self.redraw()
 
-    def on_motion(self, widget, *args):
+    def on_motion(self, widget, event):
         """
         Callback that responds to mouse motion in sequence view.
 
         @param event: Mouse event
         @type event: wx.MouseEvent
         """
-        x, y, state = self.get_window().get_pointer()
-        x, y = int(x), int(y)
+        x, y, state = int(event.x), int(event.y), event.state
         row, group, track, index, subindex = self.pos_to_pattern((x, y))
         if self.dragging:
             row, group, track, index, subindex = self.pos_to_pattern((x, y))
@@ -2310,7 +2311,7 @@ class PatternView(Gtk.DrawingArea):
                 subindex = x
         # find row
         row = min(max(0, y), self.row_count - 1)
-        return (row, group, track, index, subindex)
+        return (int(row), int(group), int(track), int(index), int(subindex))
 
     def pos_to_pattern(self, position):
         """
@@ -2645,9 +2646,6 @@ class PatternView(Gtk.DrawingArea):
     def draw_bar_marks(self, ctx):
         "Draw the horizontal bars every each fourth and eighth bar."
         w, h = self.get_client_size()
-        gc = self.get_window().new_gc()
-        cm = gc.get_colormap()
-        drawable = self.get_window()
 
         def draw_bar(row, group, track, color):
             """Draw a horizontal bar for a specified row in a
@@ -2655,15 +2653,15 @@ class PatternView(Gtk.DrawingArea):
             x, y = self.pattern_to_pos(row, group, track, 0)
             width = (self.track_width[group] - 1) * self.column_width
             height = self.row_height
-            gc.set_foreground(color)
-            drawable.draw_rectangle(gc, True, x, y, width, height)
-#        darkest = cm.alloc_color('#b0b0b0')
-#        lighter = cm.alloc_color('#d0d0d0')
-#        lightest = cm.alloc_color('#f0f0f0')
+            ctx.set_source_rgb(*color)
+            # gc.set_foreground(color)
+            ctx.rectangle(x, y, width, height)
+            ctx.fill()
+
         cfg = config.get_config()
-        darkest = cm.alloc_color(cfg.get_color('PE BG Very Dark'))
-        lighter = cm.alloc_color(cfg.get_color('PE BG Light'))
-        lightest = cm.alloc_color(cfg.get_color('PE BG Very Light'))
+        darkest = cfg.get_float_color('PE BG Very Dark')
+        lighter = cfg.get_float_color('PE BG Light')
+        lightest = cfg.get_float_color('PE BG Very Light')
 
         def get_color(row):
             "What color to paint the bar with?"
@@ -2675,8 +2673,8 @@ class PatternView(Gtk.DrawingArea):
                 return lightest
             else:
                 return None
-        num_rows = min(self.row_count - self.start_row,
-                       (h - self.row_height) / self.row_height + 1)
+
+        num_rows = min(self.row_count - self.start_row, (h - self.row_height) / self.row_height + 1)
         if self.lines and self.lines[CONN]:
             for track in range(self.group_track_count[CONN]):
                 for row in range(self.start_row, num_rows + self.start_row):
@@ -2811,10 +2809,12 @@ class PatternView(Gtk.DrawingArea):
         # drawable = self.get_window()
         # gc = drawable.new_gc()
         # cm = gc.get_colormap()
-        # cfg = config.get_config()
-        background = cm.alloc_color(cfg.get_color('PE BG'))
-        gc.set_foreground(cm.alloc_color(background))
-        drawable.draw_rectangle(gc, True, 0, 0, w, h)
+        cfg = config.get_config()
+        background = cfg.get_float_color('PE BG')
+        ctx.set_source_rgb(*background)
+        ctx.rectangle(0, 0, w, h)
+        ctx.fill()
+
 
     def on_draw(self, widget, ctx):
         """
@@ -2824,7 +2824,7 @@ class PatternView(Gtk.DrawingArea):
             self.pattern_changed()
             self.current_plugin = self.get_plugin()
 
-        if (self.needfocus):
+        if self.needfocus:
             self.grab_focus()
             self.needfocus = False
 
@@ -2833,11 +2833,11 @@ class PatternView(Gtk.DrawingArea):
         layout.set_width(-1)
         self.draw_background(ctx)
         self.draw_bar_marks(ctx)
-        self.draw_parameter_values(ctx, layout)
-        self.draw_selection(ctx)
-        self.draw_cursor_xor()
-        self.draw_pattern_background(ctx, layout)
-        self.draw_playpos_xor()
+        # self.draw_parameter_values(ctx, layout)
+        # self.draw_selection(ctx)
+        # self.draw_cursor_xor()
+        # self.draw_pattern_background(ctx, layout)
+        # self.draw_playpos_xor()
 
         return False
 
