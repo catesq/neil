@@ -252,7 +252,7 @@ class PluginContextMenu(Gtk.Menu):
 
         def populate_from_tree(menu, tree):
             for key, value in tree.items():
-                if isinstance(value, dict):
+                if not isinstance(value, dict):
                     icon = Gtk.Image()
                     filename = get_icon_name(value)
                     if os.path.isfile(filename):
@@ -272,6 +272,7 @@ class PluginContextMenu(Gtk.Menu):
             else:
                 player.plugin_origin = menu.context
                 player.create_plugin(loader)
+
         player = com.get('neil.core.player')
         plugins = {}
         tree = {}
