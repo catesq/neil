@@ -964,7 +964,7 @@ class RouteView(Gtk.DrawingArea):
                         x, y = self.float_to_pixel(pinfo.dragpos)
                         pinfo.dragoffset = x - mx, y - my
                     self.dragging = True
-                    self.get_window().set_cursor(Gdk.Cursor.new(Gdk.FLEUR))
+                    self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.FLEUR))
                     self.grab_add()
         else:
             res = self.get_connection_at((mx, my))
