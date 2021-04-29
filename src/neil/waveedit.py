@@ -669,5 +669,5 @@ class WaveEditView(Gtk.DrawingArea):
         self.draw_loop_points(ctx)
         self.draw_zoom_indicator(ctx)
 
-    return False
+        return False
 
