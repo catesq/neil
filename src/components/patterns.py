@@ -1149,7 +1149,7 @@ class PatternView(Gtk.DrawingArea):
         self.subindex = min(max(si, 0), self.subindex_count[self.group][self.index] - 1)
 
     def redraw(self, *args):
-        if self.is_visible():
+        if self.get_window() and self.is_visible():
             w, h = self.get_client_size()
             self.get_window().invalidate_rect(Gdk.Rectangle(0, 0, w, h), False)
 
@@ -2837,7 +2837,7 @@ class PatternView(Gtk.DrawingArea):
         self.draw_selection(ctx)
         self.draw_cursor_xor(ctx)
         self.draw_pattern_background(ctx, pango_ctx, pango_layout)
-        self.draw_playpos_xor()
+        self.draw_playpos_xor(ctx)
 
         return False
 
