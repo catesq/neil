@@ -420,6 +420,13 @@ def write_string(f,s):
     write_int(f, len(s))
     f.write(s)
 
+def blend_float(rgb1, rgb2, weight = 0.5):
+    return [
+        rgb1[0] * weight + rgb2[0] * (1 - weight),
+        rgb1[1] * weight + rgb2[1] * (1 - weight),
+        rgb1[2] * weight + rgb2[2] * (1 - weight)
+    ]
+
 def blend (color1, color2, weight = 0.5):
     """
         Blend (lerp) two Gdk.Colors
@@ -837,6 +844,8 @@ def file_filter(name,*patterns):
         ff.add_pattern(pattern.lower())
     return ff
 
+def box_contains(px, py, rect):
+    return (px >= rect[0] and px <= rect[2] and py >= rect[1] and py <= rect[3])
 
 def format_filesize(size):
     if (size / (1<<40)):
@@ -1123,7 +1132,7 @@ class Menu(Gtk.Menu):
         else:
             event_button = 0
             event_time = 0
-        Gtk.Menu.popup(self, None, None, None, event_button, event_time)
+        super().popup(None, None, None, None, event_button, event_time)
 
 class PropertyEventHandler:
     def get_eventbus(self):
@@ -1203,7 +1212,7 @@ def generate_ui_methods(class_, memberlist):
 
 def refresh_gui():
     while Gtk.events_pending():
-        Gtk.main_iteration_do(block=False)
+        Gtk.main_iteration_do(blocking=False)
 
 def synchronize_list(old_list, new_list, insert_entry_func=None, del_entry_func=None, swap_entry_func=None):
     """
