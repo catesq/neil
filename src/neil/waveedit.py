@@ -21,6 +21,9 @@
 """
 Provides dialogs, classes and controls to edit samples.
 """
+import gi
+gi.require_version('PangoCairo', '1.0')
+gi.require_version('Gtk', '3.0')
 
 from gi.repository import Gtk, Gdk
 from gi.repository import Pango, PangoCairo
@@ -157,7 +160,7 @@ class WaveEditView(Gtk.DrawingArea):
             self.sample_changed()
 
     def redraw(self):
-        if self.is_visible():
+        if self.get_realized() and self.is_visible():
             w, h = self.get_client_size()
             self.get_window().invalidate_rect((0, 0, w, h), False)
 
@@ -565,10 +568,6 @@ class WaveEditView(Gtk.DrawingArea):
                 ctx.fill()
 
     def on_draw(self, widget, ctx):
-        self.draw(ctx)
-        return False
-
-    def draw(self, widget, ctx):
         """
         Overriding a L{Canvas} method that paints onto an offscreen buffer.
         Draws the envelope view graphics.
@@ -595,7 +594,7 @@ class WaveEditView(Gtk.DrawingArea):
         ctx.set_line_width(1)
 
         if self.level == None:
-            return
+            return False
 
         player = com.get('neil.core.player')
         ctx.set_source_rgb(*gridpen)
@@ -669,4 +668,6 @@ class WaveEditView(Gtk.DrawingArea):
                 ctx.fill()
         self.draw_loop_points(ctx)
         self.draw_zoom_indicator(ctx)
+
+    return False
 
