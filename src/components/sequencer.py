@@ -1337,7 +1337,7 @@ class SequencerView(Gtk.DrawingArea):
         return rect.width, rect.height
 
     def redraw(self, *args):
-        if self.is_visible():
+        if self.get_window() and self.is_visible():
             rect = self.get_allocation()
             self.get_window().invalidate_rect((0, 0, rect.width, rect.height), False)
 
