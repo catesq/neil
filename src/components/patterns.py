@@ -2432,20 +2432,6 @@ class PatternView(Gtk.DrawingArea):
         self.adjust_scrollbars()
         self.update_font()
 
-    # def create_xor_gc(self):
-    #     if self.pattern == -1:
-    #         return
-    #     if not self.is_visible():
-    #         return
-    #     gc = self.get_window().new_gc()
-    #     cm = gc.get_colormap()
-    #     w, h = self.get_client_size()
-    #     bbrush = cm.alloc_color('#ffffff')
-    #     gc.set_function(Gdk.XOR)
-    #     gc.set_foreground(bbrush)
-    #     gc.set_background(bbrush)
-    #     self.xor_gc = gc
-
     def draw_cursor_xor(self, ctx):
         if self.pattern == -1:
             return
@@ -2462,15 +2448,12 @@ class PatternView(Gtk.DrawingArea):
             ctx.set_source_rgba(1.0, 0.0, 0.0, 0.3)
             ctx.fill()
 
-    def draw_playpos_xor(self):
+    def draw_playpos_xor(self, ctx):
         if self.pattern == -1:
             return
         if not self.is_visible():
             return
-        drawable = self.get_window()
-        if not hasattr(self, "xor_gc"):
-            self.create_xor_gc()
-        gc = self.xor_gc
+        
         # draw play cursor
         player = com.get('neil.core.player')
         current_position = self.playpos
@@ -2496,7 +2479,10 @@ class PatternView(Gtk.DrawingArea):
                     and current_position < pos + row_count:
                         y = self.top_margin + (current_position - pos - self.start_row) * self.row_height
                         w, h = self.get_client_size()
-                        drawable.draw_rectangle(gc, True, 0, y, w, 2)
+                        ctx.set_source_rgba(0, 0, 0, 0.3)
+                        ctx.move_to(0, y)
+                        ctx.line_to(w, 2)
+                        ctx.stroke()
                         return
 
     def get_plugin(self):
@@ -2851,7 +2837,7 @@ class PatternView(Gtk.DrawingArea):
         self.draw_selection(ctx)
         self.draw_cursor_xor(ctx)
         self.draw_pattern_background(ctx, pango_ctx, pango_layout)
-        # self.draw_playpos_xor()
+        self.draw_playpos_xor()
 
         return False
 
