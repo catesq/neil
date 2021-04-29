@@ -25,7 +25,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
 from gi.repository import GObject
-from gi.repository import Pango
+from gi.repository import Pango, PangoCairo
 
 import neil.com as com
 from neil.utils import prepstr
@@ -784,11 +784,18 @@ class PatternView(Gtk.DrawingArea):
         self.fontdesc = desc
         self.font = pctx.load_font(desc)
         metrics = self.font.get_metrics(None)
-        fh = (metrics.get_ascent() + metrics.get_descent()) / Pango.SCALE
-        fw = metrics.get_approximate_digit_width() / Pango.SCALE
-        self.row_height = fh  # row height
+        
+        # fh = (metrics.get_ascent() + metrics.get_descent()) / Pango.SCALE
+        fh = metrics.get_height() / Pango.SCALE
+        fw = int(metrics.get_approximate_digit_width() / Pango.SCALE)
+        self.row_height = int(fh)  # row height
         self.top_margin = fh  # top margin
         self.column_width = fw  # column width
+        self.row_spacing = int(fh) / fh  # row spacing is usually betwen 0.9 an 1
+                                         # as font height is often non integer eg 15.5.
+        # so the pango_layout.set_text("".join("row1", "row2", "row3", "4")) writes 4 lines 15.5 pix apart
+        # but our drawing routines are based on int, in this case 15
+        # so must call pango_layout.set_line_spacing(row_spacing) in the main on_draw routine before set_text
 
     def tab_to_note_column(self):
         """
@@ -966,12 +973,9 @@ class PatternView(Gtk.DrawingArea):
             self.selection = self.plugin_info.get(self.plugin).selection
             self.input_connection_count =\
                 self.get_plugin().get_input_connection_count()
-            # track count
-            track_count = self.plugin.get_track_count()
-            # global track not considered a track
-            # track count by group
-            self.group_track_count =\
-                [self.input_connection_count, 1, track_count]
+            
+            track_count = self.plugin.get_track_count() # global track not considered a track
+            self.group_track_count = [self.input_connection_count, 1, track_count] # track count by group
             self.parameter_count = []
             self.parameter_width = []
             self.parameter_type = []
@@ -1669,6 +1673,7 @@ class PatternView(Gtk.DrawingArea):
         """
         x, y, state = int(event.x), int(event.y), event.state
         row, group, track, index, subindex = self.pos_to_pattern((x, y))
+        
         if self.dragging:
             row, group, track, index, subindex = self.pos_to_pattern((x, y))
             if group != self.clickpos[1]:
@@ -1688,6 +1693,8 @@ class PatternView(Gtk.DrawingArea):
                 self.selection.end = row + 1
             self.adjust_selection()
             self.redraw()
+
+        
 
     def on_button_up(self, widget, event):
         """
@@ -2288,7 +2295,7 @@ class PatternView(Gtk.DrawingArea):
         track = self.track
         out_of_bounds = False
         if self.track_width[group] != 0:
-            track = x / self.track_width[group]
+            track = int(x / self.track_width[group])
             x -= track * self.track_width[group]
             # bounds checking
             if track >= self.group_track_count[group] or track < 0:
@@ -2323,7 +2330,7 @@ class PatternView(Gtk.DrawingArea):
         @rtype: (int, int, int, int, int)
         """
         x, y = position
-        return self.charpos_to_pattern(((x - PATLEFTMARGIN - 4) / self.column_width + self.start_col, (y - self.top_margin) / self.row_height * 1 + self.start_row))
+        return self.charpos_to_pattern(( int((x - PATLEFTMARGIN - 4) / self.column_width) + self.start_col, int((y - self.top_margin) / self.row_height * 1) + self.start_row))
 
     def get_charbounds(self):
         """
@@ -2332,7 +2339,7 @@ class PatternView(Gtk.DrawingArea):
         w, h = self.get_client_size()
         w -= PATLEFTMARGIN + 4
         h -= self.top_margin
-        return self.start_col + (w / self.column_width) - 1, self.start_row + (h / self.row_height) - 1
+        return self.start_col + int(w / self.column_width) - 1, self.start_row + int(h / self.row_height) - 1
 
     def get_virtual_size(self):
         """
@@ -2656,6 +2663,8 @@ class PatternView(Gtk.DrawingArea):
             ctx.set_source_rgb(*color)
             # gc.set_foreground(color)
             ctx.rectangle(x, y, width, height)
+            
+            ctx.stroke()
             ctx.fill()
 
         cfg = config.get_config()
@@ -2669,12 +2678,12 @@ class PatternView(Gtk.DrawingArea):
                 return darkest
             elif row % 8 == 0:
                 return lighter
-            elif row % 4 == 0:
+            elif row % 2 == 0:
                 return lightest
             else:
                 return None
 
-        num_rows = min(self.row_count - self.start_row, (h - self.row_height) / self.row_height + 1)
+        num_rows = min(self.row_count - self.start_row, int((h - self.row_height) / self.row_height) + 1)
         if self.lines and self.lines[CONN]:
             for track in range(self.group_track_count[CONN]):
                 for row in range(self.start_row, num_rows + self.start_row):
@@ -2693,25 +2702,23 @@ class PatternView(Gtk.DrawingArea):
                     if color != None:
                         draw_bar(row, TRACK, track, color)
 
-    def draw_parameter_values(self, ctx, layout):
+    def draw_parameter_values(self, ctx, pango_ctx, pango_layout):
         """ Draw the parameter values for all tracks, columns and rows."""
         w, h = self.get_client_size()
-        gc = self.get_window().new_gc()
-        cm = gc.get_colormap()
         cfg = config.get_config()
-        pen = cm.alloc_color(cfg.get_color('PE Text'))
-        drawable = self.get_window()
-
+        pen = cfg.get_float_color('PE Text')
+        # drawable = self.get_window()
+        ctx.set_source_rgb(*pen)
         def draw_parameters_range(row, num_rows, group, track=0):
             """Draw the parameter values for a range of rows"""
             x, y = self.pattern_to_pos(row, group, track, 0)
             s = '\n'.join([self.lines[group][track][i]
                            for i in range(row, row + num_rows)])
             # w = self.column_width * len(self.lines[group][track][row])
-            layout.set_text(s)
-            px, py = layout.get_pixel_size()
-            gc.set_foreground(pen)
-            drawable.draw_layout(gc, x, y, layout)
+            pango_layout.set_text(s)
+            px, py = pango_layout.get_pixel_size()
+            ctx.move_to(x, y)
+            PangoCairo.show_layout(ctx, pango_layout)
             return x + px
         # Draw the parameter values
         #i = self.start_row
@@ -2721,7 +2728,7 @@ class PatternView(Gtk.DrawingArea):
         # Number of rows is calculated to be either the first row displayed
         # subtracted from all rows, or the height of the screen divided
         # by row height, whichever is smaller.
-        num_rows = min(rows - row, (h - self.row_height) / self.row_height + 1)
+        num_rows = min(rows - row, int((h - self.row_height) / self.row_height) + 1)
         # out_of_bounds will be set to true if we have gone over the right
         # edge of the screen, which signifies that we don't have to process
         # the columns that are further to the right.
@@ -2748,17 +2755,15 @@ class PatternView(Gtk.DrawingArea):
 
     def draw_selection(self, ctx):
         """ Draw selection box."""
-        # drawable = self.get_window()
-        # gc = drawable.new_gc()
-        cr = self.get_window().cairo_create()
 
         def draw_box(x, y, width, height):
-            cr.rectangle(x + 0.5, y + 0.5, width, height)
-            cr.set_source_rgba(0.0, 1.0, 0.0, 1.0)
-            cr.set_line_width(1)
-            cr.stroke_preserve()
-            cr.set_source_rgba(0.0, 1.0, 0.0, 0.3)
-            cr.fill()
+            ctx.rectangle(x + 0.5, y + 0.5, width, height)
+            ctx.set_source_rgba(0.0, 1.0, 0.0, 1.0)
+            ctx.set_line_width(1)
+            ctx.stroke_preserve()
+            ctx.set_source_rgba(0.0, 1.0, 0.0, 0.3)
+            ctx.fill()
+
         if self.selection:
             x, y1 = self.pattern_to_pos(self.selection.begin,
                                         self.selection.group,
@@ -2768,8 +2773,7 @@ class PatternView(Gtk.DrawingArea):
                                         self.selection.group,
                                         self.selection.track,
                                         self.selection.index)
-            clip_y = (self.row_height +
-                      ((self.row_count - self.start_row) * self.row_height))
+            clip_y = (self.row_height + ((self.row_count - self.start_row) * self.row_height))
             y1 = max(self.row_height, y1)
             y2 = min(clip_y, y2)
             if y2 > y1:
@@ -2827,14 +2831,20 @@ class PatternView(Gtk.DrawingArea):
         if self.needfocus:
             self.grab_focus()
             self.needfocus = False
+        
+        pango_ctx = self.get_pango_context()
+        # pangocairo.CairoContext(ctx)
+        pango_layout = Pango.Layout(pango_ctx)
+        pango_layout.set_spacing(0)
+        pango_layout.set_line_spacing(self.row_spacing)
 
-        layout = Pango.Layout(self.get_pango_context())
-        layout.set_font_description(self.fontdesc)
-        layout.set_width(-1)
+        # pango_layout.set_font_description(self.fontdesc)
+        pango_layout.set_height(-1)
+        pango_layout.set_width(-1)
         self.draw_background(ctx)
         self.draw_bar_marks(ctx)
-        # self.draw_parameter_values(ctx, layout)
-        # self.draw_selection(ctx)
+        self.draw_parameter_values(ctx, pango_ctx, pango_layout)
+        self.draw_selection(ctx)
         # self.draw_cursor_xor()
         # self.draw_pattern_background(ctx, layout)
         # self.draw_playpos_xor()
