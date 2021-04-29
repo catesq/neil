@@ -390,7 +390,7 @@ class NeilFrame(Gtk.Window):
         self.activated=0
 
         self.show_all()
-        self.master.hide_all()
+        self.master.hide()
         self.load_view()
 
         eventbus = com.get('neil.core.eventbus')
