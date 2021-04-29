@@ -50,16 +50,15 @@ class ParameterView(Gtk.VBox):
     CONTROLLER = 'controller'
 
     DROP_TARGET_CTRL_SLIDER = 0
-
     DROP_TARGETS = [
-            ('application/x-controller-slider-drop', Gtk.TargetFlags.SAME_APP, DROP_TARGET_CTRL_SLIDER),
+        Gtk.TargetEntry('application/x-controller-slider-drop', Gtk.TargetFlags.SAME_APP, DROP_TARGET_CTRL_SLIDER)
     ]
 
     __neil__ = dict(
-            id = 'neil.core.parameterview',
-            singleton = False,
-            categories = [
-            ]
+        id = 'neil.core.parameterview',
+        singleton = False,
+        categories = [
+        ]
     )
 
     def __init__(self, plugin):
@@ -69,29 +68,28 @@ class ParameterView(Gtk.VBox):
         @param plugin: The plugin object for which to display parameters.
         @type plugin: zzub.Plugin
         """
-        GObject.GObject.__init__(self)
-        self.set_can_focus(true)
+        Gtk.VBox.__init__(self)
+        self.set_can_focus(True)
         self.plugin = plugin
-        self.tooltips=Gtk.Tooltips()
         name = prepstr(self.plugin.get_name())
         pl = self.plugin.get_pluginloader()
         classname = prepstr(pl.get_name())
         title = "%s - %s" % (name,classname)
         self._title = title
 
-        self.presetbox = Gtk.combo_box_entry_new_text()
+        self.presetbox = Gtk.ComboBoxText.new_with_entry()
         self.presetbox.set_size_request(100,-1)
         self.presetbox.set_wrap_width(4)
         self.btnadd = new_stock_image_button(Gtk.STOCK_ADD)
-        self.tooltips.set_tip(self.btnadd, "Write Values to Preset")
+        self.btnadd.set_tooltip_text("Write Values to Preset")
         self.btnremove = new_stock_image_button(Gtk.STOCK_REMOVE)
-        self.tooltips.set_tip(self.btnremove, "Delete Preset")
+        self.btnremove.set_tooltip_text("Delete Preset")
         self.btncopy = new_stock_image_button(Gtk.STOCK_COPY)
-        self.tooltips.set_tip(self.btncopy, "Copy Values to Clipboard (to Paste in Pattern)")
+        self.btncopy.set_tooltip_text("Copy Values to Clipboard (to Paste in Pattern)")
         self.btnrandom = Gtk.Button("_Random")
-        self.tooltips.set_tip(self.btnrandom, "Randomise Values")
+        self.btnrandom.set_tooltip_text("Randomise Values")
         self.btnhelp = new_stock_image_button(Gtk.STOCK_HELP)
-        self.tooltips.set_tip(self.btnhelp, "Help")
+        self.btnhelp.set_tooltip_text("Help")
         menugroup = Gtk.HBox(False, MARGIN)
         menugroup.pack_start(self.presetbox, True, True, 0)
         menugroup.pack_start(self.btnadd, False, True, 0)
@@ -179,8 +177,10 @@ class ParameterView(Gtk.VBox):
             namelabel = Gtk.Label()
             namelabel._default_name = name
             button = Gtk.Button('Drag to connect')
-            button.drag_source_set(Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK,
-                    self.DROP_TARGETS, Gdk.DragAction.COPY)
+            button.drag_source_set(
+                Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK,
+                self.DROP_TARGETS, 
+                Gdk.DragAction.COPY)
             button.connect('drag-data-get', self.on_drag_data_get, (g, t, i))
             button.connect('drag-data-delete', self.on_drag_data_delete,
                            (g, t, i))
