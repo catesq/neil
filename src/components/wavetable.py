@@ -53,19 +53,19 @@ class WavetablePanel(Gtk.VBox):
     sample editing for example loops and envelopes.
     """
     __neil__ = dict(
-            id='neil.core.wavetablepanel',
-            singleton=True,
-            categories=[
-                    'neil.viewpanel',
-                    'view',
-            ]
+        id='neil.core.wavetablepanel',
+        singleton=True,
+        categories=[
+            'neil.viewpanel',
+            'view',
+        ]
     )
 
     __view__ = dict(
-                    label="Wavetable",
-                    stockid="neil_samplebank",
-                    shortcut='F9',
-                    order=9,
+        label="Wavetable",
+        stockid="neil_samplebank",
+        shortcut='F9',
+        order=9,
     )
 
     def __init__(self):
@@ -76,7 +76,7 @@ class WavetablePanel(Gtk.VBox):
         self.working_directory = ''
         self.files = []
         self.needfocus = True
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.instrpanel = Gtk.HPaned()
         self.instrpanel.set_border_width(MARGIN2)
         self.libpanel = \
@@ -161,9 +161,9 @@ class WavetablePanel(Gtk.VBox):
         #self.set_current_page(0)
         self.pack_start(self.instrpanel, True, True, 0)
         self.samplelist, self.samplestore, columns = new_listview([
-                ('#', str),
-                ('Name', str),
-                (None, GObject.TYPE_PYOBJECT),
+            ('#', str),
+            ('Name', str),
+            (None, GObject.TYPE_PYOBJECT),
         ])
         self.samplelist.get_selection().select_path(0)
         # XXX: TODO
