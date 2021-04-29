@@ -540,15 +540,19 @@ class NeilPlayer(Player, PropertyEventHandler):
         # prepare arguments for the specific callback
         eventname, membername, argnames = self.event_id_to_name[data.type]
         args = []
+        # print("membername", membername)
         if membername:
             specdata = getattr(data, membername)
+            # print("specdata", specdata)
             for argname in argnames:
                 value = getattr(specdata, argname)
-                if hasattr(value, 'contents'):
+                # print("argname %s value: " % argname, value)
+
+                if value and hasattr(value, 'contents'):
                     class_ = value.contents.__class__
                     if hasattr(class_, '_wrapper_'):
                         value = class_._wrapper_._new_from_handle(value)
-                elif 'contents' in dir(value):
+                elif value and 'contents' in dir(value):
                     value = None
                 args.append(value)
         if not data.type in self._exclude_event_debug_:
