@@ -673,7 +673,7 @@ class NeilConfig(configparser.ConfigParser):
         elif isinstance(window, Gtk.Paned):
             self.write_value("SashPosition", str(window.get_position()))
         else:
-            if window.window and window.is_visible():
+            if window.get_window() and window.is_visible():
                 visible = 'true'
             else:
                 visible = 'false'
@@ -859,7 +859,6 @@ def get_config(*args):
 
     @rtype: {NeilConfig}.
     """
-    neil.com.init()
     return neil.com.get(NeilConfigSingleton.__neil__['id'])
 
 
