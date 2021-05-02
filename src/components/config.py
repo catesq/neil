@@ -82,9 +82,8 @@ CONFIG_OPTIONS = dict(
                    onget=lambda v: v or None, doc="the name of the currently active theme."),
         KeymapLanguage=dict(default='en', onset=lambda s: s.lower(
         ), onget=lambda s: s.lower(), doc="the current keymap language."),
-        IncrementalSaving=dict(
-            default=True, doc="the incremental saving option."),
-        PatternFontName=dict(func='pattern_font', default='Monospace 8',
+        IncrementalSaving=dict(default=True, doc="the incremental saving option."),
+        PatternFontName=dict(func='pattern_font', default='Monospace 9',
                              doc="the font used in the pattern editor."),
         LedDraw=dict(default=True, doc="the led draw option."),
         PatNoteOff=dict(func='pattern_noteoff', default=False,
@@ -237,6 +236,7 @@ class NeilConfig(configparser.ConfigParser):
         self.filename = os.path.join(
             self.get_settings_folder(), 'settings.cfg')
         self.read([self.filename])
+        print("config", self.filename)
         self._section = ''
         try:
             self.select_theme(self.get_active_theme())  # pylint: disable=no-member
