@@ -99,7 +99,7 @@ class ParameterView(Gtk.VBox):
         menugroup.pack_start(self.btnhelp, False, True, 0)
         toplevelgroup = Gtk.VBox(False, MARGIN)
         toplevelgroup.set_border_width(MARGIN)
-        toplevelgroup.pack_start(menugroup, False, True, 0)
+        toplevelgroup.pack_start(menugroup, False, False, 0)
 
         scrollwindow = Gtk.ScrolledWindow()
         scrollwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
@@ -130,11 +130,13 @@ class ParameterView(Gtk.VBox):
         self.presetbox.connect('changed', self.on_select_preset)
 
         scrollwindow.add_with_viewport(rowgroup)
+        scrollwindow.set_hexpand(True)
+        scrollwindow.set_vexpand(True)
         self.scrollwindow = scrollwindow
         self.rowgroup = rowgroup
-        toplevelgroup.add(scrollwindow)
+        toplevelgroup.pack_start(scrollwindow, True, True, 0)
 
-        self.add(toplevelgroup)
+        self.pack_start(toplevelgroup, True, True, 0)
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         self.update_preset_buttons()
@@ -177,13 +179,9 @@ class ParameterView(Gtk.VBox):
             namelabel = Gtk.Label()
             namelabel._default_name = name
             button = Gtk.Button('Drag to connect')
-            button.drag_source_set(
-                Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK,
-                self.DROP_TARGETS, 
-                Gdk.DragAction.COPY)
+            button.drag_source_set( Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK, self.DROP_TARGETS, Gdk.DragAction.COPY)
             button.connect('drag-data-get', self.on_drag_data_get, (g, t, i))
-            button.connect('drag-data-delete', self.on_drag_data_delete,
-                           (g, t, i))
+            button.connect('drag-data-delete', self.on_drag_data_delete, (g, t, i))
             button.connect('drag-end', self.on_drag_end, (g, t, i))
             snamegroup.add_widget(namelabel)
             namelabel.set_alignment(0, 0.5)
@@ -212,8 +210,7 @@ class ParameterView(Gtk.VBox):
             namelabel = Gtk.Label()
             namelabel._default_name = name
             button = Gtk.Button('Drop here to connect')
-            button.drag_dest_set(Gtk.DestDefaults.ALL, self.DROP_TARGETS,
-                    Gdk.DragAction.COPY)
+            button.drag_dest_set(Gtk.DestDefaults.ALL, self.DROP_TARGETS, Gdk.DragAction.COPY)
             button.connect('drag-data-received', self.on_drag_data_received, (g,t,i))
             button.connect('drag-drop', self.on_drag_drop, (g,t,i))
             snamegroup.add_widget(namelabel)
@@ -262,8 +259,7 @@ class ParameterView(Gtk.VBox):
             v = plugin.get_parameter_value(g, t, i)
             slider.set_tooltip_markup("<b>Description</b>: %s" % p.get_description())
             slider.set_value(v)
-            slider.drag_dest_set(Gtk.DestDefaults.ALL, self.DROP_TARGETS,
-                    Gdk.DragAction.COPY)
+            slider.drag_dest_set(Gtk.DestDefaults.ALL, self.DROP_TARGETS, Gdk.DragAction.COPY)
             slider.connect('drag-data-received', self.on_drag_data_received, (g, t, i))
             slider.connect('drag-drop', self.on_drag_drop, (g, t, i))
             valuelabel = Gtk.Label(label="")
@@ -904,26 +900,26 @@ class RackPanel(Gtk.VBox):
     """
 
     __neil__ = dict(
-            id = 'neil.core.rackpanel',
-            singleton = True,
-            categories = [
-                    #'neil.viewpanel',
-                    #'view',
-            ]
+        id = 'neil.core.rackpanel',
+        singleton = True,
+        categories = [
+                #'neil.viewpanel',
+                #'view',
+        ]
     )
 
     __view__ = dict(
-                    label = "Rack",
-                    stockid = "rack",
-                    shortcut = 'F11',
-                    order = 11,
+        label = "Rack",
+        stockid = "rack",
+        shortcut = 'F11',
+        order = 11,
     )
 
     def __init__(self):
         """
         Initialization.
         """
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.panels = {}
         scrollwindow = Gtk.ScrolledWindow()
         scrollwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
@@ -959,8 +955,8 @@ class RackPanel(Gtk.VBox):
             #~ view.set_size_request(*view.get_best_size())
 
 __neil__ = dict(
-        classes = [
-                ParameterView,
-                RackPanel,
-        ],
+    classes = [
+        ParameterView,
+        RackPanel,
+    ],
 )
