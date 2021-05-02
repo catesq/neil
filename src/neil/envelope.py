@@ -27,7 +27,7 @@ from gi.repository import Gtk, Gdk, GObject
 import os, sys
 import math
 from .utils import prepstr, db2linear, linear2db, note2str
-from .utils import read_int, write_int
+from .utils import read_int, write_int, box_contains
 import zzub
 import config
 from . import common
@@ -105,7 +105,7 @@ class SimpleEnvelope(Gtk.DrawingArea):
             if (bestindex == None) and (px > x):
                 bestindex = i
             rc = (px - ds, py - ds, DOTSIZE, DOTSIZE)
-            if sum(rc.intersect((x, y, 1, 1))):
+            if box_contains(x, y, rc):
                 return i, EXACT
         return bestindex, NEXT
 
@@ -398,7 +398,7 @@ class EnvelopeView(Gtk.DrawingArea):
             if (bestindex == None) and (px > x):
                 bestindex = i
             rc = (px - ds, py - ds, DOTSIZE, DOTSIZE)
-            if sum(rc.intersect((x, y, 1, 1))):
+            if box_contains(x, y, rc):
                 return i, EXACT
         return bestindex, NEXT
 
