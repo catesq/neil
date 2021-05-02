@@ -37,6 +37,7 @@ from gi.repository import GObject
 from gi.repository import Pango, PangoCairo
 # from cairo import Context
 import cairo
+import ctypes
 
 
 from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS,\
@@ -131,6 +132,9 @@ def draw_line_arrow(bmpctx, clr, crx, cry, rx, ry, cfg):
 
     bmpctx.save()
     bmpctx.translate(-0.5, -0.5)
+
+    bgbrush = cfg.get_float_color("MV Background")
+    linepen = cfg.get_float_color("MV Line")
 
     # curve
     if cfg.get_curve_arrows():
@@ -399,7 +403,7 @@ class PresetDialog(Gtk.Dialog):
         self.plugin = plugin
         self.presetview = PresetView(self, plugin, self)
         self.set_title(self.presetview.get_title())
-        self.vbox.add(self.presetview)
+        self.get_content_area().add(self.presetview)
         self.connect('realize', self.on_realize)
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_delete_plugin += self.on_zzub_delete_plugin
@@ -448,7 +452,7 @@ class RoutePanel(Gtk.VBox):
         """
         Gtk.VBox.__init__(self)
         self.view = com.get('neil.core.router.view', self)
-        self.add(self.view)
+        self.pack_start(self.view, True, True, 0)
 
     def handle_focus(self):
         self.view.grab_focus()
@@ -584,6 +588,7 @@ class VolumeSlider(Gtk.Window):
         self.drawingarea.grab_remove()
 
 
+
 class RouteView(Gtk.DrawingArea):
     """
     Allows to monitor and control plugins and their connections.
@@ -601,12 +606,6 @@ class RouteView(Gtk.DrawingArea):
     dragoffset = 0, 0
     contextmenupos = 0, 0
 
-    # 0 = default
-    # 1 = muted
-    # 2 = led off
-    # 3 = led on
-    # 4 = led border
-    # 5 = led warning
     COLOR_DEFAULT = 0
     COLOR_MUTED = 1
     COLOR_LED_OFF = 2
@@ -655,7 +654,9 @@ class RouteView(Gtk.DrawingArea):
         self.connect('configure-event', self.on_configure_event)
         if config.get_config().get_led_draw() == True:
             GObject.timeout_add(100, self.on_draw_led_timer)
-        self.drag_dest_set(0, DRAG_TARGETS, 0)
+        self.drag_dest_set(Gtk.DestDefaults.ALL, DRAG_TARGETS, Gdk.DragAction.COPY)
+
+        self.last_drop_ts = 0
         self.connect('drag_motion', self.on_drag_motion)
         self.connect('drag_drop', self.on_drag_drop)
         self.connect('drag_data_received', self.on_drag_data_received)
@@ -687,26 +688,32 @@ class RouteView(Gtk.DrawingArea):
         #     bmpctx.rectangle(x,y,20,20)
         #     bmpctx.stroke()
 
-        source = context.get_source_widget()
+        source = context.get_source_window()
         if not source:
             return
         self.drag_highlight()
-        context.drag_status(context.suggested_action, time)
+        # context.drag_status(context.suggested_action, time)
         return True
 
     def on_drag_drop(self, widget, context, x, y, time):
-        #print "on_drag_drop",widget,context,x,y,time
-        if context.targets:
-            widget.drag_get_data(context, 'application/x-neil-plugin-uri', time)
+        if context.list_targets():
+            widget.drag_get_data(context, Gdk.Atom.intern('application/x-neil-plugin-uri', False), time)
             return True
         return False
 
+
     def on_drag_data_received(self, widget, context, x, y, data, info, time):
-        if data.format == 8:
-            context.finish(True, False, time)
+        if time == self.last_drop_ts:
+            print("TODO fix the duoble drop nonsense")
+            return
+
+        self.last_drop_ts = time
+        if data.get_format() == 8:
+            context.finish(True, True, time)
+
             player = com.get('neil.core.player')
             player.plugin_origin = self.pixel_to_float((x, y))
-            uri = data.data
+            uri = str(data.get_data(), "utf-8")
             conn = None
             plugin = None
             pluginloader = player.get_pluginloader_by_name(uri)
@@ -719,11 +726,15 @@ class RouteView(Gtk.DrawingArea):
                     if is_effect(mp) or is_root(mp):
                         plugin = mp
             player.create_plugin(pluginloader, connection=conn, plugin=plugin)
+            Gtk.drag_finish(context, True, False, time)
+            Gdk.drop_finish(context, True, time)
         else:
-            context.finish(False, False, time)
+            Gtk.drag_finish(context, False, False, time)
+            Gdk.drop_finish(context, True, time)
+        return True
 
     def on_configure_event(self, widget, requisition):
-        self.routebitmap = None
+        self.redraw()
 
     def update_colors(self):
         """
@@ -1021,6 +1032,7 @@ class RouteView(Gtk.DrawingArea):
             self.dragging = False
             self.get_window().set_cursor(None)
             self.grab_remove()
+            self.grab_focus()
             ox, oy = self.dragoffset
             size = self.get_allocation()
             x, y = max(0, min(mx - ox, size.width)), max(0, min(my - oy, size.height))
@@ -1040,7 +1052,7 @@ class RouteView(Gtk.DrawingArea):
                 if player.active_plugins:
                     if not is_controller(player.active_plugins[0]):
                         mp.add_input(player.active_plugins[0], zzub.zzub_connection_type_audio)
-                        player.history_commit("new nonnection")
+                        player.history_commit("new connection")
         self.connecting = False
         self.redraw()
         res = self.get_plugin_at((mx, my))
@@ -1079,10 +1091,11 @@ class RouteView(Gtk.DrawingArea):
 
     def redraw(self):
         if self.get_window():
-            self.routebitmap = None
+            self.surface = None
             alloc_rect = self.get_allocation()
             rect = Gdk.Rectangle(0, 0, alloc_rect.width, alloc_rect.height)
             self.get_window().invalidate_rect(rect, False)
+            self.queue_draw()
 
     def draw_leds(self, ctx):
         """
@@ -1095,7 +1108,6 @@ class RouteView(Gtk.DrawingArea):
         # cm = gc.get_colormap()
         cfg = config.get_config()
         rect = self.get_allocation()
-
 
         pango_layout = Pango.Layout(self.get_pango_context())
         #~ layout.set_font_description(self.fontdesc)
@@ -1131,8 +1143,6 @@ class RouteView(Gtk.DrawingArea):
 
             def flag2col(flag):
                 return brushes[flag]
-
-
 
             if pi.plugingfx:
                 pluginctx = cairo.Context(pi.plugingfx)
@@ -1296,8 +1306,6 @@ class RouteView(Gtk.DrawingArea):
                         cfg.get_float_color("MV Controller Arrow Border Out"),
                 ],
         }
-        bgbrush = cfg.get_float_color("MV Background")
-        linepen = cfg.get_float_color("MV Line")
 
         cx, cy = w * 0.5, h * 0.5
 
@@ -1350,19 +1358,18 @@ class RouteView(Gtk.DrawingArea):
                         arrowcolors[zzub.zzub_connection_type_audio][0] = blended
 
                     draw_line_arrow(surfctx, arrowcolors[mp.get_input_connection_type(index)], int(crx), int(cry), int(rx), int(ry), cfg)
-            surfctx.translate(0.5, 0.5)
+            surfctx.translate(-0.5, -0.5)
 
-
-        # gc = self.get_window().new_gc()
-        # self.get_window().draw_drawable(gc, self.routebitmap, 0, 0, 0, 0, -1, -1)
         ctx.set_source_surface(self.surface, 0.0, 0.0)
+        ctx.paint()
+
         if self.connecting:
             ctx.set_line_width(1)
             crx, cry = get_pixelpos(*player.active_plugins[0].get_position())
             rx, ry = self.connectpos
+            linepen = cfg.get_float_color("MV Line")
             draw_line(ctx, linepen, int(crx), int(cry), int(rx), int(ry))
 
-        ctx.paint()
         self.draw_leds(ctx)
 
     # This method is not *just* for key-jazz, it handles all key-events in router. Rename?
