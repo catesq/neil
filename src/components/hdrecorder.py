@@ -100,7 +100,6 @@ class HDRecorderDialog(Gtk.Dialog):
 
     def on_zzub_parameter_changed(self,plugin,group,track,param,value):
         player = com.get('neil.core.player')
-        print("parameter changed")
         recorder = player.get_stream_recorder()
         if plugin == recorder:
             if (group,track,param) == (zzub.zzub_parameter_group_global,0,0):
