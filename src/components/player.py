@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from neil.utils import is_generator, is_effect, is_streamer, PropertyEventHandler, generate_ui_methods, refresh_gui
+from neil.utils import is_generator, is_effect, is_streamer, PropertyEventHandler, refresh_gui
 from zzub import Player
 from gi.repository import GLib
 import neil.com as com
@@ -48,19 +48,6 @@ DOCUMENT_UI = dict(
         #      it can be appended to "Returns ..." and "Sets ...". if omitted,
         #      a default will be used.
         #
-        # event: name of the global event to be triggered. usually generated
-        #        by default if not given.
-        #
-        # onset: an optional function to be called before the value is assigned.
-        #            the function should have the signature
-        #
-        #        def func(value): -> value
-        #
-        # onget: an optional function to be called before the value is returned
-        #        to the calling function.
-        #
-        #        def func(value): -> value
-        #
         # for the setting below, active_plugins, you can access player.get_active_plugins(),
         # player.set_active_plugins(plugins), and player.active_plugins as a property.
         # when changed, the event active_plugins_changed will be triggered.
@@ -76,7 +63,7 @@ DOCUMENT_UI = dict(
 )
 
 
-class NeilPlayer(Player, PropertyEventHandler):
+class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
     __neil__ = dict(
         id='neil.core.player',
         singleton=True,
@@ -132,13 +119,14 @@ class NeilPlayer(Player, PropertyEventHandler):
 
     def __init__(self):
         Player.__init__(self, Player.create())
+
         self._cbtime = time.time()
         self._cbcalls = 0
         self._hevcalls = 0
         self._hevtime = 0
         self.__lazy_commits = False
         self.__event_stats = False
-        self.solo_pplugin=None
+        self.solo_plugin=None
         # enumerate zzub_event_types and prepare unwrappers for the different types
         self.event_id_to_name = {}
         for enumname, cfg in self._event_types_.items():
@@ -183,7 +171,6 @@ class NeilPlayer(Player, PropertyEventHandler):
             for path in [os.path.join(path, 'zzub') for path in paths]:
                 if os.path.exists(path) and not path in pluginpaths:
                     pluginpaths.append(path)
-            print(pluginpaths)
         for pluginpath in pluginpaths:
             print('plugin path:', pluginpath)
             self.add_plugin_path(pluginpath + os.sep)
@@ -771,8 +758,6 @@ class NeilPlayer(Player, PropertyEventHandler):
                 outplug.set_parameter_value(zzub.zzub_parameter_group_connection, index, 1, newpan, False)
         self.history_commit("delete plugin")
 
-generate_ui_methods(NeilPlayer, DOCUMENT_UI)
-
 __neil__ = dict(
     classes = [
         NeilPlayer,
@@ -780,5 +765,9 @@ __neil__ = dict(
 )
 
 if __name__ == '__main__':
+    com.init()
     player = com.get('neil.core.player')
     player.octave = 3
+    print(player.get_octave())
+    print(com.get('neil.core.player').sequence_step)
+    print(com.get('neil.core.player').get_sequence_step())
