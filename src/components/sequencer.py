@@ -60,9 +60,9 @@ SEQKEYMAP[chr(44)] = 0x01
 def get_random_color(seed):
     """Generates a random color in float format."""
     random.seed(seed)
-    r = int(random.random() * 0.4) + 0.599
-    g = int(random.random() * 0.4) + 0.599
-    b = int(random.random() * 0.4) + 0.599
+    r = random.random() * 0.4 + 0.599
+    g = random.random() * 0.4 + 0.599
+    b = random.random() * 0.4 + 0.599
     return (r, g, b)
 
 class PatternNotFoundException(Exception):
