@@ -35,7 +35,7 @@ MARGIN2 = 12
 MARGIN3 = 18
 
 DRAG_TARGETS = [
-    Gtk.TargetEntry('application/x-neil-plugin-uri', Gtk.TargetFlags.SAME_APP, 1)
+    Gtk.TargetEntry.new('application/x-neil-plugin-uri', Gtk.TargetFlags.SAME_APP, 1)
 ]
 
 class PluginInfo(object):
