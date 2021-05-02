@@ -510,7 +510,7 @@ class SequencerView(Gtk.DrawingArea):
         self.connect('scroll-event', self.on_mousewheel)
         self.hscroll.connect('change-value', self.on_hscroll_window)
         self.vscroll.connect('change-value', self.on_vscroll_window)
-        GObject.timeout_add(100, self.update_position)
+        # GObject.timeout_add(100, self.update_position)
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_sequencer_changed += self.redraw
         eventbus.zzub_set_sequence_event += self.redraw
@@ -1349,30 +1349,31 @@ class SequencerView(Gtk.DrawingArea):
                 self.dragging = False
                 self.grab_remove()
 
-    def update_position(self):
-        """
-        Updates the position.
-        """
-        #TODO: find a better way to find out whether we are visible
-        #if self.rootwindow.get_current_panel() != self.panel:
-        #       return True:
+    # def update_position(self):
+    #     """
+    #     Updates the position.
+    #     """
+    #     #TODO: find a better way to find out whether we are visible
+    #     #if self.rootwindow.get_current_panel() != self.panel:
+    #     #       return True:
 
-        if not self.get_window():
-            return
-        player = com.get('neil.core.player')
-        playpos = player.get_position()
-        if self.playpos != playpos:
-            if self.panel.toolbar.followsong.get_active():
-                if playpos >= self.get_endrow() or playpos < self.startseqtime:
-                    self.startseqtime = int(playpos / self.step) * self.step
-                    self.redraw()
-            #self.draw_cursors()
-            ctx = self.get_window().cairo_create()
-            self.draw_playpos(ctx)
-            self.playpos = playpos
-            self.draw_playpos(ctx)
-            #self.redraw()
-        return True
+    #     if not self.get_window():
+    #         return
+    #     player = com.get('neil.core.player')
+    #     playpos = player.get_position()
+    #     print("set playpos", self.playpos, playpos)
+    #     if self.playpos != playpos:
+    #         if self.panel.toolbar.followsong.get_active():
+    #             if playpos >= self.get_endrow() or playpos < self.startseqtime:
+    #                 self.startseqtime = int(playpos / self.step) * self.step
+    #                 self.redraw()
+    #         #self.draw_cursors()
+    #         ctx = self.get_window().cairo_create()
+    #         self.draw_playpos(ctx)
+    #         self.playpos = playpos
+    #         self.draw_playpos(ctx)
+    #         #self.redraw()
+    #     return True
 
     def on_vscroll_window(self, widget, scroll, value):
         """
@@ -1511,16 +1512,16 @@ class SequencerView(Gtk.DrawingArea):
     def draw_playpos(self, ctx):
         if not self.is_visible():
             return
-        # player = com.get('neil.core.player')
 
-        drawable = self.get_window()
         width, height = self.get_client_size()
         if self.playpos >= self.startseqtime:
             ctx.set_source_rgba(1, 1, 1, 0.5)
             ctx.set_operator(cairo.OPERATOR_XOR)
             x = self.seq_left_margin + int((float(self.playpos - self.startseqtime) / self.step) * self.seq_row_size) + 1
-            ctx.rectangle(x, 1, x+1, height - 1)
-            ctx.fill()
+            ctx.set_line_width(1)
+            ctx.move_to(x, 1)
+            ctx.line_to(x, height-1)
+            ctx.stroke()
             ctx.set_operator(cairo.OPERATOR_OVER)
 
 
@@ -1629,7 +1630,7 @@ class SequencerView(Gtk.DrawingArea):
                             except IndexError:
                                 pass
                             box_size = max(int(((self.seq_row_size * length) / self.step) + 0.5), 4)
-                            gfx_w, gfx_h = box_size - 3, self.seq_track_size - 3
+                            gfx_w, gfx_h = box_size - 2, self.seq_track_size - 2
                             gfx = cairo.ImageSurface(cairo.Format.ARGB32, gfx_w, gfx_h)
                             gfxctx = cairo.Context(gfx)
 
@@ -1670,9 +1671,9 @@ class SequencerView(Gtk.DrawingArea):
                                                         gfxctx.rectangle(int(1 + gfx_w * (row / float(length))),
                                                                            int(1 + (gfx_h - 2) * (1.0 - scaled)), 2, 2)
                                                         gfxctx.fill()
-                            gfxctx.set_source_rgb(*colors['Border'])
-                            gfxctx.rectangle(0, 0, gfx_w - 1, gfx_h - 1)
-                            gfxctx.stroke()
+                            # gfxctx.set_source_rgb(*colors['Border'])
+                            # gfxctx.rectangle(0, 0, gfx_w, gfx_h)
+                            # gfxctx.stroke()
                             pango_layout.set_markup("<small>%s</small>" % name)
                             px, py = pango_layout.get_pixel_size()
                             gfxctx.set_source_rgb(*colors['Text'])
@@ -1680,7 +1681,7 @@ class SequencerView(Gtk.DrawingArea):
                             PangoCairo.show_layout(gfxctx, pango_layout)
                             plugin_info.patterngfx[value] = gfx
                         x = self.seq_left_margin + ((position - self.startseqtime) * self.seq_row_size / self.step)
-                        ctx.set_source_surface(gfx, int(x), int(y))
+                        ctx.set_source_surface(gfx, int(x+1), int(y+1))
                         ctx.paint()
                     if pattern != None:
                         pattern.destroy()
@@ -1744,9 +1745,9 @@ class SequencerView(Gtk.DrawingArea):
             ctx.line_to(width - 1, y)
             ctx.stroke()
         
-        ctx.rectangle(self.seq_left_margin, 0, 5, height)
-        ctx.set_source_rgba(0.0, 0.0, 0.0, 0.15)
-        ctx.fill()
+        # ctx.rectangle(self.seq_left_margin, 0, 5, height)
+        # ctx.set_source_rgba(0.0, 0.0, 0.0, 0.15)
+        # ctx.fill()
 
     def draw_loop_points(self, ctx, colors):
         player = com.get('neil.core.player')
@@ -1824,6 +1825,10 @@ class SequencerView(Gtk.DrawingArea):
             'Generator Bg Mute': cfg.get_float_color('MV Generator Mute'),
             'Controller Bg Mute': cfg.get_float_color('MV Controller Mute')
         }
+
+        player = com.get('neil.core.player')
+        self.playpos = player.get_position()
+
         pango_ctx = self.get_pango_context()
         pango_layout = Pango.Layout(pango_ctx)
         pango_layout.set_width(-1)
