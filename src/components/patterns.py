@@ -544,7 +544,7 @@ def key_to_note(k):
     for row, index in zip(rows, range(len(rows))):
         if k in row:
             note = row.index(k)
-            return index + (note / 12), note % 12
+            return index + int(note / 12), note % 12
     return None
 
 sc2note = {
@@ -930,12 +930,15 @@ class PatternView(Gtk.DrawingArea):
         # TODO: find some other means to find out visibility
 #               if self.rootwindow.get_current_panel() != self.panel:
 #                       return True
+        if not self.get_window():
+            return
         player = com.get('neil.core.player')
         playpos = player.get_position()
         if self.playpos != playpos:
-            self.draw_playpos_xor()
+            ctx = self.get_window().cairo_create()
+            self.draw_playpos_xor(ctx)
             self.playpos = playpos
-            self.draw_playpos_xor()
+            self.draw_playpos_xor(ctx)
         return True
 
     def get_new_pattern_name(self, m=None):
@@ -2603,7 +2606,7 @@ class PatternView(Gtk.DrawingArea):
         row = self.start_row
         rows = self.row_count
         # Draw the row numbers
-        num_rows = min(rows - row, (h - self.row_height) / self.row_height + 1)
+        num_rows = min(rows - row, int((h - self.row_height) / self.row_height) + 1)
         s = '\n'. join([str(i).rjust(4) for i in range(row, row + num_rows)])
         pango_layout.set_text(s)
         px, py = pango_layout.get_pixel_size()
