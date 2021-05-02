@@ -948,13 +948,14 @@ class CancelException(Exception):
     modal UI dialogs.
     """
 
-def make_submenu_item(submenu, name):
+def make_submenu_item(submenu, name, use_underline=False):
     item = Gtk.MenuItem(label=name)
+    item.set_use_underline(use_underline)
     item.set_submenu(submenu)
     return item
 
 def make_stock_menu_item(stockid, func, frame=None, shortcut=None, *args):
-    item = Gtk.ImageMenuItem(stockid)
+    item = Gtk.ImageMenuItem.new_from_stock(stockid, None)
     if frame and shortcut:
         acc = com.get('neil.core.accelerators')
         acc.add_accelerator(shortcut, item)
@@ -980,8 +981,9 @@ def make_stock_radio_item(stockid, func, *args):
         item.connect('toggled', func, *args)
     return item
 
-def make_menu_item(label, desc, func, *args):
+def make_menu_item(label, desc, func, underline=False, *args):
     item = Gtk.MenuItem(label=label)
+    item.set_use_underline(underline)
     if desc:
         item.set_tooltip_text(desc)
     if func:
@@ -1132,83 +1134,65 @@ class Menu(Gtk.Menu):
         else:
             event_button = 0
             event_time = 0
-        super().popup(None, None, None, None, event_button, event_time)
+        # return super().popup(None, None, None, None, event_button, event_time)
+        return super().popup(None, None, None, None, event_button, event_time)
 
-class PropertyEventHandler:
-    def get_eventbus(self):
-        return com.get('neil.core.eventbus')
+
+
+class PropertyEventHandler(type):
+    def __new__(cls, name, bases, namespace, methods={}):
+        obj = super().__new__(cls, name, bases, namespace)
+        for name, args in methods.items():
+            obj.__generate_methods(name, args)
+        return obj
+
+    def __generate_methods(self, name, args):
+        doc = args.get('doc', '')
+
+        if args.get('list', False):
+            vtype = args['vtype']
+            getter = lambda self: PropertyEventHandler.listgetter(self, name,args)
+            setter = lambda self,value: PropertyEventHandler.listsetter(self, name,args,value)
+            default = args.get('default', [])
+        else:
+            if 'default' in args:
+                default = args['default']
+                vtype = args.get('vtype', type(default))
+            else:
+                vtype = args['vtype']
+                default = {float: 0.0, int:0, int:0, str:'', str:'', bool:False}.get(vtype, None)
+            getter = lambda self: PropertyEventHandler.getter(self, name,args)
+            setter = lambda self,value: PropertyEventHandler.setter(self, name,args,value)
+
+        setattr(self, '__' + name, default)
+
+        getter.__name__ = 'get_' + name
+        getter.__doc__ = 'Returns ' + doc
+        setattr(self, 'get_' + name, getter)
+
+        setter.__name__ = 'set_' + name
+        setter.__doc__ = 'Sets ' + doc
+        setattr(self, 'set_' + name, setter)
+
+        # add a property
+        prop = property(getter, setter, doc=doc)
+        setattr(self, name, prop)
 
     def getter(self, membername, kwargs):
-        value = getattr(self, '__' + membername)
-        onget = kwargs.get('onget',None)
-        if onget:
-            value = onget(value)
-        return value
+        return getattr(self, '__' + membername)
 
     def setter(self, membername, kwargs, value):
-        onset = kwargs.get('onset',None)
-        if onset:
-            value = onset(value)
         setattr(self, '__' + membername, value)
         eventname = kwargs.get('event', membername + '_changed')
-        eventbus = self.get_eventbus()
-        getattr(eventbus, eventname)(value)
+        getattr(com.get('neil.core.eventbus'), eventname)(value)
 
     def listgetter(self, membername, kwargs):
-        value = getattr(self, '__' + membername)
-        onget = kwargs.get('onget',None)
-        if onget:
-            value = onget(value)
-        return value[:]
+        return getattr(self, '__' + membername)[:]
 
     def listsetter(self, membername, kwargs, values):
-        onset = kwargs.get('onset',None)
-        if onset:
-            values = onset(values)
         setattr(self, '__' + membername, values)
         eventname = kwargs.get('event', membername + '_changed')
-        eventbus = self.get_eventbus()
-        getattr(eventbus, eventname)(values[:])
-
-def generate_ui_method(class_, membername, kwargs):
-    doc = kwargs.get('doc', '')
-
-    onset = kwargs.get('onset', None)
-    onget = kwargs.get('onget', None)
-
-    if kwargs.get('list', False):
-        vtype = kwargs['vtype']
-        getter = lambda self: self.listgetter(membername,kwargs)
-        setter = lambda self,value: self.listsetter(membername,kwargs,value)
-        default = kwargs.get('default', [])
-    else:
-        if 'default' in kwargs:
-            default = kwargs['default']
-            vtype = kwargs.get('vtype', type(default))
-        else:
-            vtype = kwargs['vtype']
-            default = {float: 0.0, int:0, int:0, str:'', str:'', bool:False}.get(vtype, None)
-        getter = lambda self,defvalue=kwargs.get(default,False): self.getter(membername,kwargs)
-        setter = lambda self,value: self.setter(membername,kwargs,value)
-
-    setattr(class_, '__' + membername, default)
-
-    getter.__name__ = 'get_' + membername
-    getter.__doc__ = 'Returns ' + doc
-    setattr(class_, 'get_' + membername, getter)
-
-    setter.__name__ = 'set_' + membername
-    setter.__doc__ = 'Sets ' + doc
-    setattr(class_, 'set_' + membername, setter)
-
-    # add a property
-    prop = property(getter, setter, doc=doc)
-    setattr(class_, membername, prop)
-
-def generate_ui_methods(class_, memberlist):
-    # build getters and setters based on the options map
-    for membername,kwargs in memberlist.items():
-        generate_ui_method(class_, membername, kwargs)
+        getattr(com.get('neil.core.eventbus'), eventname)(values[:])
 
 def refresh_gui():
     while Gtk.events_pending():
@@ -1359,6 +1343,8 @@ __all__ = [
         'get_new_pattern_name',
         'new_theme_image',
         'camelcase_to_unixstyle',
+        'box_contains',
+        'PropertyEventHandler'
         ]
 # TODO: these used to exists at some point. why not now?
 # 'add_accelerator',
