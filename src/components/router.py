@@ -495,16 +495,13 @@ class VolumeSlider(Gtk.Window):
 
     def redraw(self):
         if self.is_visible() and self.drawingarea.get_window():
-            alloc_rect = self.drawingarea.get_allocation()
-            window = self.drawingarea.get_window()
-            rect = Gdk.Rectangle(0, 0, alloc_rect.width, alloc_rect.height)
-            window.invalidate_rect(rect, False)
+            self.queue_draw()
 
     def on_motion(self, widget, event):
         """
         Event handler for mouse movements.
         """
-        x, y, state = self.drawingarea.get_window().get_pointer()
+        x, y, state = (event.x, event.y, event.get_state())
         newpos = int(y)
         delta = newpos - self.y
         if delta == 0:
@@ -520,40 +517,39 @@ class VolumeSlider(Gtk.Window):
         """
         Event handler for paint requests.
         """
-        gc = self.drawingarea.get_window().new_gc()
-        cm = gc.get_colormap()
-        drawable = self.drawingarea.get_window()
-
         rect = self.drawingarea.get_allocation()
         w, h = rect.width, rect.height
 
         cfg = config.get_config()
-        whitebrush = cm.alloc_color(cfg.get_color('MV Amp BG'))
-        blackbrush = cm.alloc_color(cfg.get_color('MV Amp Handle'))
-        outlinepen = cm.alloc_color(cfg.get_color('MV Amp Border'))
+        whitebrush = cfg.get_float_color('MV Amp BG')
+        blackbrush = cfg.get_float_color('MV Amp Handle')
+        outlinepen = cfg.get_float_color('MV Amp Border')
 
-        gc.set_foreground(whitebrush)
-        drawable.draw_rectangle(gc, True, 0, 0, w, h)
-        gc.set_foreground(outlinepen)
-        drawable.draw_rectangle(gc, False, 0, 0, w - 1, h - 1)
+        ctx.set_source_rgb(*whitebrush)
+        ctx.rectangle(0, 0, w, h)
+        ctx.fill()
+        ctx.set_source_rgb(*outlinepen)
+        ctx.rectangle(0, 0, w - 1, h - 1)
+        ctx.fill()
 
         if self.plugin:
-            gc.set_foreground(blackbrush)
+            ctx.set_source_rgb(*blackbrush)
             pos = int(self.amp * (VOLBARHEIGHT - VOLKNOBHEIGHT))
-            drawable.draw_rectangle(gc, True, 1, pos + 1,
-                                    VOLBARWIDTH - 2, VOLKNOBHEIGHT - 2)
+            ctx.rectangle(1, pos + 1, VOLBARWIDTH - 2, VOLKNOBHEIGHT - 2)
+            ctx.fill()
 
-        black = cm.alloc_color(Gdk.color_parse("black"))
-        gc.set_foreground(black)
+        black = (0, 0, 0)
+        ctx.set_source_rgb(*black)
         layout = Pango.Layout(self.get_pango_context())
         font = Pango.FontDescription("sans 6")
         layout.set_font_description(font)
         layout.set_markup("<small>%.1f dB</small>" % (self.amp * -48.0))
-        drawable.draw_layout(gc, 2, 2, layout)
+        ctx.move_to(2, 2)
+        PangoCairo.show_layout(ctx, layout)
 
         return False
 
-    def display(self, xxx_todo_changeme, mp, index):
+    def display(self, xxx_todo_changeme, mp, index, orig_event_y):
         """
         Called by the router view to show the control.
 
@@ -565,15 +561,18 @@ class VolumeSlider(Gtk.Window):
         @type conn: zzub.Connection
         """
         (mx, my) = xxx_todo_changeme
-        self.y = VOLBARHEIGHT / 2
+
         self.plugin = mp
         self.index = index
-        self.amp = (linear2db((self.plugin.get_parameter_value(0, index, 0) /
-                               16384.0), -48.0) / -48.0)
-        #print self.amp
-        self.move(int(mx - VOLBARWIDTH * 0.5), int(my - VOLBARHEIGHT * 0.5))
+        self.amp = abs((linear2db((self.plugin.get_parameter_value(0, index, 0) / 16384.0), -48.0) / -48.0))
+        self.y = orig_event_y
+        self.oy = int(my - VOLBARHEIGHT * self.amp)
+
+        self.move(int(mx - VOLBARWIDTH * 0.5), int(my - VOLBARHEIGHT * self.amp))
         self.show_all()
+
         self.drawingarea.grab_add()
+
 
     def on_left_up(self, widget, event):
         """
@@ -981,10 +980,10 @@ class RouteView(Gtk.DrawingArea):
             res = self.get_connection_at((mx, my))
             if res:
                 mp, index = res
-                ox, oy = self.get_window().get_origin()
+                (ret, ox, oy) = self.get_window().get_origin()
                 connectiontype = mp.get_input_connection_type(index)
                 if connectiontype == zzub.zzub_connection_type_audio:
-                    self.volume_slider.display((ox + mx, oy + my), mp, index)
+                    self.volume_slider.display((ox + mx, oy + my), mp, index, my)
                 elif connectiontype == zzub.zzub_connection_type_event:
                     # no idea what to do when clicking on an event connection yet
                     pass
