@@ -205,7 +205,7 @@ class MasterPanel(Gtk.VBox):
 
         self.clipbtn = Gtk.Button()
         self.clipbtn.connect('clicked', self.on_clip_button_clicked)
-        self.clipbtn.set_property("can-focus", False)
+        self.clipbtn.set_property('can-focus', False)
 
         self.volumelabel = Gtk.Label()
 
