@@ -340,7 +340,7 @@ class WaveEditView(Gtk.DrawingArea):
         if (event.button == 1):
             s, a = self.client_to_sample(mx,my)
             # If a user double-clicks - clear the selection.
-            if (event.type == Gdk._2BUTTON_PRESS):
+            if (event.type == Gdk.EventType._2BUTTON_PRESS):
                 self.selection = None
                 self.dragging = False
                 self.redraw()
@@ -473,7 +473,7 @@ class WaveEditView(Gtk.DrawingArea):
             self.near_end_selection_marker(mx, my) or
             self.near_start_loop_marker(mx, my) or
             self.near_end_loop_marker(mx, my)):
-            resizer = Gdk.Cursor.new(Gdk.SB_H_DOUBLE_ARROW)
+            resizer = Gdk.Cursor.new(Gdk.CursorType.SB_H_DOUBLE_ARROW)
             self.get_window().set_cursor(resizer)
         else:
             if (not self.dragging) and (not self.start_loop_dragging) and (not self.end_loop_dragging):
@@ -603,19 +603,18 @@ class WaveEditView(Gtk.DrawingArea):
         x = 0
         y = 0
         ctx.set_source_rgba(*(gridpen))
+        pango_layout = Pango.Layout(self.get_pango_context())
+        pango_layout.set_width(-1)
+        pango_layout.set_font_description(Pango.FontDescription("sans 8"))
+
         for i in range(8):
             ctx.move_to(x, 0)
             ctx.line_to(x, h)
             ctx.move_to(x + 2, 0)
-            pango_ctx = PangoCairo.CairoContext(ctx)
-            layout = pango_ctx.create_layout()
-            layout.set_width(-1)
-            layout.set_font_description(Pango.FontDescription("sans 8"))
             sample_number = rb + i * (rsize / 8)
             second = sample_number / float(self.level.get_samples_per_second())
-            layout.set_markup("<small>%.3fs</small>" % second)
-            pango_ctx.update_layout(layout)
-            pango_ctx.show_layout(layout)
+            pango_layout.set_markup("<small>%.3fs</small>" % second)
+            PangoCairo.show_layout(ctx, pango_layout)
             x += (w / 8)
         for i in range(8):
             ctx.move_to(0, y)
@@ -626,13 +625,8 @@ class WaveEditView(Gtk.DrawingArea):
         # Show wave file name at the top left corner
         ctx.move_to(2, 14)
         ctx.set_source_rgba(0.4, 0.4, 0.4, 1.0)
-        pango_ctx = PangoCairo.CairoContext(ctx)
-        layout = pango_ctx.create_layout()
-        layout.set_width(-1)
-        layout.set_font_description(Pango.FontDescription("sans 8"))
-        layout.set_markup("<b>%s</b>" % self.wave.get_path())
-        pango_ctx.update_layout(layout)
-        pango_ctx.show_layout(layout)
+        pango_layout.set_markup("<b>%s</b>" % self.wave.get_path())
+        PangoCairo.show_layout(ctx, pango_layout)
         ctx.stroke()
 
         channels = 1
