@@ -952,7 +952,7 @@ class SequencerView(Gtk.DrawingArea):
         menu = Menu()
         pmenu = Menu()
         wavemenu = Menu()
-        for plugin in sorted(list(player.get_plugin_list()), lambda a, b: cmp(a.get_name().lower(), b.get_name().lower())):
+        for plugin in sorted(list(player.get_plugin_list()), key=lambda plugin: plugin.get_name().lower()):
             pmenu.add_item(prepstr(plugin.get_name().replace("_", "__")), self.on_popup_add_track, plugin)
         for i, name in enumerate(wave_names_generator()):
             wavemenu.add_item_no_underline(name, self.on_popup_record_to_wave, i + 1)
