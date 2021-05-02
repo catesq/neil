@@ -30,13 +30,15 @@ from neil.utils import prepstr, filepath, db2linear, linear2db,\
      new_listview, add_scrollbars, get_clipboard_text,\
      set_clipboard_text, gettext, new_stock_image_button,\
      new_liststore, add_vscrollbar
-from neil.common import DRAG_TARGETS
 import neil.com as com
 import zzub
 from functools import cmp_to_key
+from neil.common import DRAG_TARGETS
+
+
+
 
 class SearchPluginsDialog(Gtk.Window):
-
     __neil__ = dict(
         id = 'neil.core.searchplugins',
         singleton = True,
@@ -58,7 +60,7 @@ class SearchPluginsDialog(Gtk.Window):
         self.vbox = Gtk.VBox()
         self.add(self.vbox)
         self.set_title("Search Plugins")
-        self.connect('delete-event', self.hide_on_delete)
+        self.connect('delete-event', lambda widget,data: self.hide())
         com.get("neil.core.icons") # make sure theme icons are loaded
         self.searchterms = ['']
         self.searchbox = Gtk.Entry()
@@ -103,12 +105,7 @@ class SearchPluginsDialog(Gtk.Window):
         self.filter.set_visible_func(self.filter_item, data=None)
         self.treeview.set_model(self.filter)
         self.treeview.set_tooltip_column(3)
-        self.treeview.drag_source_set(
-            Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK,
-            DRAG_TARGETS, 
-            Gdk.DragAction.COPY | Gdk.DragAction.MOVE
-        )
-        self.treeview.connect('drag_data_get', self.on_treeview_drag_data_get)
+        
         cfg = com.get('neil.core.config')
         self.searchbox.set_text(cfg.pluginlistbrowser_search_term)
         self.show_generators_button.set_active(cfg.pluginlistbrowser_show_generators)
@@ -116,6 +113,18 @@ class SearchPluginsDialog(Gtk.Window):
         self.show_controllers_button.set_active(cfg.pluginlistbrowser_show_controllers)
         self.show_nonnative_button.set_active(cfg.pluginlistbrowser_show_nonnative)
         self.set_size_request(-1, 500)
+        self.connect('realize', self.realize)
+        self.connect('destroy', self.unrealize)
+        self.conn_id = False
+
+    def realize(self, widget):
+        self.treeview.drag_source_set( Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK, DRAG_TARGETS, Gdk.DragAction.COPY )
+        self.conn_id = self.treeview.connect('drag_data_get', self.on_treeview_drag_data_get)
+
+    def unrealize(self, widget):
+        if self.conn_id:
+            self.treeview.disconnect(self.conn_id)
+            self.conn_id = False
 
     def get_icon_name(self, pluginloader):
         uri = pluginloader.get_uri()
@@ -135,10 +144,12 @@ class SearchPluginsDialog(Gtk.Window):
         return filename
 
     def on_treeview_drag_data_get(self, widget, context, selection_data, info, time):
-        if selection_data.target == 'application/x-neil-plugin-uri':
+        target = context.list_targets()[0]
+        if target.name() == 'application/x-neil-plugin-uri':
             store, it = self.treeview.get_selection().get_selected()
             child = store.get(it, 2)[0]
-            selection_data.set(selection_data.target, 8, child.get_uri())
+            uri = child.get_uri()
+            selection_data.set(target, 8, bytes(uri.encode("utf-8")))
 
     def on_entry_changed(self, widget):
         text = self.searchbox.get_text()
