@@ -71,6 +71,7 @@ class FramePanel(Gtk.Notebook):
             if not hasattr(panel, '__view__'):
                 print(("panel",panel,"misses attribute __view__"))
                 continue
+            panel._index = index
             options = panel.__view__
             stockid = options['stockid']
             label = options['label']
@@ -91,17 +92,16 @@ class FramePanel(Gtk.Notebook):
             else:
                 header.set_tooltip_text(label)
             self.append_page(panel, header)
+
         if defaultpanel:
             self.select_viewpanel(defaultpanel)
         self.show_all()
 
     def select_viewpanel(self, panel):
-        for index in range(self.get_n_pages()):
-            if self.get_nth_page(index) == panel:
-                self.set_current_page(index)
-                if hasattr(panel, 'handle_focus'):
-                    panel.handle_focus()
-                return
+        if hasattr(panel, '_index'):
+            self.set_current_page(panel._index)
+            if hasattr(panel, 'handle_focus'):
+                panel.handle_focus()
 
 class Accelerators(Gtk.AccelGroup):
 
@@ -305,20 +305,21 @@ class NeilFrame(Gtk.Window):
         self.neilframe_menubar = Gtk.MenuBar()
         vbox.pack_start(self.neilframe_menubar, False, True, 0)
         self.filemenu = Gtk.Menu()
-        filemenuitem = make_submenu_item(self.filemenu, "_File")
+        filemenuitem = make_submenu_item(self.filemenu, "_File", True)
         filemenuitem.connect('activate', self.update_filemenu)
         self.neilframe_menubar.append(filemenuitem)
         self.update_filemenu(None)
 
         self.editmenu = Gtk.Menu()
-        editmenuitem = make_submenu_item(self.editmenu, "_Edit")
+        editmenuitem = make_submenu_item(self.editmenu, "_Edit", True)
         editmenuitem.connect('activate', self.update_editmenu)
         self.update_editmenu(None)
         self.neilframe_menubar.append(editmenuitem)
         tempmenu = com.get('neil.core.viewmenu')
-        self.neilframe_menubar.append(make_submenu_item(tempmenu, "_View"))
+        self.neilframe_menubar.append(make_submenu_item(tempmenu, "_View", True))
         self.toolsmenu = Gtk.Menu()
-        item = make_submenu_item(self.toolsmenu, "_Tools")
+        item = make_submenu_item(self.toolsmenu, "_Tools", True)
+        item.set_use_underline(True)
         self.neilframe_menubar.append(item)
         toolitems = com.get_from_category('menuitem.tool', self.toolsmenu)
         if not toolitems:
@@ -330,9 +331,11 @@ class NeilFrame(Gtk.Window):
         #shortcuts_menu_item.connect('activate', self.on_help_shortcuts)
         #tempmenu.append(shortcuts_menu_item)
         irc_menu_item = Gtk.MenuItem("Ask on _IRC")
+        irc_menu_item.set_use_underline(True)
         irc_menu_item.connect('activate', self.on_irc)
         tempmenu.append(irc_menu_item)
         bugreport_menu_item = Gtk.MenuItem("Report a _Bug")
+        bugreport_menu_item.set_use_underline(True)
         bugreport_menu_item.connect('activate', self.on_bug_report)
         tempmenu.append(bugreport_menu_item)
         # Separator
@@ -522,9 +525,9 @@ class NeilFrame(Gtk.Window):
             self.filemenu.append(Gtk.SeparatorMenuItem())
             for i,filename in enumerate(recent_files):
                 filetitle=os.path.basename(filename).replace("_","__")
-                self.filemenu.append(make_menu_item("_%i %s" % (i+1,filetitle), "", self.open_recent_file, filename))
+                self.filemenu.append(make_menu_item("_%i %s" % (i+1,filetitle), "", self.open_recent_file, True, filename))
         self.filemenu.append(Gtk.SeparatorMenuItem())
-        self.filemenu.append(make_stock_menu_item(Gtk.STOCK_QUIT, self.on_exit))
+        self.filemenu.append(make_stock_menu_item(Gtk.STOCK_QUIT, self.on_exit, frame=self, shortcut="<Control>Q"))
         self.filemenu.show_all()
 
     def get_active_view(self):
@@ -636,6 +639,7 @@ class NeilFrame(Gtk.Window):
         """
         Event handler for key events.
         """
+        print("mainwindow keydown")
         k = Gdk.keyval_name(event.keyval)
         player = com.get('neil.core.player')
         driver = com.get('neil.core.driver.audio')
@@ -646,7 +650,9 @@ class NeilFrame(Gtk.Window):
         elif k == 'F8':
             player.stop()
         else:
+            print("mainwindow exit keydown")
             return False
+        print("mainwindow exit keydown")
         return True
 
     # TODO probabley replace by framepanel
