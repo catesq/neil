@@ -983,7 +983,7 @@ class SequencerView(Gtk.DrawingArea):
             pmenu.append(prepstr(plugin.get_name()))
         dlg = AddSequencerTrackDialog(self, pmenu)
         response = dlg.run()
-        dlg.hide_all()
+        dlg.hide()
         if response == Gtk.ResponseType.OK:
             name = dlg.combo.get_active_text()
             for plugin in player.get_plugin_list():
