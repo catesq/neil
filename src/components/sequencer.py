@@ -29,8 +29,9 @@ if __name__ == '__main__':
     raise SystemExit
 
 from gi.repository import Gtk, Gdk
-from gi.repository import Pango
+from gi.repository import Pango, PangoCairo
 from gi.repository import GObject
+import cairo
 import sys
 # from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS
 # from neil.utils import GENERATOR_PLUGIN_FLAGS, EFFECT_PLUGIN_FLAGS
@@ -56,6 +57,14 @@ SEQKEYMAP[chr(45)] = 0x00
 SEQKEYMAP[chr(44)] = 0x01
 
 
+def get_random_color(seed):
+    """Generates a random color in float format."""
+    random.seed(seed)
+    r = int(random.random() * 0.4) + 0.599
+    g = int(random.random() * 0.4) + 0.599
+    b = int(random.random() * 0.4) + 0.599
+    return (r, g, b)
+
 class PatternNotFoundException(Exception):
     """
     Exception thrown when pattern is not found.
@@ -79,11 +88,11 @@ class AddSequencerTrackDialog(Gtk.Dialog):
         self.btnok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
         self.btncancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         self.combo = Gtk.ComboBoxText()
-        for machine in sorted(machines, lambda a, b: cmp(a.lower(), b.lower())):
+        for machine in sorted(machines, key=lambda m: m.lower()):
             self.combo.append_text(machine)
         # Set a default.
         self.combo.set_active(0)
-        self.vbox.add(self.combo)
+        self.get_content_area().add(self.combo)
         self.show_all()
 
 
@@ -102,12 +111,10 @@ class SequencerToolBar(Gtk.HBox):
         self.set_border_width(MARGIN)
         self.steplabel = Gtk.Label()
         self.steplabel.set_text_with_mnemonic("_Step")
-        self.steps = [1, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44,
-                      48, 52, 56, 60, 64]
-        stepstore = Gtk.ListStore(int)
+        self.steps = [1, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64]
+        self.stepselect = Gtk.ComboBoxText.new()
         for step in self.steps:
-            stepstore.append([step])
-        self.stepselect = Gtk.ComboBox.new_with_model(stepstore)
+            self.stepselect.append_text(str(step))
         
         self.stepselect.connect('changed', self.on_stepselect)
         self.stepselect.connect('key_release_event', self.on_stepselect)
@@ -146,8 +153,7 @@ class SequencerToolBar(Gtk.HBox):
         player = com.get('neil.core.player')
         try:
             self.stepselect.set_active(self.steps.index(self.seqview.step))
-            config.get_config().set_default_int('SequencerStep',
-                                                self.seqview.step)
+            config.get_config().set_default_int('SequencerStep', self.seqview.step)
             player.sequence_step = self.seqview.step
         except ValueError:
             pass
@@ -208,10 +214,8 @@ class SequencerPanel(Gtk.VBox):
         self.seqliststore = Gtk.ListStore(str, str)
         self.seqpatternlist = Gtk.TreeView(self.seqliststore)
         self.seqpatternlist.set_rules_hint(True)
-        self.seqpatternlist.connect("button-press-event",
-                                    self.on_pattern_list_button)
-        self.seqpatternlist.connect("enter-notify-event",
-                                    self.on_mouse_over)
+        self.seqpatternlist.connect("button-press-event", self.on_pattern_list_button)
+        self.seqpatternlist.connect("enter-notify-event", self.on_mouse_over)
         self.seqpatternlist.connect("row-activated", self.on_visit_pattern)
         tvkey = Gtk.TreeViewColumn("Key")
         tvkey.set_resizable(True)
@@ -233,13 +237,13 @@ class SequencerPanel(Gtk.VBox):
         hscroll = Gtk.HScrollbar()
 
         self.seqview = SequencerView(self, hscroll, vscroll)
-        self.seqview.connect("enter-notify-event",
-                             self.on_mouse_over)
+        self.seqview.connect("enter-notify-event", self.on_mouse_over)
         self.viewport = Gtk.Viewport()
         self.viewport.add(self.seqview)
         scrollwin = Gtk.Table(2, 2)
         scrollwin.attach(self.viewport, 0, 1, 0, 1,
-                         Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND)
+                         Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 
+                         Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND)
         scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL)
         scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, 0)
 
@@ -261,7 +265,7 @@ class SequencerPanel(Gtk.VBox):
         self.update_list()
         self.toolbar.update_all()
         self.seqview.connect('size-allocate', self.on_sash_pos_changed)
-        #self.seqview.grab_focus()
+        self.seqview.grab_focus()
         eventbus = com.get('neil.core.eventbus')
         eventbus.edit_sequence_request += self.edit_sequence_request
 
@@ -344,6 +348,7 @@ class SequencerPanel(Gtk.VBox):
                 plugin.remove_pattern(pattern)
                 player = com.get('neil.core.player')
                 player.history_commit("remove pattern")
+
         if event.button == 3:
             x = int(event.x)
             y = int(event.y)
@@ -488,8 +493,7 @@ class SequencerView(Gtk.DrawingArea):
         self.track = 0
         self.startseqtime = 0
         self.starttrack = 0
-        self.step = config.get_config().get_default_int('SequencerStep',
-                                                        self.seq_step)
+        self.step = config.get_config().get_default_int('SequencerStep', self.seq_step)
         self.wmax = 0
         player.set_loop_end(self.step)
         self.selection_start = None
@@ -557,7 +561,7 @@ class SequencerView(Gtk.DrawingArea):
             track = -1
         else:
             track = ((y - self.seq_top_margin) / self.seq_track_size) + self.starttrack
-        return track, row
+        return int(track), int(row)
 
     def get_endtrack(self):
         """
@@ -914,7 +918,7 @@ class SequencerView(Gtk.DrawingArea):
             "Recording",
             buttons=(Gtk.STOCK_OK, True)
             )
-        dialog.vbox.add(Gtk.Label(label="Press OK when the recording is done."))
+        dialog.get_content_area().add(Gtk.Label(label="Press OK when the recording is done."))
         dialog.show_all()
         dialog.run()
         recorder.destroy()
@@ -1286,7 +1290,7 @@ class SequencerView(Gtk.DrawingArea):
                     self.deselect()
                     self.dragging = True
                     self.grab_add()
-            if event.type == Gdk._2BUTTON_PRESS:  # double-click
+            if event.type == Gdk.EventType._2BUTTON_PRESS:  # double-click
                 m, index, bp = self.get_pattern_at(self.track, self.row)
                 if index == None:
                     track = self.get_track()
@@ -1303,14 +1307,8 @@ class SequencerView(Gtk.DrawingArea):
                 return
             self.on_context_menu(event)
 
-    def on_motion(self, widget, *args):
-        """
-        Callback that responds to mouse motion in sequence view.
-
-        @param event: Mouse event
-        @type event: wx.MouseEvent
-        """
-        x, y, state = self.get_window().get_pointer()
+    def on_motion(self, widget, event):
+        x, y, state = int(event.x), int(event.y), event.state
         x = max(int(x), self.seq_left_margin)
         if self.dragging:
             select_track, select_row = self.pos_to_track_row((x, y))
@@ -1339,7 +1337,7 @@ class SequencerView(Gtk.DrawingArea):
     def redraw(self, *args):
         if self.get_window() and self.is_visible():
             rect = self.get_allocation()
-            self.get_window().invalidate_rect((0, 0, rect.width, rect.height), False)
+            self.get_window().invalidate_rect(Gdk.Rectangle(0, 0, rect.width, rect.height), False)
 
     def on_left_up(self, widget, event):
         """
@@ -1359,7 +1357,10 @@ class SequencerView(Gtk.DrawingArea):
         """
         #TODO: find a better way to find out whether we are visible
         #if self.rootwindow.get_current_panel() != self.panel:
-        #       return True
+        #       return True:
+
+        if not self.get_window():
+            return
         player = com.get('neil.core.player')
         playpos = player.get_position()
         if self.playpos != playpos:
@@ -1368,9 +1369,10 @@ class SequencerView(Gtk.DrawingArea):
                     self.startseqtime = playpos / self.step * self.step
                     self.redraw()
             #self.draw_cursors()
-            self.draw_playpos()
+            ctx = self.get_window().cairo_create()
+            self.draw_playpos(ctx)
             self.playpos = playpos
-            self.draw_playpos()
+            self.draw_playpos(ctx)
             #self.redraw()
         return True
 
@@ -1463,7 +1465,7 @@ class SequencerView(Gtk.DrawingArea):
                 total_length) / self.step + 3)
         return w, h
 
-    def draw_cursors(self):
+    def draw_cursors(self, ctx):
         """
         Overriding a Canvas method that is called after painting is completed.
         Draws an XOR play cursor over the pattern view.
@@ -1474,16 +1476,9 @@ class SequencerView(Gtk.DrawingArea):
         if not self.is_visible():
             return
         player = com.get('neil.core.player')
-        gc = self.get_window().new_gc()
-        cr = self.get_window().cairo_create()
-        colormap = gc.get_colormap()
-        # drawable = self.get_window()
         width, height = self.get_client_size()
-        red = colormap.alloc_color('#ff0000')
-        # white = colormap.alloc_color('#ffffff')
-        gc.set_foreground(red)
-        gc.set_background(red)
-        gc.line_width = 2
+        ctx.set_source_rgba(1, 0, 0, 0.7)
+        ctx.set_line_width(2)
         sequencer = player.get_current_sequencer()
         track_count = sequencer.get_sequence_track_count()
         if track_count > 0:
@@ -1508,29 +1503,28 @@ class SequencerView(Gtk.DrawingArea):
                                                                 self.row))
                     cursor_width = self.seq_row_size
                     cursor_height = self.seq_track_size
-                cr.rectangle(cursor_x + 0.5, cursor_y + 0.5,
-                             cursor_width, cursor_height)
-                cr.set_source_rgba(1.0, 0.0, 0.0, 1.0)
-                cr.set_line_width(1)
-                cr.stroke_preserve()
-                cr.set_source_rgba(1.0, 0.0, 0.0, 0.3)
-                cr.fill()
+                ctx.rectangle(cursor_x + 0.5, cursor_y + 0.5, cursor_width, cursor_height)
+                ctx.set_source_rgba(1.0, 0.0, 0.0, 1.0)
+                ctx.set_line_width(1)
+                ctx.stroke_preserve()
+                ctx.set_source_rgba(1.0, 0.0, 0.0, 0.3)
+                ctx.fill()
 
-    def draw_playpos(self):
+    def draw_playpos(self, ctx):
         if not self.is_visible():
             return
         # player = com.get('neil.core.player')
-        gc = self.get_window().new_gc()
-        colormap = gc.get_colormap()
-        white = colormap.alloc_color('#ffffff')
+
         drawable = self.get_window()
         width, height = self.get_client_size()
         if self.playpos >= self.startseqtime:
-            gc.set_foreground(white)
-            gc.set_background(white)
-            gc.set_function(Gdk.XOR)
+            ctx.set_source_rgba(1, 1, 1, 0.5)
+            ctx.set_operator(cairo.OPERATOR_XOR)
             x = self.seq_left_margin + int((float(self.playpos - self.startseqtime) / self.step) * self.seq_row_size) + 1
-            drawable.draw_rectangle(gc, True, x, 1, 1, height - 1)
+            ctx.rectangle(x, 1, x+1, height - 1)
+            ctx.fill()
+            ctx.set_operator(cairo.OPERATOR_OVER)
+
 
     def update(self):
         """
@@ -1562,60 +1556,52 @@ class SequencerView(Gtk.DrawingArea):
                 self.memoized[args] = self.function(*args)
                 return self.memoized[args]
 
-    @memoize
-    def get_random_color(seed):
-        """Generates a random color in html format."""
-        random.seed(seed)
-        r = int(random.random() * 105) + 150
-        g = int(random.random() * 105) + 150
-        b = int(random.random() * 105) + 150
-        result = "#%2x%2x%2x" % (r, g, b)
-        return result.replace(' ', '0')
-
-    def draw_markers(self, ctx, colors):
+ 
+    def draw_markers(self, ctx, pango_layout, colors):
         """
         Draw the vertical lines every few bars.
         """
-        drawable = self.get_window()
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
-        layout = Pango.Layout(self.get_pango_context())
-        layout.set_width(-1)
+        
         start = self.startseqtime
         while (x < width):
             if start % (4 * self.step) == 0:
-                ctx.set_foreground(colors['Strong Line'])
-                drawable.draw_line(ctx, x, 0, x, height)
-                ctx.set_foreground(colors['Text'])
-                layout.set_markup("<small>%s</small>" % str(start))
-                px, py = layout.get_pixel_size()
-                drawable.draw_layout(ctx, x + 2,
-                                     self.seq_top_margin / 2 - py / 2, layout)
+                ctx.set_source_rgb(*colors['Strong Line'])
+                ctx.move_to(x, 0)
+                ctx.line_to(x, height)
+                ctx.stroke()
+                ctx.set_source_rgb(*colors['Text'])
+                pango_layout.set_markup("<small>%s</small>" % str(start))
+                px, py = pango_layout.get_pixel_size()
+                ctx.move_to(x + 2, self.seq_top_margin / 2 - py / 2)
+                PangoCairo.show_layout(ctx, pango_layout)
             else:
-                ctx.set_foreground(colors['Weak Line'])
-                drawable.draw_line(ctx, x, self.seq_top_margin, x, height)
+                ctx.set_source_rgb(*colors['Weak Line'])
+                ctx.move_to(x, self.seq_top_margin)
+                ctx.line_to(x, height)
+                ctx.stroke()
             x += self.seq_row_size
             start += self.step
-        ctx.set_foreground(colors['Border'])
-        drawable.draw_line(ctx, 0, y, width, y)
-        drawable.draw_line(ctx, self.seq_left_margin, 0,
-                           self.seq_left_margin, height)
-        ctx.set_foreground(colors['Track Background'])
-        drawable.draw_rectangle(ctx, True, 0, 0,
-                                self.seq_left_margin, height)
+        ctx.set_source_rgb(*colors['Border'])
+        ctx.move_to(0, y)
+        ctx.line_to(width, y)
+        ctx.move_to(self.seq_left_margin, 0)
+        ctx.line_to(self.seq_left_margin, height)
+        ctx.stroke()
+        ctx.set_source_rgb(*colors['Track Background'])
+        ctx.rectangle(0, 0, self.seq_left_margin, height)
+        ctx.fill()
 
-    def draw_tracks(self, ctx, colors):
+    def draw_tracks(self, ctx, pango_layout, colors):
         """
         Draw tracks and pattern boxes.
         """
         player = com.get('neil.core.player')
-        drawable = self.get_window()
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
-        layout = Pango.Layout(self.get_pango_context())
-        layout.set_width(-1)
-        layout.set_font_description(Pango.FontDescription("sans 8"))
-        # cfg = config.get_config()
+        pango_layout.set_font_description(Pango.FontDescription("sans 8"))
+        
         sequencer = player.get_current_sequencer()
         tracks = sequencer.get_track_list()
         for track_index in range(self.starttrack, len(tracks)):
@@ -1633,9 +1619,9 @@ class SequencerView(Gtk.DrawingArea):
                     width_in_bars = (width / self.seq_row_size) * self.step
                     if ((end >= self.startseqtime) and
                         (position < self.startseqtime + width_in_bars)):
-                        try:
+                        if value in plugin_info.patterngfx:
                             gfx = plugin_info.patterngfx[value]
-                        except KeyError:
+                        else:
                             name = prepstr(pattern.get_name())
                             # Handle the case where the pattern overlaps with the next one.
                             # This is done by shortening the current pattern so they display nice.
@@ -1646,12 +1632,15 @@ class SequencerView(Gtk.DrawingArea):
                                 pass
                             box_size = max(int(((self.seq_row_size * length) / self.step) + 0.5), 4)
                             gfx_w, gfx_h = box_size - 3, self.seq_track_size - 3
-                            gfx = Gdk.Pixmap(drawable, gfx_w, gfx_h, -1)
-                            pattern_color = self.get_random_color(plugin.get_name() + name)
-                            ctx.set_foreground(ctx.get_colormap().alloc_color(pattern_color))
-                            gfx.draw_rectangle(ctx, True, 0, 0, gfx_w, gfx_h)
+                            gfx = cairo.ImageSurface(cairo.Format.ARGB32, gfx_w, gfx_h)
+                            gfxctx = cairo.Context(gfx)
+
+                            pattern_color = get_random_color(plugin.get_name() + name)
+                            gfxctx.set_source_rgb(*pattern_color)
+                            gfxctx.rectangle(0, 0, gfx_w, gfx_h)
+                            gfxctx.fill()
                             if plugin.get_pluginloader().get_uri() == '@neil/lunar/controller/Control;1':
-                                ctx.set_foreground(ctx.get_colormap().alloc_color('#404040'))
+                                ctx.set_foreground(0.25, 0.25, 0.25)
                                 for row in range(length - 1):
                                     val1 = pattern.get_value(row, 1, 0, 0)
                                     val2 = pattern.get_value(row, 1, 0, 0)
@@ -1660,13 +1649,13 @@ class SequencerView(Gtk.DrawingArea):
                                     if val1 != param.get_value_none() and val2 != param.get_value_none:
                                         scaled1 = (val1 - param.get_value_min()) * scale
                                         scaled2 = (val2 - param.get_value_min()) * scale
-                                        gfx.draw_line(ctx,
-                                                      int(1 + gfx_w * (row / float(length))),
-                                                      int(1 + (gfx_h - 2) * (1.0 - scaled1)),
-                                                      int(1 + gfx_w * ((row + 1) / float(length))),
+                                        gfxctx.move_to(int(1 + gfx_w * (row / float(length))),
+                                                      int(1 + (gfx_h - 2) * (1.0 - scaled1)))
+                                        gfxctx.line_to(int(1 + gfx_w * ((row + 1) / float(length))),
                                                       int(1 + (gfx_h - 2) * (1.0 - scaled2)))
+                                        gfxctx.stroke()
                             else:
-                                ctx.set_foreground(ctx.get_colormap().alloc_color('#404040'))
+                                ctx.set_source_rgb(0.25, 0.25, 0.25)
                                 for row in range(length):
                                     groups = pattern.get_group_count()
                                     for group in range(groups):
@@ -1680,18 +1669,21 @@ class SequencerView(Gtk.DrawingArea):
                                                     if val != param.get_value_none():
                                                         scale = 1.0 / (param.get_value_max() - param.get_value_min())
                                                         scaled = (val - param.get_value_min()) * scale
-                                                        gfx.draw_rectangle(ctx, True,
-                                                                           int(1 + gfx_w * (row / float(length))),
+                                                        gfxctx.rectangle(int(1 + gfx_w * (row / float(length))),
                                                                            int(1 + (gfx_h - 2) * (1.0 - scaled)), 2, 2)
-                            ctx.set_foreground(colors['Border'])
-                            gfx.draw_rectangle(ctx, False, 0, 0, gfx_w - 1, gfx_h - 1)
-                            layout.set_markup("<small>%s</small>" % name)
-                            px, py = layout.get_pixel_size()
-                            ctx.set_foreground(colors['Text'])
-                            gfx.draw_layout(ctx, 2, 2, layout)
+                                                        gfxctx.fill()
+                            gfxctx.set_source_rgb(*colors['Border'])
+                            gfxctx.rectangle(0, 0, gfx_w - 1, gfx_h - 1)
+                            gfxctx.stroke()
+                            pango_layout.set_markup("<small>%s</small>" % name)
+                            px, py = pango_layout.get_pixel_size()
+                            gfxctx.set_source_rgb(*colors['Text'])
+                            gfxctx.move_to(2, 2)
+                            PangoCairo.show_layout(gfxctx, pango_layout)
                             plugin_info.patterngfx[value] = gfx
                         x = self.seq_left_margin + ((position - self.startseqtime) * self.seq_row_size / self.step)
-                        drawable.draw_drawable(ctx, gfx, 0, 0, x + 2, y + 2, -1, -1)
+                        ctx.set_source_surface(gfx, int(x), int(y))
+                        ctx.paint()
                     if pattern != None:
                         pattern.destroy()
                 elif value == 0x00 or value == 0x01:
@@ -1699,12 +1691,14 @@ class SequencerView(Gtk.DrawingArea):
                          ((position - self.startseqtime) * self.seq_row_size) /
                          self.step)
                     if value == 0x00:
-                        ctx.set_foreground(ctx.get_colormap().alloc_color('#ff0000'))
+                        ctx.set_source_rgb(1, 0, 0)
                     else:
-                        ctx.set_foreground(ctx.get_colormap().alloc_color('#00ff00'))
-                    ctx.line_width = 3
-                    drawable.draw_line(ctx, x, y + 2, x, y + self.seq_track_size - 1)
-                    ctx.line_width = 1
+                        ctx.set_source_rgb(0, 1, 0)
+                    ctx.set_line_width(3)
+                    ctx.move_to(x, y + 2)
+                    ctx.line_to(x, y + self.seq_track_size - 1)
+                    ctx.stroke()
+                    ctx.set_line_width(1)
                 else:
                     print(("Weird pattern id value: ", value))
             # Draw the track name boxes.
@@ -1719,71 +1713,83 @@ class SequencerView(Gtk.DrawingArea):
             # Draw a box that states the name of the machine on that track.
             if self.plugin_info[plugin].muted or self.plugin_info[plugin].bypassed:
                 if (is_effect(plugin)):
-                    ctx.set_foreground(colors['Effect Bg Mute'])
+                    ctx.set_source_rgb(*colors['Effect Bg Mute'])
                 elif (is_generator(plugin)):
-                    ctx.set_foreground(colors['Generator Bg Mute'])
+                    ctx.set_source_rgb(*colors['Generator Bg Mute'])
                 elif (is_controller(plugin)):
-                    ctx.set_foreground(colors['Controller Bg Mute'])
+                    ctx.set_source_rgb(*colors['Controller Bg Mute'])
                 elif (is_root(plugin)):
-                    ctx.set_foreground(colors['Master Bg Mute'])
+                    ctx.set_source_rgb(*colors['Master Bg Mute'])
             else:
                 if (is_effect(plugin)):
-                    ctx.set_foreground(colors['Effect Bg'])
+                    ctx.set_source_rgb(*colors['Effect Bg'])
                 elif (is_generator(plugin)):
-                    ctx.set_foreground(colors['Generator Bg'])
+                    ctx.set_source_rgb(*colors['Generator Bg'])
                 elif (is_controller(plugin)):
-                    ctx.set_foreground(colors['Controller Bg'])
+                    ctx.set_source_rgb(*colors['Controller Bg'])
                 elif (is_root(plugin)):
-                    ctx.set_foreground(colors['Master Bg'])
-            drawable.draw_rectangle(ctx, True, 0, y, self.seq_left_margin,
-                                    self.seq_track_size)
-            ctx.set_foreground(colors['Border'])
-            drawable.draw_rectangle(ctx, False, 0, y, self.seq_left_margin,
-                                    self.seq_track_size)
-            ctx.set_foreground(colors['Border'])
-            layout.set_markup("%s" % title)
-            px, py = layout.get_pixel_size()
+                    ctx.set_source_rgb(*colors['Master Bg'])
+            ctx.rectangle(0, y, self.seq_left_margin, self.seq_track_size)
+            ctx.fill()
+            ctx.set_source_rgb(*colors['Border'])
+            ctx.rectangle(0, y, self.seq_left_margin, self.seq_track_size)
+            ctx.stroke()
+            pango_layout.set_markup("%s" % title)
+            px, py = pango_layout.get_pixel_size()
             # Draw the label with the track name
-            drawable.draw_layout(ctx, self.seq_left_margin - 4 - px,
-                                 y + self.seq_track_size / 2 - py / 2, layout)
+            ctx.move_to(self.seq_left_margin - 4 - px, y + self.seq_track_size / 2 - py / 2)
+            PangoCairo.show_layout(ctx, pango_layout)
             y += self.seq_track_size
             # Draw the horizontal lines separating tracks
-            ctx.set_foreground(colors['Weak Line'])
-            drawable.draw_line(ctx, self.seq_left_margin + 1, y, width - 1, y)
-        cr = self.get_window().cairo_create()
-        cr.rectangle(self.seq_left_margin, 0, 5, height)
-        cr.set_source_rgba(0.0, 0.0, 0.0, 0.15)
-        cr.fill()
+            ctx.set_source_rgb(*colors['Weak Line'])
+            ctx.move_to(self.seq_left_margin + 1, y)
+            ctx.line_to(width - 1, y)
+            ctx.stroke()
+        
+        ctx.rectangle(self.seq_left_margin, 0, 5, height)
+        ctx.set_source_rgba(0.0, 0.0, 0.0, 0.15)
+        ctx.fill()
 
     def draw_loop_points(self, ctx, colors):
         player = com.get('neil.core.player')
-        drawable = self.get_window()
         width, height = self.get_client_size()
-        ctx.line_width = 1
+        ctx.set_line_width(1)
         loop_start, loop_end = player.get_loop()
         window_start, window_end = self.get_bounds()
         if (loop_start >= window_start and loop_start <= window_end):
             # The right facing loop delimiter line with arrow.
             x, y = self.track_row_to_pos((0, loop_start))
-            ctx.set_foreground(colors['Loop Line'])
-            drawable.draw_line(ctx, x, 0, x, height)
-            drawable.draw_polygon(ctx, filled=True,
-                                  points=((x, 0), (x + 10, 0), (x, 10)))
+            ctx.set_source_rgb(*colors['Loop Line'])
+            ctx.move_to(x, 0)
+            ctx.line_to(x, height)
+            ctx.stroke()
+            ctx.move_to(x, 0)
+            ctx.line_to(x+10, 0)
+            ctx.line_to(x, 10)
+            ctx.close_path()
+            ctx.fill()
         if (loop_end >= window_start and loop_end <= window_end):
             # The left facing loop delimiter with arrow.
             x, y = self.track_row_to_pos((0, loop_end))
-            ctx.set_foreground(colors['Loop Line'])
-            drawable.draw_line(ctx, x, 0, x, height)
-            drawable.draw_polygon(ctx, filled=True,
-                                  points=((x, 0), (x - 10, 0), (x, 10)))
+            ctx.set_source_rgb(*colors['Loop Line'])
+            ctx.move_to(x, 0)
+            ctx.line_to(x, height)
+            ctx.stroke()
+            ctx.move_to(x, 0)
+            ctx.line_to(x-10, 0)
+            ctx.line_to(x, 10)
+            ctx.close_path()
+            ctx.fill()
         # Draw song end marker.
-        ctx.line_width = 3
+        ctx.set_line_width(3)
         song_end = player.get_song_end()
         if (song_end > window_start and song_end < window_end):
             x, y = self.track_row_to_pos((0, song_end))
-            ctx.set_foreground(colors['End Marker'])
-            drawable.draw_line(ctx, x, 0, x, height)
-        ctx.line_width = 1
+            ctx.set_source_rgb(*colors['End Marker'])
+            ctx.move_to(x, 0)
+            ctx.line_to(x, height)
+            ctx.stroke()
+        ctx.set_line_width(1)
 
     def on_draw(self, widget, ctx):
         if (self.needfocus):
@@ -1802,32 +1808,37 @@ class SequencerView(Gtk.DrawingArea):
         width, height = self.get_client_size()
         cfg = config.get_config()
         colors = {
-            'Background': colormap.alloc_color(cfg.get_color('SE Background')),
-            'Border': colormap.alloc_color(cfg.get_color('SE Border')),
-            'Strong Line': colormap.alloc_color(cfg.get_color('SE Strong Line')),
-            'Weak Line': colormap.alloc_color(cfg.get_color('SE Weak Line')),
-            'Text': colormap.alloc_color(cfg.get_color('SE Text')),
-            'Track Background': colormap.alloc_color(cfg.get_color('SE Track Background')),
-            'Track Foreground': colormap.alloc_color(cfg.get_color('SE Track Foreground')),
-            'Loop Line': colormap.alloc_color(cfg.get_color('SE Loop Line')),
-            'End Marker': colormap.alloc_color(cfg.get_color('SE End Marker')),
-            'Master Bg': colormap.alloc_color(cfg.get_color('MV Master')),
-            'Effect Bg': colormap.alloc_color(cfg.get_color('MV Effect')),
-            'Generator Bg': colormap.alloc_color(cfg.get_color('MV Generator')),
-            'Controller Bg': colormap.alloc_color(cfg.get_color('MV Controller')),
-            'Master Bg Mute': colormap.alloc_color(cfg.get_color('MV Master Mute')),
-            'Effect Bg Mute': colormap.alloc_color(cfg.get_color('MV Effect Mute')),
-            'Generator Bg Mute': colormap.alloc_color(cfg.get_color('MV Generator Mute')),
-            'Controller Bg Mute': colormap.alloc_color(cfg.get_color('MV Controller Mute'))
+            'Background': cfg.get_float_color('SE Background'),
+            'Border': cfg.get_float_color('SE Border'),
+            'Strong Line': cfg.get_float_color('SE Strong Line'),
+            'Weak Line': cfg.get_float_color('SE Weak Line'),
+            'Text': cfg.get_float_color('SE Text'),
+            'Track Background': cfg.get_float_color('SE Track Background'),
+            'Track Foreground': cfg.get_float_color('SE Track Foreground'),
+            'Loop Line': cfg.get_float_color('SE Loop Line'),
+            'End Marker': cfg.get_float_color('SE End Marker'),
+            'Master Bg': cfg.get_float_color('MV Master'),
+            'Effect Bg': cfg.get_float_color('MV Effect'),
+            'Generator Bg': cfg.get_float_color('MV Generator'),
+            'Controller Bg': cfg.get_float_color('MV Controller'),
+            'Master Bg Mute': cfg.get_float_color('MV Master Mute'),
+            'Effect Bg Mute': cfg.get_float_color('MV Effect Mute'),
+            'Generator Bg Mute': cfg.get_float_color('MV Generator Mute'),
+            'Controller Bg Mute': cfg.get_float_color('MV Controller Mute')
         }
+        pango_ctx = self.get_pango_context()
+        pango_layout = Pango.Layout(pango_ctx)
+        pango_layout.set_width(-1)
         # Draw the background
-        ctx.set_foreground(colors['Background'])
-        drawable.draw_rectangle(ctx, True, 0, 0, width, height)
-        self.draw_markers(ctx, colors)
-        self.draw_tracks(ctx, colors)
+        ctx.set_source_rgb(*colors['Background'])
+        ctx.rectangle(0, 0, width, height)
+        ctx.fill()
+        self.draw_markers(ctx, pango_layout, colors)
+        self.draw_tracks(ctx, pango_layout, colors)
         self.draw_loop_points(ctx, colors)
-        self.draw_cursors()
-        self.draw_playpos()
+        self.draw_cursors(ctx)
+        self.draw_playpos(ctx) 
+
         # Draw the black border
         #ctx.set_foreground(colors['Border'])
         #drawable.draw_rectangle(ctx, False, 0, 0, width - 1, height - 1)
