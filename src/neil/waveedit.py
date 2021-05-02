@@ -162,7 +162,7 @@ class WaveEditView(Gtk.DrawingArea):
     def redraw(self):
         if self.get_realized() and self.is_visible():
             w, h = self.get_client_size()
-            self.get_window().invalidate_rect((0, 0, w, h), False)
+            self.get_window().invalidate_rect(Gdk.Rectangle(0, 0, w, h), False)
 
     def update_digest(self, channel=0):
         if self.level == None:
