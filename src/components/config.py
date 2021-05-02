@@ -232,7 +232,7 @@ class NeilConfig(configparser.ConfigParser):
         """
         Initializer.
         """
-        configparser.ConfigParser.__init__(self)
+        configparser.ConfigParser.__init__(self, allow_no_value=True)
         self.filename = os.path.join(
             self.get_settings_folder(), 'settings.cfg')
         self.read([self.filename])
