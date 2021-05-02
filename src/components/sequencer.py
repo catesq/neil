@@ -1290,12 +1290,13 @@ class SequencerView(Gtk.DrawingArea):
                     self.grab_add()
             if event.type == Gdk.EventType._2BUTTON_PRESS:  # double-click
                 m, index, bp = self.get_pattern_at(self.track, self.row)
+                print("get pattern at m index bp", m, index, bp, self.track, self.row)
                 if index == None:
                     track = self.get_track()
                     if track:
                         self.jump_to_pattern(track.get_plugin())
                         return
-                    self.jump_to_pattern(m, index)
+                self.jump_to_pattern(m, index)
 
         elif event.button == 3:
             if (x < self.seq_left_margin) and (track < track_count):
