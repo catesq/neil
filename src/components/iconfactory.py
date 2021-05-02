@@ -1,3 +1,4 @@
+
 #encoding: latin-1
 
 # Neil
@@ -18,51 +19,55 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-if __name__ == '__main__':
-    import os
-    os.environ['NEIL_BASE_PATH'] = '/home/paniq/devel/neil'
-import neil.com as com
-from gi.repository import Gtk, Gdk, GdkPixbuf
 
-import glob, os
-from neil.utils import filepath, get_root_folder_path, iconpath, imagepath
+import glob
+import os
+
+from gi.repository import Gdk, GdkPixbuf, Gtk
+
+import neil.com as com
+from neil.utils import iconpath, imagepath
 
 ICON_SEARCHPATH = [
-        iconpath('16x16'),
-        iconpath('22x22'),
-        iconpath('24x24'),
-        iconpath('32x32'),
-        iconpath('48x48'),
-        iconpath('scalable'),
-        imagepath(''),
+    iconpath('16x16'),
+    iconpath('22x22'),
+    iconpath('24x24'),
+    iconpath('32x32'),
+    iconpath('48x48'),
+    iconpath('scalable'),
+    imagepath(''),
 ]
 
 ICON_EXTENSIONS = [
-        '.svg',
-        '.png',
+    '.svg',
+    '.png',
 ]
 
-class IconLibrary:
+class IconTheme:
     """
     registers icons to gtk and the rest of the application in a simple,
     unified way.
     """
 
     __neil__ = dict(
-            id = 'neil.core.icons',
-            singleton = True,
+        id = 'neil.core.icons',
+        singleton = True,
     )
 
     def __init__(self):
         sizenames = [
-                Gtk.IconSize.MENU,
-                Gtk.IconSize.SMALL_TOOLBAR,
-                Gtk.IconSize.LARGE_TOOLBAR,
-                Gtk.IconSize.BUTTON,
-                Gtk.IconSize.DND,
-                Gtk.IconSize.DIALOG,
+            Gtk.IconSize.MENU,
+            Gtk.IconSize.SMALL_TOOLBAR,
+            Gtk.IconSize.LARGE_TOOLBAR,
+            Gtk.IconSize.BUTTON,
+            Gtk.IconSize.DND,
+            Gtk.IconSize.DIALOG,
         ]
         icons = {}
+        icon_theme=Gtk.IconTheme.get_default()
+        for path in ICON_SEARCHPATH:
+            Gtk.IconTheme.add_resource_path(icon_theme, path)
+
         for searchpath in ICON_SEARCHPATH:
             for ext in ICON_EXTENSIONS:
                 mask = searchpath + '/*' + ext
@@ -75,7 +80,7 @@ class IconLibrary:
                     icons[key] = iconsizes
         for key,iconsizes in icons.items():
             for size in sizenames:
-                w,h = Gtk.icon_size_lookup(size)
+                sz_enum, w,h = Gtk.icon_size_lookup(size)
                 if (w,h) in iconsizes:
                     pixbuf = iconsizes[(w,h)]
                 else:
@@ -88,7 +93,7 @@ class IconLibrary:
                         if d < bestw:
                             bestw = d
                             pixbuf = icon
-                #print "new icon: %s (%r = %i,%i ~ %i,%i)" % (key,size,w,h,pixbuf.get_width(),pixbuf.get_height())
+                print("new icon: %s (%r = %i,%i ~ %i,%i)" % (key,size,w,h,pixbuf.get_width(),pixbuf.get_height()))
                 Gtk.icon_theme_add_builtin_icon(key, size, pixbuf)
 
     def register_single(self, stockid, label, key=''):
@@ -100,12 +105,19 @@ class IconLibrary:
                 (stockid, label, 0, key, 'neil'),
         ))
 
+    def all(self):
+        return Gtk.IconTheme.list_icons(self,None)
+
 __neil__ = dict(
-        classes = [
-                IconLibrary,
-        ],
+    classes = [
+    ],
 )
 
 if __name__ == '__main__':
     com.init()
     icons = com.get('neil.core.icons')
+    print(icons.all())
+
+# if __name__ == '__main__':
+    # import os
+    # os.enviro/n['NEIL_BASE_PATH'] = '/home/paniq/devel/neil'
