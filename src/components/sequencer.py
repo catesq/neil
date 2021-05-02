@@ -532,7 +532,7 @@ class SequencerView(Gtk.DrawingArea):
         if row == -1:
             x = 0
         else:
-            x = int((float(row) - self.startseqtime) / self.step) * self.seq_row_size) + self.seq_left_margin
+            x = (int((float(row) - self.startseqtime) / self.step) * self.seq_row_size) + self.seq_left_margin
         if track == -1:
             y = 0
         else:
@@ -1497,7 +1497,8 @@ class SequencerView(Gtk.DrawingArea):
                     cursor_x, cursor_y = x1, y1
                     cursor_width, cursor_height = x2 - x1, y2 - y1
                 else:
-                    cursor_x, cursor_y = self.track_row_to_pos((self.track, self.row))
+                    cursor_x, cursor_y = self.track_row_to_pos((self.track,
+                                                                self.row))
                     cursor_width = self.seq_row_size
                     cursor_height = self.seq_track_size
                 ctx.rectangle(cursor_x + 0.5, cursor_y + 0.5, cursor_width, cursor_height)
