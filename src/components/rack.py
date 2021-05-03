@@ -785,7 +785,7 @@ class ParameterView(Gtk.VBox):
         Used to reset value to default on double click
         """
         (g,t,i) = xxx_todo_changeme12
-        if event.type == Gdk._2BUTTON_PRESS:
+        if event.type == Gdk.EventType._2BUTTON_PRESS:
             p = self.plugin.get_parameter(g,t,i)
             v = p.get_value_default()
             self.plugin.set_parameter_value(g,t,i,v,1)
