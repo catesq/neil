@@ -71,6 +71,7 @@ opts.Add("SSE", "Support SSE instructions", False, None, bool_converter)
 opts.Add("SSE2", "Support SSE2 instructions", False, None, bool_converter)
 opts.Add("LADSPA", "Support LADSPA plugins", False, None, bool_converter)
 opts.Add("DSSI", "Support DSSI plugins", False, None, bool_converter)
+opts.Add("LV2", "Support LV2 plugins", False, None, bool_converter)
 opts.Add("JOBS", "Number of threads to compile with", '2')
 opts.Add("PYZZUB", "Support pyzzub", True, None, bool_converter)
 opts.Add("GTK3", "Support GTK3 GUIs", False, None, bool_converter)
@@ -133,6 +134,7 @@ gcc = env['CC'] == 'gcc'
 
 if gcc:
     #env['CXXFLAGS'] += ['--no-rtti']
+    env['CXXFLAGS'] += ['-std=c++17']
     if env['DEBUG'] == False:
         env.Append(CCFLAGS=[
                 '-Wall',
@@ -405,6 +407,10 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         env['DSSI'] = True
     else:
         env['DSSI'] = False
+    if env['LV2']:
+        if not conf.CheckCHeader('lilv-0/lilv/lilv.h') or not conf.CheckCHeader('lv2/lv2.h'):
+            print("Missing lv2(or lv2-dev) header files.")
+            Exit(1)
     if not conf.CheckCHeader('FLAC/all.h'):
         print("Error: no FLAC library development files found.")
         Exit(1)
@@ -449,6 +455,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     print("=== Components ===".center(50))
     print("DSSI:".rjust(30),yesno[env['DSSI'] == True])
     print("LADSPA:".rjust(30),yesno[env['LADSPA'] == True])
+    print("LV2:".rjust(30),yesno[env['LV2'] == True])
     print("pyzzub (zubb for Python):".rjust(30),yesno[env['PYZZUB'] == True])
     print()
     print("=== Directories ===".center(50))
