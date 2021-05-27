@@ -314,6 +314,7 @@ class PackageBrowserMenuItem:
         item = Gtk.MenuItem(label="Show _Component Browser")
         # connect the menu item to our handler
         item.connect('activate', self.on_menuitem_activate)
+        item.set_use_underline(True)
         # append the item to the menu
         menu.append(item)
 
