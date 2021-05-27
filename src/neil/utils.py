@@ -1117,7 +1117,7 @@ class Menu(Gtk.Menu):
         return item, submenu
 
     def add_item(self, label, func, *args):
-        item = Gtk.MenuItem(label=label)
+        item = Gtk.MenuItem(label=label, use_underline=True)
         item.connect('activate', func, *args)
         self.append(item)
         return item
