@@ -46,15 +46,9 @@ from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS,\
 from neil.utils import is_effect, is_generator, is_controller, is_root
 from neil.utils import prepstr, db2linear, linear2db, error, new_listview, add_scrollbars
 from neil.utils import blend, blend_float, box_contains
+from neil.utils import get_window_pointer
 import config
 import zzub
-# import sys
-# import os
-# import fnmatch
-# import ctypes
-# import time
-# import random
-# from neil.preset import PresetCollection, Preset
 import neil.common as common
 from neil.common import MARGIN, DRAG_TARGETS
 from rack import ParameterView
@@ -604,6 +598,7 @@ class RouteView(Gtk.DrawingArea):
     dragging = False
     dragoffset = 0, 0
     contextmenupos = 0, 0
+    showing_cvports = False
 
     COLOR_DEFAULT = 0
     COLOR_MUTED = 1
@@ -614,11 +609,12 @@ class RouteView(Gtk.DrawingArea):
     COLOR_CPU_OFF = 2
     COLOR_CPU_ON = 3
     COLOR_CPU_BORDER = 4
-    COLOR_CPU_WARNING = 9
-    COLOR_BORDER_IN = 10
-    COLOR_BORDER_OUT = 12
-    COLOR_BORDER_SELECT = 13
-    COLOR_TEXT = 14
+    COLOR_CPU_WARNING = 4
+    COLOR_BORDER_IN = 8
+    COLOR_BORDER_OUT = 8
+    COLOR_BORDER_SELECT = 8
+    COLOR_TEXT = 9
+
 
     def __init__(self, parent):
         """
@@ -749,12 +745,6 @@ class RouteView(Gtk.DrawingArea):
                 'MV Indicator Foreground',
                 'MV Indicator Border',
                 'MV Indicator Warning',
-                'MV Indicator Background',
-                'MV Indicator Foreground',
-                'MV Indicator Border',
-                'MV Indicator Warning',
-                'MV Border',
-                'MV Border',
                 'MV Border',
                 'MV Text',
         ]
@@ -896,9 +886,11 @@ class RouteView(Gtk.DrawingArea):
             x, y = mp.get_position()
             x, y = int(cx * (1 + x)), int(cy * (1 + y))
             plugin_box = (x - PW, y - PH, x + PW, y + PH)
+
             if box_contains(mx, my, plugin_box):
-                led_box = (x - PW + LEDOFSX, y - PH + LEDOFSY, LEDWIDTH, LEDHEIGHT)
-                if box_contains(mx, my, led_box):
+                led_tl_pos = (plugin_box[0] + LEDOFSX, plugin_box[1] + LEDOFSY)
+                led_br_pos = (led_tl_pos[0] + LEDWIDTH, led_tl_pos[1] + LEDHEIGHT)
+                if box_contains(mx, my, [*led_tl_pos, *led_br_pos]):
                     area = AREA_LED
                 return mp, (x, y), area
 
@@ -908,21 +900,27 @@ class RouteView(Gtk.DrawingArea):
         hits a plugin, the parameter window is being shown.
         """
         #player = com.get('neil.core.player')
+        print("dcilck")
         mx, my = int(event.x), int(event.y)
         res = self.get_plugin_at((mx, my))
         if not res:
             searchwindow = com.get('neil.core.searchplugins')
             searchwindow.show_all()
-            searchwindow.set_transient_for(com.get('neil.core.window.root'))
             searchwindow.present()
             return
         mp, (x, y), area = res
         if area == AREA_ANY:
             data = zzub.zzub_event_data_t()
-            data.type = zzub.zzub_event_type_double_click
+
             mp.invoke_event(data, 1)
-            if not (mp.get_flags() & zzub.zzub_plugin_flag_has_custom_gui):
-                com.get('neil.core.parameterdialog.manager').show(mp, self)
+
+            if mp.get_pluginloader().get_uri().startswith('@zzub.org/lv2adapter/'):
+                ui_opened = mp.get_attribute_value(1)
+                if ui_opened == 1: # this attribute only == 1 when a custom ui has just been opened
+                    return          # if ui was already open - or no ui open - it == 0
+
+            #when not lv2adapter or lv2 ui already open/not opened then display ParameterDialog
+            com.get('neil.core.parameterdialog.manager').show(mp, self)
 
     def on_left_down(self, widget, event):
         """
@@ -991,7 +989,6 @@ class RouteView(Gtk.DrawingArea):
                 player.active_plugins = []
 
     def on_motion(self, widget, event):
-        # x, y, state = self.get_window().get_pointer()
         x, y, state = event.x, event.y, event.state
         if self.dragging:
             player = com.get('neil.core.player')
@@ -1015,7 +1012,7 @@ class RouteView(Gtk.DrawingArea):
             res = self.get_plugin_at((x, y))
             if res:
                 mp, (mx, my), area = res
-                self.get_window().set_cursor(Gdk.Cursor.new(Gdk.HAND1) if area == AREA_LED else None)
+                self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1) if area == AREA_LED else None)
         return True
 
     def on_left_up(self, widget, event):
@@ -1058,7 +1055,7 @@ class RouteView(Gtk.DrawingArea):
         if res:
             mp, (x, y), area = res
             if area == AREA_LED:
-                self.get_window().set_cursor(Gdk.Cursor.new(Gdk.HAND1))
+                self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1))
         else:
             self.get_window().set_cursor(None)
 
@@ -1096,21 +1093,17 @@ class RouteView(Gtk.DrawingArea):
             self.get_window().invalidate_rect(rect, False)
             self.queue_draw()
 
-    def draw_leds(self, ctx):
+    def draw_leds(self, ctx, pango_layout):
         """
         Draws only the leds into the offscreen buffer.
         """
         player = com.get('neil.core.player')
         if player.is_loading():
             return
-        # gc = self.get_window().new_gc()
-        # cm = gc.get_colormap()
+
         cfg = config.get_config()
         rect = self.get_allocation()
 
-        pango_layout = Pango.Layout(self.get_pango_context())
-        #~ layout.set_font_description(self.fontdesc)
-        pango_layout.set_width(-1)
         w, h = rect.width, rect.height
         cx, cy = w * 0.5, h * 0.5
 
@@ -1214,6 +1207,8 @@ class RouteView(Gtk.DrawingArea):
 
                 maxl, maxr = mp.get_last_peak()
                 amp = min(max(maxl, maxr), 1.0)
+                if amp != amp:   # occasionally getting a nan during srtartup
+                    amp = 0
                 if amp != pi.amp:
                     if amp >= 1:
                         pluginctx.set_source_rgb(*brushes[self.COLOR_LED_WARNING])
@@ -1250,34 +1245,58 @@ class RouteView(Gtk.DrawingArea):
                 #     pi.cpu = relperc
 
                 #     # cpu fill
-                #     gc.set_foreground(flag2cm(self.COLOR_CPU_OFF))
-                #     pi.plugingfx.draw_rectangle(gc, True, CPUOFSX, CPUOFSY, CPUWIDTH, CPUHEIGHT)
+                #     pluginctx.set_source_rgb(*flag2col(self.COLOR_CPU_OFF))
+                #     pluginctx.rectangle(CPUOFSX, CPUOFSY, CPUWIDTH, CPUHEIGHT)
+                #     pluginctx.fill()
 
                 #     # cpu border
                 #     color = brushes[self.COLOR_MUTED if pi.muted else self.COLOR_DEFAULT]
-                #     border = blend(cm.alloc_color(color), Gdk.Color("#000"), 0.5)
-                #     gc.set_foreground(cm.alloc_color(border))
-                #     pi.plugingfx.draw_rectangle(gc, False, CPUOFSX, CPUOFSY, CPUWIDTH - 1, CPUHEIGHT - 1)
+                #     border = blend_float(color, [0,0,0], 0.5)
+                #     pluginctx.set_source_rgb(*border)
+                #     pluginctx.rectangle(CPUOFSX, CPUOFSY, CPUWIDTH - 1, CPUHEIGHT - 1)
+                #     pluginctx.stroke()
 
                 #     height = int((CPUHEIGHT - 4) * relperc + 0.5)
                 #     if (height > 0):
                 #         if relperc >= 0.9:
-                #             gc.set_foreground(flag2cm(self.COLOR_CPU_WARNING))
+                #             pluginctx.set_source_rgb(*flag2col(self.COLOR_CPU_WARNING))
                 #         else:
-                #             gc.set_foreground(flag2cm(self.COLOR_CPU_ON))
-                #         pi.plugingfx.draw_rectangle(gc, True, CPUOFSX + 1, (CPUOFSY + CPUHEIGHT - height - 1), CPUWIDTH - 2, height)
+                #             pluginctx.set_source_rgb(*flag2col(self.COLOR_CPU_ON))
+                #         pluginctx.rectangle(CPUOFSX + 1, (CPUOFSY + CPUHEIGHT - height - 1), CPUWIDTH - 2, height)
+                #         pluginctx.fill()
 
             # shadow
             pluginctx.set_source_rgba(0.0, 0.0, 0.0, 0.2)
             pluginctx.rectangle(rx + 3, ry + 3, PLUGINWIDTH, PLUGINHEIGHT)
             pluginctx.fill()
 
-            if mp in player.active_plugins:
-                pass
-
-            # flip plugin pixmap to screen
+                # flip plugin pixmap to screen
             ctx.set_source_surface(pi.plugingfx, int(rx), int(ry))
             ctx.paint()
+
+            if self.showing_cvports:
+                pl = mp.get_pluginloader()
+                port_names = pl.get_cv_port_names()
+                if not port_names:
+                    continue
+
+                ports = pl.get_cv_port_names().split("\n")
+
+                pango_layout.set_text(port_names)
+                tx, ty = pango_layout.get_pixel_size()
+
+                ctx.set_source_rgb(*cfg.get_float_color("MV Background"))
+
+                ctx.rectangle(rx+PLUGINWIDTH, ry, tx+3, ty+3)
+                ctx.fill()
+
+                ctx.set_source_rgb(*cfg.get_float_color("MV Border"))
+                ctx.rectangle(rx+PLUGINWIDTH-1, ry-1, tx+4, ty+4)
+                ctx.stroke()
+
+                ctx.move_to(rx+PLUGINWIDTH+1, ry+1)
+                ctx.set_source_rgb(*cfg.get_float_color("MV Text"))
+                PangoCairo.show_layout(ctx, pango_layout)
 
     def on_draw(self, widget, ctx):
         self.draw(ctx)
@@ -1290,6 +1309,7 @@ class RouteView(Gtk.DrawingArea):
         player = com.get('neil.core.player')
         if player.is_loading():
             return
+
         cfg = config.get_config()
         rect = self.get_allocation()
         w, h = rect.width, rect.height
@@ -1308,6 +1328,11 @@ class RouteView(Gtk.DrawingArea):
 
         cx, cy = w * 0.5, h * 0.5
 
+
+        pango_layout = Pango.Layout(self.get_pango_context())
+        #~ layout.set_font_description(self.fontdesc)
+        pango_layout.set_width(-1)
+
         def get_pixelpos(x, y):
             return cx * (1 + x), cy * (1 + y)
 
@@ -1317,17 +1342,11 @@ class RouteView(Gtk.DrawingArea):
             self.surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
             surfctx = cairo.Context(self.surface)
 
-            # self.routebitmap = Gdk.Pixmap(self.get_window(), w, h, -1)
-            # gc = self.routebitmap.new_gc()
-            # cm = gc.get_colormap()
-            # drawable = self.routebitmap
             surfctx.translate(0.5, 0.5)
             bg_color = cfg.get_float_color('MV Background')
             surfctx.set_source_rgb(*bg_color)
             surfctx.rectangle(0, 0, w, h)
             surfctx.fill()
-
-            # bmpctx = self.routebitmap.cairo_create()
 
             surfctx.set_line_width(1)
             mplist = [(mp, get_pixelpos(*mp.get_position()))
@@ -1337,6 +1356,7 @@ class RouteView(Gtk.DrawingArea):
                 if self.dragging and mp in player.active_plugins:
                     pinfo = self.get_plugin_info(mp)
                     rx, ry = get_pixelpos(*pinfo.dragpos)
+
                 for index in range(mp.get_input_connection_count()):
                     targetmp = mp.get_input_connection_plugin(index)
                     pi = common.get_plugin_infos().get(targetmp)
@@ -1346,13 +1366,13 @@ class RouteView(Gtk.DrawingArea):
                     if self.dragging and targetmp in player.active_plugins:
                         pinfo = self.get_plugin_info(targetmp)
                         tmppos = pinfo.dragpos
+
+
                     crx, cry = get_pixelpos(*tmppos)
                     if (mp.get_input_connection_type(index) != zzub.zzub_connection_type_event):
                         amp = mp.get_parameter_value(0, index, 0)
                         amp /= 16384.0
                         amp = amp ** 0.5
-                        #color = [amp, amp, amp]
-                        #arrowcolors[zzub.zzub_connection_type_audio][0] = color
                         blended = blend_float(cfg.get_float_color("MV Arrow"), (0.0, 0.0, 0.0), amp)
                         arrowcolors[zzub.zzub_connection_type_audio][0] = blended
 
@@ -1369,16 +1389,22 @@ class RouteView(Gtk.DrawingArea):
             linepen = cfg.get_float_color("MV Line")
             draw_line(ctx, linepen, int(crx), int(cry), int(rx), int(ry))
 
-        self.draw_leds(ctx)
+
+
+        self.draw_leds(ctx, pango_layout)
 
     # This method is not *just* for key-jazz, it handles all key-events in router. Rename?
     def on_key_jazz(self, widget, event, plugin):
         mask = event.get_state()
         kv = event.keyval
         k = Gdk.keyval_name(kv)
-        if (mask & Gdk.ModifierType.CONTROL_MASK):
+        if mask & Gdk.ModifierType.CONTROL_MASK:
             if k == 'Return':
                 com.get('neil.core.pluginbrowser', self)
+                return
+            if mask & Gdk.ModifierType.META_MASK:
+                self.showing_cvports = True
+                self.redraw()
                 return
         player = com.get('neil.core.player')
         if not plugin:
@@ -1407,12 +1433,19 @@ class RouteView(Gtk.DrawingArea):
 
     def on_key_jazz_release(self, widget, event, plugin):
         player = com.get('neil.core.player')
+        kv = event.keyval
+        mask = event.get_state()
+
+        if self.showing_cvports == True:
+            if not mask & (Gdk.ModifierType.CONTROL_MASK|Gdk.ModifierType.META_MASK):
+                self.showing_cvports = False
+                self.redraw()
         if not plugin:
             if player.active_plugins:
                 plugin = player.active_plugins[0]
             else:
                 return
-        kv = event.keyval
+
         if kv < 256:
             player = com.get('neil.core.player')
             octave = player.octave
@@ -1423,27 +1456,27 @@ class RouteView(Gtk.DrawingArea):
                 plugin.play_midi_note(zzub.zzub_note_value_off, n, 0)
 
 __all__ = [
-'ParameterDialog',
-'ParameterDialogManager',
-'PresetDialog',
-'PresetDialogManager',
-'AttributesDialog',
-'RoutePanel',
-'VolumeSlider',
-'RouteView',
+    'ParameterDialog',
+    'ParameterDialogManager',
+    'PresetDialog',
+    'PresetDialogManager',
+    'AttributesDialog',
+    'RoutePanel',
+    'VolumeSlider',
+    'RouteView',
 ]
 
 __neil__ = dict(
-        classes = [
-                ParameterDialog,
-                ParameterDialogManager,
-                PresetDialog,
-                PresetDialogManager,
-                AttributesDialog,
-                RoutePanel,
-                VolumeSlider,
-                RouteView,
-        ],
+    classes = [
+        ParameterDialog,
+        ParameterDialogManager,
+        PresetDialog,
+        PresetDialogManager,
+        AttributesDialog,
+        RoutePanel,
+        VolumeSlider,
+        RouteView,
+    ],
 )
 
 if __name__ == '__main__':
