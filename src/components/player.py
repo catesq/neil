@@ -474,7 +474,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             plugin = self.active_plugins[0]
             index = None
 
-        patterns = sorted([(plugin, i) for i in range(plugin.get_pattern_count())], key=lambda plugin, ptn_id: plugin.get_pattern_name(ptn_id).lower())
+        patterns = sorted([(plugin, i) for i in range(plugin.get_pattern_count())], key=lambda pair: pair[0].get_pattern_name(pair[1]).lower())
         if not patterns:
             return
         if direction == -1:
@@ -718,6 +718,8 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         if active_patterns:
             self.active_patterns = active_patterns
 
+        return mp
+
     def delete_plugin(self, plugin):
         # add plugin information
         common.get_plugin_infos().add_plugin(plugin)
@@ -754,7 +756,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
                 newpan = ipan
                 outplug.add_input(inplug, zzub.zzub_connection_type_audio)
                 index = outplug.get_input_connection_count() - 1
-                outplug.set_parameter_value(zzub.zzub_parameter_group_connection, index, 0, newamp, False)
+                outplug.set_parameter_value(zzub.zzub_parameter_group_connection, index, 0, int(newamp), False)
                 outplug.set_parameter_value(zzub.zzub_parameter_group_connection, index, 1, newpan, False)
         self.history_commit("delete plugin")
 
