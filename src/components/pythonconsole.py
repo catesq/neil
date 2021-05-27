@@ -106,13 +106,17 @@ class PythonConsoleDialog(Gtk.Dialog):
         scrollwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         scrollwin.set_shadow_type(Gtk.ShadowType.IN)
         scrollwin.add(self.consoleview)
+        self.consoleview.set_vexpand(True)
         scrollwin.set_vexpand(True)
 
         vpack.pack_start(self.shell, False, False, 0)
         vpack.pack_start(scrollwin, True, True, 0)
         vpack.pack_end(self.entry, False, False, 0)
+        vpack.set_vexpand(True)
         hpack.pack_start(vpack, True, True, 0)
-        self.get_content_area().add(hpack)
+        hpack.set_vexpand(True)
+
+        self.get_content_area().pack_start(hpack, True, True, 0)
 
         GObject.timeout_add(50, self.update_output)
         self.log_buffer_pos = 0
@@ -209,6 +213,7 @@ class PythonConsoleMenuItem:
         item = Gtk.MenuItem(label="Show _Python Console")
         # connect the menu item to our handler
         item.connect('activate', self.on_menuitem_activate)
+        item.set_use_underline(True)
         # append the item to the menu
         menu.append(item)
 
