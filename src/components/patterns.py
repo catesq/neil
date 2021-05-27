@@ -23,9 +23,9 @@ editor and its associated dialogs.
 
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk
-from gi.repository import GObject
+from gi.repository import Gtk, Gdk, GLib
 from gi.repository import Pango, PangoCairo
+import cairo
 
 import neil.com as com
 from neil.utils import prepstr
@@ -53,6 +53,202 @@ patternsizes = [
     1, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512
 ]
 
+class BarMarksPainter():
+    def __init__(self, widget):
+        self.widget = widget
+
+    def draw(self, ctx):
+        "Draw the horizontal bars every each fourth and eighth bar."
+        w, h = self.widget.get_client_size()
+        row_height = self.widget.row_height
+        column_width = self.widget.column_width
+
+        def draw_bar(row, group, track, color):
+            """Draw a horizontal bar for a specified row in a
+            specified group/track."""
+            x, y = self.widget.pattern_to_pos(row, group, track, 0)
+            width = (self.widget.track_width[group] - 1) * column_width
+            ctx.set_source_rgb(*color)
+            ctx.rectangle(x, y, width, row_height)
+
+            ctx.fill()
+
+        cfg = config.get_config()
+        darkest = cfg.get_float_color('PE BG Very Dark')
+        lighter = cfg.get_float_color('PE BG Light')
+        lightest = cfg.get_float_color('PE BG Very Light')
+
+        def get_color(row):
+            "What color to paint the bar with?"
+            if row % 16 == 0:
+                return darkest
+            elif row % 8 == 0:
+                return lighter
+            elif row % 2 == 0:
+                return lightest
+            else:
+                return None
+
+        start_row = self.widget.start_row
+        row_count = self.widget.row_count
+        num_rows = min(row_count - start_row, int((h - row_height) / row_height) + 1)
+        if self.widget.lines and self.widget.lines[CONN]:
+            for track in range(self.widget.group_track_count[CONN]):
+                for row in range(start_row, num_rows + start_row):
+                    color = get_color(row)
+                    if color != None:
+                        draw_bar(row, CONN, track, color)
+        if self.widget.lines and self.widget.lines[GLOBAL]:
+            for row in range(start_row, num_rows + start_row):
+                color = get_color(row)
+                if color != None:
+                    draw_bar(row, GLOBAL, 0, color)
+        if self.widget.lines and self.widget.lines[TRACK]:
+            for track in range(self.widget.group_track_count[TRACK]):
+                for row in range(start_row, num_rows + start_row):
+                    color = get_color(row)
+                    if color != None:
+                        draw_bar(row, TRACK, track, color)
+
+class PatternBackgroundPainter():
+    def __init__(self, widget):
+        self.widget = widget
+
+    def draw(self, ctx, pango_ctx, pango_layout):
+        """ Draw the background, lines, borders and row numbers """
+        w, h = self.widget.get_client_size()
+        row_height = self.widget.row_height
+        column_width = self.widget.column_width
+
+        cfg = config.get_config()
+        background = cfg.get_float_color('PE BG')
+        pen = cfg.get_float_color('PE Row Numbers')
+
+        ctx.set_source_rgb(*background)
+        ctx.rectangle(0, 0, w, row_height)
+        ctx.rectangle(0, 0, PATLEFTMARGIN, h)
+        ctx.fill()
+
+        if self.widget.lines == None:
+            return
+
+        ctx.set_source_rgb(*pen)
+        x, y = PATLEFTMARGIN, self.widget.row_height
+        start_row = self.widget.start_row
+        row_count = self.widget.row_count
+        # Draw the row numbers
+        num_rows = min(row_count - start_row, int((h - row_height) / row_height) + 1)
+        s = '\n'. join([str(i).rjust(4) for i in range(start_row, start_row + row_count)])
+        pango_layout.set_text(s)
+        px, py = pango_layout.get_pixel_size()
+        ctx.move_to(x - 5 - px, y)
+        PangoCairo.show_layout(ctx, pango_layout)
+
+        # Draw a black vertical separator line
+        y = row_height - 1
+        ctx.move_to(x, y) #draw_line(gc, x, y, x, h)
+        ctx.line_to(x, h)
+        ctx.stroke()
+
+        # Draw a black horizontal separator line
+        # The color of text as specified in config.py
+        text_color = cfg.get_float_color('PE Track Numbers')
+        ctx.set_source_rgb(*text_color)
+        # Display track numbers in the middle of each track column at the to
+        # For each existing track:
+        for track in range(self.widget.group_track_count[TRACK]):
+            # Get x and y positions in the drawable that correspond
+            # to a position that's designated for a particular event in
+            # the pattern, in this case first row, track group,
+            # current track being processed and the index of the first
+            # parameter (0).
+            x, y = self.widget.pattern_to_pos(self.widget.start_row, TRACK, track, 0)
+            # Convert track number to a string that will be drawn with Pango.
+            s = str(track)
+            # Get the width of the track being processed.
+            width = self.widget.track_width[TRACK] * column_width
+            # Prepare the text.
+            pango_layout.set_text(s)
+            # Get the size of the string when it will be displayed in pixels.
+            px, py = pango_layout.get_pixel_size()
+            # And draw it so that it falls in the middle of the track column.
+            ctx.move_to(x + int(width / 2 - px / 2), int(row_height / 2 - (py / 2)))
+            PangoCairo.show_layout(ctx, pango_layout)
+
+class PlayPosPainter():
+    def __init__(self, widget):
+        self.widget = widget
+        self.playpos = None
+        self.playpos_buf=None
+        self.prev_playpos=None
+
+    def draw(self, ctx, plugin=None, pattern=None):
+        if pattern == -1:
+            return
+
+        if self.prev_playpos:
+            px, py = self.prev_playpos
+            ctx.set_source_surface(self.playpos_buf, 0, py)
+            ctx.paint()
+            self.prev_playpos = False
+
+        if not self.widget.panel.is_current_page():
+            return
+
+        w, h = self.widget.get_client_size()
+
+        if not self.playpos_buf:
+            self.playpos_buf = cairo.ImageSurface(cairo.Format.ARGB32, w, 3)
+        elif self.playpos_buf.get_width() != w:
+            self.playpos_buf.finish()
+            self.playpos_buf = cairo.ImageSurface(cairo.Format.ARGB32, w, 3)
+
+
+        # draw play cursor
+        player = com.get('neil.core.player')
+        current_position = self.widget.playpos
+        seq = player.get_current_sequencer()
+
+        row_height = self.widget.row_height
+        start_row = self.widget.start_row
+        top_margin = self.widget.top_margin
+
+        for i in range(seq.get_sequence_track_count()):
+            track = seq.get_sequence(i)
+
+            track_plugin = track.get_plugin()
+            if plugin == track_plugin and pattern != -1:
+                row_count = plugin.get_pattern_length(pattern)
+                events = list(track.get_event_list())
+                for i, pair in enumerate(events):
+                    pos, value = pair
+                    # print(i, pos, value)
+                    # make sure event is a pattern
+                    if value >= 0x10:
+                        pattern_match = value - 0x10
+                    else:
+                        continue
+                    # print(i, pattern, self.pattern, pos, current_position, row_count)
+                    # handle overlapping of patterns
+                    if i < len(events) - 1 and events[i + 1][0] <= current_position:
+                        continue
+                    if pattern == pattern_match and pos < current_position \
+                    and current_position < pos + row_count:
+
+                        y = int(top_margin + (current_position - pos - start_row) * row_height)
+                        bg_ctx = cairo.Context(self.playpos_buf)
+                        bg_y = max(y-1, 0)
+                        bg_ctx.set_source_surface(ctx.get_target(), 0, -bg_y)
+                        bg_ctx.paint()
+                        self.prev_playpos = (0, bg_y)
+
+                        ctx.set_line_width(1)
+                        ctx.set_source_rgb(0, 0, 0)
+                        ctx.move_to(0, y)
+                        ctx.line_to(w, y)
+                        ctx.stroke()
+                        return
+
 
 class PatternDialog(Gtk.Dialog):
     """
@@ -74,7 +270,7 @@ class PatternDialog(Gtk.Dialog):
         )
         vbox = Gtk.VBox(False, MARGIN)
         vbox.set_border_width(MARGIN)
-        
+
         self.btn_ok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
         self.btn_cancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         self.name_label = Gtk.Label(label="Name")
@@ -97,7 +293,7 @@ class PatternDialog(Gtk.Dialog):
             sgroup1.add_widget(c1)
             sgroup2.add_widget(c2)
             vbox.pack_start(row, False, True, 0)
-        
+
         add_row(self.name_label, self.edtname)
         add_row(self.rows_label, self.lengthbox)
         vbox.pack_start(self.chkswitch, False, True, 0)
@@ -408,8 +604,16 @@ class PatternToolBar(Gtk.HBox):
         else:
             player.stop_preview()
 
+class NeilNotebookPage(Gtk.VBox):
+    _notebook = None # notebook and index assigned in the notebook framepanel in mainwindow.py
+    _index = None
+    def is_current_page(self):
+        if not self._notebook:
+            return False
 
-class PatternPanel(Gtk.VBox):
+        return self._notebook.get_current_page() == self._index
+
+class PatternPanel(NeilNotebookPage):
     """
     Panel containing the pattern toolbar and pattern view.
     """
@@ -475,6 +679,7 @@ class PatternPanel(Gtk.VBox):
         self.pack_start(scrollwin, True, True, 0)
         self.pack_end(self.statusbar, False, True, 0)
 
+
         self.view.grab_focus()
         eventbus = com.get('neil.core.eventbus')
         eventbus.edit_pattern_request += self.on_edit_pattern_request
@@ -504,6 +709,7 @@ class PatternPanel(Gtk.VBox):
         except AttributeError:  # no pattern in current machine
             pass
         self.view.needfocus = True
+        self.view.redraw()
 
     def update_all(self):
         self.view.update_font()
@@ -681,6 +887,10 @@ class PatternView(Gtk.DrawingArea):
         Gtk.DrawingArea.__init__(self)
         # "Bitstream Vera Sans Mono"
         self.update_font()
+        self.playpos_painter = PlayPosPainter(self)
+        self.pattern_bg_painter = PatternBackgroundPainter(self)
+        self.bar_mark_painter = BarMarksPainter(self)
+
         # implements horizontal scrolling
         self.start_col = 0
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
@@ -735,7 +945,7 @@ class PatternView(Gtk.DrawingArea):
         self.connect('button-release-event', self.on_button_up)
         self.connect('motion-notify-event', self.on_motion)
         self.connect('scroll-event', self.on_mousewheel)
-        GObject.timeout_add(100, self.update_position)
+        GLib.timeout_add(100, self.update_position)
         self.hscroll.connect('change-value', self.on_hscroll_window)
         self.vscroll.connect('change-value', self.on_vscroll_window)
         eventbus = com.get('neil.core.eventbus')
@@ -784,7 +994,7 @@ class PatternView(Gtk.DrawingArea):
         self.fontdesc = desc
         self.font = pctx.load_font(desc)
         metrics = self.font.get_metrics(None)
-        
+
         # fh = (metrics.get_ascent() + metrics.get_descent()) / Pango.SCALE
         fh = metrics.get_height() / Pango.SCALE
         fw = int(metrics.get_approximate_digit_width() / Pango.SCALE)
@@ -927,12 +1137,10 @@ class PatternView(Gtk.DrawingArea):
         """
         Updates the position.
         """
-        # TODO: find some other means to find out visibility
-#               if self.rootwindow.get_current_panel() != self.panel:
-#                       return True
-        if not self.get_window():
-            return
+        if not self.panel.is_current_page():
+            return True
         player = com.get('neil.core.player')
+
         playpos = player.get_position()
         if self.playpos != playpos:
             ctx = self.get_window().cairo_create()
@@ -976,7 +1184,7 @@ class PatternView(Gtk.DrawingArea):
             self.selection = self.plugin_info.get(self.plugin).selection
             self.input_connection_count =\
                 self.get_plugin().get_input_connection_count()
-            
+
             track_count = self.plugin.get_track_count() # global track not considered a track
             self.group_track_count = [self.input_connection_count, 1, track_count] # track count by group
             self.parameter_count = []
@@ -1121,7 +1329,7 @@ class PatternView(Gtk.DrawingArea):
         row = min(max(r, 0), self.row_count - 1)
         if row >= 0:
             w, h = self.get_client_size()
-            endrow = (((h - self.top_margin) / self.row_height * 1) + self.start_row) - 1
+            endrow = int((h - self.top_margin) / self.row_height * 1 + self.start_row) - 1
             if row < self.start_row:
                 self.start_row = row
                 self.redraw()
@@ -1676,7 +1884,7 @@ class PatternView(Gtk.DrawingArea):
         """
         x, y, state = int(event.x), int(event.y), event.state
         row, group, track, index, subindex = self.pos_to_pattern((x, y))
-        
+
         if self.dragging:
             row, group, track, index, subindex = self.pos_to_pattern((x, y))
             if group != self.clickpos[1]:
@@ -1697,7 +1905,7 @@ class PatternView(Gtk.DrawingArea):
             self.adjust_selection()
             self.redraw()
 
-        
+
 
     def on_button_up(self, widget, event):
         """
@@ -2039,8 +2247,7 @@ class PatternView(Gtk.DrawingArea):
                 self.lines[self.group][self.track].insert(self.row + index, "")
                 self.update_line(self.row + index)
             del self.lines[self.group][self.track][-1]
-            self.plugin.insert_pattern_rows(self.pattern, indices,
-                                            len(indices) / 3, self.row, 1)
+            self.plugin.insert_pattern_rows(self.pattern, indices, int(len(indices) / 3), self.row, 1)
             player.history_commit("insert row")
         elif k == 'Delete':
             del self.lines[self.group][self.track][self.row:self.row +\
@@ -2053,7 +2260,7 @@ class PatternView(Gtk.DrawingArea):
                     indices += [self.group, self.track, i]
                 self.update_line(self.row_count - 1 + index - 1)
             self.plugin.remove_pattern_rows(self.pattern, indices,
-                                            len(indices) / 3, self.row, 1)
+                                            int(len(indices) / 3), self.row, 1)
             player.history_commit("remove row")
         elif k == 'Return':
             eventbus.edit_sequence_request()
@@ -2077,7 +2284,6 @@ class PatternView(Gtk.DrawingArea):
             self.selection = None
             self.shiftselect = None
             self.update_plugin_info()
-            self.redraw()
         # A key to insert a note or a parameter value was pressed.
         elif self.plugin and (kv < 256):
             # Get the parameter that you are currently editing.
@@ -2183,6 +2389,8 @@ class PatternView(Gtk.DrawingArea):
             player.history_commit("enter event")
         else:
             return False
+
+        self.redraw()
         return True
 
     def play_note(self, playtrack):
@@ -2366,8 +2574,7 @@ class PatternView(Gtk.DrawingArea):
         pagesize = adj.get_property('page-size')
         value = int(max(min(value, maxv - pagesize), minv) + 0.5)
         widget.set_value(value)
-        if self.start_row != value / 1 * 1:
-            self.start_row = value / 1 * 1
+        self.start_row = int(value)
         self.redraw()
         return True
 
@@ -2434,59 +2641,6 @@ class PatternView(Gtk.DrawingArea):
         self.redraw()
         self.adjust_scrollbars()
         self.update_font()
-
-    def draw_cursor_xor(self, ctx):
-        if self.pattern == -1:
-            return
-        if not self.is_visible():
-            return
-        cx, cy = self.pattern_to_pos(self.row, self.group, self.track, self.index, self.subindex)
-        if (cx >= (PATLEFTMARGIN + 4)) and (cy >= self.top_margin):
-            # Note that you have to add 0.5 to coordinates for cairo to properly
-            # display lines of width 1.
-            ctx.rectangle(cx + 0.5, cy + 0.5, self.column_width, self.row_height)
-            ctx.set_source_rgba(1.0, 0.0, 0.0, 1.0)
-            ctx.set_line_width(1)
-            ctx.stroke_preserve()
-            ctx.set_source_rgba(1.0, 0.0, 0.0, 0.3)
-            ctx.fill()
-
-    def draw_playpos_xor(self, ctx):
-        if self.pattern == -1:
-            return
-        if not self.is_visible():
-            return
-        
-        # draw play cursor
-        player = com.get('neil.core.player')
-        current_position = self.playpos
-        seq = player.get_current_sequencer()
-        for i in range(seq.get_sequence_track_count()):
-            track = seq.get_sequence(i)
-            track_plugin = track.get_plugin()
-            plugin = self.get_plugin()
-            if plugin == track_plugin and self.pattern != -1:
-                row_count = self.plugin.get_pattern_length(self.pattern)
-                events = list(track.get_event_list())
-                for i, pair in enumerate(events):
-                    pos, value = pair
-                    # make sure event is a pattern
-                    if value >= 0x10:
-                        pattern = value - 0x10
-                    else:
-                        continue
-                    # handle overlapping of patterns
-                    if i < len(events) - 1 and events[i + 1][0] <= current_position:
-                        continue
-                    if self.pattern == pattern and pos < current_position \
-                    and current_position < pos + row_count:
-                        y = self.top_margin + (current_position - pos - self.start_row) * self.row_height
-                        w, h = self.get_client_size()
-                        ctx.set_source_rgba(0, 0, 0, 0.3)
-                        ctx.move_to(0, y)
-                        ctx.line_to(w, 2)
-                        ctx.stroke()
-                        return
 
     def get_plugin(self):
         """
@@ -2583,117 +2737,33 @@ class PatternView(Gtk.DrawingArea):
             3: [12, 4],
             }.get(tpb, [16, 4])
 
-    def draw_pattern_background(self, ctx, pango_ctx, pango_layout):
-        """ Draw the background, lines, borders and row numbers """
-        w, h = self.get_client_size()
-        # gc = self.get_window().new_gc()
-        # cm = gc.get_colormap()
-        cfg = config.get_config()
-        # drawable = self.get_window()
-        background = cfg.get_float_color('PE BG')
-        pen = cfg.get_float_color('PE Row Numbers')
-        ctx.set_source_rgb(*background)
-        ctx.rectangle(0, 0, w, self.row_height)
-        ctx.rectangle(0, 0, PATLEFTMARGIN, h)
-        ctx.fill()
 
-        if self.lines == None:
+    def draw_cursor_xor(self, ctx):
+        if self.pattern == -1:
             return
-
-        ctx.set_source_rgb(*pen)
-        #drawable.draw_rectangle(gc, False, 0, 0, w - 1, h - 1)
-        x, y = PATLEFTMARGIN, self.row_height
-        row = self.start_row
-        rows = self.row_count
-        # Draw the row numbers
-        num_rows = min(rows - row, int((h - self.row_height) / self.row_height) + 1)
-        s = '\n'. join([str(i).rjust(4) for i in range(row, row + num_rows)])
-        pango_layout.set_text(s)
-        px, py = pango_layout.get_pixel_size()
-        ctx.move_to(x - 5 - px, y)
-        PangoCairo.show_layout(ctx, pango_layout)
-
-        # Draw a black vertical separator line
-        y = self.row_height - 1
-        ctx.move_to(x, y) #draw_line(gc, x, y, x, h)
-        ctx.line_to(x, h)
-        ctx.stroke()
-        
-        # Draw a black horizontal separator line
-
-        # The color of text as specified in config.py
-        text_color = cfg.get_float_color('PE Track Numbers')
-        ctx.set_source_rgb(*text_color)
-        # Display track numbers in the middle of each track column at the to
-        # For each existing track:
-        for track in range(self.group_track_count[TRACK]):
-            # Get x and y positions in the drawable that correspond
-            # to a position that's designated for a particular event in
-            # the pattern, in this case first row, track group,
-            # current track being processed and the index of the first
-            # parameter (0).
-            x, y = self.pattern_to_pos(self.start_row, TRACK, track, 0)
-            # Convert track number to a string that will be drawn with Pango.
-            s = str(track)
-            # Get the width of the track being processed.
-            width = self.track_width[TRACK] * self.column_width
-            # Prepare the text.
-            pango_layout.set_text(s)
-            # Get the size of the string when it will be displayed in pixels.
-            px, py = pango_layout.get_pixel_size()
-            # And draw it so that it falls in the middle of the track column.
-            ctx.move_to(x + int(width / 2 - px / 2), int(self.row_height / 2 - (py / 2)))
-            PangoCairo.show_layout(ctx, pango_layout)
-
-    def draw_bar_marks(self, ctx):
-        "Draw the horizontal bars every each fourth and eighth bar."
-        w, h = self.get_client_size()
-
-        def draw_bar(row, group, track, color):
-            """Draw a horizontal bar for a specified row in a
-            specified group/track."""
-            x, y = self.pattern_to_pos(row, group, track, 0)
-            width = (self.track_width[group] - 1) * self.column_width
-            height = self.row_height
-            ctx.set_source_rgb(*color)
-            ctx.rectangle(x, y, width, height)
-            
+        if not self.is_visible():
+            return
+        cx, cy = self.pattern_to_pos(self.row, self.group, self.track, self.index, self.subindex)
+        if (cx >= (PATLEFTMARGIN + 4)) and (cy >= self.top_margin):
+            # Note that you have to add 0.5 to coordinates for cairo to properly
+            # display lines of width 1.
+            ctx.rectangle(cx + 0.5, cy + 0.5, self.column_width, self.row_height)
+            ctx.set_source_rgba(1.0, 0.0, 0.0, 1.0)
+            ctx.set_line_width(1)
+            ctx.stroke_preserve()
+            ctx.set_source_rgba(1.0, 0.0, 0.0, 0.3)
             ctx.fill()
 
-        cfg = config.get_config()
-        darkest = cfg.get_float_color('PE BG Very Dark')
-        lighter = cfg.get_float_color('PE BG Light')
-        lightest = cfg.get_float_color('PE BG Very Light')
+    # def draw(self, ctx, plugin=None, pattern=None, playpos=None):
 
-        def get_color(row):
-            "What color to paint the bar with?"
-            if row % 16 == 0:
-                return darkest
-            elif row % 8 == 0:
-                return lighter
-            elif row % 2 == 0:
-                return lightest
-            else:
-                return None
+    def draw_playpos_xor(self, ctx):
+        self.playpos_painter.draw(ctx, self.get_plugin(), self.pattern)
 
-        num_rows = min(self.row_count - self.start_row, int((h - self.row_height) / self.row_height) + 1)
-        if self.lines and self.lines[CONN]:
-            for track in range(self.group_track_count[CONN]):
-                for row in range(self.start_row, num_rows + self.start_row):
-                    color = get_color(row)
-                    if color != None:
-                        draw_bar(row, CONN, track, color)
-        if self.lines and self.lines[GLOBAL]:
-            for row in range(self.start_row, num_rows + self.start_row):
-                color = get_color(row)
-                if color != None:
-                    draw_bar(row, GLOBAL, 0, color)
-        if self.lines and self.lines[TRACK]:
-            for track in range(self.group_track_count[TRACK]):
-                for row in range(self.start_row, num_rows + self.start_row):
-                    color = get_color(row)
-                    if color != None:
-                        draw_bar(row, TRACK, track, color)
+    def draw_pattern_background(self, ctx, pango_ctx, pango_layout):
+        self.pattern_bg_painter.draw(ctx, pango_ctx, pango_layout)
+
+    def draw_bar_marks(self, ctx):
+        self.bar_mark_painter.draw(ctx)
 
     def draw_parameter_values(self, ctx, pango_ctx, pango_layout):
         """ Draw the parameter values for all tracks, columns and rows."""
@@ -2824,7 +2894,7 @@ class PatternView(Gtk.DrawingArea):
         if self.needfocus:
             self.grab_focus()
             self.needfocus = False
-        
+
         pango_ctx = self.get_pango_context()
         # pangocairo.CairoContext(ctx)
         pango_layout = Pango.Layout(pango_ctx)
