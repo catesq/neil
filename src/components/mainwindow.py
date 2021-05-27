@@ -31,6 +31,8 @@ import neil.errordlg as errordlg
 from neil import com
 import neil.common as common
 from functools import cmp_to_key
+import ctypes
+
 MARGIN = common.MARGIN
 MARGIN2 = common.MARGIN2
 MARGIN3 = common.MARGIN3
@@ -71,6 +73,7 @@ class FramePanel(Gtk.Notebook):
             if not hasattr(panel, '__view__'):
                 print(("panel",panel,"misses attribute __view__"))
                 continue
+            panel._notebook = self
             panel._index = index
             options = panel.__view__
             stockid = options['stockid']
@@ -104,7 +107,6 @@ class FramePanel(Gtk.Notebook):
                 panel.handle_focus()
 
 class Accelerators(Gtk.AccelGroup):
-
     __neil__ = dict(
         id = 'neil.core.accelerators',
         singleton = True,
@@ -130,14 +132,14 @@ class ViewMenu(Menu):
         if menuitem.get_active():
             view.show_all()
         else:
-            view.hide_all()
+            view.hide()
 
     def on_activate_item(self, menuitem, view):
         if 'neil.viewpanel' in view.__neil__.get('categories',[]):
             framepanel = com.get('neil.core.framepanel')
             framepanel.select_viewpanel(view)
         else:
-            view.hide_all()
+            view.hide()
 
     def on_activate(self, widget, item, view):
         item.set_active(view.get_property('visible'))
@@ -256,7 +258,7 @@ class NeilFrame(Gtk.Window):
         """
 
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
-        import ctypes
+
         com.get('neil.core.player').set_host_info(1,1,ctypes.c_void_p(hash(self)))
 
         errordlg.install(self)
@@ -341,12 +343,13 @@ class NeilFrame(Gtk.Window):
         # Separator
         tempmenu.append(Gtk.SeparatorMenuItem())
         donate_menu_item = Gtk.MenuItem("_Donate")
+        donate_menu_item.set_use_underline(True)
         donate_menu_item.connect('activate', self.on_donate)
         tempmenu.append(donate_menu_item)
         tempmenu.append(Gtk.SeparatorMenuItem())
         # Menu item that launches the about box
         tempmenu.append(make_stock_menu_item(Gtk.STOCK_ABOUT, self.on_about))
-        self.neilframe_menubar.append(make_submenu_item(tempmenu, "_Help"))
+        self.neilframe_menubar.append(make_submenu_item(tempmenu, "_Help", True))
         self.master = com.get('neil.core.panel.master')
         self.transport = com.get('neil.core.panel.transport')
         self.playback_info = com.get('neil.core.playback')
@@ -639,10 +642,8 @@ class NeilFrame(Gtk.Window):
         """
         Event handler for key events.
         """
-        print("mainwindow keydown")
         k = Gdk.keyval_name(event.keyval)
         player = com.get('neil.core.player')
-        driver = com.get('neil.core.driver.audio')
         if k == 'F6':
             self.play_from_cursor(event)
         elif k == 'F5':
@@ -650,9 +651,7 @@ class NeilFrame(Gtk.Window):
         elif k == 'F8':
             player.stop()
         else:
-            print("mainwindow exit keydown")
             return False
-        print("mainwindow exit keydown")
         return True
 
     # TODO probabley replace by framepanel
