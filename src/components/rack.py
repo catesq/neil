@@ -502,8 +502,6 @@ class ParameterView(Gtk.VBox):
                 if func:
                     item.connect('activate', func, *args)
                 return item
-            def cmp_nocase(a,b):
-                return cmp(a[0].lower(),b[0].lower())
             evbinds = self.get_event_connection_bindings(g,t,i)
             if g == 3:
                 for conn,c in evbinds:
@@ -524,7 +522,7 @@ class ParameterView(Gtk.VBox):
             else:
                 index = 0
                 submenu = Gtk.Menu()
-                for name,channel,ctrlid in sorted(config.get_config().get_midi_controllers(), cmp_nocase):
+                for name,channel,ctrlid in sorted(config.get_config().get_midi_controllers(), key=lambda plugin: plugin.lower()):
                     submenu.append(make_menu_item(prepstr(name), "", self.on_bind_controller, (g,t,i), (name,channel,ctrlid)))
                     index += 1
                 controllers = 0
