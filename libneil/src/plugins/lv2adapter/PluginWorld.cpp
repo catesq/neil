@@ -1,5 +1,5 @@
-#include "PluginWorld.hpp"
-#include "lv2_utils.hpp"
+#include "PluginWorld.h"
+#include "lv2_utils.h"
 
 //-----------------------------------------------------------------------------------
 

@@ -1,5 +1,4 @@
-#ifndef LV2ZZUBUTILS_HPP
-#define LV2ZZUBUTILS_HPP
+#pragma once
 
 #include <string>
 #include <initializer_list>
@@ -91,7 +90,8 @@ inline uint8_t midi_msg_len(uint8_t cmd) {
 #pragma pack(1)
 
 struct attrvals {
-    int channel;
+    int channel{};
+    int ui{};
 };
 
 union midi_msg {
@@ -191,6 +191,3 @@ struct MidiEvents {
         return data.size();
     }
 };
-
-
-#endif // LV2UTILS_HPP

@@ -1,8 +1,3 @@
-// dssi plugin adapter
-
-// Copyright (C) 2006 Leonard Ritter (contact@leonard-ritter.com)
-// Copyright (C) 2008 James McDermott (jamesmichaelmcdermott@gmail.com)
-//
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; either version 2
@@ -17,16 +12,17 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-// lv2adapter allows running DSSI plugins as zzub plugins
+// lv2 plugin adapter by github.com/mitnuh
+// based on the dssi adapter by
+//     Copyright (C) 2006 Leonard Ritter (contact@leonard-ritter.com)
+//     Copyright (C) 2008 James McDermott (jamesmichaelmcdermott@gmail.com)
 
 #include "lv2_defines.h"
-#include "lv2_utils.hpp"
-#include "PluginAdapter.hpp"
-#include "PluginInfo.hpp"
+#include "lv2_utils.h"
+#include "PluginAdapter.h"
+#include "PluginInfo.h"
 #include <ostream>
 #include <string>
-
 
 #include <gdk/gdk.h>
 #include <glib-object.h>
@@ -51,8 +47,10 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), world(info->world) 
         values = (float*) malloc(sizeof(float) * info->paramPorts.size());
     }
 
-	ui_events     = zix_ring_new(EVENT_BUF_SIZE);
-	plugin_events = zix_ring_new(EVENT_BUF_SIZE);
+    ui_events     = zix_ring_new(EVENT_BUF_SIZE);
+    plugin_events = zix_ring_new(EVENT_BUF_SIZE);
+
+    printf("lv2 cklass %s", info->lv2Class.c_str());
     
     track_values = track_vals;
     attributes = (int *) &attr_vals;
@@ -69,13 +67,8 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), world(info->world) 
         memset(cvBufs, 0.0f, sizeof(float) * ZZUB_BUFLEN * info->cvPorts.size());
     }
 
-    // for(EventPort *evtPort: info->eventPorts) {
-    //     eventBufs.push_back(lv2_evbuf_new(world->hostParams.bufSize, world->urids.atom_Chunk, world->urids.atom_Sequence));
-    // }
-
     for(EventPort *midiPort: info->midiPorts) {
         midiBufs.push_back(lv2_evbuf_new(world->hostParams.bufSize, world->urids.atom_Chunk, world->urids.atom_Sequence));
-        // midiSeqs.push_back((LV2_Atom_Sequence*)malloc(sizeof(LV2_Atom_Sequence) + world->hostParams.bufSize));
     }
 
     if(info->flags | zzub::plugin_flag_has_custom_gui) {
@@ -106,14 +99,10 @@ PluginAdapter::~PluginAdapter() {
     for(auto buf: midiBufs)
         lv2_evbuf_free(buf);
 
-    // for(auto seq: midiSeqs)
-    //     lilv_free(seq);
-
     for(auto buf: eventBufs)
         lv2_evbuf_free(buf);
 
     midiBufs.clear();
-    // midiSeqs.clear();
     eventBufs.clear();
 }
 
@@ -150,23 +139,18 @@ void PluginAdapter::init(zzub::archive *arc) {
     // if (verbose) 
     const LV2_Feature* feature_list[7] = {
         &features.uri_map_feature,
-		&features.map_feature,
+        &features.map_feature,
         &features.program_host_feature,
-		&features.unmap_feature,
-		// &features.sched_feature,
-		&features.options_feature,
-        // &features.pow2_buf_feature,
-        // &features.fixed_buf_feature,
+        &features.unmap_feature,
+        &features.options_feature,
         &features.bounded_buf_feature,
-        // &features.default_state_feature,
-		NULL
-	};
+        NULL
+    };
 
     pluginInstance = lilv_plugin_instantiate(info->lilvPlugin, _master_info->samples_per_second, feature_list);
 
     metaPlugin = _host->get_metaplugin();
     _host->set_event_handler(metaPlugin, this);
-    printf("connect plugin %s\n", info->name.c_str());
     connectInstance(pluginInstance);
     
     lilv_instance_activate(pluginInstance);
@@ -229,17 +213,16 @@ void PluginAdapter::attach_ui(GtkWidget* window, GtkWidget* container) {
 
 
 GtkWidget* PluginAdapter::open_ui(GtkWidget* window) {
-	g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), this);
+    g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), this);
 
     GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
-	gtk_window_set_role(GTK_WINDOW(window), "plugin_ui");
-	gtk_container_add(GTK_CONTAINER(window), vbox);
+    gtk_window_set_role(GTK_WINDOW(window), "plugin_ui");
+    gtk_container_add(GTK_CONTAINER(window), vbox);
 
     GtkWidget* alignment = gtk_alignment_new(0.5, 0.5, 1.0, 1.0);
-	gtk_box_pack_start(GTK_BOX(vbox), alignment, TRUE, TRUE, 0);
-	
-    // printf("return from open_ui\n");
+    gtk_box_pack_start(GTK_BOX(vbox), alignment, TRUE, TRUE, 0);
+    
     return alignment;
 }
 
@@ -253,19 +236,19 @@ void program_changed(LV2_Programs_Handle handle, int32_t index) {
 
 
 bool PluginAdapter::invoke(zzub_event_data_t& data) {
+    attr_vals.ui = 0;
     if (data.type != zzub::event_type_double_click || !(info->flags & zzub_plugin_flag_has_custom_gui))
         return false;
 
     // printf("invoke ui_window %.X\n", ui_window);
     if(ui_window != nullptr) {
-        return true;
+        return false;
     }
 
-    // printf("show gui %d\n", data.type);
     ui_host   = suil_host_new(write_events_from_ui, lv2_port_index, nullptr, nullptr); //&update_port, &remove_port);
     ui        = select_ui();
 
-    // some guis don't work. ie all gtk2 plugin in this gtk3 host
+    // gtk2 uis don't work in gtk3 host
     if(!ui)
         return false;
 
@@ -273,56 +256,52 @@ bool PluginAdapter::invoke(zzub_event_data_t& data) {
     ui_container = open_ui(ui_window);
 
     const char* bundle_uri  = lilv_node_as_uri(lilv_ui_get_bundle_uri(ui));
-	const char* binary_uri  = lilv_node_as_uri(lilv_ui_get_binary_uri(ui));
-	char*       bundle_path = lilv_file_uri_parse(bundle_uri, NULL);
-	char*       binary_path = lilv_file_uri_parse(binary_uri, NULL);
+    const char* binary_uri  = lilv_node_as_uri(lilv_ui_get_binary_uri(ui));
+    char*       bundle_path = lilv_file_uri_parse(bundle_uri, NULL);
+    char*       binary_path = lilv_file_uri_parse(binary_uri, NULL);
 
     const LV2_Feature instance_feature = {
-		NS_EXT "instance-access", lilv_instance_get_handle(pluginInstance)
-	};
+        NS_EXT "instance-access", lilv_instance_get_handle(pluginInstance)
+    };
 
     LV2_Feature parent_feature = {
-		LV2_UI__parent, ui_window
-	};
+        LV2_UI__parent, ui_window
+    };
 
     const LV2_Feature* ui_features[8] = {
         &features.uri_map_feature,
-		&features.map_feature,
-		&features.unmap_feature,
+        &features.map_feature,
+        &features.unmap_feature,
         &features.program_host_feature,
-		&instance_feature,
-		// &data_feature,
-		// &features.log_feature,
-		&parent_feature,
-		&features.options_feature,
-		// &idle_feature,
-		// &features.request_value_feature,
-		NULL
-	};
+        &instance_feature,
+        &parent_feature,
+        &features.options_feature,
+        NULL
+    };
 
     ui_instance = suil_instance_new(
-		ui_host,
-		this,
-		GTK3_URI,
-		lilv_node_as_uri(lilv_plugin_get_uri(info->lilvPlugin)),
-		lilv_node_as_uri(lilv_ui_get_uri(ui)),
-		lilv_node_as_uri(ui_type),
-		bundle_path,
-		binary_path,
-		ui_features);
+        ui_host,
+        this,
+        GTK3_URI,
+        lilv_node_as_uri(lilv_plugin_get_uri(info->lilvPlugin)),
+        lilv_node_as_uri(lilv_ui_get_uri(ui)),
+        lilv_node_as_uri(ui_type),
+        bundle_path,
+        binary_path,
+        ui_features);
 
-	lilv_free(binary_path);
-	lilv_free(bundle_path);
+    lilv_free(binary_path);
+    lilv_free(bundle_path);
 
     if(!ui_instance) 
         return false;
 
     attach_ui(ui_window, ui_container);
+    // gtk_window_set_transient_for(GTK_WINDOW(ui_window), GTK_WINDOW(data.custom.data));
     gtk_window_present(GTK_WINDOW(ui_window));
-    gtk_main();
 
-    	// Set initial control port values
-	for (auto port: info->paramPorts) {
+        // Set initial control port values
+    for (auto port: info->paramPorts) {
         suil_instance_port_event(
             ui_instance, 
             port->index,
@@ -330,64 +309,22 @@ bool PluginAdapter::invoke(zzub_event_data_t& data) {
             0, 
             &values[port->paramIndex]
         );
-	}
+    }
+
+    attr_vals.ui = 1;
 
     return true;
 }
 
 void PluginAdapter::destroy() {
-//    if (verbose) printf("in destroy\n");
-//    if(pluginInstance) { lilv_instance_free(pluginInstance); }
     delete this;
 }
-
-
-//float PluginAdapter::get_param_value(std::string symbol) {
-//    ParamPort *port = get_param_port(symbol);
-
-//    return port == nullptr ? 0.f : port->zzub_to_lilv_value(port->getData((uint8_t*) global_values));
-
-//    //    uint8_t* globals = (uint8_t*) global_values;
-
-//    //    switch(port->zzubParam->type) {
-//    //    case zzub_parameter_type_word:
-//    //        return port->toLv2Val(*(uint16_t*)(globals + port->byteOffset));
-//    //    case zzub_parameter_type_byte:
-//    //        return port->toLv2Val(*(globals + port->byteOffset));
-//    //    case zzub_parameter_type_note:
-//    //        return (float) *((uint8_t*) (globals + port->byteOffset));
-//    //    case zzub_parameter_type_switch:
-//    //        return (float) *((uint8_t*) (globals + port->byteOffset)) == zzub::switch_value_off ? 0.f : 1.f;
-//    //    }
-//}
-
-//void PluginAdapter::set_param_value(std::string symbol, float value) {
-//    printf("\nSet param value\n");
-//    ParamPort *port = get_param_port(symbol);
-
-//    if(port != nullptr) {
-//        port->putData((uint8_t*) global_values, port->lilv_to_zzub_value(value));
-//    }
-
-
-//    //    switch(port->zzubParam->type) {
-//    //    case zzub_parameter_type_word:
-//    //        *((uint16_t*) (globals + port->byteOffset)) = port->toZzubVal(value);
-//    //    case zzub_parameter_type_byte:
-//    //        *(globals + port->byteOffset) = port->toZzubVal(value);
-//    //    case zzub_parameter_type_note:
-//    //        *(globals + port->byteOffset) = (u_int8_t) value;
-//    //    case zzub_parameter_type_switch:
-//    //        *((uint8_t*) (globals + port->byteOffset)) = value == 0.f ? zzub::switch_value_off : zzub::switch_value_on;
-//    //    }
-//}
 
 
 
 void PluginAdapter::connectInstance(LilvInstance* pluginInstance) {
     if(verbose) { printf("in connectInstance\n"); }
-    printf("connect instance %s\n", info->name.c_str());
-    
+
     uint8_t* globals = (uint8_t*) global_values;
     for(auto paramPort: info->paramPorts) {
         values[paramPort->paramIndex] = paramPort->defaultVal;
@@ -414,6 +351,7 @@ void PluginAdapter::connectInstance(LilvInstance* pluginInstance) {
     }
 
     for(auto cvPort: info->cvPorts) {
+        printf("connect cv port: port num %d bufnum %d\n", cvPort->index, cvPort->bufIndex);
         lilv_instance_connect_port(pluginInstance, cvPort->index, &cvBufs[cvPort->bufIndex * ZZUB_BUFLEN]);
     }
 
@@ -423,23 +361,7 @@ void PluginAdapter::connectInstance(LilvInstance* pluginInstance) {
 }
 
 
-
-void PluginAdapter::read_from_archive(zzub::archive *arc) {
-    // if(verbose)
-    //  printf("in read_fromarchive");
-    // zzub::instream *in = arc->get_instream("");
-    // uint32_t len = 0;
-    // char* str = (char*) malloc(len);
-    // in->read(&len, 4);
-    // in->read(str, len);
-
-    // LilvState *state = lilv_state_new_from_string(world->lilvWorld, &world->map, str);
-    // lilv_state_restore(state, pluginInstance, set_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
-    // free(str);
-    printf("read_from_archive\n");
-}
-
-
+void PluginAdapter::read_from_archive(zzub::archive *arc) { }
 
 void PluginAdapter::load(zzub::archive *arc) {
     // This is called when user selects a new preset in Aldrin.
@@ -450,9 +372,6 @@ void PluginAdapter::load(zzub::archive *arc) {
 
 
 void PluginAdapter::save(zzub::archive *arc) {
-    // in osc_configure_handler we see what keys there are,
-    // and for each key save the *latest* value.
-    // then in update_handler we actually send the keys that we got in init()
     if (verbose) printf("PluginAdapter: in save()!\n");
     const char *dir = world->hostParams.tempDir;
     LilvState* const state = lilv_state_new_from_instance(
@@ -468,7 +387,6 @@ void PluginAdapter::save(zzub::archive *arc) {
 
 
 const char *PluginAdapter::describe_value(int param, int value) {
-//    if(verbose) {printf("in describe param %d %d\n", param, value);}
     static char text[256];
     if(param < info->paramPorts.size()) {
         return info->paramPorts[param]->describeValue(value, text);
@@ -487,7 +405,6 @@ void PluginAdapter::set_track_count(int ntracks) {
         }
     }
     trackCount = ntracks;
-    if(verbose) { printf("done settrack\n"); }
 }
 
 ParamPort* PluginAdapter::get_param_port(std::string symbol) {
@@ -499,57 +416,41 @@ ParamPort* PluginAdapter::get_param_port(std::string symbol) {
         return nullptr;
 }
 
-
-void PluginAdapter::stop() {
-}
-
+void PluginAdapter::stop() {}
 
 void PluginAdapter::apply_events_from_ui() {
     ControlChange ev;
 
-	const size_t  space = zix_ring_read_space(ui_events);
+    const size_t  space = zix_ring_read_space(ui_events);
     for (size_t i = 0; i < space; i += sizeof(ev) + ev.size) {
-        printf("apply ?\n");
-		zix_ring_read(ui_events, (char*)&ev, sizeof(ev));
-		char body[ev.size];  
+        zix_ring_read(ui_events, (char*)&ev, sizeof(ev));
+        char body[ev.size];  
 
-		if (zix_ring_read(ui_events, body, ev.size) != ev.size) {
-			fprintf(stderr, "error: Error reading from UI ring buffer\n");
-			break;
-		}
-		assert(ev.index < jalv->num_ports);
-		Port* port = info->ports[ev.index];
+        if (zix_ring_read(ui_events, body, ev.size) != ev.size) {
+            fprintf(stderr, "error: Error reading from UI ring buffer\n");
+            break;
+        }
+        assert(ev.index < jalv->num_ports);
+        Port* port = info->ports[ev.index];
 
-		if (ev.protocol == 0 && port->type == PortType::Control) {
+        if (ev.protocol == 0 && port->type == PortType::Control) {
             update_port((ParamPort*) port, *((float*) body));
-		} else if (ev.protocol == world->urids.atom_eventTransfer) {
+        } else if (ev.protocol == world->urids.atom_eventTransfer) {
             printf("event from ui\n");
             if(port->type != PortType::Event)
                 continue;
 
             EventPort* evt_port = (EventPort*) port;
-			LV2_Evbuf_Iterator e = lv2_evbuf_end(eventBufs[evt_port->bufIndex]);
+            LV2_Evbuf_Iterator e = lv2_evbuf_end(eventBufs[evt_port->bufIndex]);
 
-			const LV2_Atom* const atom = (const LV2_Atom*)body;
-			lv2_evbuf_write(&e, samp_count, 0, atom->type, atom->size,
-			                (const uint8_t*)LV2_ATOM_BODY_CONST(atom));
-		} else {
-			fprintf(stderr, "error: Unknown control change protocol %u\n",
-			        ev.protocol);
-		}
-	}
-}
-
-void PluginAdapter::update_all_from_ui() {
-    // const char *dir = world->hostParams.tempDir;
-
-    //  LilvState* const state = lilv_state_new_from_instance(
-    //             info->lilvPlugin, pluginInstance, &world->map,
-    //             dir, dir, dir, dir,
-    //             get_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
-
-
-    // printf("\n");
+            const LV2_Atom* const atom = (const LV2_Atom*)body;
+            lv2_evbuf_write(&e, samp_count, 0, atom->type, atom->size,
+                            (const uint8_t*)LV2_ATOM_BODY_CONST(atom));
+        } else {
+            fprintf(stderr, "error: Unknown control change protocol %u\n",
+                    ev.protocol);
+        }
+    }
 }
 
 void PluginAdapter::update_port(ParamPort* port, float float_val) {
@@ -583,12 +484,8 @@ void PluginAdapter::process_events() {
         if (value != port->zzubParam->value_none) {
             values[port->paramIndex] = port->zzub_to_lilv_value(value);
         }
-        
     }
-    // Don't zero eventcount here: it could have been
-    // incremented in midi_note or set_track_count.
-    // Instead, zero it in process_stereo after processing
-    // events.
+
     for (int t = 0; t < trackCount; t++) {
         tvals &vals = track_vals[t];
         tvals &state = track_states[t];
@@ -597,9 +494,8 @@ void PluginAdapter::process_events() {
             state.volume = vals.volume;
 
         if (vals.note == zzub::note_value_none) {
-            if(state.note != zzub::note_value_none) {
-                // midiEvents.aftertouch(attrVals.channel, vals.note, volume);
-            }
+            if(state.note != zzub::note_value_none)
+                midiEvents.aftertouch(attr_vals.channel, state.note, state.volume);
         } else if(vals.note != zzub::note_value_off) {
             midiEvents.noteOn(attr_vals.channel, vals.note, state.volume);
             state.note = vals.note;
@@ -616,12 +512,26 @@ void PluginAdapter::process_events() {
 void PluginAdapter::process_track_midi_events(midi_msg &vals_msg, midi_msg& state_msg) {
     if(vals_msg.midi.cmd != TRACKVAL_NO_MIDI_CMD) {
         state_msg.midi.cmd = vals_msg.midi.cmd;
+
         if (vals_msg.midi.data != TRACKVAL_NO_MIDI_DATA)
             state_msg.midi.data = vals_msg.midi.data;
+
         midiEvents.add_message(state_msg);
     }
 }
 
+
+void PluginAdapter::update_all_from_ui() {
+    // const char *dir = world->hostParams.tempDir;
+
+    //  LilvState* const state = lilv_state_new_from_instance(
+    //             info->lilvPlugin, pluginInstance, &world->map,
+    //             dir, dir, dir, dir,
+    //             get_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
+
+
+    // printf("\n");
+}
 
 
 // inline LV2_Atom* populatePosBuf(PluginWorld *world, LV2_Atom_Forge *forge, PlaybackPosition &info) {
@@ -673,26 +583,20 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
         }
 
         lv2_evbuf_reset(midiBufs[port->bufIndex], true);
-        // lv2_atom_sequence_clear(midiSeqs[port->bufIndex]);
 
         if(midiEvents.count() == 0) {
             continue;
         }
 
         LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiBufs[port->bufIndex]);
-        // LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiSeqs[port->bufIndex]);
 
         for (auto& midi_event: midiEvents.data) {
-            // printf("%s\n", midi_event.str().c_str());
-            // midi_event.event.body.type = world->urids.midi_MidiEvent;
-            // lv2_atom_sequence_append_event(midiSeqs[port->bufIndex], world->hostParams.bufSize, &midi_event.event);
             lv2_evbuf_write(&buf_iter, 
                             midi_event.time, 0, 
                             world->urids.midi_MidiEvent, 
                             midi_event.size, 
                             midi_event.data);
         }
-        // printf("reset\n");
         midiEvents.reset();
     }
 
@@ -724,13 +628,6 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
 
     // FIXME midi -> lv2_evbuf in process_events
     lilv_instance_run(pluginInstance, numsamples);
-    //    if (desc->run_synth) {
-    //        desc->run_synth(handle, numsamples, events, eventcount);
-    //    } else if (desc->run_multiple_synths) {
-    //        desc->run_multiple_synths(1, &handle, numsamples, &events, &eventcount);
-    //    } else {
-    //    // No synth method -- what should we return?
-    //    }
 
     switch(info->audio_out_count) {
     case 0:
@@ -747,51 +644,6 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
     }
 
 }
-
-// void PluginAdapter::midi_note(int channel, int value, int velocity)
-// {
-//     if (verbose) {
-//         printf("midi_note: %d %d %d\n", channel, value, velocity);
-//     }
-
-//     midiEvents.noteOn(channel, value, velocity);
-    
-//     return;
-// }
-
-// void PluginAdapter::midi_note_off(int channel, int value, int velocity) {
-//     if (verbose) {
-//         printf("midi_note_off: %d %d %d\n", channel, value, velocity);
-//     }
-
-//     midiEvents.noteOff(channel, value);
-    
-//     return;
-// }
-
-
-
-// void PluginAdapter::process_controller_events() {}
-// void PluginAdapter::attributes_changed() {}
-// void PluginAdapter::command(int) {}
-// void PluginAdapter::mute_track(int) {}
-// bool PluginAdapter::is_track_muted(int) const { return false; }
-// void PluginAdapter::event(unsigned int) {}
-// const zzub::envelope_info** PluginAdapter::get_envelope_infos() { return 0; }
-// bool PluginAdapter::play_wave(int, int, float) { return false; }
-// void PluginAdapter::stop_wave() {}
-// int PluginAdapter::get_wave_envelope_play_position(int) { return -1; }
-// const char* PluginAdapter::describe_param(int) { return 0; }
-// bool PluginAdapter::set_instrument(const char*) { return false; }
-// void PluginAdapter::get_sub_menu(int, zzub::outstream*) {}
-// void PluginAdapter::add_input(const char*) {}
-// void PluginAdapter::delete_input(const char*) {}
-// void PluginAdapter::rename_input(const char*, const char*) {}
-// void PluginAdapter::input(float**, int, float) {}
-// void PluginAdapter::midi_control_change(int, int, int) {}
-// bool PluginAdapter::handle_input(int, int, int) { return false; }
-
-
 
 
 zzub::plugin *PluginInfo::create_plugin() const {
@@ -848,23 +700,23 @@ void write_events_from_ui(void* const adapter_handle,
                   const void* buffer) {
     PluginAdapter* const adapter = (PluginAdapter *) adapter_handle;
 
-	if (protocol != 0 && protocol != adapter->world->urids.atom_eventTransfer) {
-		fprintf(stderr, "UI write with unsupported protocol %u (%s)\n", protocol, unmap_uri(adapter->world, protocol));
-		return;
-	}
+    if (protocol != 0 && protocol != adapter->world->urids.atom_eventTransfer) {
+        fprintf(stderr, "UI write with unsupported protocol %u (%s)\n", protocol, unmap_uri(adapter->world, protocol));
+        return;
+    }
 
-   	if (port_index >= adapter->info->ports.size()) {
-		fprintf(stderr, "UI write to out of range port index %u\n", port_index);
-		return;
-	}
+       if (port_index >= adapter->info->ports.size()) {
+        fprintf(stderr, "UI write to out of range port index %u\n", port_index);
+        return;
+    }
 
-	char buf[sizeof(ControlChange) + buffer_size];
-	ControlChange* ev = (ControlChange*)buf;
-	ev->index    = port_index;
-	ev->protocol = protocol;
-	ev->size     = buffer_size;
-	memcpy(ev->body, buffer, buffer_size);
-	zix_ring_write(adapter->ui_events, buf, sizeof(buf));
+    char buf[sizeof(ControlChange) + buffer_size];
+    ControlChange* ev = (ControlChange*)buf;
+    ev->index    = port_index;
+    ev->protocol = protocol;
+    ev->size     = buffer_size;
+    memcpy(ev->body, buffer, buffer_size);
+    zix_ring_write(adapter->ui_events, buf, sizeof(buf));
 }
 
 
@@ -913,8 +765,6 @@ void set_port_value(const char* port_symbol,
         return;
     }
 
-    
-
     float fvalue;
     if (type == adapter->world->forge.Float) {
         fvalue = *(const float*)value;
@@ -932,22 +782,14 @@ void set_port_value(const char* port_symbol,
 
     adapter->values[port->paramIndex] = fvalue;
 
-    //	if (jalv->play_state != JALV_RUNNING) {
-    //		// Set value on port struct directly
-    //		port->control = fvalue;
-    //	} else {
-    //		// Send value to running plugin
-    //		jalv_ui_write(jalv, port->index, sizeof(fvalue), 0, &fvalue);
-    //	}
-
-    	if (adapter->ui_instance) {
-    		// Update UI
-    		char buf[sizeof(ControlChange) + sizeof(fvalue)];
-    		ControlChange* ev = (ControlChange*)buf;
-    		ev->index    = port->index;
-    		ev->protocol = 0;
-    		ev->size     = sizeof(fvalue);
-    		*(float*)ev->body = fvalue;
-    		zix_ring_write(adapter->plugin_events, buf, sizeof(buf));
-    	}
+    if (adapter->ui_instance) {
+        // Update UI
+        char buf[sizeof(ControlChange) + sizeof(fvalue)];
+        ControlChange* ev = (ControlChange*)buf;
+        ev->index    = port->index;
+        ev->protocol = 0;
+        ev->size     = sizeof(fvalue);
+        *(float*)ev->body = fvalue;
+        zix_ring_write(adapter->plugin_events, buf, sizeof(buf));
+    }
 }

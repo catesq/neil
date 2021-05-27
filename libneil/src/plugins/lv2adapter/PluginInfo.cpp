@@ -1,5 +1,5 @@
-#include "PluginInfo.hpp"
-#include "Ports.hpp"
+#include "PluginInfo.h"
+#include "Ports.h"
 #include <string>
 #include <ostream>
 
@@ -40,6 +40,10 @@ PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
                    .set_value_min(0)
                    .set_value_max(16)
                    .set_value_default(0);
+    add_attribute().set_name("Ui")
+                   .set_value_min(0)
+                   .set_value_max(1)
+                   .set_value_default(1);
 
     // add_generator_params();
 
@@ -54,7 +58,7 @@ PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
         portSymbol[port->symbol.c_str()] = port;
     }
 
-    if(!(flags & zzub_plugin_flag_has_audio_input)) {
+    if(lv2Class == "Instrument") {
         printf("add generator params for %s\n", name);
         add_generator_params();
     }
@@ -131,14 +135,14 @@ Port* PluginInfo::build_port(uint32_t idx) {
 
     } else if(lilv_port_is_a(lilvPlugin, lilvPort, world->port_cv)) {
 
-        // auto cv_port = new CvBufPort(this, lilvPort, flow, idx, cvPorts.size());
-        // cvPorts.push_back(cv_port);
-        // // if(verbose)
-        //     printport("cv port!", lilvPlugin, lilvPort, flow);
-        // flags |= (flow == PortFlow::Input) ? zzub_plugin_flag_has_cv_input : zzub_plugin_flag_has_cv_output;
+        auto cv_port = new CvBufPort(this, lilvPort, flow, idx, cvPorts.size());
+        cvPorts.push_back(cv_port);
+        // if(verbose)
+            // printport("cv port!", lilvPlugin, lilvPort, flow);
+        flags |= (flow == PortFlow::Input) ? zzub_plugin_flag_has_cv_input : zzub_plugin_flag_has_cv_output;
         // add_cv_port(cv_port->name.c_str()).set_is_input(flow == PortFlow::Input).set_index(idx);
 
-        // return cv_port;
+        return cv_port;
 
     } else if((atomLv2Api = lilv_port_is_a(lilvPlugin, lilvPort, world->port_atom)) || lilv_port_is_a(lilvPlugin, lilvPort, world->port_event)) {
         if (lilv_port_supports_event(lilvPlugin, lilvPort, world->midi_event)) {

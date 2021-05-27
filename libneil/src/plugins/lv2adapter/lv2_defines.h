@@ -1,22 +1,14 @@
-#ifndef LV2_DEFINES_H
-#define LV2_DEFINES_H
+#pragma once
 
-//#ifdef DEBUG
-//static int verbose = 1;
-//#else
-//static int verbose = 1;
-//#endif
-static int verbose = 0;
+static int verbose = 0; 
 
-
-//#include "zzub/zzub.h"
 #include "common.h"
 #include "lilv/lilv.h"
+
 #include "lv2/options/options.h"
 #include "lv2/data-access/data-access.h"
 #include "lv2/ui/ui.h"
 #include "lv2/urid/urid.h"
-
 #include "lv2/uri-map/uri-map.h"
 #include "lv2/worker/worker.h"
 #include "lv2/state/state.h"
@@ -24,15 +16,12 @@ static int verbose = 0;
 
 #include "ext/lv2_programs.h"
 
-
-
 #define ZZUB_BUFLEN zzub_buffer_size
 #define EVENT_BUF_CYCLES 8
 #define EVENT_BUF_SIZE ZZUB_BUFLEN * EVENT_BUF_CYCLES 
 #define NUM_OPTIONS 5
 
 #define GTK3_URI "http://lv2plug.in/ns/extensions/ui#Gtk3UI"
-
 
 // -----------------------------------------------------------------------
 
@@ -53,78 +42,59 @@ struct Lv2HostParams {
 };
 
 typedef struct {
-    
     LV2_Feature                uri_map_feature       = { LV2_URI_MAP_URI, NULL };
     LV2_Feature                map_feature           = { LV2_URID__map, NULL };
 	LV2_Feature                unmap_feature         = { LV2_URID__unmap, NULL };
 	LV2_Feature                make_path_feature     = { LV2_STATE__makePath, NULL };
 	LV2_Feature                program_host_feature  = { LV2_PROGRAMS__Host, NULL };
-	// LV2_Worker_Schedule        sched;
-	// LV2_Feature                sched_feature;
-	// LV2_Worker_Schedule        ssched;
-	// LV2_Feature                state_sched_feature;
-	// LV2_Log_Log                llog;
-	// LV2_Feature                log_feature;
-    // LV2_Feature                pow2_buf_feature      = { LV2_BUF_SIZE__powerOf2BlockLength, NULL };
-    // LV2_Feature                fixed_buf_feature     = { LV2_BUF_SIZE__fixedBlockLength, NULL };
     LV2_Feature                bounded_buf_feature   = { LV2_BUF_SIZE__boundedBlockLength, NULL };
     LV2_Feature                default_state_feature = { LV2_STATE__loadDefaultState, NULL };
 
 	LV2_Options_Option         options[NUM_OPTIONS];
 	LV2_Feature                options_feature       = { LV2_OPTIONS__options, NULL };
-	// LV2_Feature                safe_restore_feature;
-	// LV2UI_Request_Value        request_value;
-	// LV2_Feature                request_value_feature;
 
 	LV2_Extension_Data_Feature ext_data;
 } Lv2Features;
 
 
-
 // -----------------------------------------------------------------------
 
 extern "C" {
-#include "lilv/lilv.h"
+    #include "lilv/lilv.h"
 
-#include "lv2.h"
-#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
-#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
-//#include "lv2/atom-helpers.h"
-#include "lv2/lv2plug.in/ns/ext/atom/util.h"
-#include "lv2/lv2plug.in/ns/ext/buf-size/buf-size.h"
-#include "lv2/lv2plug.in/ns/ext/data-access/data-access.h"
-// dynmanifest
-#include "lv2/lv2plug.in/ns/ext/event/event.h"
-#include "lv2/lv2plug.in/ns/ext/event/event-helpers.h"
-#include "lv2/lv2plug.in/ns/ext/instance-access/instance-access.h"
-#include "lv2/lv2plug.in/ns/ext/log/log.h"
-// logger
-#include "lv2/lv2plug.in/ns/ext/midi/midi.h"
-// morph
-#include "lv2/lv2plug.in/ns/ext/options/options.h"
-#include "lv2/lv2plug.in/ns/ext/parameters/parameters.h"
-#include "lv2/lv2plug.in/ns/ext/patch/patch.h"
-#include "lv2/lv2plug.in/ns/ext/port-groups/port-groups.h"
-#include "lv2/lv2plug.in/ns/ext/port-props/port-props.h"
-#include "lv2/lv2plug.in/ns/ext/presets/presets.h"
-#include "lv2/lv2plug.in/ns/ext/resize-port/resize-port.h"
-#include "lv2/lv2plug.in/ns/ext/state/state.h"
-#include "lv2/lv2plug.in/ns/ext/time/time.h"
-#include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
-#include "lv2/lv2plug.in/ns/extensions/units/units.h"
-#include "lv2/lv2plug.in/ns/ext/uri-map/uri-map.h"
-#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
-#include "lv2/lv2plug.in/ns/ext/worker/worker.h"
-
-//#include "lv2/lv2-miditype.h"
-//#include "lv2/lv2-midifunctions.h"
-//#include "lv2/lv2_external_ui.h"
-//#include "lv2/lv2_kxstudio_properties.h"
-//#include "lv2/lv2_programs.h"
-//#include "lv2/lv2_rtmempool.h"
+    #include "lv2.h"
+    #include "lv2/lv2plug.in/ns/ext/atom/atom.h"
+    #include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+    //#include "lv2/atom-helpers.h"
+    #include "lv2/lv2plug.in/ns/ext/atom/util.h"
+    #include "lv2/lv2plug.in/ns/ext/buf-size/buf-size.h"
+    #include "lv2/lv2plug.in/ns/ext/data-access/data-access.h"
+    // dynmanifest
+    #include "lv2/lv2plug.in/ns/ext/event/event.h"
+    #include "lv2/lv2plug.in/ns/ext/event/event-helpers.h"
+    #include "lv2/lv2plug.in/ns/ext/instance-access/instance-access.h"
+    #include "lv2/lv2plug.in/ns/ext/log/log.h"
+    // logger
+    #include "lv2/lv2plug.in/ns/ext/midi/midi.h"
+    // morph
+    #include "lv2/lv2plug.in/ns/ext/options/options.h"
+    #include "lv2/lv2plug.in/ns/ext/parameters/parameters.h"
+    #include "lv2/lv2plug.in/ns/ext/patch/patch.h"
+    #include "lv2/lv2plug.in/ns/ext/port-groups/port-groups.h"
+    #include "lv2/lv2plug.in/ns/ext/port-props/port-props.h"
+    #include "lv2/lv2plug.in/ns/ext/presets/presets.h"
+    #include "lv2/lv2plug.in/ns/ext/resize-port/resize-port.h"
+    #include "lv2/lv2plug.in/ns/ext/state/state.h"
+    #include "lv2/lv2plug.in/ns/ext/time/time.h"
+    #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
+    #include "lv2/lv2plug.in/ns/extensions/units/units.h"
+    #include "lv2/lv2plug.in/ns/ext/uri-map/uri-map.h"
+    #include "lv2/lv2plug.in/ns/ext/urid/urid.h"
+    #include "lv2/lv2plug.in/ns/ext/worker/worker.h"
 }
 
 //-----------------------------------------------------------------------
+
 #define TRACKVAL_VOLUME_UNDEFINED 0x0FF
 #define TRACKVAL_NO_MIDI_CMD 0x00
 #define TRACKVAL_NO_MIDI_DATA 0xFFFF
@@ -134,17 +104,13 @@ extern "C" {
 #define F_THRESHOLD 0.00001
 #define SIMILAR(a, b) (a > b - F_THRESHOLD && a < b + F_THRESHOLD)
 
-
 //-----------------------------------------------------------------------
-
 
 #define NS_EXT "http://lv2plug.in/ns/ext/"
 
 #define LV2_KXSTUDIO_PROPERTIES_URI    "http://kxstudio.sf.net/ns/lv2ext/props"
 
 #define LV2_KXSTUDIO_PROPERTIES_PREFIX LV2_KXSTUDIO_PROPERTIES_URI "#"
-
-
 
 #define LV2_PROPERTY u_int32_t
 
@@ -436,11 +402,6 @@ typedef uint32_t LV2_Property;
 #define LV2_EXTERNAL_UI_DEPRECATED_URI "http://lv2plug.in/ns/extensions/ui#external"
 
 
-
-
-
-
-
 // -----------------------------------------------------------------------
 // Define namespaces and missing prefixes
 
@@ -459,13 +420,7 @@ typedef uint32_t LV2_Property;
 #define LV2_UI__Qt5UI         LV2_UI_PREFIX "Qt5UI"
 #define LV2_UI__makeResident  LV2_UI_PREFIX "makeResident"
 
-
-
-
-
 //-----------------------------------------------------------------------
-
-
 
 //      MIDI CODES
 // cmd	Meaning	               # params  param 1        param 2
@@ -496,6 +451,3 @@ typedef uint32_t LV2_Property;
 //0xFD	???
 //0xFE	Active Sensing (Sys Realtime)
 //0xFF	System Reset (Sys Realtime)
-
-
-#endif // LV2_DEFINES_H

@@ -1,9 +1,7 @@
-#include "PluginAdapter.hpp"
-#include "Ports.hpp"
-#include "PluginInfo.hpp"
+#include "PluginAdapter.h"
+#include "Ports.h"
+#include "PluginInfo.h"
 #include <cmath>
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 
 
 Port::Port(

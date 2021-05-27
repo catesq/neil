@@ -18,14 +18,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+# lv2 plugin adapter by github.com/mitnuh
+# based on the dssi adapter by
+#     Copyright (C) 2006 Leonard Ritter (contact@leonard-ritter.com)
+#     Copyright (C) 2008 James McDermott (jamesmichaelmcdermott@gmail.com)
+
 Import('pluginenv', 'build_plugin')
 
 lv2_pluginenv = pluginenv.Clone()
-lv2_pluginenv.Append(LIBS=['lilv-0','suil-0', 'gtk-3'])
+lv2_pluginenv.Append(LIBS=['lilv-0', 'suil-0', 'gtk-3'])
 
 #lv2_pluginenv.Append(CCFLAGS=[ '-DUSE_LILV', '-DUSE_LV2' ])
 
 lv2_pluginenv.Append(CCFLAGS='`pkg-config gtk+-3.0 suil-0 lilv-0 --cflags` -Ilibneil/src/libzzub -Ilibneil/src/plugins/lv2adapter')
 
 if pluginenv['LV2'] == True:
-    lv2_build = build_plugin(lv2_pluginenv, 'lv2adapter', [ 'PluginAdapter.cpp',   'Ports.cpp', 'PluginInfo.cpp', 'PluginWorld.cpp', 'ext/lv2_evbuf.c', 'ext/symap.c', 'zix/ring.c'])
+    lv2_build = build_plugin(lv2_pluginenv, 'lv2adapter', [ 'PluginAdapter.cpp', 'Ports.cpp', 'PluginInfo.cpp', 'PluginWorld.cpp', 'ext/lv2_evbuf.c', 'ext/symap.c', 'zix/ring.c'])
