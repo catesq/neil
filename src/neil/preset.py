@@ -47,13 +47,6 @@ import zzub
 from .utils import read_int, read_string, write_int, write_string
 
 
-def sort_preset(a, b):
-    if a.name.lower() < b.name.lower():
-        return -1
-    elif a.name.lower() > b.name.lower():
-        return 1
-    return 0
-
 
 class Preset:
     """
@@ -190,7 +183,7 @@ class PresetCollection:
         """
         Sorts presets by filenames.
         """
-        self.presets = sorted(self.presets, sort_preset)
+        self.presets = sorted(self.presets, key=lambda preset: preset.name.lower())
 
 __all__ = [
     'PresetCollection',
