@@ -19,12 +19,15 @@ import array
 import cairo
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GObject
+from gi.repository import Gtk, Gdk, GObject, GLib
 
-import numpy as np
+from statistics import stdev, pstdev
+from collections import deque
+# import numpy as np
 import neil.utils as utils
 import neil.com as com
 from neil.common import MARGIN
+from math import sqrt, fabs
 
 # pylint: disable=no-member
 pattern = cairo.SurfacePattern(
@@ -34,6 +37,9 @@ pattern = cairo.SurfacePattern(
     )
 # pattern.set_extend(cairo.EXTEND_REPEAT)
 # pylint: enable=no-member
+
+def roll(array, offs):
+    return array[-15:] + array[:-15]
 
 class AmpView(Gtk.DrawingArea):
     """
@@ -54,36 +60,32 @@ class AmpView(Gtk.DrawingArea):
         self.amp = 0.0
         self.channel = channel
         self.stops = (0.0, 6.0 / self.range, 48.0 / self.range)  # red, yellow, green
-        self.peaks = np.zeros(300)
-        self.hold = 15
+        self.peakz = deque([0.0] * 20)
         self.set_size_request(20, -1)
         self.connect("draw", self.on_draw)
         self.connect("configure_event", self.configure)
-        GObject.timeout_add(33, self.on_update)
+        GLib.timeout_add(50, self.on_update)
 
     def on_update(self):
         """
-        Event handler triggered by a 30fps timer event.
+        Event handler triggered by a 20fps timer event.
         """
         player = com.get('neil.core.player')
         master = player.get_plugin(0)
-        # vol = master.get_parameter_value(1, 0, 0)
         self.amp = min(master.get_last_peak()[self.channel], 1.0)
 
-        self.peaks = np.roll(self.peaks, self.hold)
-        std = self.peaks.std()
-        self.peaks[:self.hold] = [self.amp - std] * self.hold
+        std = pstdev(self.peakz)
+        peak = fabs(self.amp - std)
+        self.peakz.pop()
+        self.peakz.append(peak if peak > 0.01  else 0.0)
+        self.peakz.rotate(1)
 
-        rect = self.get_allocation()
         if self.is_visible():
-            self.get_window().invalidate_rect(Gdk.Rectangle(0, 0, rect.width, rect.height), False)
+            self.queue_draw()
+
         return True
 
     def on_draw(self, widget, ctx):
-        self.draw_all(ctx)
-        return False
-
-    def draw_all(self, ctx):
         """
         Draws the VU bar client region.
         """
@@ -120,7 +122,7 @@ class AmpView(Gtk.DrawingArea):
         rms = lambda x: 0 if len(x) == 0 else ((sum(x) / len(x)) ** 2) ** 0.5
         db = lambda p: utils.linear2db(p, limit= -self.range) + self.range
         # db rms
-        dbp = [x for x in [db(p) for p in self.peaks] if x > 0]
+        dbp = [x for x in [db(p) for p in self.peakz] if x > 0]
         ph = max(bh, int(h * rms(dbp) / self.range))
         ctx.set_source_rgb(1, 1, 1)
         ctx.move_to(1 + (0 if self.channel else w / 2), h - ph)
@@ -128,20 +130,20 @@ class AmpView(Gtk.DrawingArea):
         ctx.stroke()
 
         # linear rms
-        phl = max(bhl, int(h * rms(self.peaks)))
+        phl = max(bhl, int(h * rms(self.peakz)))
         ctx.move_to(1 + (w / 2 if self.channel else 0), h - phl)
         ctx.line_to(w / 2 - 1 + (w / 2 if self.channel else 0), h - phl)
         ctx.stroke()
 
         # db peak
-        p = int(h * (utils.linear2db(max(self.peaks), limit= -self.range) + self.range) / self.range)
+        p = int(h * (utils.linear2db(max(self.peakz), limit= -self.range) + self.range) / self.range)
         ctx.set_source(self.linear)
         ctx.move_to(1 + (0 if self.channel else w / 2), h - p)
         ctx.line_to(w / 2 - 1 + (0 if self.channel else w / 2), h - p)
         ctx.stroke()
 
         # linear peak
-        p = int(h * max(self.peaks))
+        p = int(h * max(self.peakz))
         ctx.move_to(1 + (w / 2 if self.channel else 0), h - p)
         ctx.line_to(w / 2 - 1 + (w / 2 if self.channel else 0), h - p)
         ctx.stroke()
@@ -153,6 +155,7 @@ class AmpView(Gtk.DrawingArea):
             ctx.set_source_rgba(1, 0, 0, .5)
             ctx.fill()
             self.emit('clip', self.amp)
+        return False
 
 
     def configure(self, widget, event):
@@ -269,7 +272,7 @@ class MasterPanel(Gtk.VBox):
     def on_clipped(self, widget, level):
         # db = utils.linear2db(level, widget.range)
         self.clipbtn.set_label('CLIP')
-        self.clipbtn.modify_bg(Gtk.StateType.NORMAL, Gdk.Color("#f00"))
+        self.clipbtn.modify_bg(Gtk.StateType.NORMAL, Gdk.Color(255,0,0))
 
     def update_all(self):
         """
