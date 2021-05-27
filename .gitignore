@@ -4,6 +4,9 @@
 *.exe
 *.o
 *.so
+*.so.0
+*.so.0.*
+*.a
 *.os
 
 # Packages #
@@ -29,6 +32,7 @@
 *.pyc
 .env
 
+.vscode
 *.code-workspace
 .sconf_temp/
 doc/manual/
@@ -36,4 +40,7 @@ doc/manual/
 libneil/REVISION
 libneil/options.conf
 options.conf
-
+libneil/src/libzzub/libzzub.def
+libneil/include/zzub/zzub.h
+libneil/include/zzub/signature.h
+libneil/src/pyzzub/zzub/
