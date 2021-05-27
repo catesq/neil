@@ -60,7 +60,7 @@ class PlaybackInfo(Gtk.Dialog):
         """
         Initializer.
         """
-        GObject.GObject.__init__(self)
+        Gtk.Dialog.__init__(self)
         self.set_title("Playback")
         sg1 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
         sg2 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
