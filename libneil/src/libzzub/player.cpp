@@ -91,7 +91,7 @@ namespace zzub {
   }
 
   off_t mpg123_seek_cb(void* user_data, off_t offset, int whence) {
-    zzub::instream* strm = (zzub::instream*)user_data ;    
+    zzub::instream* strm = (zzub::instream*)user_data ;
     strm->seek((long)offset, (int)whence);
     return strm->position();
   }
@@ -111,13 +111,13 @@ namespace zzub {
     mpg123_param(mh, MPG123_VERBOSE, 2, 0); /* Brabble a bit about the parsing/decoding. */
     // mpg123_param(mh, MPG123_ADD_FLAGS, MPG123_SEEKBUFFER, 0.);
     // mpg123_param(mh, MPG123_ADD_FLAGS, MPG123_FORCE_FLOAT, 0);
-  
+
     if(mpg123_replace_reader_handle(mh, mpg123_read_cb, mpg123_seek_cb, 0) != MPG123_OK)
     {
         fprintf(stderr, "mpg123 error: %s\n", mpg123_strerror(mh));
         close();
         mh = 0;
-        return false;        
+        return false;
     }
 
     if( mpg123_open_handle(mh, strm) != MPG123_OK
@@ -159,7 +159,7 @@ namespace zzub {
     mpg123_exit();
   }
 
-  int import_mpg123::get_wave_count() { 
+  int import_mpg123::get_wave_count() {
     if (mh != 0) return 1;
     return 0;
   }
@@ -170,7 +170,7 @@ namespace zzub {
     return 0;
   }
 
-  bool import_mpg123::get_wave_level_info(int i, int level, importwave_info& info) { 
+  bool import_mpg123::get_wave_level_info(int i, int level, importwave_info& info) {
     assert(i == 0);
     assert(level == 0);
     if (i != 0 && level != 0) {
@@ -181,9 +181,9 @@ namespace zzub {
     switch (encoding) {
     case MPG123_ENC_SIGNED_16:
       info.format = wave_buffer_type_si16;
-      break;      
+      break;
     case MPG123_ENC_FLOAT_32:
-      info.format = wave_buffer_type_si16;      
+      info.format = wave_buffer_type_si16;
       break;
     default:
       return false;
@@ -201,7 +201,7 @@ namespace zzub {
       printf("error getting wave level info\n");
       return;
     }
-    const int buffer_size = mpg123_outblock(mh);    
+    const int buffer_size = mpg123_outblock(mh);
     // const int buffer_size = 2048;
 
     size_t done = 0;
@@ -216,7 +216,7 @@ namespace zzub {
            samples += done / sizeof(short);
 
     } while (err==MPG123_OK);
-    
+
     if(err != MPG123_DONE)
     fprintf( stderr, "Warning: Decoding ended prematurely because: %s\n",
             err == MPG123_ERR ? mpg123_strerror(mh) : mpg123_plain_strerror(err) );
@@ -271,7 +271,7 @@ namespace zzub {
     // This was done due to simplicy, some machines only working
     // with 16 bit files and due to the fact that if it were not
     // for this notice you would have never noticed it did this.
-    // With time, of course, this should be re-implemented in a 
+    // With time, of course, this should be re-implemented in a
     // more pleasing manner.
     switch (sfinfo.format & SF_FORMAT_SUBMASK) {
     case SF_FORMAT_PCM_U8:
@@ -310,9 +310,9 @@ namespace zzub {
     for (int i = 0; i < iwi.sample_count / stream_buffer_size; i++) {
       float f[2 * stream_buffer_size];
       sf_read_float(sf, f, iwi.channels * stream_buffer_size);
-      CopySamples(&f, buffer, stream_buffer_size * iwi.channels, 
-		  wave_buffer_type_f32, iwi.format, 1, 1, 0, 
-		  i * iwi.channels * stream_buffer_size);
+      CopySamples(&f, buffer, stream_buffer_size * iwi.channels,
+          wave_buffer_type_f32, iwi.format, 1, 1, 0,
+          i * iwi.channels * stream_buffer_size);
     }
     /* If the number of samples in the file is not an exact
        multiple of the stream_buffer_size then load the remaining
@@ -323,9 +323,9 @@ namespace zzub {
       int divided = iwi.sample_count / stream_buffer_size;
       float f[2 * stream_buffer_size];
       sf_read_float(sf, f, iwi.channels * remainder);
-      CopySamples(&f, buffer, remainder * iwi.channels, 
-		  wave_buffer_type_f32, iwi.format, 1, 1, 0, 
-		  divided * iwi.channels * stream_buffer_size);      
+      CopySamples(&f, buffer, remainder * iwi.channels,
+          wave_buffer_type_f32, iwi.format, 1, 1, 0,
+          divided * iwi.channels * stream_buffer_size);
     }
   }
 
@@ -461,9 +461,9 @@ namespace zzub {
       // now and during loading of songs
       pluginlib* l = new pluginlib(fullpath, *this);
       if (l->collection != 0)
-	plugin_libraries.push_back(l); 
-      else 
-	delete l;
+    plugin_libraries.push_back(l);
+      else
+    delete l;
     }
   }
 
@@ -473,24 +473,24 @@ namespace zzub {
     struct dirent **namelist;
     struct stat statinfo;
     int n;
-	
+
     string searchPath=folder;
-	
+
     n = scandir(searchPath.c_str(), &namelist, 0, alphasort);
     if (n < 0)
       perror("scandir");
     else {
       while(n--) {
-	string fullFilePath=folder + namelist[n]->d_name;
-	printf("enumerating %s\n", fullFilePath.c_str());
-	if (!stat(fullFilePath.c_str(), &statinfo))
-	  {
-	    if (!S_ISDIR(statinfo.st_mode))
-	      {
-		load_plugin_library(fullFilePath);
-	      }
-	  }
-	free(namelist[n]);
+    string fullFilePath=folder + namelist[n]->d_name;
+    printf("enumerating %s\n", fullFilePath.c_str());
+    if (!stat(fullFilePath.c_str(), &statinfo))
+      {
+        if (!S_ISDIR(statinfo.st_mode))
+          {
+        load_plugin_library(fullFilePath);
+          }
+      }
+    free(namelist[n]);
       }
       free(namelist);
     }
@@ -520,10 +520,10 @@ namespace zzub {
     // NOTE: the state is now queued until flushed:
     // player::set_state() is called from zzub_player_set_state() (apps) and
     // host::set_state() (plugins).
-    // zzub_player_set_state() handles flushing for clients, and 
+    // zzub_player_set_state() handles flushing for clients, and
     // host::set_state() will always (usually?) be a part of a larger operation
-    // when it is called, so flushing presumably takes place later. when 
-    // host::set_state() is called from the audio thread, it will invoke 
+    // when it is called, so flushing presumably takes place later. when
+    // host::set_state() is called from the audio thread, it will invoke
     // set_state_direct() instead, not requiring a flush. (phew!)
   }
 
@@ -571,9 +571,9 @@ namespace zzub {
       if (back.plugins[i] == 0) continue;
       // reset the master plugin
       if (back.plugins[i]->info->flags & zzub::plugin_flag_is_root) {
-	clear_plugin(0);
-	back.process_plugin_events(0);
-	continue;
+    clear_plugin(0);
+    back.process_plugin_events(0);
+    continue;
       }
       // destroy all other plugins
       plugin_destroy(i);
@@ -613,9 +613,9 @@ namespace zzub {
     }
     for (int j = 0; j < (int)back.sequencer_tracks.size(); ) {
       if (back.sequencer_tracks[j].plugin_id == id) {
-	sequencer_remove_track(j);
+    sequencer_remove_track(j);
       } else
-	j++;
+    j++;
     }
     for (int j = 0; j < (int)back.plugins[id]->patterns.size(); ) {
       plugin_remove_pattern(id, j);
@@ -624,10 +624,10 @@ namespace zzub {
     // set default params
     for (int group = 1; group <= 2; group++) {
       for (int track = 0; track < back.plugin_get_track_count(id, group); track++) {
-	for (int j = 0; j < back.plugin_get_parameter_count(id, group, 0); j++) {
-	  const parameter* param = back.plugin_get_parameter_info(id, group, track, j);
-	  plugin_set_parameter(id, group, track, j, param->value_default, false, false, true);
-	}
+    for (int j = 0; j < back.plugin_get_parameter_count(id, group, 0); j++) {
+      const parameter* param = back.plugin_get_parameter_info(id, group, track, j);
+      plugin_set_parameter(id, group, track, j, param->value_default, false, false, true);
+    }
       }
     }
     const zzub::info* i = back.plugins[id]->info;
@@ -657,15 +657,17 @@ namespace zzub {
       poll_operations();
       swap_lock.lock();
       // handle MIDI input
-      if (midiDriver) 
-	midiDriver->poll();
+      if (midiDriver)
+    midiDriver->poll();
       for (int i = 0; i < work_out_channel_count; i++) {
-	front.outputBuffer[i] = &work_out_buffer[i][work_buffer_position];
+    front.outputBuffer[i] = &work_out_buffer[i][work_buffer_position];
       }
+
       for (int i = 0; i < work_in_channel_count; i++) {
-	if (work_in_device)
-	  front.inputBuffer[i] = &work_in_buffer[i][work_buffer_position]; else
-	  front.inputBuffer[i] = 0;
+        if (work_in_device)
+            front.inputBuffer[i] = &work_in_buffer[i][work_buffer_position];
+        else
+            front.inputBuffer[i] = 0;
       }
       int chunk_size = front.generate_audio(remaining_samples);
       // the master plugins work_buffer has the final output
@@ -681,11 +683,11 @@ namespace zzub {
     for (unsigned int i = 0; i < front.plugins.size(); i++) {
       if (front.plugins[i] == 0) continue;
       metaplugin& m = *front.plugins[i];
-      double load;		
+      double load;
       if (m.cpu_load_buffersize > 0)
-	load = (m.cpu_load_time * double(front.master_info.samples_per_second)) / double(m.cpu_load_buffersize); 
+    load = (m.cpu_load_time * double(front.master_info.samples_per_second)) / double(m.cpu_load_buffersize);
       else
-	load = 0;
+    load = 0;
       m.cpu_load += 0.1 * (load - m.cpu_load);
       m.cpu_load_time = 0;
       m.cpu_load_buffersize = 0;
@@ -702,19 +704,19 @@ namespace zzub {
     // midi sync
     if (front.is_syncing_midi_transport) {
       if (status == 0xf2) {
-	// set song position pointer
-	int spp = data1 | (data2 << 7);
-	front.song_position = front.song_loop_begin + spp;
+    // set song position pointer
+    int spp = data1 | (data2 << 7);
+    front.song_position = front.song_loop_begin + spp;
       } else if (status == 0xfa) {
-	// midi start
-	front.song_position = 0;	
-	set_state_direct(player_state_playing);
+    // midi start
+    front.song_position = 0;
+    set_state_direct(player_state_playing);
       } else if (status == 0xfb) {
-	// midi continue
-	set_state_direct(player_state_playing);
+    // midi continue
+    set_state_direct(player_state_playing);
       } else if (status == 0xfc) {
-	// midi stop
-	set_state_direct(player_state_stopped);
+    // midi stop
+    set_state_direct(player_state_stopped);
       }
     }
     // send midi event to the mixer class for handling per machine
@@ -731,19 +733,19 @@ namespace zzub {
   }
 
   void player::reset_keyjazz() {
-    if (front.keyjazz.size() == 0) 
+    if (front.keyjazz.size() == 0)
       return ;
     // send note off for all currently playing notes
     vector<op_plugin_play_note*> ops;
     for (vector<keyjazz_note>::iterator i = front.keyjazz.begin(); i != front.keyjazz.end(); ++i) {
-      if (i->delay_off) 
-	continue;
+      if (i->delay_off)
+    continue;
       op_plugin_play_note* o = new op_plugin_play_note(i->plugin_id, note_value_off, i->note, 0);
       backbuffer_operations.push_back(o);
       o->prepare(back);
       ops.push_back(o);
     }
-    if (ops.size() == 0) 
+    if (ops.size() == 0)
       return;
     flush_operations(0, 0, 0);
     for (vector<op_plugin_play_note*>::iterator i = ops.begin(); i != ops.end(); ++i) {
@@ -759,15 +761,15 @@ namespace zzub {
     using namespace std;
     string baseName;
     std::vector<const zzub::info*>::iterator info = find_if(plugin_infos.begin(), plugin_infos.end(), find_info_by_uri(uri));
-    if (info == plugin_infos.end()) 
+    if (info == plugin_infos.end())
       baseName = uri; else
       baseName = (*info)->short_name;
     for (int i = 0; i < 9999; i++) {
       std::stringstream strm;
       if (i == 0) {
-	strm << baseName;
+    strm << baseName;
       }  else {
-	strm << baseName << (i+1);
+    strm << baseName << (i+1);
       }
       zzub::plugin_descriptor m = back.get_plugin_descriptor(strm.str());
       if (m == graph_traits<plugin_map>::null_vertex()) return strm.str();
@@ -778,7 +780,7 @@ namespace zzub {
 
   const zzub::info* player::plugin_get_info(std::string uri) {
     std::vector<const zzub::info*>::iterator i = find_if(plugin_infos.begin(), plugin_infos.end(), find_info_by_uri(uri));
-    if (i == plugin_infos.end()) 
+    if (i == plugin_infos.end())
       return 0;
     else
       return *i;
@@ -811,7 +813,7 @@ namespace zzub {
   //
   // ---------------------------------------------------------------------------
 
-  /*! \brief Process GUI messages. 
+  /*! \brief Process GUI messages.
 
     Whenever the player invokes an event that may reach the GUI, it is
     queued until the host invokes handleMessages() on its thread.
@@ -822,8 +824,8 @@ namespace zzub {
       event_message& message = front.user_event_queue[front.user_event_queue_read];
       if (message.event != 0) message.event->invoke(message.data);
       if (front.user_event_queue_read == front.user_event_queue.size() - 1)
-	front.user_event_queue_read = 0; else
-	front.user_event_queue_read++;
+    front.user_event_queue_read = 0; else
+    front.user_event_queue_read++;
     }
   }
 
@@ -847,7 +849,7 @@ namespace zzub {
       state.groups[group][track][column][0] = value;
       front.transfer_plugin_parameter_row(plugin_id, group, state, front.plugins[plugin_id]->state_write, 0, 0, false);
       if (record)
-	front.transfer_plugin_parameter_row(plugin_id, group, state, front.plugins[plugin_id]->state_automation, 0, 0, false);
+    front.transfer_plugin_parameter_row(plugin_id, group, state, front.plugins[plugin_id]->state_automation, 0, 0, false);
     } else {
       // her kan vi merge flagg
       operation_copy_flags flags;
@@ -858,16 +860,16 @@ namespace zzub {
       op_plugin_set_parameter* redo = new op_plugin_set_parameter(plugin_id, group, track, column, value, record);
 
       if (undoable) {
-	int oldval = back.plugin_get_parameter(plugin_id, group, track, column);
-	op_plugin_set_parameter* undo = new op_plugin_set_parameter(plugin_id, group, track, column, oldval, record);
+    int oldval = back.plugin_get_parameter(plugin_id, group, track, column);
+    op_plugin_set_parameter* undo = new op_plugin_set_parameter(plugin_id, group, track, column, oldval, record);
 
-	prepare_operation_redo(redo);
-	prepare_operation_undo(undo);
+    prepare_operation_redo(redo);
+    prepare_operation_undo(undo);
       } else {
-	// these two lines are identical to prepare_operation_redo() except we dont add it to the undo buffer:
-	redo->prepare(back);
-	backbuffer_operations.push_back(redo);
-	// TODO: dont leak the redo object here!
+    // these two lines are identical to prepare_operation_redo() except we dont add it to the undo buffer:
+    redo->prepare(back);
+    backbuffer_operations.push_back(redo);
+    // TODO: dont leak the redo object here!
       }
     }
   }
@@ -894,10 +896,10 @@ namespace zzub {
     for (int i = 0; i < (int)back.midi_mappings.size(); i++) {
       midimapping& mm = back.midi_mappings[i];
       if (mm.plugin_id == plugin_id && mm.group == group && mm.track == track && mm.column == param) {
-	op_midimapping_remove* redo = new op_midimapping_remove(i - found);
-	op_midimapping_insert* undo = new op_midimapping_insert(mm);
-	prepare_operation_redo(redo);
-	prepare_operation_undo(undo);
+    op_midimapping_remove* redo = new op_midimapping_remove(i - found);
+    op_midimapping_insert* undo = new op_midimapping_insert(mm);
+    prepare_operation_redo(redo);
+    prepare_operation_undo(undo);
       }
     }
   }
@@ -914,7 +916,7 @@ namespace zzub {
       ignore_undo = true;
     }
     op_plugin_create* redo = new op_plugin_create(this, next_id, name, bytes, loader, pflags);
-    if (!prepare_operation_redo(redo)) 
+    if (!prepare_operation_redo(redo))
       return -1;
     op_plugin_delete* undo = new op_plugin_delete(this, next_id);
     prepare_operation_undo(undo);
@@ -1008,14 +1010,14 @@ namespace zzub {
     std::vector<std::pair<int, int> > remove_events;
     for (size_t i = 0; i < back.sequencer_tracks.size(); i++) {
       if (back.sequencer_tracks[i].plugin_id == id) {
-	for (size_t j = 0; j < back.sequencer_tracks[i].events.size(); j++) {
-	  sequence_event& ta = back.sequencer_tracks[i].events[j];
-	  if (ta.pattern_event.value >= 0x10) {
-	    if (pattern == ta.pattern_event.value - 0x10) {
-	      remove_events.push_back(std::pair<int, int>(i, ta.time));
-	    }
-	  }
-	}
+    for (size_t j = 0; j < back.sequencer_tracks[i].events.size(); j++) {
+      sequence_event& ta = back.sequencer_tracks[i].events[j];
+      if (ta.pattern_event.value >= 0x10) {
+        if (pattern == ta.pattern_event.value - 0x10) {
+          remove_events.push_back(std::pair<int, int>(i, ta.time));
+        }
+      }
+    }
       }
     }
     for (size_t i = 0; i < remove_events.size(); i++) {
@@ -1099,9 +1101,9 @@ namespace zzub {
       int column = column_indices[i * 3 + 2];
       int first_overflow_row = p.rows - rows;
       for (int j = 0; j < rows; j++) {
-	int v = p.groups[group][track][column][first_overflow_row + j];
-	op_pattern_edit* undo_edit = new op_pattern_edit(plugin_id, pattern, group, track, column, first_overflow_row + j, v);
-	prepare_operation_undo(undo_edit);
+    int v = p.groups[group][track][column][first_overflow_row + j];
+    op_pattern_edit* undo_edit = new op_pattern_edit(plugin_id, pattern, group, track, column, first_overflow_row + j, v);
+    prepare_operation_undo(undo_edit);
       }
     }
     std::vector<int> columns;
@@ -1129,9 +1131,9 @@ namespace zzub {
       int track = column_indices[i * 3 + 1];
       int column = column_indices[i * 3 + 2];
       for (int j = 0; j < rows; j++) {
-	int v = p.groups[group][track][column][start + j];
-	op_pattern_edit* undo_edit = new op_pattern_edit(plugin_id, pattern, group, track, column, start + j, v);
-	prepare_operation_undo(undo_edit);
+    int v = p.groups[group][track][column][start + j];
+    op_pattern_edit* undo_edit = new op_pattern_edit(plugin_id, pattern, group, track, column, start + j, v);
+    prepare_operation_undo(undo_edit);
       }
     }
     std::vector<int> columns;
@@ -1162,7 +1164,6 @@ namespace zzub {
   }
 
   void player::plugin_delete_input(int to_id, int from_id, connection_type type) {
-
     op_plugin_disconnect* redo = new op_plugin_disconnect(from_id, to_id, type);
     merge_backbuffer_flags(redo->copy_flags);
 
@@ -1210,7 +1211,7 @@ namespace zzub {
     op_plugin_set_midi_connection_device* redo = new op_plugin_set_midi_connection_device(to_id, from_id, name);
     int midiconn = back.plugin_get_input_connection_index(to_id, from_id, connection_type_midi);
     assert(midiconn != -1);
-	
+
     midi_connection* conn = (midi_connection*)back.plugin_get_input_connection(to_id, midiconn);
 
     op_plugin_set_midi_connection_device* undo = new op_plugin_set_midi_connection_device(to_id, from_id, conn->device_name);
@@ -1270,10 +1271,9 @@ namespace zzub {
 
 
   void player::sequencer_add_track(int id, sequence_type type) {
-
     // TODO: disallow sequencer tracks for no_undo-plugins?
-    // adding a track, and then adding more tracks with non-no_undo plugins will mess up the 
-    // undo buffer for sure when the no_undo-plugin is deleted.. correctional surgery on the history 
+    // adding a track, and then adding more tracks with non-no_undo plugins will mess up the
+    // undo buffer for sure when the no_undo-plugin is deleted.. correctional surgery on the history
     // would be messy and a first
 
     // TODO: disallow wave_tracks on plugins that has no plugin_plays_wave flag
@@ -1351,8 +1351,8 @@ namespace zzub {
     for (size_t i = 0; i < back.sequencer_tracks[track].events.size(); i++) {
       sequence_event& ev =  back.sequencer_tracks[track].events[i];
       if (ev.time >= start) {
-	remove_ops.push_back(op_sequencer_set_event(ev.time, track, -1));
-	insert_ops.push_back(op_sequencer_set_event(ev.time + ticks, track, ev.pattern_event.value));
+    remove_ops.push_back(op_sequencer_set_event(ev.time, track, -1));
+    insert_ops.push_back(op_sequencer_set_event(ev.time + ticks, track, ev.pattern_event.value));
       }
     }
 
@@ -1387,10 +1387,10 @@ namespace zzub {
     for (size_t i = 0; i < back.sequencer_tracks[track].events.size(); i++) {
       sequence_event& ev = back.sequencer_tracks[track].events[i];
       if (ev.time >= start) {
-	// this event is subject to moving
-	remove_ops.push_back(op_sequencer_set_event(ev.time, track, -1));
-	if (ev.time - ticks >= start)
-	  insert_ops.push_back(op_sequencer_set_event(ev.time - ticks, track, ev.pattern_event.value));
+    // this event is subject to moving
+    remove_ops.push_back(op_sequencer_set_event(ev.time, track, -1));
+    if (ev.time - ticks >= start)
+      insert_ops.push_back(op_sequencer_set_event(ev.time - ticks, track, ev.pattern_event.value));
       }
     }
 
@@ -1424,10 +1424,10 @@ namespace zzub {
 
     // because of limitations in buzz, the mono/stereo flag is specified for all levels
     // a situation occurs if we try to load a mono sample as the second level where the first
-    // level is a stereo sample. what to do? three possibilities: 
-    //     - convert both to mono? 
+    // level is a stereo sample. what to do? three possibilities:
+    //     - convert both to mono?
     //     - convert both to stereo?
-    //     - import the stereo sample as mono sample data, so the user has to convert the 
+    //     - import the stereo sample as mono sample data, so the user has to convert the
     //       second sample manually if it mismatches the earlier sample?
 
     waveimporter importer;
@@ -1464,9 +1464,9 @@ namespace zzub {
 
     if (reset_wave) {
       if (wavedata.channels == 2)
-	wave_set_flags(wave, wave_flag_stereo); else
-	wave_set_flags(wave, 0);
-		
+    wave_set_flags(wave, wave_flag_stereo); else
+    wave_set_flags(wave, 0);
+
       // TODO: set the wave format here as well
       // allocate_level = wave_set_format + wave_insert_sample_data ?
       //wave_set_format(wave, level, wavedata.sample_count);
@@ -1536,7 +1536,6 @@ namespace zzub {
   }
 
   void player::wave_set_name(int wave, std::string name) {
-
     operation_copy_flags flags;
     flags.copy_wavetable = true;
     merge_backbuffer_flags(flags);
@@ -1553,7 +1552,6 @@ namespace zzub {
   }
 
   void player::wave_set_volume(int wave, float volume) {
-
     operation_copy_flags flags;
     flags.copy_wavetable = true;
     merge_backbuffer_flags(flags);
@@ -1734,7 +1732,6 @@ namespace zzub {
   }
 
   void player::wave_set_envelopes(int wave, const vector<zzub::envelope_entry>& envelopes) {
-
     operation_copy_flags flags;
     flags.copy_wavetable = true;
     merge_backbuffer_flags(flags);

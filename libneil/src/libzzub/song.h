@@ -142,7 +142,7 @@ namespace zzub {
 
   protected:
     // don't instantiate this class directly,
-    // use either audio_connection or events_connection
+    // use either audio_connection or events_connection or midi_connection or cv_connection
     connection();
   };
 
