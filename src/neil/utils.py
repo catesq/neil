@@ -921,6 +921,19 @@ GENERATOR_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_audio_output
 EFFECT_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output
 CONTROLLER_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_event_output
 
+# either "LV2", "DSSI", "LADSPA", or "" for intenal/Lunar
+def get_adapter_name(pluginloader):
+    name = pluginloader.get_loader_name()
+
+    typename = name[10:name.find("/", 10)]
+    if typename in ["lv2adapter", "ladspadapter", "dssidapter"]:
+        return typename
+
+    return ""
+
+def is_other(plugin):
+    return not (is_effect(plugin) or is_generator(plugin) or is_controller(plugin) or is_root(plugin))
+
 def is_effect(plugin):
     return ((plugin.get_flags() & PLUGIN_FLAGS_MASK) == EFFECT_PLUGIN_FLAGS)
 
