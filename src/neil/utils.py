@@ -296,7 +296,7 @@ def mn2bn(v):
     """
     if v == 255:
         return zzub.zzub_note_value_off
-    return ((int(v)/12) << 4) | ((v%12)+1)
+    return (int(v/12) << 4) | ((v%12)+1)
 
 NOTES = ('?-','C-','C#','D-','D#','E-','F-','F#','G-','G#','A-','A#','B-')
 
