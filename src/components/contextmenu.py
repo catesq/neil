@@ -32,6 +32,7 @@ import zzub
 from neil.com import com
 from neil.utils import (Menu, filenameify, gettext, iconpath, is_effect,
                         is_generator, is_root, prepstr, show_machine_manual)
+from neil.preset import Preset
 
 
 class ContextMenu(Menu):
@@ -327,6 +328,7 @@ class PluginContextMenu(Gtk.Menu):
         menu.add_item("P_resets...", self.on_popup_show_presets, mp)
         menu.add_separator()
         menu.add_item("_Rename...", self.on_popup_rename, mp)
+        menu.add_item("_Clone...", self.on_popup_clone, mp)
         if not is_root(mp):
             menu.add_item("_Delete plugin", self.on_popup_delete, mp)
         if is_effect(mp) or is_root(mp):
@@ -361,6 +363,16 @@ class PluginContextMenu(Gtk.Menu):
             info = Gtk.MessageDialog(self.get_toplevel(), flags=0, type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, message_format="Sorry, there's no help for this plugin yet")
             info.run()
             info.destroy()
+
+    def on_popup_clone(self, widget, mp):
+        player = com.get('neil.core.player')
+        pluginloader = mp.get_pluginloader()
+        new_plugin = player.create_plugin(pluginloader)
+        print("on clone", pluginloader, new_plugin, player)
+        preset = Preset()
+        preset.pickup(mp)
+        preset.apply(new_plugin)
+        player.history_commit("Clone plugin %s" % pluginloader.get_short_name())
 
     def on_popup_rename(self, widget, mp):
         text = gettext(self, "Enter new plugin name:", prepstr(mp.get_name()))
