@@ -23,13 +23,12 @@ from gi.repository import Gtk, Gdk, GdkPixbuf
 from gi.repository import GObject
 import neil.utils as utils, os, stat
 from neil.utils import new_stock_image_toggle_button, ObjectHandlerGroup
-from neil.utils import is_effect,is_generator,is_controller,\
-     is_root
+from neil.utils import is_effect,is_generator,is_controller, is_root, is_other
 from neil.utils import prepstr, filepath, db2linear, linear2db,\
      is_debug, filenameify, get_item_count, question, error,\
      new_listview, add_scrollbars, get_clipboard_text,\
      set_clipboard_text, gettext, new_stock_image_button,\
-     new_liststore, add_vscrollbar
+     new_liststore, add_vscrollbar, get_adapter_name
 import neil.com as com
 import zzub
 from functools import cmp_to_key
@@ -52,7 +51,7 @@ class SearchPluginsDialog(Gtk.Window):
         label = "Search Plugins",
         order = 0,
         toggle = True,
-        )
+    )
 
     def __init__(self):
         Gtk.Window.__init__(self)
@@ -60,16 +59,16 @@ class SearchPluginsDialog(Gtk.Window):
         self.vbox = Gtk.VBox()
         self.add(self.vbox)
         self.set_title("Search Plugins")
-        self.connect('delete-event', lambda widget,data: self.hide())
+        self.connect('delete-event', self.unrealize)
         com.get("neil.core.icons") # make sure theme icons are loaded
-        self.searchterms = ['']
+        self.searchterms = []
         self.searchbox = Gtk.Entry()
         self.treeview = Gtk.TreeView()
         new_liststore(self.treeview, [
-                ('Icon', GdkPixbuf.Pixbuf),
-                ('Name', str, dict(markup=True)),
-                (None, object),
-                (None, str, dict(markup=True)),
+            ('Icon', GdkPixbuf.Pixbuf),
+            ('Name', str, dict(markup=True)),
+            (None, object),
+            (None, str, dict(markup=True)),
         ])
 
         # checkboxes
@@ -105,6 +104,7 @@ class SearchPluginsDialog(Gtk.Window):
         self.filter.set_visible_func(self.filter_item, data=None)
         self.treeview.set_model(self.filter)
         self.treeview.set_tooltip_column(3)
+        self.treeview.drag_source_set( Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK, DRAG_TARGETS, Gdk.DragAction.COPY )
         
         cfg = com.get('neil.core.config')
         self.searchbox.set_text(cfg.pluginlistbrowser_search_term)
@@ -112,19 +112,17 @@ class SearchPluginsDialog(Gtk.Window):
         self.show_effects_button.set_active(cfg.pluginlistbrowser_show_effects)
         self.show_controllers_button.set_active(cfg.pluginlistbrowser_show_controllers)
         self.show_nonnative_button.set_active(cfg.pluginlistbrowser_show_nonnative)
-        self.set_size_request(-1, 500)
+        self.set_size_request(400, 600)
         self.connect('realize', self.realize)
-        self.connect('destroy', self.unrealize)
         self.conn_id = False
 
     def realize(self, widget):
-        self.treeview.drag_source_set( Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK, DRAG_TARGETS, Gdk.DragAction.COPY )
-        self.conn_id = self.treeview.connect('drag_data_get', self.on_treeview_drag_data_get)
+        if not self.conn_id:
+            self.conn_id = self.treeview.connect('drag_data_get', self.on_treeview_drag_data_get)
 
-    def unrealize(self, widget):
-        if self.conn_id:
-            self.treeview.disconnect(self.conn_id)
-            self.conn_id = False
+    def unrealize(self, widget, data):
+        self.hide()
+        return True
 
     def get_icon_name(self, pluginloader):
         uri = pluginloader.get_uri()
@@ -134,6 +132,8 @@ class SearchPluginsDialog(Gtk.Window):
             return 'ladspa'
         if uri.startswith('@psycle.sourceforge.net/'):
             return 'psycle'
+        if uri.startswith('@zzub.org/lv2adapter/'):
+            return 'lv2'
         filename = pluginloader.get_name()
         filename = filename.strip().lower()
         for c in '():[]/,.!"\'$%&\\=?*#~+-<>`@ ':
@@ -175,15 +175,15 @@ class SearchPluginsDialog(Gtk.Window):
 
     def filter_item(self, model, it, data):
         def is_native(pl):
-            name = pl.get_loader_name().lower()
-            if "ladspa" in name or "dssi" in name:
+            name = get_adapter_name(pl)
+            if name:
                 return False
             else:
                 return True
-        if not self.searchterms:
-            return True
         child = model.get(it, 2)[0]
         name = child.get_name().lower()
+        if is_other(child):
+            return False 
         if not self.show_nonnative_button.get_active() and not is_native(child):
             return False
         if not self.show_generators_button.get_active() and is_generator(child):
@@ -192,15 +192,17 @@ class SearchPluginsDialog(Gtk.Window):
             return False
         if not self.show_controllers_button.get_active() and is_controller(child):
             return False
-        for group in self.searchterms:
-            found = True
-            for word in group:
-                if not word in name:
-                    found = False
-                    break
-            if found:
-                return True
-        return False
+        if len(self.searchterms) > 0:
+            for group in self.searchterms:
+                for word in group:
+                    if word not in name:
+                        return False
+                    
+            # if found:
+                # print(name, "matched", self.searchterms)
+                # return True
+            # return False
+        return True
 
     def populate(self):
         player = com.get('neil.core.player')
@@ -217,6 +219,8 @@ class SearchPluginsDialog(Gtk.Window):
                 return 1
             if uri.startswith('@psycle.sourceforge.net/'):
                 return 2
+            if uri.startswith('@zzub.org/lv2adapter/'):
+                return 3
             return 0
         def get_icon_rating(n):
             icon = self.get_icon_name(n)
@@ -247,6 +251,8 @@ class SearchPluginsDialog(Gtk.Window):
                 return c
             return cmp(a.get_name().lower(),b.get_name().lower())
         def get_type_text(pl):
+            prefix = get_adapter_name(pl)
+
             if is_generator(pl):
                 return '<span color="' + cfg.get_color('MV Generator') + '">Generator</span>'
             elif is_effect(pl):
