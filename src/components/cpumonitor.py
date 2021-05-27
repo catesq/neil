@@ -55,12 +55,10 @@ class CPUMonitorDialog(Gtk.Dialog):
         Initializer.
         """
         Gtk.Dialog.__init__(self)
-        self.connect('delete-event', self.hide_on_delete)
+        self.connect('delete-event', lambda widget, evt: self.hide_on_delete())
         self.set_size_request(200,300)
         self.set_title("CPU Monitor")
         self.pluginlist = Gtk.ListStore(str, str)
-        scrollwin = Gtk.ScrolledWindow()
-        scrollwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.pluginlistview = Gtk.TreeView(self.pluginlist)
         self.pluginlistview.set_rules_hint(True)
         self.tvplugin = Gtk.TreeViewColumn("Plugin")
@@ -75,6 +73,7 @@ class CPUMonitorDialog(Gtk.Dialog):
         self.pluginlistview.append_column(self.tvplugin)
         self.pluginlistview.append_column(self.tvload)
         self.pluginlistview.set_search_column(0)
+        self.pluginlistview.set_vexpand(True)
         self.tvplugin.set_sort_column_id(0)
         self.tvload.set_sort_column_id(1)
         self.labeltotal = Gtk.Label(label="100%")
@@ -84,11 +83,12 @@ class CPUMonitorDialog(Gtk.Dialog):
         sizer = Gtk.VBox(False, MARGIN)
         sizer.set_border_width(MARGIN)
         sizer.pack_start(scrollbars, True, True, 0)
+        scrollbars.set_vexpand(True)
 
         hsizer = Gtk.HBox(False, MARGIN)
-        hsizer.pack_start(self.gaugetotal, True, True, 0)
-        hsizer.pack_start(self.labeltotal, False, True, 0)
-        sizer.pack_start(hsizer, False, True, 0)
+        hsizer.pack_start(self.gaugetotal, False, False, 0)
+        hsizer.pack_start(self.labeltotal, False, False, 0)
+        sizer.pack_start(hsizer, False, False, 0)
         self.get_content_area().add(sizer)
         GLib.timeout_add(1000, self.on_timer)
 
