@@ -80,7 +80,6 @@ class ComponentManager:
                 if not path in sys.path:
                     sys.path = [path] + sys.path
                 for filename in glob.glob(os.path.join(path, '*.neil-component')):
-                    print(filename)
                     pkg = Package(filename)
                     if pkg.parse():
                         packages.append(pkg)
@@ -89,7 +88,6 @@ class ComponentManager:
         for pkg in packages:
             try:
                 modulename = pkg.module
-                print("importing module", modulename)
                 module_ = __import__(modulename)
                 names = modulename.split('.')
                 for name in names[1:]:
@@ -267,4 +265,3 @@ if __name__ == '__main__':
         com.throw('neil.exception.cancel', "argh.")
     except com.exception('neil.exception.cancel') as test:
         print("passed.", test)
-    print("bleh.")
