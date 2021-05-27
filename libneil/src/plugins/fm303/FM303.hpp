@@ -52,7 +52,7 @@ private:
     s_aenv[zzub_buffer_size], s_menv[zzub_buffer_size], 
     s_feedback[zzub_buffer_size];
   int wave;
-  float feedback, feedback_v, env_mod, acc_amount;
+  float feedback, feedback_v{}, env_mod, acc_amount;
   int decay_time;
 public:
   FM303();

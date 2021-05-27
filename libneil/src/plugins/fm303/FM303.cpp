@@ -118,6 +118,7 @@ bool FM303::process_stereo(float **pin, float **pout, int n, int mode)
   if (wave == 1)
     mul_signals(2.0, s_freq, n);
   for (int i = 0; i < n; i++) {
+
     float phase = phasor_m.process(s_freq[i]);
     phase += feedback_v;
     s_osc_m[i] = osc_m.process(phase);
