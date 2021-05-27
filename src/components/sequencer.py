@@ -115,7 +115,7 @@ class SequencerToolBar(Gtk.HBox):
         self.stepselect = Gtk.ComboBoxText.new()
         for step in self.steps:
             self.stepselect.append_text(str(step))
-        
+
         self.stepselect.connect('changed', self.on_stepselect)
         self.stepselect.connect('key_release_event', self.on_stepselect)
         self.stepselect.set_size_request(60, -1)
@@ -242,7 +242,7 @@ class SequencerPanel(Gtk.VBox):
         self.viewport.add(self.seqview)
         scrollwin = Gtk.Table(2, 2)
         scrollwin.attach(self.viewport, 0, 1, 0, 1,
-                         Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 
+                         Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND,
                          Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND)
         scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL)
         scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, 0)
@@ -438,13 +438,13 @@ class SequencerPanel(Gtk.VBox):
         """
         # begin wxGlade: SequencerFrame.__set_properties
         self.statuslabels = []
-        
+
         label = Gtk.Label()
         vsep = Gtk.VSeparator()
         self.statuslabels.append(label)
         self.statusbar.pack_start(label, False, True, 0)
         self.statusbar.pack_start(vsep, False, True, 0)
-        
+
         label = Gtk.Label()
         vsep = Gtk.VSeparator()
         self.statuslabels.append(label)
@@ -1118,6 +1118,7 @@ class SequencerView(Gtk.DrawingArea):
                         newrow = newrow - (newrow % self.step)
                     else:
                         newrow = self.row + self.step
+
                     self.insert_at_cursor(idx)
                     player.history_commit("add pattern reference")
                     self.set_cursor_pos(self.track, newrow)
@@ -1218,6 +1219,8 @@ class SequencerView(Gtk.DrawingArea):
         bestmatch = None
         bestpos = row
         event_list = track.get_event_list()
+
+        pos, value= 0, 0x10
         for pos, value in event_list:
             if pos > row:
                 break
@@ -1227,7 +1230,9 @@ class SequencerView(Gtk.DrawingArea):
             elif (value >= 0x10):
                 bestpos = pos
                 bestmatch = value - 0x10
+
         pattern = plugin.get_pattern(value - 0x10)
+
         nrows = pattern.get_row_count()
         if pos + nrows < row + 1:
             return plugin, None, -1
@@ -1284,7 +1289,7 @@ class SequencerView(Gtk.DrawingArea):
                     player.toggle_mute(mp)
                     self.redraw()
                 else:
-                    self.set_cursor_pos(track, row)
+                    self.set_cursor_pos(track, row - row % self.step)
                     self.deselect()
                     self.dragging = True
                     self.grab_add()
@@ -1555,14 +1560,14 @@ class SequencerView(Gtk.DrawingArea):
                 self.memoized[args] = self.function(*args)
                 return self.memoized[args]
 
- 
+
     def draw_markers(self, ctx, pango_layout, colors):
         """
         Draw the vertical lines every few bars.
         """
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
-        
+
         start = self.startseqtime
         while (x < width):
             if start % (4 * self.step) == 0:
@@ -1600,7 +1605,7 @@ class SequencerView(Gtk.DrawingArea):
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
         pango_layout.set_font_description(Pango.FontDescription("sans 8"))
-        
+
         sequencer = player.get_current_sequencer()
         tracks = sequencer.get_track_list()
         for track_index in range(self.starttrack, len(tracks)):
@@ -1744,7 +1749,7 @@ class SequencerView(Gtk.DrawingArea):
             ctx.move_to(self.seq_left_margin + 1, y)
             ctx.line_to(width - 1, y)
             ctx.stroke()
-        
+
         # ctx.rectangle(self.seq_left_margin, 0, 5, height)
         # ctx.set_source_rgba(0.0, 0.0, 0.0, 0.15)
         # ctx.fill()
@@ -1840,11 +1845,7 @@ class SequencerView(Gtk.DrawingArea):
         self.draw_tracks(ctx, pango_layout, colors)
         self.draw_loop_points(ctx, colors)
         self.draw_cursors(ctx)
-        self.draw_playpos(ctx) 
-
-        # Draw the black border
-        #ctx.set_foreground(colors['Border'])
-        #drawable.draw_rectangle(ctx, False, 0, 0, width - 1, height - 1)
+        self.draw_playpos(ctx)
 
 
 __all__ = [
