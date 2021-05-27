@@ -415,7 +415,7 @@ def read_string(f):
     Reads a pascal string (32bit len, data) from a binary file.
     """
     size = read_int(f)
-    return f.read(size)
+    return str(f.read(size), 'utf-8')
 
 def write_int(f,v):
     """
@@ -427,7 +427,7 @@ def write_string(f,s):
     """
     Writes a pascal string (32bit len, data) to a binary file.
     """
-    s = str(s)
+    s = str(s, 'utf-8')
     write_int(f, len(s))
     f.write(s)
 
