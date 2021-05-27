@@ -32,6 +32,17 @@ from gi.repository import Gtk, Gdk, GdkPixbuf
 from gi.repository import GObject
 import weakref
 import neil.com as com
+import ctypes
+
+#https://stackoverflow.com/questions/23021327/how-i-can-get-drawingarea-window-handle-in-gtk3/27236258#27236258
+#http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=examples/gtkvlc.py;hb=HEAD
+def get_window_pointer(window):
+    """ Use the window.__gpointer__ PyCapsule to get the C void* pointer to the window
+    """
+    # get the c gpointer of the gdk window
+    ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
+    ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
+    return ctypes.pythonapi.PyCapsule_GetPointer(window.__gpointer__, None)
 
 def is_debug():
     if os.environ.get('NEIL_DEBUG'):
