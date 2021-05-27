@@ -23,6 +23,8 @@
 import glob
 import os
 
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gdk, GdkPixbuf, Gtk
 
 import neil.com as com
@@ -64,9 +66,7 @@ class IconTheme:
             Gtk.IconSize.DIALOG,
         ]
         icons = {}
-        icon_theme=Gtk.IconTheme.get_default()
-        for path in ICON_SEARCHPATH:
-            Gtk.IconTheme.add_resource_path(icon_theme, path)
+        self.icon_theme=Gtk.IconTheme.get_default()
 
         for searchpath in ICON_SEARCHPATH:
             for ext in ICON_EXTENSIONS:
@@ -93,8 +93,8 @@ class IconTheme:
                         if d < bestw:
                             bestw = d
                             pixbuf = icon
-                print("new icon: %s (%r = %i,%i ~ %i,%i)" % (key,size,w,h,pixbuf.get_width(),pixbuf.get_height()))
-                Gtk.icon_theme_add_builtin_icon(key, size, pixbuf)
+                # print("new icon: %s (%r = %i,%i ~ %i,%i)" % (key,size,w,h,pixbuf.get_width(),pixbuf.get_height()))
+                Gtk.IconTheme.add_builtin_icon(key, size, pixbuf)
 
     def register_single(self, stockid, label, key=''):
         if key:
@@ -106,10 +106,11 @@ class IconTheme:
         ))
 
     def all(self):
-        return Gtk.IconTheme.list_icons(self,None)
+        return self.icon_theme.list_icons()
 
 __neil__ = dict(
     classes = [
+        IconTheme
     ],
 )
 
