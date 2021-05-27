@@ -97,7 +97,7 @@ void enumerate_ladspaplugin
 	      i->global_parameters.push_back(param);
 	      i->m_params.push_back(param);
 	      i->m_paramnames.push_back(name);
-	      param->name = i->m_paramnames[i->m_paramnames.size()-1].c_str();
+	      param->name = desc->PortNames[port];
 	      param->description = param->name;
 	      setup_ladspa_parameter(param, hint, mp);
 									  
