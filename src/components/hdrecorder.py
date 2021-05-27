@@ -55,13 +55,13 @@ class HDRecorderDialog(Gtk.Dialog):
         toggle = True,
     )
 
-    def __init__(self, parent=None):
+    def __init__(self):
         """
         Initializer.
         """
 
         Gtk.Dialog.__init__(self, title="Hard Disk Recorder", flags=0)
-        self.connect('delete-event', lambda widget, evt: self.hide_on_delete)
+        self.connect('delete-event', lambda widget, evt: self.hide_on_delete())
         #self.add_button(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE)
         #self.set_size_request(250,-1)
         self.set_resizable(False)
