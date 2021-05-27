@@ -39,7 +39,7 @@ class TickDoublerDialog(Gtk.Dialog):
     )
 
     def __init__(self, hide_on_delete=True):
-        GObject.GObject.__init__(self, "Change resolution of song")
+        Gtk.Dialog.__init__(self, "Change resolution of song")
 
         # do not destroy dialog on close
         if hide_on_delete:
