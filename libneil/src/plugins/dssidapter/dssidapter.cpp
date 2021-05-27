@@ -1,4 +1,3 @@
-// -*- c-basic-offset: 8 -*-
 // dssi plugin adapter
 // Copyright (C) 2006 Leonard Ritter (contact@leonard-ritter.com)
 // Copyright (C) 2008 James McDermott (jamesmichaelmcdermott@gmail.com)
