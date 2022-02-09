@@ -43,15 +43,15 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), world(info->world) 
         memset(global_values, 0, info->zzubGlobalsLen);
     }
 
-    if (info->paramPorts.size() > 0) {
-        values = (float*) malloc(sizeof(float) * info->paramPorts.size());
+    if (info->num_controls() > 0) {
+        values = (float*) malloc(sizeof(float) * info->num_controls());
     }
+
+    printf("port size %d\n", info->paramPorts.size());
 
     ui_events     = zix_ring_new(EVENT_BUF_SIZE);
     plugin_events = zix_ring_new(EVENT_BUF_SIZE);
 
-    printf("lv2 cklass %s", info->lv2Class.c_str());
-    
     track_values = track_vals;
     attributes = (int *) &attr_vals;
 
@@ -112,22 +112,23 @@ void PluginAdapter::init_static_features() {
     SymapUrids& urids = this->world->urids;
 
     LV2_Options_Option options[NUM_OPTIONS] = {
-       { LV2_OPTIONS_INSTANCE, 0, urids.param_sampleRate,   sizeof(float), urids.atom_Float, &host_params.sample_rate },
-       { LV2_OPTIONS_INSTANCE, 0, urids.minBlockLength,     sizeof(int32_t), urids.atom_Int, &host_params.minBlockLength },
-       { LV2_OPTIONS_INSTANCE, 0, urids.maxBlockLength,     sizeof(int32_t), urids.atom_Int, &host_params.blockLength },
-       { LV2_OPTIONS_INSTANCE, 0, urids.bufSeqSize,         sizeof(int32_t), urids.atom_Int, &host_params.bufSize },
+       { LV2_OPTIONS_INSTANCE, 0, urids.param_sampleRate, sizeof(float), urids.atom_Float, &host_params.sample_rate },
+       { LV2_OPTIONS_INSTANCE, 0, urids.minBlockLength, sizeof(int32_t), urids.atom_Int, &host_params.minBlockLength },
+       { LV2_OPTIONS_INSTANCE, 0, urids.maxBlockLength, sizeof(int32_t), urids.atom_Int, &host_params.blockLength },
+       { LV2_OPTIONS_INSTANCE, 0, urids.bufSeqSize, sizeof(int32_t), urids.atom_Int, &host_params.bufSize },
        { LV2_OPTIONS_INSTANCE, 0, 0, 0, 0, NULL }
     };
 
     memcpy(features.options, options, sizeof(features.options));
 
-    features.uri_map_feature.data      = &this->world->uri_map;
-    features.map_feature.data          = &this->world->map;
-    features.unmap_feature.data        = &this->world->unmap;
-    features.bounded_buf_feature.data  = &host_params.blockLength;
-    features.options_feature.data      = features.options;
-    features.make_path_feature.data    = &this->world->make_path;
+    features.uri_map_feature.data = &this->world->uri_map;
+    features.map_feature.data = &this->world->map;
+    features.unmap_feature.data = &this->world->unmap;
+    features.bounded_buf_feature.data = &host_params.blockLength;
+    features.options_feature.data = features.options;
+    features.make_path_feature.data = &this->world->make_path;
     features.program_host_feature.data = &this->program_host;
+    features.data_access_feature.data = &features.ext_data;
 
     program_host.handle = this;
     program_host.program_changed = &program_changed;
@@ -137,13 +138,14 @@ void PluginAdapter::init_static_features() {
 
 void PluginAdapter::init(zzub::archive *arc) {
     // if (verbose) 
-    const LV2_Feature* feature_list[7] = {
+    const LV2_Feature* feature_list[8] = {
         &features.uri_map_feature,
         &features.map_feature,
         &features.program_host_feature,
         &features.unmap_feature,
         &features.options_feature,
         &features.bounded_buf_feature,
+        &features.data_access_feature,
         NULL
     };
 
@@ -155,7 +157,7 @@ void PluginAdapter::init(zzub::archive *arc) {
     
     lilv_instance_activate(pluginInstance);
 
-    features.ext_data.data_access = lilv_instance_get_descriptor(pluginInstance)->extension_data;
+    // features.extdata.data_access = lilv_instance_get_descriptor(pluginInstance)->extension_data;
 
     // read from the archive
     if (arc) {
@@ -307,7 +309,7 @@ bool PluginAdapter::invoke(zzub_event_data_t& data) {
             port->index,
             sizeof(float), 
             0, 
-            &values[port->paramIndex]
+            &values[port->dataIndex]
         );
     }
 
@@ -327,7 +329,7 @@ void PluginAdapter::connectInstance(LilvInstance* pluginInstance) {
 
     uint8_t* globals = (uint8_t*) global_values;
     for(auto paramPort: info->paramPorts) {
-        values[paramPort->paramIndex] = paramPort->defaultVal;
+        values[paramPort->dataIndex] = paramPort->defaultVal;
         int zzubDefault = paramPort->zzubParam->value_default;
 
         switch(paramPort->zzubParam->type) {
@@ -342,8 +344,13 @@ void PluginAdapter::connectInstance(LilvInstance* pluginInstance) {
         }
         
         globals += paramPort->byteSize;
+        printf("connect port %s %d\n", paramPort->zzubParam->name, paramPort->dataIndex);
+        lilv_instance_connect_port(pluginInstance, paramPort->index, &values[paramPort->dataIndex]);
+    }
 
-        lilv_instance_connect_port(pluginInstance, paramPort->index, &values[paramPort->paramIndex]);
+    for(auto controlPort: info->controlPorts) {
+        printf("connect control %s %d %d", controlPort->name.c_str(), controlPort->index, controlPort->dataIndex);
+        lilv_instance_connect_port(pluginInstance, controlPort->index, &values[controlPort->dataIndex]);
     }
 
     for(auto audioPort: info->audioPorts) {
@@ -454,11 +461,12 @@ void PluginAdapter::apply_events_from_ui() {
 }
 
 void PluginAdapter::update_port(ParamPort* port, float float_val) {
+    printf("Update ports: ");
     int zzub_val = port->lilv_to_zzub_value(float_val);
     assert(ev.size == sizeof(float));
-    values[port->paramIndex] = float_val;
+    values[port->dataIndex] = float_val;
     port->putData((uint8_t*) global_values, zzub_val);
-    _host->control_change(metaPlugin, 1, 0, port->paramIndex, zzub_val, false, true);
+    _host->control_change(metaPlugin, 1, 0, port->dataIndex, zzub_val, false, true);
 }
 
 
@@ -482,7 +490,7 @@ void PluginAdapter::process_events() {
         globals += port->byteSize;
         
         if (value != port->zzubParam->value_none) {
-            values[port->paramIndex] = port->zzub_to_lilv_value(value);
+            values[port->dataIndex] = port->zzub_to_lilv_value(value);
         }
     }
 
@@ -494,14 +502,18 @@ void PluginAdapter::process_events() {
             state.volume = vals.volume;
 
         if (vals.note == zzub::note_value_none) {
-            if(state.note != zzub::note_value_none)
+            if(vals.volume != TRACKVAL_VOLUME_UNDEFINED && state.note != zzub::note_value_none)
                 midiEvents.aftertouch(attr_vals.channel, state.note, state.volume);
         } else if(vals.note != zzub::note_value_off) {
             midiEvents.noteOn(attr_vals.channel, vals.note, state.volume);
             state.note = vals.note;
         } else if(state.note != zzub::note_value_none) {
             midiEvents.noteOff(attr_vals.channel, state.note);
-            state.note = zzub::note_value_none;
+            // this is wrong but some synths glitch when an aftertoiuch is sent after a note off
+            // it relires on state.note being a valid note. 
+            // if a note off with volume 0 is set then clear state.note to prevent aftertouch
+            if(vals.volume == 0)
+                state.note = zzub::note_value_none;
         }
 
         process_track_midi_events(vals.msg_1, state.msg_1);
@@ -740,7 +752,7 @@ const void* get_port_value(const char* port_symbol,
     if (port != nullptr) {
         *size = sizeof(float);
         *type = adapter->world->forge.Float;
-        return &adapter->values[port->paramIndex];
+        return &adapter->values[port->dataIndex];
     }
 
     *size = *type = 0;
@@ -780,7 +792,7 @@ void set_port_value(const char* port_symbol,
         return;
     }
 
-    adapter->values[port->paramIndex] = fvalue;
+    adapter->values[port->dataIndex] = fvalue;
 
     if (adapter->ui_instance) {
         // Update UI
