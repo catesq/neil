@@ -87,7 +87,6 @@ PluginInfo::~PluginInfo() {
 // }
 Port* PluginInfo::build_port(uint32_t idx) {
     const LilvPort *lilvPort = lilv_plugin_get_port_by_index(lilvPlugin, idx);
-
     PortFlow flow = PortFlow::Unknown;
     bool atomLv2Api = false;
 
@@ -99,21 +98,40 @@ Port* PluginInfo::build_port(uint32_t idx) {
 
     if(lilv_port_is_a(lilvPlugin, lilvPort, world->port_control)) {
         if(flow == PortFlow::Input) {
-            ParamPort *param_port = new ParamPort(this, lilvPort, flow, idx, paramPorts.size(), zzubGlobalsLen);
-
+            ParamPort *param_port = new ParamPort(this, lilvPort, flow, idx, paramPorts.size()+ controlPorts.size(), zzubGlobalsLen);
             zzubGlobalsLen += param_port->byteSize;
             flags |= zzub_plugin_flag_has_event_input;
 
-            //portIdx2ControlInIdx.push_back(paramPorts.size());
+        //portIdx2ControlInIdx.push_back(paramPorts.size());
             global_parameters.push_back(param_port->zzubParam);
             paramNames.push_back(param_port->name);
             paramPorts.push_back(param_port);
-
-            if(verbose)
-                printport("control param", lilvPlugin, lilvPort, flow);
-
             return param_port;
+        } else {
+            
+            ControlPort *control_port = new ControlPort(this, lilvPort, flow, idx, paramPorts.size()+ controlPorts.size());
+            controlPorts.push_back(control_port);
+            flags |= zzub_plugin_flag_has_event_output;
+            return control_port;
         }
+        
+
+        // if(flow == PortFlow::Input) {
+        //     ParamPort *param_port = new ParamPort(this, lilvPort, flow, idx, paramPorts.size(), zzubGlobalsLen);
+
+        //     zzubGlobalsLen += param_port->byteSize;
+        //     flags |= zzub_plugin_flag_has_event_input;
+
+        //     //portIdx2ControlInIdx.push_back(paramPorts.size());
+        //     global_parameters.push_back(param_port->zzubParam);
+        //     paramNames.push_back(param_port->name);
+        //     paramPorts.push_back(param_port);
+
+        //     if(verbose)
+        //         printport("control param", lilvPlugin, lilvPort, flow);
+
+        //     return param_port;
+        // }
     } else if (lilv_port_is_a(lilvPlugin, lilvPort, world->port_audio)) {
         auto audio_port = new AudioBufPort(this, lilvPort, flow, idx, audioPorts.size());
 
@@ -185,8 +203,7 @@ void PluginInfo::add_generator_params() {
                          .set_value_min(0)
                          .set_value_max(0x007F)
                          .set_value_none(TRACKVAL_VOLUME_UNDEFINED)
-                         .set_value_default(0x40)
-                         .set_state_flag();
+                         .set_value_default(0x40);
 
     add_track_parameter().set_byte()
                          .set_name("Midi command 1")
@@ -194,8 +211,7 @@ void PluginInfo::add_generator_params() {
                          .set_value_min(0x80)
                          .set_value_max(0xfe)
                          .set_value_none(TRACKVAL_NO_MIDI_CMD)
-                         .set_value_default(TRACKVAL_NO_MIDI_CMD)
-                         .set_state_flag();
+                         .set_value_default(TRACKVAL_NO_MIDI_CMD);
 
     add_track_parameter().set_word()
                          .set_name("Midi data 1")
@@ -203,8 +219,7 @@ void PluginInfo::add_generator_params() {
                          .set_value_min(0)
                          .set_value_max(0xfffe)
                          .set_value_none(0xffff)
-                         .set_value_default(0)
-                         .set_state_flag();
+                         .set_value_default(0);
 
     add_track_parameter().set_byte()
                          .set_name("Midi command 2")
@@ -212,8 +227,7 @@ void PluginInfo::add_generator_params() {
                          .set_value_min(0x80)
                          .set_value_max(0xfe)
                          .set_value_none(TRACKVAL_NO_MIDI_CMD)
-                         .set_value_default(TRACKVAL_NO_MIDI_CMD)
-                         .set_state_flag();
+                         .set_value_default(TRACKVAL_NO_MIDI_CMD);
 
     add_track_parameter().set_word()
                          .set_name("Midi data 2")
@@ -221,8 +235,7 @@ void PluginInfo::add_generator_params() {
                          .set_value_min(0)
                          .set_value_max(0xfffe)
                          .set_value_none(0xffff)
-                         .set_value_default(0)
-                         .set_state_flag();
+                         .set_value_default(0);
 }
 
 Port* PluginInfo::port_by_symbol(std::string symbol) {
