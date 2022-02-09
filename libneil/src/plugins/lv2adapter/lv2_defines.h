@@ -20,44 +20,16 @@ static int verbose = 0;
 #define EVENT_BUF_CYCLES 8
 #define EVENT_BUF_SIZE ZZUB_BUFLEN * EVENT_BUF_CYCLES 
 #define NUM_OPTIONS 5
+#define TRACKVAL_VOLUME_UNDEFINED 0x0FF
+#define TRACKVAL_NO_MIDI_CMD 0x00
+#define TRACKVAL_NO_MIDI_DATA 0xFFFF
 
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define F_THRESHOLD 0.00001
+#define SIMILAR(a, b) (a > b - F_THRESHOLD && a < b + F_THRESHOLD)
 #define GTK3_URI "http://lv2plug.in/ns/extensions/ui#Gtk3UI"
 
-// -----------------------------------------------------------------------
-
-typedef struct {
-    uint32_t index;
-    uint32_t protocol;
-    uint32_t size;
-    uint8_t  body[];
-} ControlChange;
-
-
-struct Lv2HostParams {
-    float sample_rate = 0.0f;
-    int32_t blockLength = ZZUB_BUFLEN;
-    int32_t minBlockLength = 16;
-    int32_t bufSize = EVENT_BUF_SIZE;
-    char *tempDir = nullptr;
-};
-
-typedef struct {
-    LV2_Feature                uri_map_feature       = { LV2_URI_MAP_URI, NULL };
-    LV2_Feature                map_feature           = { LV2_URID__map, NULL };
-	LV2_Feature                unmap_feature         = { LV2_URID__unmap, NULL };
-	LV2_Feature                make_path_feature     = { LV2_STATE__makePath, NULL };
-	LV2_Feature                program_host_feature  = { LV2_PROGRAMS__Host, NULL };
-    LV2_Feature                bounded_buf_feature   = { LV2_BUF_SIZE__boundedBlockLength, NULL };
-    LV2_Feature                default_state_feature = { LV2_STATE__loadDefaultState, NULL };
-
-	LV2_Options_Option         options[NUM_OPTIONS];
-	LV2_Feature                options_feature       = { LV2_OPTIONS__options, NULL };
-
-	LV2_Extension_Data_Feature ext_data;
-} Lv2Features;
-
-
-// -----------------------------------------------------------------------
 
 extern "C" {
     #include "lilv/lilv.h"
@@ -93,16 +65,45 @@ extern "C" {
     #include "lv2/lv2plug.in/ns/ext/worker/worker.h"
 }
 
-//-----------------------------------------------------------------------
 
-#define TRACKVAL_VOLUME_UNDEFINED 0x0FF
-#define TRACKVAL_NO_MIDI_CMD 0x00
-#define TRACKVAL_NO_MIDI_DATA 0xFFFF
+// -----------------------------------------------------------------------
 
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#define F_THRESHOLD 0.00001
-#define SIMILAR(a, b) (a > b - F_THRESHOLD && a < b + F_THRESHOLD)
+typedef struct {
+    uint32_t index;
+    uint32_t protocol;
+    uint32_t size;
+    uint8_t  body[];
+} ControlChange;
+
+
+struct Lv2HostParams {
+    float sample_rate = 0.0f;
+    int32_t blockLength = ZZUB_BUFLEN;
+    int32_t minBlockLength = 16;
+    int32_t bufSize = EVENT_BUF_SIZE;
+    char *tempDir = nullptr;
+};
+
+typedef struct {
+    LV2_Feature uri_map_feature = { LV2_URI_MAP_URI, NULL };
+    LV2_Feature map_feature = { LV2_URID__map, NULL };
+	LV2_Feature unmap_feature = { LV2_URID__unmap, NULL };
+	LV2_Feature make_path_feature = { LV2_STATE__makePath, NULL };
+	LV2_Feature program_host_feature = { LV2_PROGRAMS__Host, NULL };
+    LV2_Feature bounded_buf_feature = { LV2_BUF_SIZE__boundedBlockLength, NULL };
+    LV2_Feature default_state_feature = { LV2_STATE__loadDefaultState, NULL };
+    LV2_Feature data_access_feature = { LV2_DATA_ACCESS_URI, NULL };
+
+	LV2_Options_Option         options[NUM_OPTIONS];
+	LV2_Feature                options_feature       = { LV2_OPTIONS__options, NULL };
+
+	LV2_Extension_Data_Feature ext_data;
+} Lv2Features;
+
+
+// -----------------------------------------------------------------------
+
+
 
 //-----------------------------------------------------------------------
 
