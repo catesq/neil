@@ -237,6 +237,7 @@ class NeilFrame(Gtk.Window):
 
     OPEN_SONG_FILTER = [
         file_filter("CCM Songs (*.ccm)", "*.ccm"),
+        file_filter("CCM Song Backups (*.ccm.???.bak)", "*.ccm.???.bak"),
     ]
 
     SAVE_SONG_FILTER = [
