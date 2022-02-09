@@ -35,7 +35,7 @@
 using boost::algorithm::trim;
 
 extern "C" {
-  #include "symap.h"
+  #include "ext/symap.h"
 }
 
 #include "lv2_defines.h"
@@ -223,6 +223,7 @@ struct PluginWorld {
 
     LV2_Atom_Forge forge;
 
+    std:mutex suil_mtx;
     bool suil_is_init;
 
     
