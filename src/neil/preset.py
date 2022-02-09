@@ -109,6 +109,7 @@ class Preset:
                         v = self.params[idx]
                         idx += 1
                         state_param_count += 1
+                        print("param", i, "value", v, "preset name", p.get_name(), p.get_value_min(), p.get_value_max(), p.get_value_none())
                         assert v >= p.get_value_min() and v <= p.get_value_max()
                         if not dryrun:
                             plugin.set_parameter_value(g, t, i, v, 0)
