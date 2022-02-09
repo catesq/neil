@@ -24,8 +24,19 @@ Organizes finding Neils resources across the system.
 
 from configparser import ConfigParser
 import sys, os
+import platform
 
-HOME_CONFIG_DIR = '~/.neil'
+
+def get_settings_dir():
+    if os.name == 'nt':
+        return os.path.expanduser('~/neil')
+    elif os.name == 'posix':
+        return os.path.expanduser('~/.neil')
+    else:
+        return None
+
+
+# HOME_CONFIG_DIR = '~/.neil'
 
 if 'NEIL_PATHCONFIG' in os.environ:
     PATHCONFIG = os.environ['NEIL_PATHCONFIG']
@@ -40,7 +51,7 @@ else:
 class PathConfig(ConfigParser):
     CFG_PATHS = [
             PATHCONFIG, # assume we are in the repository
-            HOME_CONFIG_DIR + '/path.cfg', # is it in home dir config folder?
+            os.path.join(get_settings_dir(), 'path.cfg'), # is it in home dir config folder?
             '/etc/neil/path.cfg', # take the absolute path
     ]
 
@@ -70,6 +81,8 @@ class PathConfig(ConfigParser):
             paths.append(default_path)
         paths.append(os.path.expanduser(os.path.join(HOME_CONFIG_DIR, pathid)))
         return paths
+    
+    
 
     def get_path(self, pathid, append=''):
         if not self.has_option('Paths', pathid):
