@@ -32,6 +32,7 @@ from gi.repository import Gtk
 
 import neil.com
 import neil.preset as preset
+import neil.pathconfig as pathconfig
 
 from neil.utils import (camelcase_to_unixstyle, etcpath, filenameify, filepath,
                         iconpath, sharedpath)
@@ -100,8 +101,15 @@ CONFIG_OPTIONS = dict(
                          default='true', vtype=bool, doc="Show effects."),
         ShowControllers=dict(func='pluginlistbrowser_show_controllers',
                              default='true', vtype=bool, doc="Show controllers."),
-        ShowNonNative=dict(func='pluginlistbrowser_show_nonnative',
-                           default='false', vtype=bool, doc="Show non-native plugins."),
+                            #  ShowNonNative
+        ShowAsWellOrOnly=dict(func='pluginlistbrowser_show_aswell_or_only', default='false', vtype=bool, 
+            doc="When false include lv2 and ladspa plugins when true show only lv2 or ladspa plugins - depending on the state of the ladspa and lv2 checkboxes"),
+        ShowLadspa=dict(func='pluginlistbrowser_show_ladspa',
+                            default='false', vtype=bool, doc="Show ladspa plugins"),
+        ShowLv2=dict(func='pluginlistbrowser_show_lv2',
+                           default='false', vtype=bool, doc="Show lv2 plugins."),
+        ShowDssi=dict(func='pluginlistbrowser_show_dssi',
+                            default='false', vtype=bool, doc="Show dssi plugins"),
     ),
     WavetablePaths=dict(
         Path=dict(list=True, func='wavetable_paths', vtype=str,
@@ -360,10 +368,7 @@ class NeilConfig(configparser.ConfigParser):
         """
         Returns the users settings folder.
         """
-        if os.name == 'nt':
-            settingsfolder = os.path.expanduser('~/neil')
-        elif os.name == 'posix':
-            settingsfolder = os.path.expanduser('~/.neil')
+        settingsfolder = pathconfig.get_settings_dir()
         if not os.path.isdir(settingsfolder):
             os.makedirs(settingsfolder)
         return settingsfolder
@@ -627,7 +632,6 @@ class NeilConfig(configparser.ConfigParser):
         name = filenameify(pluginloader.get_name())
         #presetpath = os.path.join(sharedpath('presets'))
         presetpath = os.path.join(self.get_settings_folder(), 'presets')
-        print(presetpath)
         presetfilepaths = [
             os.path.join(presetpath, uri + '.prs'),
             os.path.join(presetpath, name + '.prs'),
