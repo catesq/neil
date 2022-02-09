@@ -45,7 +45,7 @@ class PresetView(Gtk.VBox):
         """
         Initialization.
         """
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.set_size_request(150, 400)
         self.rootwindow = rootwindow
         self.plugin = plugin
@@ -70,7 +70,7 @@ class PresetView(Gtk.VBox):
         buttonbox.pack_start(button_import, True, True, 5)
         buttonbox.pack_start(button_export, True, True, 5)
         buttonbox.pack_start(button_delete, True, True, 5)
-        self.pack_start(buttonbox, expand=False, padding=5)
+        self.pack_start(buttonbox, False, False, 5)
 
         button_import.connect('clicked', self.on_import)
         button_export.connect('clicked', self.on_export)
