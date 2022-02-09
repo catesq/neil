@@ -72,11 +72,15 @@ class SearchPluginsDialog(Gtk.Window):
         ])
 
         # checkboxes
-        self.check_containers = [Gtk.HBox() for i in range(2)]
-        self.vbox.pack_end(self.check_containers[1], False, False, 0)
-        self.vbox.pack_end(self.check_containers[0], False, False, 0)
+        box_container = Gtk.HBox()
+        self.check_containers = [Gtk.VBox() for i in range(2)]
+        
+        box_container.pack_start(self.check_containers[0], False, False, 0)
+        box_container.pack_end(self.check_containers[1], True, False, 0)
+        self.vbox.pack_end(box_container, False, False, 0)
 
         self.show_generators_button = Gtk.CheckButton(label="Generators")
+        # self.show_generators_button.set_halign()
         self.check_containers[0].add(self.show_generators_button)
         self.show_generators_button.connect("toggled", self.on_checkbox_changed)
 
@@ -85,12 +89,29 @@ class SearchPluginsDialog(Gtk.Window):
         self.show_effects_button.connect("toggled", self.on_checkbox_changed)
 
         self.show_controllers_button = Gtk.CheckButton(label="Controllers")
-        self.check_containers[1].add(self.show_controllers_button)
+        self.check_containers[0].add(self.show_controllers_button)
         self.show_controllers_button.connect("toggled", self.on_checkbox_changed)
 
-        self.show_nonnative_button = Gtk.CheckButton(label="Non-native")
-        self.check_containers[1].add(self.show_nonnative_button)
-        self.show_nonnative_button.connect("toggled", self.on_checkbox_changed)
+        
+        
+        self.show_aswell_or_only_switch = Gtk.Switch()
+        self.show_aswell_or_only_switch.connect("notify::active", self.on_switch_activated)
+        show_box = Gtk.HBox()
+        show_box.add(Gtk.Label("Show"))
+        show_box.add(self.show_aswell_or_only_switch)
+        self.check_containers[1].add(show_box)
+
+        self.show_lv2_button = Gtk.CheckButton(label="LV2")
+        self.check_containers[1].add(self.show_lv2_button)
+        self.show_lv2_button.connect("toggled", self.on_checkbox_changed)
+
+        self.show_ladspa_button = Gtk.CheckButton(label="Ladspa")
+        self.check_containers[1].add(self.show_ladspa_button)
+        self.show_ladspa_button.connect("toggled", self.on_checkbox_changed)
+
+        self.show_dssi_button = Gtk.CheckButton(label="Dssi")
+        self.check_containers[1].add(self.show_dssi_button)
+        self.show_dssi_button.connect("toggled", self.on_checkbox_changed)
 
         self.store = self.treeview.get_model()
         self.treeview.set_headers_visible(False)
@@ -111,7 +132,9 @@ class SearchPluginsDialog(Gtk.Window):
         self.show_generators_button.set_active(cfg.pluginlistbrowser_show_generators)
         self.show_effects_button.set_active(cfg.pluginlistbrowser_show_effects)
         self.show_controllers_button.set_active(cfg.pluginlistbrowser_show_controllers)
-        self.show_nonnative_button.set_active(cfg.pluginlistbrowser_show_nonnative)
+        self.show_aswell_or_only_switch.set_active(cfg.pluginlistbrowser_show_aswell_or_only)
+        self.show_lv2_button.set_active(cfg.pluginlistbrowser_show_lv2)
+        self.show_ladspa_button.set_active(cfg.pluginlistbrowser_show_ladspa)
         self.set_size_request(400, 600)
         self.connect('realize', self.realize)
         self.conn_id = False
@@ -131,7 +154,7 @@ class SearchPluginsDialog(Gtk.Window):
         if uri.startswith('@zzub.org/ladspadapter/'):
             return 'ladspa'
         if uri.startswith('@psycle.sourceforge.net/'):
-            return 'psycle'
+            return 'psycle' 
         if uri.startswith('@zzub.org/lv2adapter/'):
             return 'lv2'
         filename = pluginloader.get_name()
@@ -169,29 +192,45 @@ class SearchPluginsDialog(Gtk.Window):
             cfg.pluginlistbrowser_show_effects = active
         elif lbl == "Controllers":
             cfg.pluginlistbrowser_show_controllers = active
-        elif lbl == "Non-native":
-            cfg.pluginlistbrowser_show_nonnative = active
+        elif lbl == "LV2":
+            cfg.pluginlistbrowser_show_lv2 = active
+        elif lbl == "Ladspa":
+            cfg.pluginlistbrowser_show_ladpsa = active
+        elif lbl == "Dssi":
+            cfg.pluginlistbrowser_show_dssi = active
         self.filter.refilter()
 
+    def on_switch_activated(self, switch, other):
+        cfg = com.get('neil.core.config')
+        cfg.pluginlistbrowser_show_aswell_or_only = switch.get_active()
+        self.filter.refilter()
+
+
     def filter_item(self, model, it, data):
-        def is_native(pl):
-            name = get_adapter_name(pl)
-            if name:
-                return False
-            else:
-                return True
-        child = model.get(it, 2)[0]
-        name = child.get_name().lower()
-        if is_other(child):
+        pluginloader = model.get(it, 2)[0]
+
+        if is_other(pluginloader):
             return False 
-        if not self.show_nonnative_button.get_active() and not is_native(child):
+
+        if not self.show_generators_button.get_active() and is_generator(pluginloader):
             return False
-        if not self.show_generators_button.get_active() and is_generator(child):
+        if not self.show_effects_button.get_active() and is_effect(pluginloader):
             return False
-        if not self.show_effects_button.get_active() and is_effect(child):
+        if not self.show_controllers_button.get_active() and is_controller(pluginloader):
             return False
-        if not self.show_controllers_button.get_active() and is_controller(child):
+
+        adapter_name = get_adapter_name(pluginloader)
+
+        if adapter_name == "lv2" and not self.show_lv2_button.get_active():
             return False
+        elif adapter_name == "ladspa" and not self.show_ladspa_button.get_active():
+            return False
+        elif adapter_name == "dssi" and not self.show_dssi_button.get_active():
+            return False
+        elif adapter_name == "zzub" and self.show_aswell_or_only_switch.get_active():
+            return False
+
+        name = pluginloader.get_name().lower()
         if len(self.searchterms) > 0:
             for group in self.searchterms:
                 for word in group:
@@ -202,6 +241,7 @@ class SearchPluginsDialog(Gtk.Window):
                 # print(name, "matched", self.searchterms)
                 # return True
             # return False
+        print("show it")
         return True
 
     def populate(self):
@@ -251,8 +291,6 @@ class SearchPluginsDialog(Gtk.Window):
                 return c
             return cmp(a.get_name().lower(),b.get_name().lower())
         def get_type_text(pl):
-            prefix = get_adapter_name(pl)
-
             if is_generator(pl):
                 return '<span color="' + cfg.get_color('MV Generator') + '">Generator</span>'
             elif is_effect(pl):
