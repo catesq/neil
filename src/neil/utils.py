@@ -34,6 +34,16 @@ import weakref
 import neil.com as com
 import ctypes
 
+from enum import Enum
+
+class PluginType(Enum):
+    Root = 1
+    Generator = 2
+    Effect = 3
+    Controller = 4
+    Streamer = 5
+    Other = 6
+
 #https://stackoverflow.com/questions/23021327/how-i-can-get-drawingarea-window-handle-in-gtk3/27236258#27236258
 #http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=examples/gtkvlc.py;hb=HEAD
 def get_window_pointer(window):
@@ -427,7 +437,7 @@ def write_string(f,s):
     """
     Writes a pascal string (32bit len, data) to a binary file.
     """
-    s = str(s, 'utf-8')
+    s = str(s).encode('utf-8')
     write_int(f, len(s))
     f.write(s)
 
@@ -915,39 +925,63 @@ def padded_partition(iterable, part_len, pad_val=None):
     return partition(itr, part_len)
 
 
-PLUGIN_FLAGS_MASK = zzub.zzub_plugin_flag_is_root|zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output|zzub.zzub_plugin_flag_has_event_output
-ROOT_PLUGIN_FLAGS = zzub.zzub_plugin_flag_is_root|zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output
-GENERATOR_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_audio_output
-EFFECT_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output
-CONTROLLER_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_event_output
+# PLUGIN_FLAGS_MASK = zzub.zzub_plugin_flag_is_root|zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output|zzub.zzub_plugin_flag_has_event_output|zzub.zzub_plugin_flag_has_cv_input|zzub.zzub_plugin_flag_has_cv_output
+# ROOT_PLUGIN_FLAGS = zzub.zzub_plugin_flag_is_root|zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output
+# GENERATOR_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_audio_output
+# EFFECT_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output
+# CONTROLLER_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_event_output
 
-# either "LV2", "DSSI", "LADSPA", or "" for intenal/Lunar
+adapters = {"lv2adapter": "lv2", "ladspadapter": "ladspa", "dssidapter": "dssi"}
 def get_adapter_name(pluginloader):
     name = pluginloader.get_loader_name()
 
     typename = name[10:name.find("/", 10)]
-    if typename in ["lv2adapter", "ladspadapter", "dssidapter"]:
-        return typename
+    if typename in adapters.keys():
+        return adapters[typename]
 
-    return ""
+    return "zzub"
+
+def get_plugin_type(plugin):
+    flags = plugin.get_flags()
+
+    if flags & zzub.zzub_plugin_flag_has_audio_input:
+        if flags & zzub.zzub_plugin_flag_is_root:
+            return PluginType.Root
+        elif flags & zzub.zzub_plugin_flag_has_audio_output:
+            return PluginType.Effect
+    
+    if flags & zzub.zzub_plugin_flag_stream:
+        return PluginType.Streamer
+    
+    if flags & zzub.zzub_plugin_flag_has_audio_output:
+        return PluginType.Generator
+    
+    if flags & (zzub.zzub_plugin_flag_has_event_output|zzub.zzub_plugin_flag_has_cv_output):
+        return PluginType.Controller
+
+    return PluginType.Other
+
+
+AUDIO_IO_FLAGS = zzub.zzub_plugin_flag_has_audio_input | zzub.zzub_plugin_flag_has_audio_output
+EVENT_IO_FLAGS = zzub.zzub_plugin_flag_has_event_output | zzub.zzub_plugin_flag_has_cv_output
 
 def is_other(plugin):
     return not (is_effect(plugin) or is_generator(plugin) or is_controller(plugin) or is_root(plugin))
 
 def is_effect(plugin):
-    return ((plugin.get_flags() & PLUGIN_FLAGS_MASK) == EFFECT_PLUGIN_FLAGS)
+    return (plugin.get_flags() & AUDIO_IO_FLAGS) == AUDIO_IO_FLAGS
 
 def is_generator(plugin):
-    return ((plugin.get_flags() & PLUGIN_FLAGS_MASK) == GENERATOR_PLUGIN_FLAGS)
+    return (plugin.get_flags() & zzub.zzub_plugin_flag_has_audio_output) and not (plugin.get_flags() & zzub.zzub_plugin_flag_has_audio_input)
 
 def is_controller(plugin):
-    return ((plugin.get_flags() & PLUGIN_FLAGS_MASK) == CONTROLLER_PLUGIN_FLAGS)
+    return (plugin.get_flags() & EVENT_IO_FLAGS) and not (plugin.get_flags() & AUDIO_IO_FLAGS)
 
 def is_root(plugin):
-    return ((plugin.get_flags() & PLUGIN_FLAGS_MASK) == ROOT_PLUGIN_FLAGS)
+    return plugin.get_flags() & zzub.zzub_plugin_flag_is_root & AUDIO_IO_FLAGS
 
 def is_streamer(plugin):
-    return (plugin.get_flags() & zzub.zzub_plugin_flag_stream)
+    return plugin.get_flags() & zzub.zzub_plugin_flag_stream
 
 def get_new_pattern_name(plugin):
     """
