@@ -132,14 +132,24 @@ union BodgeEndian {
     uint8_t c[2];
 };
 
+struct ControlPort : Port {
+    ControlPort(
+        PluginInfo *info,
+        const LilvPort *lilvPort,
+        PortFlow flow,
+        uint32_t index,
+        uint32_t dataIndex
+    );
 
-struct ParamPort : Port {
+    uint32_t dataIndex;
+};
+
+struct ParamPort : ControlPort {
     zzub::parameter *zzubParam;
     std::vector<ScalePoint *> scalePoints{};
 
-    unsigned paramIndex;
-    unsigned byteOffset;
-    unsigned byteSize;
+    uint32_t byteOffset;
+    uint32_t byteSize;
 
     float minVal;
     float maxVal;
@@ -150,13 +160,9 @@ struct ParamPort : Port {
         const LilvPort *lilvPort,
         PortFlow flow,
         uint32_t index,
-        unsigned paramIndex,
-        unsigned byteOffset
+        uint32_t dataIndex,
+        uint32_t byteOffset
     );
-
-    ~ParamPort() {
-
-    }
 
     inline int lilv_to_zzub_value(float val) {
         if(strcmp(zzubParam->name, "pan_one") == 0 || strcmp(zzubParam->name, "kit_num") == 0 || strcmp(zzubParam->name, "base_note") == 0) {
@@ -178,11 +184,6 @@ struct ParamPort : Port {
     }
 
     inline float zzub_to_lilv_value(int val) {
-        // if(strcmp(zzubParam->name, "pan_one") == 0 || strcmp(zzubParam->name, "kit_num") == 0 || strcmp(zzubParam->name, "base_note") == 0) {
-        //     printf("%s zzubmax %i min %f max %f curr %i lv2curr %f",
-        //            zzubParam->name, zzubParam->value_max, minVal, maxVal, val, minVal + (val / (float) zzubParam->value_max) * (maxVal - minVal));
-        // }
-
         switch(zzubParam->type) {
         case zzub_parameter_type_word:
         case zzub_parameter_type_byte:
@@ -205,26 +206,21 @@ struct ParamPort : Port {
     }
 
     void putData(uint8_t *globals, int value) {
-        printf("putdata %d %d\n", zzubParam->type, byteOffset);
         uint8_t* dest = &globals[byteOffset];
         switch(zzubParam->type) {
         case zzub_parameter_type_word:{
             auto be = BodgeEndian{(uint16_t)value};
-            printf("word to %d\n", byteOffset);
             *dest = be.c[0];
             *dest++ = be.c[1];
             break;
         }
         case zzub_parameter_type_byte:
-        printf("bte to %d\n", byteOffset);
             *dest = (u_int8_t) value;
             break;
         case zzub_parameter_type_note:
-        printf("note to %d\n", byteOffset);
             *dest = (u_int8_t) value;
             break;
         case zzub_parameter_type_switch:
-        printf("bool to %d\n", byteOffset);
             *dest = (value == 0.f ? zzub::switch_value_off : zzub::switch_value_on);
             break;
         }
