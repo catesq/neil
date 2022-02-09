@@ -1117,7 +1117,7 @@ class Function(zzubIDLObject):
 				class_ = arg.typemap_cfg['class_']
 				return class_.name + '._new_from_handle(' + argname + ')'
 			if arg.typename == 'string':
-				return argname + ".decode('utf8')"
+				return 'str(' + argname + ".decode('iso-8859-1'))"
 			else:
 				return argname
 			
