@@ -290,6 +290,9 @@ namespace zzub:
 		
 		set has_custom_gui = bit 27 # machine draws its own GUI
 
+		set has_cv_input = bit 28 # for event effects
+		set has_cv_output = bit 29 # for event generators and effects
+
 	enum StateFlag:
 		# player state flags
 		set playing	= 1
