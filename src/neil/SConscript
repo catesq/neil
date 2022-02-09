@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-Import('env', 'install', 'install_recursive')
+Import('env', 'install', 'install_recursive', 'pip')
 import glob
 
 for filename in glob.glob('*.py'):
@@ -26,3 +26,5 @@ for filename in glob.glob('*.py'):
 
 for filename in glob.glob('*.xml'):
 	install('${SITE_PACKAGE_PATH}/neil', filename, 0o444)
+
+pip('rdflib')

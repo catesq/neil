@@ -144,6 +144,10 @@ def build_path_config(target, source, env):
     cfg.write(s)
     open(outpath, 'w').write(s.getvalue())
 
+
+def pip(pkg):
+    os.system('pip install -qq --target %s %s' % (env['SITE_PACKAGE_PATH'], pkg))
+
 builders = dict(
     BuildPathConfig = Builder(action=build_path_config),
 )
@@ -154,6 +158,7 @@ Export(
     'env',
     'install',
     'install_recursive',
+    'pip',
     'win32', 'mac', 'posix', 
 )
 
