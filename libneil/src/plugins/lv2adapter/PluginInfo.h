@@ -37,8 +37,8 @@ struct PluginInfo : zzub::info {
     std::vector<std::string> paramNames{};
     std::unordered_map<std::string, Port*> portSymbol{};
 
-    std::vector<ParamPort*> paramPorts;
-//    std::vector<Port *> eventPorts;
+    std::vector<ControlPort *> controlPorts;
+    std::vector<ParamPort *> paramPorts;
 
     std::vector<EventPort*> midiPorts{};
 
@@ -57,6 +57,7 @@ struct PluginInfo : zzub::info {
     PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin);
     virtual ~PluginInfo();
     void add_generator_params();
+    uint32_t inline num_controls() { return controlPorts.size() + paramPorts.size(); }
 private:
     Port *build_port(uint32_t index);
 };
