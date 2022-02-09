@@ -29,6 +29,7 @@ if __name__ == '__main__':
     os.system('../../bin/neil-combrowser neil.core.routerpanel')
     raise SystemExit
 
+from typing import Generator
 import gi
 gi.require_version("Gtk", "3.0")
 import neil.com as com
@@ -40,9 +41,8 @@ import cairo
 import ctypes
 
 
-from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS,\
-     GENERATOR_PLUGIN_FLAGS, EFFECT_PLUGIN_FLAGS,\
-     CONTROLLER_PLUGIN_FLAGS
+from neil.utils import PluginType
+from neil.utils import get_plugin_type
 from neil.utils import is_effect, is_generator, is_controller, is_root
 from neil.utils import prepstr, db2linear, linear2db, error, new_listview, add_scrollbars
 from neil.utils import blend, blend_float, box_contains
@@ -749,17 +749,17 @@ class RouteView(Gtk.DrawingArea):
                 'MV Text',
         ]
         flagids = [
-                (ROOT_PLUGIN_FLAGS, 'Master'),
-                (GENERATOR_PLUGIN_FLAGS, 'Generator'),
-                (EFFECT_PLUGIN_FLAGS, 'Effect'),
-                (CONTROLLER_PLUGIN_FLAGS, 'Controller'),
+                (PluginType.Root, 'Master'),
+                (PluginType.Generator, 'Generator'),
+                (PluginType.Effect, 'Effect'),
+                (PluginType.Controller, 'Controller'),
         ]
-        self.flags2brushes = {}
-        for flags, name in flagids:
+        self.plugintype2brushes = {}
+        for plugintype, name in flagids:
             brushes = []
             for name in [x.replace('${PLUGIN}', name) for x in names]:
                 brushes.append(cfg.get_float_color(name))
-            self.flags2brushes[flags] = brushes
+            self.plugintype2brushes[plugintype] = brushes
         common.get_plugin_infos().reset_plugingfx()
 
     def on_zzub_plugin_changed(self, plugin):
@@ -1129,9 +1129,9 @@ class RouteView(Gtk.DrawingArea):
             if not pi:
                 continue
 
-            brushes = self.flags2brushes.get(
-                mp.get_flags() & PLUGIN_FLAGS_MASK,
-                self.flags2brushes[GENERATOR_PLUGIN_FLAGS])
+            brushes = self.plugintype2brushes.get(
+                get_plugin_type(mp),
+                self.plugintype2brushes[PluginType.Generator])
 
             def flag2col(flag):
                 return brushes[flag]
