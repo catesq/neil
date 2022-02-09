@@ -74,15 +74,27 @@ MidiPort::MidiPort(
     ) : EventPort(info, lilvPort, portFlow, PortType::Midi, index, bufIndex) {}
 
 
+ControlPort::ControlPort(
+        PluginInfo *info, 
+        const LilvPort *lilvPort, 
+        PortFlow portFlow, 
+        uint32_t index, 
+        uint32_t dataIndex) 
+    : Port(info, lilvPort, portFlow, PortType::Control, index), 
+      dataIndex(dataIndex) {
+
+    }
+
+
 ParamPort::ParamPort(
         PluginInfo *info, 
         const LilvPort *lilvPort, 
         PortFlow portFlow, 
-        unsigned index, 
-        unsigned paramIndex, 
-        unsigned byteOffset) : Port(info, lilvPort, portFlow, PortType::Control, index),
-                            paramIndex(paramIndex),
-                            byteOffset(byteOffset) {
+        uint32_t index, 
+        uint32_t dataIndex, 
+        uint32_t byteOffset
+    ) : ControlPort(info, lilvPort, portFlow, index, dataIndex), 
+        byteOffset(byteOffset) {
                                 
     zzubParam = new zzub::parameter();
 
