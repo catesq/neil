@@ -277,10 +277,12 @@ PluginWorld::PluginWorld()
 }
 
 void PluginWorld::init_suil() {
+    suil_mtx.lock();
     if(!suil_is_init) {
         suil_is_init = true;
         suil_init(0, NULL, SUIL_ARG_NONE);
     }
+    suil_mtx.unlock();
 }
 
 
