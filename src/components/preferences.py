@@ -72,7 +72,7 @@ class GeneralPanel(Gtk.VBox):
         """
         Gtk.VBox.__init__(self)
         self.set_border_width(MARGIN)
-        frame1 = Gtk.Frame("General Settings")
+        frame1 = Gtk.Frame.new("General Settings")
         fssizer = Gtk.VBox(False, MARGIN)
         fssizer.set_border_width(MARGIN)
         frame1.add(fssizer)
@@ -181,7 +181,7 @@ class DriverPanel(Gtk.VBox):
             row.pack_start(c2, True, True, 0)
             return row
 
-        sizer1 = Gtk.Frame("Audio Output")
+        sizer1 = Gtk.Frame.new("Audio Output")
         vbox = Gtk.VBox(False, MARGIN)
         driver_row = add_row(Gtk.Label(label="Driver"), self.cboutput)
         samp_rate_row = add_row(Gtk.Label(label="Samplerate"), self.cbsamplerate)
@@ -263,7 +263,7 @@ class ControllerPanel(Gtk.VBox):
         self.sort_column = 0
         Gtk.VBox.__init__(self)
         self.set_border_width(MARGIN)
-        frame1 = Gtk.Frame("Controllers")
+        frame1 = Gtk.Frame.new("Controllers")
         sizer1 = Gtk.VBox(False, MARGIN)
         sizer1.set_border_width(MARGIN)
         frame1.add(sizer1)
@@ -346,7 +346,7 @@ class MidiPanel(Gtk.VBox):
     def __init__(self):
         Gtk.VBox.__init__(self, False, MARGIN)
         self.set_border_width(MARGIN)
-        frame1 = Gtk.Frame("MIDI Input Devices")
+        frame1 = Gtk.Frame.new("MIDI Input Devices")
         sizer1 = Gtk.VBox()
         sizer1.set_border_width(MARGIN)
         frame1.add(sizer1)
@@ -363,7 +363,7 @@ class MidiPanel(Gtk.VBox):
                 use = name.strip() in inputlist
                 self.istore.append([use, name])
         sizer1.add(add_scrollbars(self.idevicelist))
-        frame2 = Gtk.Frame("MIDI Output Devices")
+        frame2 = Gtk.Frame.new("MIDI Output Devices")
         sizer2 = Gtk.VBox()
         sizer2.set_border_width(MARGIN)
         frame2.add(sizer2)
