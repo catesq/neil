@@ -428,7 +428,7 @@ class KeyboardPanel(Gtk.VBox):
         Gtk.VBox.__init__(self, False, MARGIN)
         self.set_border_width(MARGIN)
         hsizer = Gtk.HBox(False, MARGIN)
-        hsizer.pack_start(Gtk.Label("Keyboard Map", True, True, 0), expand=False)
+        hsizer.pack_start(Gtk.Label("Keyboard Map"), True, True, 0)
         self.cblanguage = Gtk.ComboBoxText()
         sel = 0
         lang = config.get_config().get_keymap_language()
