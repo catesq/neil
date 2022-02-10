@@ -56,6 +56,14 @@ env.SConsignFile()
 # build settings
 ######################################
 
+def get_settings_dir():
+    if win32:
+        return os.path.expanduser('~/neil')
+    elif posix:
+        return os.path.expanduser('~/.neil')
+    else:
+        return None
+
 distutils_prefix = "%s%s" % (env['DESTDIR'], env['PREFIX'])
 
 env['ROOTPATH'] = os.getcwd()
@@ -69,6 +77,7 @@ env['ETC_PATH'] = '${DESTDIR}${ETCDIR}/neil'
 env['ICONS_NEIL_PATH'] = '${DESTDIR}${PREFIX}/share/icons/neil'
 env['ICONS_HICOLOR_PATH'] = '${DESTDIR}${PREFIX}/share/icons/hicolor'
 env['PIXMAPS_PATH'] = '${DESTDIR}${PREFIX}/share/pixmaps/neil'
+env['SETTINGS_PATH'] = get_settings_dir()
 
 CONFIG_PATHS = dict(
     site_packages = 'SITE_PACKAGE_PATH',
@@ -80,6 +89,7 @@ CONFIG_PATHS = dict(
     icons_hicolor = 'ICONS_HICOLOR_PATH',
     pixmaps = 'PIXMAPS_PATH',
     etc = 'ETC_PATH',
+    settings = 'SETTINGS_PATH'
 )
 
 ######################################
@@ -115,6 +125,7 @@ def install(target, source, perm=None):
 
 env.Alias(target='install', source="${DESTDIR}${PREFIX}")
 env.Alias(target='install', source="${DESTDIR}${ETCDIR}")
+env.Alias(target='install', source=get_settings_dir())
 
 def install_recursive(target, path, mask):
     for f in glob.glob(os.path.join(path, mask)):
