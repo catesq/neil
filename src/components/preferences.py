@@ -70,7 +70,7 @@ class GeneralPanel(Gtk.VBox):
         """
         Initializing.
         """
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.set_border_width(MARGIN)
         frame1 = Gtk.Frame("General Settings")
         fssizer = Gtk.VBox(False, MARGIN)
@@ -166,7 +166,7 @@ class DriverPanel(Gtk.VBox):
         """
         Initializing.
         """
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.set_border_width(MARGIN)
         self.cboutput = Gtk.ComboBoxText()
         self.cbsamplerate = Gtk.ComboBoxText()
@@ -261,7 +261,7 @@ class ControllerPanel(Gtk.VBox):
 
     def __init__(self):
         self.sort_column = 0
-        GObject.GObject.__init__(self)
+        Gtk.VBox.__init__(self)
         self.set_border_width(MARGIN)
         frame1 = Gtk.Frame("Controllers")
         sizer1 = Gtk.VBox(False, MARGIN)
@@ -344,7 +344,7 @@ class MidiPanel(Gtk.VBox):
     )
 
     def __init__(self):
-        GObject.GObject.__init__(self, False, MARGIN)
+        Gtk.VBox.__init__(self, False, MARGIN)
         self.set_border_width(MARGIN)
         frame1 = Gtk.Frame("MIDI Input Devices")
         sizer1 = Gtk.VBox()
@@ -425,7 +425,7 @@ class KeyboardPanel(Gtk.VBox):
     ]
 
     def __init__(self):
-        GObject.GObject.__init__(self, False, MARGIN)
+        Gtk.VBox.__init__(self, False, MARGIN)
         self.set_border_width(MARGIN)
         hsizer = Gtk.HBox(False, MARGIN)
         hsizer.pack_start(Gtk.Label("Keyboard Map", True, True, 0), expand=False)
@@ -468,7 +468,7 @@ class PreferencesDialog(Gtk.Dialog):
     )
 
     def __init__(self, parent=None, visible_panel=None):
-        GObject.GObject.__init__(self,
+        Gtk.Dialog.__init__(self,
                 "Preferences",
                 parent,
                 Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT)
