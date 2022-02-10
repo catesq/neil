@@ -449,10 +449,8 @@ class KeyboardPanel(Gtk.VBox):
         config.get_config().set_keymap_language(self.KEYMAPS[self.cblanguage.get_active()][0])
 
 
-def cmp_prefpanel(a,b):
-    a_order = (hasattr(a, '__prefpanel__') and a.__prefpanel__.get('label','')) or ''
-    b_order = (hasattr(b, '__prefpanel__') and b.__prefpanel__.get('label','')) or ''
-    return cmp(a_order, b_order)
+def key_prefpanel(a):
+    return (hasattr(a, '__prefpanel__') and a.__prefpanel__.get('label','')) or ''
 
 
 class PreferencesDialog(Gtk.Dialog):
@@ -476,7 +474,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.nb.set_show_tabs(False)
         self.nb.set_border_width(MARGIN)
         self.nb.set_show_border(False)
-        self.panels = sorted(com.get_from_category('neil.prefpanel'), cmp_prefpanel)
+        self.panels = sorted(com.get_from_category('neil.prefpanel'), key=key_prefpanel)
         starting_tab_index = 0
         for i, panel in enumerate(self.panels):
             if not hasattr(panel, '__prefpanel__'):
