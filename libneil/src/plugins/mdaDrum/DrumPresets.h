@@ -4,6 +4,7 @@
 #include "DrumDefines.h"
 #include "utils/tinydir.h"
 #include "DrumVoice.h"
+#include <string>
 
 #include <map>
 
