@@ -18,11 +18,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-Import('pluginenv', 'build_plugin')
+Import('pluginenv', 'build_plugin', 'get_settings_dir')
 
 drum_pluginenv = pluginenv.Clone()
 
 #drum_pluginenv.Append(CCFLAGS=['-Ilibneil/src/plugins/DrumSynth/drumsynth/src/DrumSynth'])
 drum_pluginenv.Append(LIBS=['boost_locale'])
+print("SETTINGS_PATH", get_settings_dir())
+drum_pluginenv.Append(CPPDEFINES=['MDA_DRUMS_PATH=\'"%s"\'' % get_settings_dir()])
 
 drum_build = build_plugin(drum_pluginenv, 'mda_drum', ['DrumPlugin.cpp', 'DrumVoice.cpp', 'DrumPresets.cpp',  'DrumParameter.cpp', 'utils/dictionary.cpp', 'utils/iniparser.cpp'])

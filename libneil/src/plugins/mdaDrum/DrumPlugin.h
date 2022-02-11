@@ -84,7 +84,7 @@ struct DrumPluginCollection : zzub::plugincollection {
     DrumSets* drumSets;
 
     virtual void initialize(zzub::pluginfactory *factory) {
-		drumSets = new DrumSets ("/home/mylogin/.neil/mdaDrumLibrary", 256);
+		drumSets = new DrumSets (MDA_DRUMS_PATH, 256);
         factory->register_info(new DrumPluginInfo(drumSets));
     }
 

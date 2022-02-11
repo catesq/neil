@@ -169,6 +169,7 @@ Export(
     'env',
     'install',
     'install_recursive',
+    'get_settings_dir',
     'pip',
     'win32', 'mac', 'posix', 
 )
