@@ -241,7 +241,6 @@ class SearchPluginsDialog(Gtk.Window):
                 # print(name, "matched", self.searchterms)
                 # return True
             # return False
-        print("show it")
         return True
 
     def populate(self):
