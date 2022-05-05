@@ -1,0 +1,12 @@
+Import('env', 'posix', 'install_lib')
+
+import glob
+
+localenv = env.Clone()
+localenv.Append(CPPFLAGS=['-O3'])
+
+files = ["kiss_fft.c", "kiss_fftr.c"]
+
+kissfft_static = localenv.StaticLibrary('${LIB_BUILD_PATH}/kissfft', files)
+
+Export('kissfft_static')
