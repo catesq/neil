@@ -275,6 +275,8 @@ env['MINIZIP_SRC_PATH'] = '${ROOTPATH}/src/minizip'
 env['PLUGINS_SRC_PATH'] = '${ROOTPATH}/src/plugins'
 env['PYZZUB_SRC_PATH'] = '${ROOTPATH}/src/pyzzub'
 env['LANTERNFISH_SRC_PATH'] = '${ROOTPATH}/src/lanternfish'
+env['KISSFFT_SRC_PATH'] = '${ROOTPATH}/src/kiss_fft'
+
 
 env['LIB_BUILD_PATH'] = '${ROOTPATH}/lib'
 env['BIN_BUILD_PATH'] = '${ROOTPATH}/bin'
@@ -617,6 +619,7 @@ Export(
 env.Signature(target='include/zzub/signature.h',source='options.conf')
 
 env.SConscript('${LANTERNFISH_SRC_PATH}/SConscript')
+env.SConscript('${KISSFFT_SRC_PATH}/SConscript')
 env.SConscript('${LIBZZUB_SRC_PATH}/SConscript')
 env.SConscript('${PLUGINS_SRC_PATH}/SConscript')
 env.SConscript('${PYZZUB_SRC_PATH}/SConscript')
