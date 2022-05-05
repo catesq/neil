@@ -1,6 +1,4 @@
-#encoding: latin-1
-
-# libzzub, Buzé, Aldrin
+# libzzub, BuzÃ©, Aldrin
 # Modular Sequencer
 # Copyright (C) 2006 The Aldrin Development Team
 #
@@ -20,7 +18,12 @@
 
 Import('pluginenv', 'build_plugin')
 
-build_plugin(pluginenv, 'green_milk', files=[
+localenv = pluginenv.Clone()
+localenv.Append(CPPPATH=["${KISSFFT_SRC_PATH}"])
+localenv.Append(LIBS=['kissfft'])
+localenv.Append(CPPFLAGS=['-O3'])
+
+build_plugin(localenv, 'green_milk', files=[
 		'green_milk.cpp',
 		'adsr.cpp',
 		'chord_shapes.cpp',
@@ -30,9 +33,7 @@ build_plugin(pluginenv, 'green_milk', files=[
 		'fast_pow.cpp',
 		'filter.cpp',
 		'lfo_waveshapes.cpp',
-		'phasor.cpp',
-		'../fft/kiss_fft.c',
-		'../fft/kiss_fftr.c',
+		'phasor.cpp'
 	],
 	helpfiles=[
 		'index.html',
