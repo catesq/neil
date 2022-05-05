@@ -387,6 +387,10 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         print("Error: no libfftw3 development files seem to be installed.")
         print("libfftw3 libraries and headers are required for building.")
         Exit(1)
+    if not conf.CheckCHeader('mad.h'):
+        print("Error: no libmad development files seem to be installed.")
+        print("libmad libraries and headers are required for building.")
+        Exit(1)
     if not conf.CheckCHeader('mpg123.h'):
         print("Error: no mpg123 development files seem to be installed.")
         print("libmpg123 libraries and headers are required for building.")
@@ -407,10 +411,13 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         env['DSSI'] = True
     else:
         env['DSSI'] = False
-    if env['LV2']:
-        if not conf.CheckCHeader('lilv-0/lilv/lilv.h') or not conf.CheckCHeader('lv2/lv2.h'):
-            print("Missing lv2(or lv2-dev) header files.")
-            Exit(1)
+
+    if conf.CheckCHeader('lilv-0/lilv/lilv.h') and conf.CheckCHeader('lv2.h') and conf.CheckCHeader('suil-0/suil/suil.h'):
+        env['LV2'] = True
+    else:
+        print("Need lilv-0, suil-0 and lv2 headers to build LV2 plugins")
+        Exit(1)
+
     if not conf.CheckCHeader('FLAC/all.h'):
         print("Error: no FLAC library development files found.")
         Exit(1)
