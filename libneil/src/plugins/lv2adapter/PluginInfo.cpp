@@ -38,11 +38,11 @@ PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
     
     name = lilv::as_string(lilv_plugin_get_name(lilvPlugin), true);
     author = lilv::as_string(lilv_plugin_get_author_name(lilvPlugin), true);
-    lv2Class = lilv::as_string(lilv_plugin_class_get_label(lilv_plugin_get_class(lilvPlugin)));
 
-    libraryPath = lilv_uri_to_path(lilv::as_string(lilv_plugin_get_library_uri(lilvPlugin)).c_str());
-    bundlePath = lilv_uri_to_path(lilv::as_string(lilv_plugin_get_bundle_uri(lilvPlugin)).c_str());
+    libraryPath = lilv::free_string(lilv_file_uri_parse(lilv::as_string(lilv_plugin_get_library_uri(lilvPlugin)).c_str(), NULL));
+    bundlePath = lilv::free_string(lilv_file_uri_parse(lilv::as_string(lilv_plugin_get_bundle_uri(lilvPlugin)).c_str(), NULL));
     lv2Uri = lilv::as_string(lilv_plugin_get_uri(lilvPlugin));
+    lv2ClassUri =  lilv::as_string(lilv_plugin_class_get_uri(lilv_plugin_get_class(lilvPlugin)));
     zzubUri = std::string("@zzub.org/lv2adapter/") + (strncmp(lv2Uri.c_str(), "http://", 6) == 0 ? std::string(lv2Uri.substr(7)) : lv2Uri);
 
     uri = zzubUri.c_str();
@@ -73,15 +73,14 @@ PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
         portSymbol[port->symbol.c_str()] = port;
     }
 
-    if(lv2Class == "Instrument") {
-        printf("add generator params for %s\n", name);
+
+    if(lv2ClassUri == LV2_CORE__InstrumentPlugin) {
         add_generator_params();
     }
 
     LilvNodes *extDataNodes = lilv_plugin_get_extension_data(lilvPlugin);
     LILV_FOREACH(nodes, dataIter, extDataNodes) {
         const LilvNode *lilvNode = lilv_nodes_get(extDataNodes, dataIter);
-        if(verbose) printf("\nplugin has extension data: %s", lilv::as_string(lilvNode).c_str());
     }
     lilv_nodes_free(extDataNodes);
 
