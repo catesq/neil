@@ -178,7 +178,7 @@ class SequencerToolBar(Gtk.HBox):
             self.seqview.step = 1
         else:
             self.seqview.step = step
-        self.seqview.update_all()
+        self.seqview.update()
         player = com.get('neil.core.player')
         player.set_seqstep(step)
 
