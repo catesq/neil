@@ -102,7 +102,7 @@ LADSPAPluginSearch(LADSPAPluginSearchCallbackFunction fCallbackFunction) {
     fprintf(stderr,
 	    "Warning: You do not have a LADSPA_PATH "
 	    "environment variable set.\n");
-	pcLADSPAPath = "/usr/local/lib/ladspa:/usr/lib/ladspa";
+	pcLADSPAPath = "/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa";
 	fprintf(stderr,"assuming '%s'\n",pcLADSPAPath);	
   }
   
