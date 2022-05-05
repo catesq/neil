@@ -5,9 +5,24 @@
 
 #include "suil/suil.h"
 
+inline const char* describe_port_flow(PortFlow flow) {
+    if(flow == PortFlow::Input)
+        return "Input";
+    else if(flow == PortFlow::Output)
+        return "Output";
+    else 
+        return "Unknown";
+}
+
 inline void printport(const char *typetext, const LilvPlugin* lilvPlugin, const LilvPort* lilvPort, PortFlow flow) {
-    const char *flowtext = (flow == PortFlow::Input ? "Input" : (PortFlow::Output ? "Output": "Unknown"));
-    printf("\nPort '%s'. Type '%s'. Direction '%s'. Plugin '%s'", lilv::as_string(lilv_port_get_name(lilvPlugin, lilvPort), true).c_str(), typetext, flowtext, lilv::as_string(lilv_plugin_get_name(lilvPlugin), true).c_str());
+    const char *flowtext = describe_port_flow(flow);
+
+    printf("\nPort '%s'. Type '%s'. Direction '%s'. Plugin '%s'", 
+           lilv::as_string(lilv_port_get_name(lilvPlugin, lilvPort), true).c_str(), 
+           typetext, 
+           flowtext,
+           lilv::as_string(lilv_plugin_get_name(lilvPlugin), true).c_str()
+    );
 }
 
 PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
