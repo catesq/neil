@@ -130,7 +130,7 @@ machine_info::machine_info() {
     .set_state_flag()
     .set_name("Wet")
     .set_description("Wet")
-    .set_value_min(0x0001)
+    .set_value_min(0x0000)
     .set_value_max(0xFFFE)
     .set_value_none(0xFFFF)
     .set_value_default(0xFFFE);
@@ -139,7 +139,7 @@ machine_info::machine_info() {
     .set_state_flag()
     .set_name("Dry")
     .set_description("Dry")
-    .set_value_min(0x0001)
+    .set_value_min(0x0000)
     .set_value_max(0xFFFE)
     .set_value_none(0xFFFF)
     .set_value_default(0x0000);

@@ -114,7 +114,7 @@ struct DistortionInfo : zzub::info {
       .set_value_max(0x8000)
       .set_value_none(0xFFFF)
       .set_state_flag()
-      .set_value_default(0);
+      .set_value_default(1);
     paraThreshold = &add_global_parameter()
       .set_word()
       .set_name("Threshold")
