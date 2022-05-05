@@ -64,8 +64,6 @@ PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
 
 
     int num_ports = lilv_plugin_get_num_ports(lilvPlugin);
-    // defaultValues = (float*) calloc(num_ports, sizeof(float));
-    // lilv_plugin_get_port_ranges_float(lilvPlugin, NULL, NULL, defaultValues);
 
     for(uint i = 0; i < num_ports; i++) {
         auto port = build_port(i);
