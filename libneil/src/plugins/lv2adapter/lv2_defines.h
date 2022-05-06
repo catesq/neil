@@ -5,14 +5,21 @@ static int verbose = 0;
 #include "common.h"
 #include "lilv/lilv.h"
 
+#include "lv2.h"
+
 #include "lv2/options/options.h"
 #include "lv2/data-access/data-access.h"
-#include "lv2/ui/ui.h"
-#include "lv2/urid/urid.h"
 #include "lv2/uri-map/uri-map.h"
-#include "lv2/worker/worker.h"
 #include "lv2/state/state.h"
 #include "lv2/buf-size/buf-size.h"
+#include "lv2/lv2plug.in/ns/ext/midi/midi.h"
+#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+#include "lv2/lv2plug.in/ns/ext/parameters/parameters.h"
+#include "lv2/lv2plug.in/ns/ext/time/time.h"
+#include "lv2/lv2plug.in/ns/ext/port-groups/port-groups.h"
+#include "lv2/lv2plug.in/ns/ext/event/event.h"
+
+#include "lv2/lv2plug.in/ns/ext/port-props/port-props.h"  
 
 #include "ext/lv2_programs.h"
 
@@ -30,40 +37,6 @@ static int verbose = 0;
 #define SIMILAR(a, b) (a > b - F_THRESHOLD && a < b + F_THRESHOLD)
 #define GTK3_URI "http://lv2plug.in/ns/extensions/ui#Gtk3UI"
 
-
-extern "C" {
-    #include "lilv/lilv.h"
-
-    #include "lv2.h"
-    #include "lv2/lv2plug.in/ns/ext/atom/atom.h"
-    #include "lv2/lv2plug.in/ns/ext/atom/forge.h"
-    //#include "lv2/atom-helpers.h"
-    #include "lv2/lv2plug.in/ns/ext/atom/util.h"
-    #include "lv2/lv2plug.in/ns/ext/buf-size/buf-size.h"
-    #include "lv2/lv2plug.in/ns/ext/data-access/data-access.h"
-    // dynmanifest
-    #include "lv2/lv2plug.in/ns/ext/event/event.h"
-    #include "lv2/lv2plug.in/ns/ext/event/event-helpers.h"
-    #include "lv2/lv2plug.in/ns/ext/instance-access/instance-access.h"
-    #include "lv2/lv2plug.in/ns/ext/log/log.h"
-    // logger
-    #include "lv2/lv2plug.in/ns/ext/midi/midi.h"
-    // morph
-    #include "lv2/lv2plug.in/ns/ext/options/options.h"
-    #include "lv2/lv2plug.in/ns/ext/parameters/parameters.h"
-    #include "lv2/lv2plug.in/ns/ext/patch/patch.h"
-    #include "lv2/lv2plug.in/ns/ext/port-groups/port-groups.h"
-    #include "lv2/lv2plug.in/ns/ext/port-props/port-props.h"
-    #include "lv2/lv2plug.in/ns/ext/presets/presets.h"
-    #include "lv2/lv2plug.in/ns/ext/resize-port/resize-port.h"
-    #include "lv2/lv2plug.in/ns/ext/state/state.h"
-    #include "lv2/lv2plug.in/ns/ext/time/time.h"
-    #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
-    #include "lv2/lv2plug.in/ns/extensions/units/units.h"
-    #include "lv2/lv2plug.in/ns/ext/uri-map/uri-map.h"
-    #include "lv2/lv2plug.in/ns/ext/urid/urid.h"
-    #include "lv2/lv2plug.in/ns/ext/worker/worker.h"
-}
 
 
 // -----------------------------------------------------------------------
