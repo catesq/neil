@@ -333,18 +333,17 @@ void PluginAdapter::connectInstance(LilvInstance* pluginInstance) {
         int zzubDefault = paramPort->zzubParam->value_default;
 
         switch(paramPort->zzubParam->type) {
-        case zzub_parameter_type_note:
-        case zzub_parameter_type_byte:
-        case zzub_parameter_type_switch:
-            *globals = (uint8_t) zzubDefault;
-            break;
-        case zzub_parameter_type_word:
-            *((uint16_t*)globals) = (uint16_t) zzubDefault;
-            break;
+            case zzub::parameter_type_note:
+            case zzub::parameter_type_byte:
+            case zzub::parameter_type_switch:
+                *globals = (uint8_t) zzubDefault;
+                break;
+            case zzub::parameter_type_word:
+                *((uint16_t*)globals) = (uint16_t) zzubDefault;
+                break;
         }
         
         globals += paramPort->byteSize;
-        printf("connect port %s %d\n", paramPort->zzubParam->name, paramPort->dataIndex);
         lilv_instance_connect_port(pluginInstance, paramPort->index, &values[paramPort->dataIndex]);
     }
 
