@@ -29,7 +29,7 @@ struct PluginInfo : zzub::info {
 //    unsigned evbufMinSize;
     std::string zzubUri;
 	std::string lv2Uri;
-    std::string lv2Class;
+    std::string lv2ClassUri;
     std::string libraryPath;
     std::string bundlePath;
 
