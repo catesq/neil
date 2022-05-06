@@ -436,7 +436,7 @@ void PluginAdapter::apply_events_from_ui() {
             fprintf(stderr, "error: Error reading from UI ring buffer\n");
             break;
         }
-        assert(ev.index < jalv->num_ports);
+        assert(ev.index < info->ports.size());
         Port* port = info->ports[ev.index];
 
         if (ev.protocol == 0 && port->type == PortType::Control) {
