@@ -477,8 +477,6 @@ void PluginAdapter::process_events() {
             value = *((unsigned short*) globals);
             break;
         case zzub::parameter_type_switch:
-            value = *((unsigned char*) globals);
-            break;
         case zzub::parameter_type_note:
         case zzub::parameter_type_byte:
             value = *((unsigned char*) globals);
