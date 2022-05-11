@@ -32,7 +32,7 @@
 
 // KISS fft : http://sourceforge.net/projects/kissfft/
 // with BSD license
-#include "../fft/kiss_fftr.h"
+#include "kiss_fftr.h"
 
 #include "common.h"
 #include "delaylfo.h"
