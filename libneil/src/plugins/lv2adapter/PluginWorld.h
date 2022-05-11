@@ -194,12 +194,12 @@ struct SymapUrids {
     u_int32_t minBlockLength;
     u_int32_t bufSeqSize;
     u_int32_t nominalBlockLength;
-    u_int32_t log_Trace;
+    // u_int32_t log_Trace;
     u_int32_t midi_MidiEvent;
     u_int32_t param_sampleRate;
-    u_int32_t patch_Set;
-    u_int32_t patch_property;
-    u_int32_t patch_value;
+    // u_int32_t patch_Set;
+    // u_int32_t patch_property;
+    // u_int32_t patch_value;
     u_int32_t time_Position;
     u_int32_t time_bar;
     u_int32_t time_barBeat;
@@ -320,10 +320,10 @@ struct PluginWorld {
     LilvNode *oldPropTrigger;
 
     // Unit Hints
-    LilvNode *unit_name;
-    LilvNode *unit_render;
-    LilvNode *unit_symbol;
-    LilvNode *unit_unit;
+    // LilvNode *unit_name;
+    // LilvNode *unit_render;
+    // LilvNode *unit_symbol;
+    // LilvNode *unit_unit;
 
     // UI Types
     LilvNode *ui_gtk2;
@@ -343,7 +343,7 @@ struct PluginWorld {
     LilvNode *atom_sequence;
     LilvNode *atom_supports;
 
-    LilvNode *preset_preset;
+    // LilvNode *preset_preset;
 
     LilvNode *state_state;
 
@@ -356,7 +356,7 @@ struct PluginWorld {
 
     // Port Data Types
     LilvNode *midi_event;
-    LilvNode *patch_message;
+    // LilvNode *patch_message;
     LilvNode *time_position;
 
     // MIDI CC
