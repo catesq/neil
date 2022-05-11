@@ -177,7 +177,7 @@ namespace zzub {
   */
 
   void host::midi_out(int time, unsigned int data) {
-    midi_message msg = { -1, data, time };
+    midi_message msg = { -1, data, unsigned(time) };
     metaplugin& m = *plugin_player->plugins[_plugin->id];
     m.midi_messages.push_back(msg);
   }
