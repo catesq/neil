@@ -462,7 +462,6 @@ void PluginAdapter::apply_events_from_ui() {
 void PluginAdapter::update_port(ParamPort* port, float float_val) {
     printf("Update ports: ");
     int zzub_val = port->lilv_to_zzub_value(float_val);
-    assert(ev.size == sizeof(float));
     values[port->dataIndex] = float_val;
     port->putData((uint8_t*) global_values, zzub_val);
     _host->control_change(metaPlugin, 1, 0, port->dataIndex, zzub_val, false, true);
