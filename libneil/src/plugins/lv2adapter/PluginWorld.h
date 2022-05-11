@@ -38,6 +38,7 @@ extern "C" {
   #include "ext/symap.h"
 }
 
+#include <mutex>
 #include "lv2_defines.h"
 
 #include "suil/suil.h"
