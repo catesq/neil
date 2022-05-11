@@ -57,6 +57,12 @@ namespace lilv {
         const char empty_str[1] = "";
     }
 
+    inline std::string free_string(char* owned_lilv_str) {
+        std::string dup_str(owned_lilv_str);
+        lilv_free(owned_lilv_str);
+        return dup_str;
+    }
+
     inline std::string as_string(LilvNode *node, bool canFreeNode = false) {
         std::string val("");
 
