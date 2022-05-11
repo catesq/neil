@@ -30,6 +30,7 @@
 #include "green_milk.h"
 #include "fast_pow.h"
 #include "commands.h"
+#include <algorithm>
 
 //static bool initialised;	// used to say whether the wavetables are set up
 //static bool initialising;	// used to say whether the wavetables are BEING set up
@@ -1203,21 +1204,22 @@ float green_milk::WaveLevels(int wave, int iPhaseInc, float * * pLevel1, float *
   iPhaseInc >>= (32 - SAMPLE_BIT_COUNT);
 
   int iPhaseCompare;
-	
+
   iPhaseCompare = ilog2(iPhaseInc) - 1;	
 
-  iPhaseCompare = std::min(iPhaseCompare, SAMPLE_SETS-1);
-  int iPhaseCompareNext = std::min(iPhaseCompare + 1, SAMPLE_SETS-1);
-	
-  // clamp to zero
   iPhaseCompare = std::max(iPhaseCompare, 0);
+  iPhaseCompare = std::min(iPhaseCompare, SAMPLE_SETS-1);
+
+  int iPhaseCompareNext = std::min(iPhaseCompare + 1, SAMPLE_SETS-1);
+
+  // clamp to zero
   iPhaseCompareNext = std::max(iPhaseCompareNext, 0);
 
   int base = (1 << (iPhaseCompare + 1));
 
   float dif = (float)(iPhaseInc - base);
   float lev = (dif / base);
-	
+  
   // TEMP: Check waveform shapes
   // iPhaseCompare = 0;
 
