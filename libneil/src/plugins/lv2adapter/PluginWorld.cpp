@@ -141,10 +141,10 @@ PluginWorld::PluginWorld()
   oldPropNotOnGUI     (new_uri("http://lv2plug.in/ns/dev/extportinfo#notOnGUI")),
   oldPropTrigger      (new_uri("http://lv2plug.in/ns/dev/extportinfo#trigger")),
 
-  unit_name          (new_uri(LV2_UNITS__name)),
-  unit_render        (new_uri(LV2_UNITS__render)),
-  unit_symbol        (new_uri(LV2_UNITS__symbol)),
-  unit_unit          (new_uri(LV2_UNITS__unit)),
+//   unit_name          (new_uri(LV2_UNITS__name)),
+//   unit_render        (new_uri(LV2_UNITS__render)),
+//   unit_symbol        (new_uri(LV2_UNITS__symbol)),
+//   unit_unit          (new_uri(LV2_UNITS__unit)),
 
   ui_gtk2            (new_uri(LV2_UI__GtkUI)),
   ui_gtk3            (new_uri(LV2_UI__Gtk3UI)),
@@ -160,7 +160,7 @@ PluginWorld::PluginWorld()
   atom_sequence      (new_uri(LV2_ATOM__Sequence)),
   atom_supports      (new_uri(LV2_ATOM__supports)),
 
-  preset_preset      (new_uri(LV2_PRESETS__Preset)),
+//   preset_preset      (new_uri(LV2_PRESETS__Preset)),
 
   state_state        (new_uri(LV2_STATE__state)),
 
@@ -169,7 +169,7 @@ PluginWorld::PluginWorld()
   value_maximum      (new_uri(LV2_CORE__maximum)),
 
   midi_event         (new_uri(LV2_MIDI__MidiEvent)),
-  patch_message      (new_uri(LV2_PATCH__Message)),
+//   patch_message      (new_uri(LV2_PATCH__Message)),
   time_position      (new_uri(LV2_TIME__Position)),
 
   mm_defaultControl  (new_uri(NS_llmm "defaultMidiController")),
@@ -200,12 +200,12 @@ PluginWorld::PluginWorld()
     urids.minBlockLength = symap_map(symap, LV2_BUF_SIZE__minBlockLength);
     urids.bufSeqSize = symap_map(symap, LV2_BUF_SIZE__sequenceSize);
     urids.nominalBlockLength = symap_map(symap, LV2_BUF_SIZE__nominalBlockLength);
-    urids.log_Trace = symap_map(symap, LV2_LOG__Trace);
+    // urids.log_Trace = symap_map(symap, LV2_LOG__Trace);
     urids.midi_MidiEvent = symap_map(symap, LV2_MIDI__MidiEvent);
     urids.param_sampleRate = symap_map(symap, LV2_PARAMETERS__sampleRate);
-    urids.patch_Set = symap_map(symap, LV2_PATCH__Set);
-    urids.patch_property = symap_map(symap, LV2_PATCH__property);
-    urids.patch_value = symap_map(symap, LV2_PATCH__value);
+    // urids.patch_Set = symap_map(symap, LV2_PATCH__Set);
+    // urids.patch_property = symap_map(symap, LV2_PATCH__property);
+    // urids.patch_value = symap_map(symap, LV2_PATCH__value);
     urids.time_Position = symap_map(symap, LV2_TIME__Position);
     urids.time_bar = symap_map(symap, LV2_TIME__bar);
     urids.time_barBeat = symap_map(symap, LV2_TIME__barBeat);
