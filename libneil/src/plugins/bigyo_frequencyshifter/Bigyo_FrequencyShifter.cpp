@@ -162,7 +162,7 @@ machine_info::machine_info() {
 #define miVERSION "1.12"
 #define miABOUTTXT1 "Marcin Dabrowski\n"
 #define miABOUTTXT2	"bigyo@wp.pl\n"
-#define miABOUTTXT miMACHINE_NAME" v"miVERSION"\n\nbuild: "__DATE__"\n\n"miABOUTTXT1""miABOUTTXT2
+#define miABOUTTXT miMACHINE_NAME " v" miVERSION "\n\nbuild: " __DATE__ "\n\n" miABOUTTXT1 "" miABOUTTXT2
 
 ///////////////////////////////////////////////////////////////////////////////
 
