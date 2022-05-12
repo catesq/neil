@@ -132,13 +132,13 @@ class SequencerToolBar(Gtk.HBox):
         if self.seqview.step < 64:
             self.seqview.step *= 2
         self.update_stepselect()
-        self.seqview.update_all()
+        self.seqview.update()
 
     def decrease_step(self):
         if self.seqview.step > 1:
-            self.seqview.step /= 2
+            self.seqview.step >>= 1
         self.update_stepselect()
-        self.seqview.update_all()
+        self.seqview.update()
 
     def update_all(self):
         """
