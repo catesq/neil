@@ -205,7 +205,7 @@ void LfoWavebank::initialiseWavebanks()
   srand(99);
   for(i = 0; i < LfoWavebank::length; )	// don't increment
     {
-      f = float(rand()) / RAND_MAX;
+      f = float(rand()) / float(RAND_MAX);
       snh_1[i++] = f;
       snh_1[i++] = f;
       snh_1[i++] = f;
@@ -215,7 +215,7 @@ void LfoWavebank::initialiseWavebanks()
   srand(0x7191);
   for(i = 0; i < LfoWavebank::length; )	// don't increment
     {
-      f = float(rand()) / RAND_MAX;
+      f = float(rand()) / float(RAND_MAX);
       snh_2[i++] = f;
       snh_2[i++] = f;
       snh_2[i++] = f;
