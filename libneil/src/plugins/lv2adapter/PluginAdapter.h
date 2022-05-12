@@ -24,6 +24,10 @@
 #include <gobject/gclosure.h>
 #include <gtk/gtk.h>
 
+#ifndef _WIN32
+    #define HAVE_MLOCK 1      // zix checks for HAVE_MLOCK before using mlock - in sys/mman.h - for memory locking
+#endif
+
 #include "zix/common.h"
 #include "zix/ring.h"
 #include "zix/sem.h"
