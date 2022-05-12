@@ -230,7 +230,7 @@ struct PluginWorld {
 
     LV2_Atom_Forge forge;
 
-    std:mutex suil_mtx;
+    std::mutex suil_mtx;
     bool suil_is_init;
 
     
