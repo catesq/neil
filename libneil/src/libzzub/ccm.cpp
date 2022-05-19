@@ -1911,7 +1911,6 @@ bool CcmReader::loadSequencer(xml_node &item, zzub::player &player) {
 
 
 bool CcmReader::open(std::string fileName, zzub::player* player) {
-
     const char* loc = setlocale(LC_NUMERIC, "C");
 
     bool result = false;
@@ -1982,9 +1981,10 @@ bool CcmReader::open(std::string fileName, zzub::player* player) {
         std::cerr << "ccm: error opening " << fileName << std::endl;
     }
 
+    player->set_state(player_state_stopped);
     player->flush_operations(0, 0, 0);
     player->flush_from_history();	// TODO: ccm loading doesnt support undo yet
-    player->set_state(player_state_stopped);
+
 
     setlocale(LC_NUMERIC, loc);
 
