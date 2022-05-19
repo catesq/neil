@@ -61,7 +61,7 @@ public:
         currentSample=0;
 
         if (maxValue<0)
-            maxValue=static_cast<float>(((1<<wave.get_bits_per_sample(level))>>1)-1);
+            maxValue=static_cast<float>(((((long long)1)<<wave.get_bits_per_sample(level))>>1)-1);
 
         buffer=(char*)wave.get_sample_ptr(level);
         samples=wave.get_sample_count(level);
@@ -78,7 +78,7 @@ public:
             break;
         case zzub::wave_buffer_type_si32:
             delta=4;
-            multiplier= maxValue / 0x7fffffff;
+            multiplier= maxValue / float(0x7fffffff);
             break;
         case zzub::wave_buffer_type_f32:
             delta=4;
