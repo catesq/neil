@@ -46,3 +46,5 @@ libneil/include/zzub/signature.h
 libneil/src/pyzzub/zzub/
 
 src/neil/lib/
+.qtc_clangd/
+neil.*
