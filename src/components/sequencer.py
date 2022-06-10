@@ -28,14 +28,15 @@ if __name__ == '__main__':
     os.system('../../bin/neil-combrowser neil.core.sequencerpanel')
     raise SystemExit
 
+import gi
+gi.require_version('PangoCairo', '1.0')
+
 from gi.repository import Gtk, Gdk
 from gi.repository import Pango, PangoCairo
 from gi.repository import GObject
 import cairo
 import sys
-# from neil.utils import PLUGIN_FLAGS_MASK, ROOT_PLUGIN_FLAGS
-# from neil.utils import GENERATOR_PLUGIN_FLAGS, EFFECT_PLUGIN_FLAGS
-# from neil.utils import CONTROLLER_PLUGIN_FLAGS
+
 from neil.utils import prepstr, get_item_count
 from neil.utils import get_clipboard_text, set_clipboard_text, add_scrollbars
 from neil.utils import is_effect, is_generator, is_controller
