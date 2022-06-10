@@ -22,12 +22,11 @@ enum PortFlow : unsigned {
 
 enum PortType : unsigned {
     None    = 0,
-    Audio   = 4,
-    Param   = 8,
-    Control = 16,
-    CV      = 32,
-    Event   = 64,
-    Midi    = 128
+    Audio   = 2,
+    Control = 4,
+    CV      = 16,
+    Event   = 32,
+    Midi    = 64
 };
 
 u_int32_t get_port_properties(const PluginWorld *world, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
@@ -53,85 +52,49 @@ struct ScalePoint {
 struct Port {
     const PluginInfo *info;
     const LilvPort *lilvPort;
+
     std::string name;
     std::string symbol;
 
-    uint32_t properties;
-    uint32_t designation;
+    uint32_t    properties;
+    uint32_t    designation;
 
-    PortFlow flow;
-    PortType type;
-    uint32_t index;
+    PortFlow    flow;
+    PortType    type;
+    uint32_t    index;
+
+    float       portValue   = 0.f;
+    float*      portBuf    = nullptr;
+    LV2_Evbuf*  eventBuf   = nullptr;
 
     Port(PluginInfo *info, const LilvPort *lilvPort, PortFlow flow, PortType type, uint32_t index);
+
+protected:
+    virtual void build_port_info() {}
 };
 
-struct EventPort : Port {
-    unsigned bufIndex;
-
-    EventPort(PluginInfo *info,
-              const LilvPort *lilvPort,
-              PortFlow flow,
-              PortType type,
-              uint32_t index,
-              unsigned bufIndex
-              );
-};
-
-
-
-struct MidiPort : EventPort {
-    MidiPort(
-            PluginInfo *info,
-            const LilvPort *lilvPort,
-            PortFlow flow,
-            uint32_t index,
-            unsigned bufIndex
-            );
-};
-
-struct BufPort  : Port {
-    unsigned bufIndex;
-    BufPort(
-            PluginInfo *info,
-            const LilvPort *lilvPort,
-            PortFlow flow,
-            PortType type,
-            uint32_t index,
-            unsigned bufIndex
-            );
-};
-
-
-struct CvBufPort : BufPort {
-    CvBufPort(
-            PluginInfo *info,
-            const LilvPort *lilvPort,
-            PortFlow flow,
-            uint32_t index,
-            unsigned bufIndex
-            );
-};
-
-
-struct AudioBufPort : BufPort {
-    AudioBufPort(
-            PluginInfo *info,
-            const LilvPort *lilvPort,
-            PortFlow flow,
-            uint32_t index,
-            unsigned bufIndex
-            );
-};
 
 union BodgeEndian {
     uint16_t i;
     uint8_t c[2];
 };
 
-struct ControlPort : Port {
+struct ControlPort : public Port {
     uint32_t controlIndex;
-    float defaultVal = 0.f;
+
+    float    portMin;
+    float    portMax;
+    float    portDefault;
+
+
+    ControlPort(
+            PluginInfo *info,
+            const LilvPort *lilvPort,
+            PortFlow flow,
+            PortType portType,
+            uint32_t index,
+            uint32_t controlIndex
+            );
 
     ControlPort(
             PluginInfo *info,
@@ -140,19 +103,18 @@ struct ControlPort : Port {
             uint32_t index,
             uint32_t controlIndex
             );
+
+protected:
+    virtual void build_port_info() override;
 };
 
-struct ParamPort : Port {
-    zzub::parameter *zzubParam;
+
+struct ParamPort : public ControlPort {
+    zzub::parameter zzubParam;
     std::vector<ScalePoint *> scalePoints{};
 
-    uint32_t byteOffset;
-    uint32_t byteSize;
-    uint32_t paramIndex;
-
-    float minVal;
-    float maxVal;
-    float defaultVal;
+    uint32_t zubbDataOffset;
+    uint32_t zzubDataSize;
 
     ParamPort(
             PluginInfo *info,
@@ -164,12 +126,12 @@ struct ParamPort : Port {
             );
 
     inline int lilv_to_zzub_value(float val) {
-        if(strcmp(zzubParam->name, "pan_one") == 0 || strcmp(zzubParam->name, "kit_num") == 0 || strcmp(zzubParam->name, "base_note") == 0) {
+        if(strcmp(zzubParam.name, "pan_one") == 0 || strcmp(zzubParam.name, "kit_num") == 0 || strcmp(zzubParam.name, "base_note") == 0) {
             printf("%s zzubmax %i min %f max %f from curr %f to zzub %i",
-                   zzubParam->name, zzubParam->value_max, minVal, maxVal, val, (int)(((val - minVal) / (maxVal - minVal)) * zzubParam->value_max));
+                   zzubParam.name, zzubParam.value_max, portMin, portMax, val, (int)(((val - portMin) / (portMax - portMin)) * zzubParam.value_max));
         }
 
-        switch(zzubParam->type) {
+        switch(zzubParam.type) {
         case zzub::parameter_type_note:
             return (int) val;
 
@@ -178,15 +140,15 @@ struct ParamPort : Port {
 
         case zzub::parameter_type_word:
         case zzub::parameter_type_byte:
-            return zzubParam->value_min + (int)(((val - minVal) / (maxVal - minVal)) * (zzubParam->value_max - zzubParam->value_min));
+            return zzubParam.value_min + (int)(((val - portMin) / (portMax - portMin)) * (zzubParam.value_max - zzubParam.value_min));
         }
     }
 
     inline float zzub_to_lilv_value(int val) {
-        switch(zzubParam->type) {
+        switch(zzubParam.type) {
         case zzub::parameter_type_word:
         case zzub::parameter_type_byte:
-            return minVal + ((val - zzubParam->value_min) / (float) (zzubParam->value_max - zzubParam->value_min)) * (maxVal - minVal);
+            return portMin + ((val - zzubParam.value_min) / (float) (zzubParam.value_max - zzubParam.value_min)) * (portMax - portMin);
         case zzub::parameter_type_note:
             return (float) val;
         case zzub::parameter_type_switch:
@@ -195,19 +157,19 @@ struct ParamPort : Port {
     }
 
     int getData(uint8_t *globals){
-        switch(zzubParam->type) {
+        switch(zzubParam.type) {
         case zzub::parameter_type_word:
-            return *((unsigned short*)(globals + byteOffset));
+            return *((unsigned short*)(globals + zubbDataOffset));
         case zzub::parameter_type_byte:
         case zzub::parameter_type_note:
         case zzub::parameter_type_switch:
-            return *(globals + byteOffset);
+            return *(globals + zubbDataOffset);
         }
     }
 
     void putData(uint8_t *globals, int value) {
-        uint8_t* dest = &globals[byteOffset];
-        switch(zzubParam->type) {
+        uint8_t* dest = &globals[zubbDataOffset];
+        switch(zzubParam.type) {
 
         case zzub::parameter_type_word: {
             auto be = BodgeEndian{(uint16_t)value};
@@ -231,7 +193,7 @@ struct ParamPort : Port {
     }
 
     const char *describeValue(const int value, char *text) {
-        switch(zzubParam->type) {
+        switch(zzubParam.type) {
         case zzub::parameter_type_switch:
             if(value == zzub::switch_value_on) {
                 sprintf(text, "1");
@@ -269,6 +231,9 @@ struct ParamPort : Port {
         sprintf(text, "%f", lv2Val);
         return text;
     }
+
+protected:
+    virtual void build_port_info() override;
 };
 
 
