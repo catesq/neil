@@ -42,10 +42,13 @@ PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
 
     // gui's are created in invoke() after a double click
     //it's possible that the custom gui is not supported on gtk3
-    uis = lilv_plugin_get_uis(lilvPlugin);
-    if(uis)
+    LilvUIs* uis = lilv_plugin_get_uis(lilvPlugin);
+
+    if(uis) {
         flags |= zzub_plugin_flag_has_custom_gui;
-    
+        lilv_uis_free(uis);
+    }
+
     name = as_string(lilv_plugin_get_name(lilvPlugin), true);
     author = as_string(lilv_plugin_get_author_name(lilvPlugin), true);
 
@@ -89,11 +92,6 @@ PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
     }
     lilv_nodes_free(extDataNodes);
 
-}
-
-PluginInfo::~PluginInfo() {
-    // free(defaultValues);
-    lilv_uis_free(uis);
 }
 
 PortFlow PluginInfo::get_port_flow(const LilvPort* port) {
