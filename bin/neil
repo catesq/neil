@@ -9,40 +9,48 @@ home = Path.home()
 
 
 paths = {
-	"linux": {
-		"LV2_PATH": "/usr/lib/lv2:/usr/local/lib/lv2:{HOME}/.lv2:/usr/local/lib64/lv2:/usr/lib64/lv2",
-		"DSSI_PATH": "/usr/local/lib/dssi:/usr/lib/x86_64-linux-gnu/dssi/:/usr/lib/dssi",
-		"LADSPA_PATH": "/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa",
-	},
+    "linux": {
+        "LV2_PATH": "/usr/lib/lv2:/usr/local/lib/lv2:{HOME}/.lv2:/usr/local/lib64/lv2:/usr/lib64/lv2",
+#		"DSSI_PATH": "/usr/local/lib/dssi:/usr/lib/x86_64-linux-gnu/dssi/:/usr/lib/dssi",
+#		"LADSPA_PATH": "/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa",
+    },
 
-	"xplatform": {
-		"NEIL_BASE_PATH": "{DEST}",
-		"NEIL_PATHCONFIG": "{DEST}/etc/neil/path.cfg"
-	}
+    "xplatform": {
+        "NEIL_BASE_PATH": "{DEST}",
+        "NEIL_PATHCONFIG": "{DEST}/etc/neil/path.cfg"
+    }
 }
 
+updated_env = False
+
 for key, path in paths['xplatform'].items():
-	if key not in os.environ:
-		os.environ[key] = path.format(DEST=dest, HOME=home)
+    if key not in os.environ:
+        updated_env = True
+        os.environ[key] = path.format(DEST=dest, HOME=home)
 
 if sys.platform.startswith('linux'):
-	for key, path in paths['linux'].items():
-		if key not in os.environ:
-			os.environ[key] = path.format(DEST=dest, HOME=home)
 
-	if "LD_LIBRARY_PATH" not in os.environ or "zzub" not in os.environ["LD_LIBRARY_PATH"]:
-		os.environ["LD_LIBRARY_PATH"] = "{DEST}/lib:{DEST}/lib/zzub".format(DEST=dest)
-		os.execv(sys.argv[0], sys.argv)
+    for key, path in paths['linux'].items():
+        if key not in os.environ:
+            updated_env = True
+            os.environ[key] = path.format(DEST=dest, HOME=home)
+
+    if "LD_LIBRARY_PATH" not in os.environ or "zzub" not in os.environ["LD_LIBRARY_PATH"]:
+        updated_env = True
+        os.environ["LD_LIBRARY_PATH"] = "{DEST}/lib:{DEST}/lib/zzub".format(DEST=dest)
+
+    if updated_env:
+        os.execv(sys.argv[0], sys.argv)
 
 
 if '--debug' in sys.argv:
-	sys.argv.remove('--debug')
-	os.system('gdb --eval-command=start -q --args python "%s"$*' % sys.argv[0])
-	raise SystemExit(0)
+    sys.argv.remove('--debug')
+    os.system('gdb --eval-command=start -q --args python "%s"$*' % sys.argv[0])
+    raise SystemExit(0)
 if '--pydebug' in sys.argv:
-	sys.argv.remove('--pydebug')
-	os.system('winpdb "%s"$*' % sys.argv[0])
-	raise SystemExit(0)
+    sys.argv.remove('--pydebug')
+    os.system('winpdb "%s"$*' % sys.argv[0])
+    raise SystemExit(0)
 
 
 package_path = str(next(dest.glob("**/*lib/python*/**/zzub")).resolve().parent)
