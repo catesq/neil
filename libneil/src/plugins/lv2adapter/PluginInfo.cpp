@@ -1,4 +1,5 @@
 #include "PluginInfo.h"
+#include "PluginAdapter.h"
 #include "Ports.h"
 #include <string>
 #include <ostream>
@@ -15,12 +16,10 @@ inline const char* describe_port_flow(PortFlow flow) {
 }
 
 inline void printport(const char *typetext, const LilvPlugin* lilvPlugin, const LilvPort* lilvPort, PortFlow flow) {
-    const char *flowtext = describe_port_flow(flow);
-
     printf("Port '%s'. Type '%s'. Direction '%s'. Plugin '%s'\nClasses:",
            as_string(lilv_port_get_name(lilvPlugin, lilvPort), true).c_str(),
            typetext, 
-           flowtext,
+           describe_port_flow(flow),
            as_string(lilv_plugin_get_name(lilvPlugin), true).c_str()
     );
     auto portnodes = lilv_port_get_classes(lilvPlugin, lilvPort);
@@ -29,6 +28,11 @@ inline void printport(const char *typetext, const LilvPlugin* lilvPlugin, const 
         printf("\n\turi: '%s', label: '%s'", as_string(node).c_str(), as_string(node).c_str());
 
     }
+}
+
+
+zzub::plugin *PluginInfo::create_plugin() const {
+    return new PluginAdapter((PluginInfo*) &(*this));
 }
 
 PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
@@ -66,14 +70,9 @@ PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
                    .set_value_max(1)
                    .set_value_default(1);
 
-    int num_ports = lilv_plugin_get_num_ports(lilvPlugin);
     printf("Registered plugin: name='%s', uri='%s', path='%s'\n", name.c_str(), uri.c_str(), bundlePath.c_str());
 
-    for(uint i = 0; i < num_ports; i++) {
-        auto port = build_port(i);
-        ports.push_back(port);
-        portSymbol[port->symbol.c_str()] = port;
-    }
+    build_ports();
 
     if(lv2ClassUri == LV2_CORE__InstrumentPlugin) {
         add_generator_params();
@@ -97,19 +96,59 @@ PluginInfo::~PluginInfo() {
     lilv_uis_free(uis);
 }
 
+PortFlow PluginInfo::get_port_flow(const LilvPort* port) {
+   if(lilv_port_is_a(lilvPlugin, port, world->nodes.port_input)) {
+        return PortFlow::Input;
+    } else if(lilv_port_is_a(lilvPlugin, port, world->nodes.port_output)) {
+        return PortFlow::Output;
+    } else {
+       return PortFlow::Unknown;
+   }
+}
+
+PortType PluginInfo::get_port_type(const LilvPort* lilvPort) {
+    if(lilv_port_is_a(lilvPlugin, lilvPort, world->nodes.port_control)) {
+        return PortType::Control;
+    } else if (lilv_port_is_a(lilvPlugin, lilvPort, world->nodes.port_audio)) {
+        return PortType::Audio;
+    } else if(lilv_port_is_a(lilvPlugin, lilvPort, world->nodes.port_cv)) {
+        return PortType::CV;
+    } else if(lilv_port_is_a(lilvPlugin, lilvPort, world->nodes.port_atom) ||
+              lilv_port_is_a(lilvPlugin, lilvPort, world->nodes.port_event) ||
+              lilv_port_is_a(lilvPlugin, lilvPort, world->nodes.port_midi)) {
+        if (lilv_port_supports_event(lilvPlugin, lilvPort, world->nodes.midi_event)) {
+            return PortType::Midi;
+        } else {
+            return PortType::Event;
+        }
+    } else {
+        printport("unrecognised port", lilvPlugin, lilvPort, get_port_flow(lilvPort));
+        return PortType::None;
+    }
+}
+
+void PluginInfo::build_ports() {
+    uint32_t zzubDataOffset = 0;
+
+    int num_ports = lilv_plugin_get_num_ports(lilvPlugin);
+    for(uint i = 0; i < num_ports; i++) {
+        auto port = build_port(i);
+        ports.push_back(port);
+        portSymbol[port->symbol.c_str()] = port;
+    }
+}
+
 Port* PluginInfo::build_port(uint32_t idx) {
     const LilvPort *lilvPort = lilv_plugin_get_port_by_index(lilvPlugin, idx);
-    PortFlow flow = PortFlow::Unknown;
 
-    if(lilv_port_is_a(lilvPlugin, lilvPort, world->nodes.port_input)) {
-        flow = PortFlow::Input;
-    } else if(lilv_port_is_a(lilvPlugin, lilvPort, world->nodes.port_output)) {
-        flow = PortFlow::Output;
-    }
 
     auto name = as_string(lilv_port_get_symbol(lilvPlugin, lilvPort));
 
 //    printf("Port number: %d. Name: %s \n", idx, name.c_str());
+    PortFlow flow = get_port_flow(lilvPort);
+    PortType type = get_port_type(lilvPort);
+
+
 
     if(lilv_port_is_a(lilvPlugin, lilvPort, world->nodes.port_control)) {
         if(flow == PortFlow::Input) {
