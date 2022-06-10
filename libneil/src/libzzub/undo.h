@@ -18,6 +18,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
 
+#import <vector>
+#import <utility>
+#import <string>
+
 using std::pair;
 using std::string;
 using std::vector;
