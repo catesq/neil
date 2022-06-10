@@ -34,33 +34,52 @@
 
 #include "ext/lv2_programs.h"
 
-using namespace zzub;
-
-#define SUIL_HOST_UI "http://lv2plug.in/ns/extensions/ui#Gtk3UI"
-
-void program_changed(LV2_Programs_Handle handle, int32_t index);
-
-const void* get_port_value(const char* port_symbol,
-                           void*       user_data,
-                           uint32_t*   size,
-                           uint32_t*   type);
+#include "features/worker.h"
 
 
-void set_port_value(const char* port_symbol,
-                    void*       user_data,
-                    const void* value,
-                    uint32_t    size,
-                    uint32_t    type);
+inline float get_scale_factor() {
+    GtkWidget* test_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    float scale_factor =  gtk_widget_get_scale_factor(test_window);
+    gtk_widget_destroy(test_window);
+    return scale_factor;
+}
 
 
-void write_events_from_ui(void* const adapter_handle,
-                  uint32_t    port_index,
-                  uint32_t    buffer_size,
-                  uint32_t    protocol,
-                  const void* buffer);
+void program_changed(
+        LV2_Programs_Handle handle,
+        int32_t index
+);
+
+const void* get_port_value(
+        const char* port_symbol,
+        void*       user_data,
+        uint32_t*   size,
+        uint32_t*   type
+);
 
 
-uint32_t lv2_port_index(void* const lv2adapter_handle, const char* symbol);
+void set_port_value(
+        const char* port_symbol,
+        void*       user_data,
+        const void* value,
+        uint32_t    size,
+        uint32_t    type
+);
+
+
+void write_events_from_ui(
+        void* const adapter_handle,
+        uint32_t    port_index,
+        uint32_t    buffer_size,
+        uint32_t    protocol,
+        const void* buffer
+);
+
+
+uint32_t lv2_port_index(
+        void* const lv2adapter_handle,
+        const char* symbol
+);
 
 
 struct PluginInfo;
@@ -69,76 +88,98 @@ struct PluginWorld;
 
 extern "C" {
     void on_window_destroy(GtkWidget* widget, gpointer data);
-
+    void finalise_plugin_ui(GtkWidget* widget, gpointer data);
 }
 
-struct PluginAdapter : plugin, event_handler {
-    PluginInfo *info;
-    PluginWorld *world;
-	LilvInstance *pluginInstance = nullptr;
-    zzub_plugin_t* metaPlugin = nullptr;
+struct PluginAdapter : zzub::plugin, zzub::event_handler {
+    PluginInfo*             info              = nullptr;
+    PluginWorld*            world             = nullptr;
+    LilvInstance*           lilvInstance      = nullptr;
+    zzub_plugin_t*          metaPlugin        = nullptr;
 
-    const LilvUI* ui{};
-    const LilvNode* ui_type{};
-    SuilHost* ui_host{};            // < Plugin UI host support
-	SuilInstance* ui_instance{};    // < Plugin UI instance (shared library)
-    GtkWidget* ui_window{};
-    GtkWidget* ui_container{};
-    LV2_Programs_Host program_host{};  // pointers this  asnd program_select()
-                                     // called when synth program changed in ui 
-    
-    uint32_t samp_count = 0;        //number of samples played
-    uint32_t last_update = 0;
-    uint32_t update_every = 767;    //update from ui after every x samples
-	int trackCount = 0;
-    tvals track_vals[16]{};
-    tvals track_states[16]{};
-    attrvals attr_vals;
-    Lv2Features features{};
-    bool update_from_program_change = false;
+    const LilvUI*           lilv_ui_type      = nullptr;
+    const LilvNode*         lilv_ui_type_node = nullptr;
+    SuilHost*               suil_ui_host      = nullptr;            // < Plugin UI host support
+    SuilInstance*           suil_ui_instance  = nullptr;    // < Plugin UI instance (shared library)
+    SuilHandle              suil_ui_handle    = nullptr;
 
-    ZixRing*         ui_events;       // Port events from ui
-    ZixRing*         plugin_events;   // Port events from plugin
+    GtkWidget*              gtk_ui_window     = nullptr;
+    GtkWidget*              gtk_ui_root_box   = nullptr;
+    GtkWidget*              gtk_ui_parent_box = nullptr;
+    void*                   transient_wid     = nullptr;
 
-//	unsigned evtBufSize = 0;
-    // std::vector<Lv2Port*> ports;
+    uint32_t                samp_count        = 0;        //number of samples played
+    uint32_t                last_update       = 0;
+    uint32_t                update_every      = 767;    //update from ui after every x samples
+    int32_t                 trackCount        = 0;
+    float                   ui_scale          = 2.0;    // for displaying ui of plugins on high density displays. only updated when the ui_window is created in PluginAdapter::invoke
+    float                   sample_rate       = 44100;
+    float                   update_rate       = 10;
 
-    // std::vector<float>dataValues;
-    float *values;
+    trackvals               trak_values[16]{};
+    trackvals               trak_states[16]{};
+    attrvals                attr_values;
 
-    float *audioBufs = nullptr;
-    float *audioIn, *audioOut;
-    float *cvBufs = nullptr;
+    LV2Features             features;
+    LV2Worker               worker;
+
+    ZixRing*                ui_events;       // Port events from ui
+    ZixRing*                plugin_events;   // Port events from plugin
+    ZixSem                  work_lock;       // lock for the LV2Worker
+
+
+    float*                  audioIn;
+    float*                  audioOut;
+
+    float*                  audioBufs         = nullptr;
+    float*                  cvBufs            = nullptr;
+
+    float*                  paramPortValues   = nullptr;
+    float*                  controlPortValues = nullptr;
 
     std::vector<LV2_Evbuf*> midiBufs{};
-    // std::vector<LV2_Atom_Sequence*> midiSeqs;
     std::vector<LV2_Evbuf*> eventBufs{};
+    MidiEvents              midiEvents{};
 
-    MidiEvents midiEvents{};
-
-    ~PluginAdapter();
+    bool                    update_from_program_change = false;
+    bool                    halting                    = false;
 
     PluginAdapter(PluginInfo *info);
+    ~PluginAdapter();
 
-    ParamPort* get_param_port(std::string symbol);
+    ParamPort*          get_param_port(std::string symbol);
 
-    void connectInstance(LilvInstance* pluginInstance);
-    void connectPluginUI();
+    void                connectInstance(LilvInstance* pluginInstance);
+    void                connectPluginUI();
+    void                ui_destroy();
+    void                update_all_from_ui();
     
-    virtual bool invoke(zzub_event_data_t& data);
-    virtual void destroy();
-    virtual void init(zzub::archive *arc);
-    void read_from_archive(zzub::archive *arc);
-    virtual void process_events();
+    virtual bool        invoke(zzub_event_data_t& data);
+    virtual void        destroy();
+    virtual void        init(zzub::archive *arc);
+    virtual void        process_events();
+    virtual const char* describe_value(int param, int value);
+    virtual void        set_track_count(int ntracks);
+    virtual void        stop();
+    virtual bool        process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate);
+    virtual bool        process_stereo(float **pin, float **pout, int numsamples, int const mode);
+    virtual void        load(zzub::archive *arc);
+    virtual void        save(zzub::archive *arc);
 
-    virtual const char * describe_value(int param, int value) override;
-    virtual void set_track_count(int ntracks);
-    virtual void stop();
-    virtual bool process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate);
-    virtual bool process_stereo(float **pin, float **pout, int numsamples, int const mode);
 
-    virtual void load(zzub::archive *arc);
-    virtual void save(zzub::archive *arc);
+private:
+    bool ui_open();
+    bool is_ui_resizable();
+    bool isExternalUI(const LilvUI* ui);
+    void                process_track_midi_events(midi_msg &vals_msg, midi_msg& state_msg);
+    void                update_port(ParamPort* port, float float_val);
+    void                ui_event_import();
+    const bool          ui_select(const char *native_ui_type, const LilvUI** ui_type_ui, const LilvNode** ui_type_node);
+    GtkWidget*          ui_open_window(GtkWidget** root_container, GtkWidget** parent_container);
+    void                init_static_features();
+    const LV2UI_Idle_Interface* idle_interface = nullptr;
+    const LV2UI_Show_Interface* show_interface = nullptr;
+    bool showing_interface = false;
 
     // virtual void process_controller_events();
     // virtual void attributes_changed();
@@ -159,16 +200,7 @@ struct PluginAdapter : plugin, event_handler {
     // virtual void input(float**, int, float);
     // virtual void midi_control_change(int, int, int);
     // virtual bool handle_input(int, int, int);
-    
-    void destroy_ui();
-    void update_all_from_ui();
-private:
-    void process_track_midi_events(midi_msg &vals_msg, midi_msg& state_msg);
-    void update_port(ParamPort* port, float float_val);
-    void apply_events_from_ui();
-    const LilvUI* select_ui();
-    GtkWidget* open_ui(GtkWidget* window);
-    void attach_ui(GtkWidget* window, GtkWidget* container);
-    void init_static_features();
+
+
 };
 
