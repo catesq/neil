@@ -48,7 +48,15 @@ opts.Add("PREFIX", 'Set the install "prefix" ( /path/to/PREFIX )', "/usr/local")
 opts.Add("DESTDIR", 'Set the root directory to install into ( /path/to/DESTDIR )', "")
 opts.Add("ETCDIR", 'Set the configuration dir "prefix" ( /path/to/ETC )', "/etc")
 
+if posix:
+    opts.Add("COMPILER", "Either clang or gcc", "clang")
+
 env = Environment(ENV = os.environ, options=opts)
+
+if posix and env['COMPILER'] == 'clang':
+    env["CC"] = (os.getenv("CC") or env["CC"])
+    env["CXX"] = (os.getenv("CXX") or env["CXX"])
+    env["ENV"].update(x for x in os.environ.items() if x[0].startswith("CCC_"))
 
 env.SConsignFile()
 
@@ -157,7 +165,7 @@ def build_path_config(target, source, env):
 
 
 def pip(pkg):
-    os.system('pip install -qq --target %s %s' % (env['SITE_PACKAGE_PATH'], pkg))
+    os.system('pip show %s >> /dev/null && if [ $? -ne 0 ]; then echo "Installing python rdflib with pip..."; pip install -qq --target %s %s; fi' % (pkg, env['SITE_PACKAGE_PATH'], pkg))
 
 builders = dict(
     BuildPathConfig = Builder(action=build_path_config),

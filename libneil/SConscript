@@ -130,7 +130,20 @@ else:
     env['LIB_RT'] = 'rt'
     env['LIB_COMPAT'] = ''
 
-gcc = env['CC'] == 'gcc'
+#if env['COMPILER'] == 'clang':
+    #env['CC'] += 'clang'
+    #env['CXX'] += 'clang++'
+    #gcc = False
+    #clang = True
+#else:
+    #env['CC'] += 'gcc'
+    #env['CXX'] += 'g++'
+    #gcc = True
+    #clang = False
+
+env['CC'] = ' clang'
+env['CXX'] = ' clang++'
+gcc = True
 
 if gcc:
     #env['CXXFLAGS'] += ['--no-rtti']
