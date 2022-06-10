@@ -12,52 +12,35 @@
 
 
 struct PluginInfo : zzub::info {
-	PluginWorld *world;
-    const LilvPlugin *lilvPlugin;
+    PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin);
 
+    const PluginWorld* world;
 
-    // float *defaultValues;
+    const LilvPlugin*  lilvPlugin;
 
-    LilvUIs *uis;
+    std::string        zzubUri;
 
-    // uint64_t pluginType = 0;
-    int audio_in_count = 0;
-    int audio_out_count = 0;
+    std::string        lv2Uri;
 
-    unsigned zzubGlobalsLen = 0; // byte offset into the globals data populated by zzub
-                                  // the globals data is a mix of 8 & 16 bit ints
-    std::string zzubUri;
-	std::string lv2Uri;
-    std::string lv2ClassUri;
-    std::string libraryPath;
-    std::string bundlePath;
+    std::string        lv2ClassUri;
+
+    std::string        libraryPath;
+
+    std::string        bundlePath;
 
     std::vector<Port*> ports;
-    std::vector<std::string> paramNames{};
-    std::unordered_map<std::string, Port*> portSymbol{};
 
-    std::vector<ControlPort *> controlPorts;
-    std::vector<ParamPort *> paramPorts;
+    virtual      zzub::plugin* create_plugin() const;
 
-    std::vector<EventPort*> midiPorts{};
-
-    std::vector<EventPort*> eventPorts{};
-
-    std::vector<AudioBufPort*> audioPorts{};
-
-    std::vector<CvBufPort*> cvPorts{};
-
-
-    virtual zzub::plugin* create_plugin() const;
     virtual bool store_info(zzub::archive *) const { return false; }
-    Port* port_by_symbol(std::string symbol);
-    // void setMinBufSize(unsigned);
 
-    PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin);
-    virtual ~PluginInfo();
-    void add_generator_params();
-//    uint32_t inline num_controls() { return controlPorts.size() + paramPorts.size(); }
+    void         add_generator_params();
+
 private:
-    Port *build_port(uint32_t index);
+    void         build_ports();
+    Port*        build_port(uint32_t index);
+
+    PortType     get_port_type(const LilvPort* lilvPort);
+    PortFlow     get_port_flow(const LilvPort* lilvPort);
 };
 
