@@ -21,26 +21,27 @@
 """
 Provides application class and controls used in the neil main window.
 """
+import sys, os
 
 from . import pathconfig
 from gi.repository import GObject
-GObject.threads_init()
+
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-import sys, os
 
 import neil.contextlog as contextlog
 import neil.errordlg as errordlg
 
 import neil.com as com
 
+
 def shutdown():
     Gtk.main_quit()
 
-def init_neil():
+def init_neil(argv):
     """
     Loads the categories neccessary to visualize neil.
     """
@@ -56,18 +57,36 @@ def run(argv, initfunc = init_neil):
     @param initfunc: a function to call before Gtk.main() is called.
     @type initfunc: callable()
     """
+
+#    print([(key, os.environ[key]) for key in sorted(os.environ.keys())]);
+#    sys.exit();
+    Gtk.init(argv)
+
     contextlog.init()
     errordlg.install()
     com.init()
     # init_neil()
+    initfunc(argv)
+
+    for i in ['--sync', '--gdk-debug', '--gtk-debug']:
+        if i in argv:
+            argv.remove(i)
+
+    print(argv)
+
+
     GObject.threads_init()
     options = com.get('neil.core.options')
     options.parse_args(argv)
+
     eventbus = com.get('neil.core.eventbus')
     eventbus.shutdown += shutdown
+
+
+
     options = com.get('neil.core.options')
     app_options, app_args = options.get_options_args()
-    initfunc()
+
     if app_options.profile:
         import cProfile
         cProfile.runctx('Gtk.main()', globals(), locals(), app_options.profile)
