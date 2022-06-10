@@ -19,8 +19,8 @@ Port::Port(
     properties = get_port_properties(info->world, info->lilvPlugin, lilvPort);
     designation = get_port_designation(info->world, info->lilvPlugin, lilvPort);
 
-    name = lilv::as_string(lilv_port_get_name(info->lilvPlugin, lilvPort), true);
-    symbol = lilv::as_string(lilv_port_get_symbol(info->lilvPlugin, lilvPort));
+    name = as_string(lilv_port_get_name(info->lilvPlugin, lilvPort), true);
+    symbol = as_string(lilv_port_get_symbol(info->lilvPlugin, lilvPort));
 }
 
 BufPort::BufPort(
@@ -60,8 +60,6 @@ EventPort::EventPort(
         unsigned bufIndex
     ) : Port(info, lilvPort, flow, type, index),
         bufIndex(bufIndex) {
-
-    // apiType = atomEventApi ? LV2_EVBUF_ATOM : LV2_EVBUF_EVENT;
  }
 
 
@@ -79,11 +77,22 @@ ControlPort::ControlPort(
         const LilvPort *lilvPort, 
         PortFlow portFlow, 
         uint32_t index, 
-        uint32_t dataIndex) 
+        uint32_t controlIndex)
     : Port(info, lilvPort, portFlow, PortType::Control, index), 
-      dataIndex(dataIndex) {
+      controlIndex(controlIndex) {
+    LilvNode *default_val_node, *min_val_node, *max_val_node;
+    lilv_port_get_range(info->lilvPlugin, lilvPort, &default_val_node, &min_val_node, &max_val_node);
 
+    defaultVal   = default_val_node != NULL ? as_float(default_val_node) : 0.f;
+    float minVal = min_val_node != NULL     ? as_float(min_val_node) : 0.f;
+    float maxVal = min_val_node != NULL     ? as_float(max_val_node) : 0.f;
+
+//    if(verbose) { printf("\nbuild port %s: ", name.c_str()); }
+
+    if(defaultVal < minVal || defaultVal > maxVal) {
+        defaultVal = (maxVal - minVal) / 2.0f;
     }
+}
 
 
 ParamPort::ParamPort(
@@ -91,10 +100,11 @@ ParamPort::ParamPort(
         const LilvPort *lilvPort, 
         PortFlow portFlow, 
         uint32_t index, 
-        uint32_t dataIndex, 
+        uint32_t paramIndex,
         uint32_t byteOffset
-    ) : ControlPort(info, lilvPort, portFlow, index, dataIndex), 
-        byteOffset(byteOffset) {
+    ) : Port(info, lilvPort, portFlow, PortType::Param, index),
+        byteOffset(byteOffset),
+        paramIndex(paramIndex){
                                 
     zzubParam = new zzub::parameter();
 
@@ -103,9 +113,9 @@ ParamPort::ParamPort(
     LilvNode *default_val_node, *min_val_node, *max_val_node;
     lilv_port_get_range(info->lilvPlugin, lilvPort, &default_val_node, &min_val_node, &max_val_node);
 
-    minVal = lilv::as_float(min_val_node);
-    maxVal = lilv::as_float(max_val_node);
-	defaultVal = lilv::as_float(default_val_node);
+    minVal = as_float(min_val_node);
+    maxVal = as_float(max_val_node);
+    defaultVal = as_float(default_val_node);
 
 //    if(verbose) { printf("\nbuild port %s: ", name.c_str()); }
 
@@ -114,12 +124,12 @@ ParamPort::ParamPort(
     }
 
     LilvScalePoints *lilv_scale_points = lilv_port_get_scale_points(info->lilvPlugin, lilvPort);
-    unsigned scale_points_size = lilv::scale_size(lilv_scale_points);
+    unsigned scale_points_size = scale_size(lilv_scale_points);
 
     if (LV2_IS_PORT_TOGGLED(properties) || LV2_IS_PORT_TRIGGER(properties)) {
 //        if(verbose) { printf(" As switch param "); }
         zzubParam->set_switch();
-        zzubParam->value_default = switch_value_off;
+        zzubParam->value_default = zzub::switch_value_off;
     } else if(LV2_IS_PORT_ENUMERATION(properties)) {
 //        if(verbose) { printf(" As options list "); }
         (scale_points_size <= 128) ?  zzubParam->set_byte() : zzubParam->set_word();
@@ -162,36 +172,36 @@ ParamPort::ParamPort(
 uint32_t get_port_properties(const PluginWorld *world, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
     uint32_t properties = 0;
     
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_optional))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_optional))
         properties |= LV2_PORT_OPTIONAL;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_enumeration))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_enumeration))
         properties |= LV2_PORT_ENUMERATION;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_integer))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_integer))
         properties |= LV2_PORT_INTEGER;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_sampleRate))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_sampleRate))
         properties |= LV2_PORT_SAMPLE_RATE;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_toggled))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_toggled))
         properties |= LV2_PORT_TOGGLED;
 
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_artifacts) || lilv_port_has_property(lilvPlugin, lilvPort, world->oldPropArtifacts))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_artifacts) || lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.oldPropArtifacts))
         properties |= LV2_PORT_CAUSES_ARTIFACTS;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_continuousCV) || lilv_port_has_property(lilvPlugin, lilvPort, world->oldPropContinuousCV))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_continuousCV) || lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.oldPropContinuousCV))
         properties |= LV2_PORT_CONTINUOUS_CV;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_discreteCV) || lilv_port_has_property(lilvPlugin, lilvPort, world->oldPropDiscreteCV))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_discreteCV) || lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.oldPropDiscreteCV))
         properties |= LV2_PORT_DISCRETE_CV;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_expensive) || lilv_port_has_property(lilvPlugin, lilvPort, world->oldPropExpensive))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_expensive) || lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.oldPropExpensive))
         properties |= LV2_PORT_EXPENSIVE;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_strictBounds) || lilv_port_has_property(lilvPlugin, lilvPort, world->oldPropStrictBounds))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_strictBounds) || lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.oldPropStrictBounds))
         properties |= LV2_PORT_STRICT_BOUNDS;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_logarithmic) || lilv_port_has_property(lilvPlugin, lilvPort, world->oldPropLogarithmic))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_logarithmic) || lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.oldPropLogarithmic))
         properties |= LV2_PORT_LOGARITHMIC;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_notAutomatic) || lilv_port_has_property(lilvPlugin, lilvPort, world->oldPropNotAutomatic))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_notAutomatic) || lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.oldPropNotAutomatic))
         properties |= LV2_PORT_NOT_AUTOMATIC;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_notOnGUI) || lilv_port_has_property(lilvPlugin, lilvPort, world->oldPropNotOnGUI))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_notOnGUI) || lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.oldPropNotOnGUI))
         properties |= LV2_PORT_NOT_ON_GUI;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_trigger) || lilv_port_has_property(lilvPlugin, lilvPort, world->oldPropTrigger))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_trigger) || lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.oldPropTrigger))
         properties |= LV2_PORT_TRIGGER;
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->pprop_nonAutomable))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.pprop_nonAutomable))
         properties |= LV2_PORT_NON_AUTOMABLE;
 
     return properties;
@@ -204,13 +214,13 @@ uint32_t get_port_properties(const PluginWorld *world, const LilvPlugin *lilvPlu
 uint32_t get_port_designation(const PluginWorld *world, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
     uint32_t designation = 0;
 
-    if (lilv_port_has_property(lilvPlugin, lilvPort, world->reportsLatency))
+    if (lilv_port_has_property(lilvPlugin, lilvPort, world->nodes.reportsLatency))
         designation |= LV2_PORT_DESIGNATION_LATENCY;
 
-    LilvNode* const designationNode = lilv_port_get(lilvPlugin, lilvPort, world->designation);
+    LilvNode* const designationNode = lilv_port_get(lilvPlugin, lilvPort, world->nodes.designation);
 
     if (designationNode) {
-        std::string designationStr = lilv::as_string(designationNode);
+        std::string designationStr = as_string(designationNode);
 
         if (designationStr.length() > 0) {
             if (std::strcmp(designationStr.c_str(), LV2_CORE__control) == 0)
@@ -244,8 +254,8 @@ uint32_t get_port_designation(const PluginWorld *world, const LilvPlugin *lilvPl
             else if (std::strncmp(designationStr.c_str(), LV2_PARAMETERS_PREFIX, std::strlen(LV2_PARAMETERS_PREFIX)) != 0 &&
                      std::strncmp(designationStr.c_str(), LV2_PORT_GROUPS_PREFIX, std::strlen(LV2_PORT_GROUPS_PREFIX)) != 0) {
                 fprintf(stderr, "lv2_port_designation(\"%s, %s\") - got unknown port designation '%s'",
-                        lilv::as_string(lilv_plugin_get_name(lilvPlugin), true).c_str(),
-                        lilv::as_string(lilv_port_get_name(lilvPlugin, lilvPort), true).c_str(),
+                        as_string(lilv_plugin_get_name(lilvPlugin), true).c_str(),
+                        as_string(lilv_port_get_name(lilvPlugin, lilvPort), true).c_str(),
                         designationStr.c_str());
             }
         }
@@ -264,7 +274,7 @@ uint32_t get_port_designation(const PluginWorld *world, const LilvPlugin *lilvPl
 
 //     u_int64_t type = 0;
 
-//     if (lilv::nodes_size(typeNodes) > 0) {
+//     if (nodes_size(typeNodes) > 0) {
 //         if (lilv_nodes_contains(typeNodes, world->class_allpass))
 //             type |= LV2_PLUGIN_ALLPASS;
 //         if (lilv_nodes_contains(typeNodes, world->class_amplifier))

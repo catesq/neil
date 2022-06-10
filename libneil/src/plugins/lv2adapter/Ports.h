@@ -23,15 +23,13 @@ enum PortFlow : unsigned {
 enum PortType : unsigned {
     None    = 0,
     Audio   = 4,
-    Control = 8,
-    CV      = 16,
-    Event   = 32,
-    Midi    = 64
+    Param   = 8,
+    Control = 16,
+    CV      = 32,
+    Event   = 64,
+    Midi    = 128
 };
 
-//ParamPort *make_param_port(const PluginWorld *world, ParamPort *paramPort, PluginInfo *info);
-
-// u_int64_t get_plugin_type(const PluginWorld *world, const LilvPlugin *lilvPlugin);
 u_int32_t get_port_properties(const PluginWorld *world, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
 u_int32_t get_port_designation(const PluginWorld *world, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
 
@@ -44,8 +42,8 @@ struct ScalePoint {
     std::string label;
 
     ScalePoint(const LilvScalePoint *scalePoint) {
-        label = lilv::as_string(lilv_scale_point_get_label(scalePoint));
-        value = lilv::as_float(lilv_scale_point_get_value(scalePoint));
+        label = as_string(lilv_scale_point_get_label(scalePoint));
+        value = as_float(lilv_scale_point_get_value(scalePoint));
     }
 };
 
@@ -69,62 +67,61 @@ struct Port {
 };
 
 struct EventPort : Port {
-    // Evbuf_Type apiType;
     unsigned bufIndex;
 
-    EventPort(PluginInfo *info, 
-        const LilvPort *lilvPort, 
-        PortFlow flow, 
-        PortType type,
-        uint32_t index, 
-        unsigned bufIndex
-    );
+    EventPort(PluginInfo *info,
+              const LilvPort *lilvPort,
+              PortFlow flow,
+              PortType type,
+              uint32_t index,
+              unsigned bufIndex
+              );
 };
 
 
 
 struct MidiPort : EventPort {
     MidiPort(
-        PluginInfo *info, 
-        const LilvPort *lilvPort, 
-        PortFlow flow, 
-        uint32_t index, 
-        unsigned bufIndex
-    );
+            PluginInfo *info,
+            const LilvPort *lilvPort,
+            PortFlow flow,
+            uint32_t index,
+            unsigned bufIndex
+            );
 };
 
 struct BufPort  : Port {
     unsigned bufIndex;
     BufPort(
-        PluginInfo *info, 
-        const LilvPort *lilvPort, 
-        PortFlow flow,
-        PortType type,
-        uint32_t index, 
-        unsigned bufIndex
-    );
+            PluginInfo *info,
+            const LilvPort *lilvPort,
+            PortFlow flow,
+            PortType type,
+            uint32_t index,
+            unsigned bufIndex
+            );
 };
 
 
 struct CvBufPort : BufPort {
     CvBufPort(
-        PluginInfo *info, 
-        const LilvPort *lilvPort, 
-        PortFlow flow, 
-        uint32_t index, 
-        unsigned bufIndex
-    );
+            PluginInfo *info,
+            const LilvPort *lilvPort,
+            PortFlow flow,
+            uint32_t index,
+            unsigned bufIndex
+            );
 };
 
 
 struct AudioBufPort : BufPort {
     AudioBufPort(
-        PluginInfo *info, 
-        const LilvPort *lilvPort, 
-        PortFlow flow, 
-        uint32_t index, 
-        unsigned bufIndex
-    );
+            PluginInfo *info,
+            const LilvPort *lilvPort,
+            PortFlow flow,
+            uint32_t index,
+            unsigned bufIndex
+            );
 };
 
 union BodgeEndian {
@@ -133,36 +130,38 @@ union BodgeEndian {
 };
 
 struct ControlPort : Port {
-    ControlPort(
-        PluginInfo *info,
-        const LilvPort *lilvPort,
-        PortFlow flow,
-        uint32_t index,
-        uint32_t dataIndex
-    );
+    uint32_t controlIndex;
+    float defaultVal = 0.f;
 
-    uint32_t dataIndex;
+    ControlPort(
+            PluginInfo *info,
+            const LilvPort *lilvPort,
+            PortFlow flow,
+            uint32_t index,
+            uint32_t controlIndex
+            );
 };
 
-struct ParamPort : ControlPort {
+struct ParamPort : Port {
     zzub::parameter *zzubParam;
     std::vector<ScalePoint *> scalePoints{};
 
     uint32_t byteOffset;
     uint32_t byteSize;
+    uint32_t paramIndex;
 
     float minVal;
     float maxVal;
     float defaultVal;
 
     ParamPort(
-        PluginInfo *info,
-        const LilvPort *lilvPort,
-        PortFlow flow,
-        uint32_t index,
-        uint32_t dataIndex,
-        uint32_t byteOffset
-    );
+            PluginInfo *info,
+            const LilvPort *lilvPort,
+            PortFlow flow,
+            uint32_t index,
+            uint32_t paramIndex,
+            uint32_t byteOffset
+            );
 
     inline int lilv_to_zzub_value(float val) {
         if(strcmp(zzubParam->name, "pan_one") == 0 || strcmp(zzubParam->name, "kit_num") == 0 || strcmp(zzubParam->name, "base_note") == 0) {
@@ -171,36 +170,37 @@ struct ParamPort : ControlPort {
         }
 
         switch(zzubParam->type) {
-        case zzub_parameter_type_note:
+        case zzub::parameter_type_note:
             return (int) val;
-            
-        case zzub_parameter_type_switch:
+
+        case zzub::parameter_type_switch:
             return val == 0.f ? 1 : 0;
 
-        case zzub_parameter_type_word:
-        case zzub_parameter_type_byte:
+        case zzub::parameter_type_word:
+        case zzub::parameter_type_byte:
             return zzubParam->value_min + (int)(((val - minVal) / (maxVal - minVal)) * (zzubParam->value_max - zzubParam->value_min));
         }
     }
 
     inline float zzub_to_lilv_value(int val) {
         switch(zzubParam->type) {
-        case zzub_parameter_type_word:
-        case zzub_parameter_type_byte:
+        case zzub::parameter_type_word:
+        case zzub::parameter_type_byte:
             return minVal + ((val - zzubParam->value_min) / (float) (zzubParam->value_max - zzubParam->value_min)) * (maxVal - minVal);
-        case zzub_parameter_type_note:
+        case zzub::parameter_type_note:
             return (float) val;
-        case zzub_parameter_type_switch:
+        case zzub::parameter_type_switch:
             return val == zzub::switch_value_off ? 0.f : 1.f;
         }
     }
 
     int getData(uint8_t *globals){
         switch(zzubParam->type) {
-        case zzub_parameter_type_word:
+        case zzub::parameter_type_word:
             return *((unsigned short*)(globals + byteOffset));
-        case zzub_parameter_type_byte:
-        case zzub_parameter_type_note:
+        case zzub::parameter_type_byte:
+        case zzub::parameter_type_note:
+        case zzub::parameter_type_switch:
             return *(globals + byteOffset);
         }
     }
@@ -208,23 +208,26 @@ struct ParamPort : ControlPort {
     void putData(uint8_t *globals, int value) {
         uint8_t* dest = &globals[byteOffset];
         switch(zzubParam->type) {
-        case zzub_parameter_type_word:{
+
+        case zzub::parameter_type_word: {
             auto be = BodgeEndian{(uint16_t)value};
             *dest = be.c[0];
             *dest++ = be.c[1];
             break;
         }
-        case zzub_parameter_type_byte:
+
+        case zzub::parameter_type_byte:
             *dest = (u_int8_t) value;
             break;
-        case zzub_parameter_type_note:
+
+        case zzub::parameter_type_note:
             *dest = (u_int8_t) value;
             break;
-        case zzub_parameter_type_switch:
+
+        case zzub::parameter_type_switch:
             *dest = (value == 0.f ? zzub::switch_value_off : zzub::switch_value_on);
             break;
         }
-        // printf("dione put\n");
     }
 
     const char *describeValue(const int value, char *text) {
@@ -241,12 +244,13 @@ struct ParamPort : ControlPort {
             return text;
 
         case zzub::parameter_type_note:
-//            printf("describe note");
             return note_param_to_str(value, text);
+
+        default:
+            break;
         }
 
         if(LV2_IS_PORT_INTEGER(properties)) {
-//            printf("describe integer");
             sprintf(text, "%i", value);
             return text;
         }
@@ -256,17 +260,13 @@ struct ParamPort : ControlPort {
         if (scalePoints.size() > 0) {
             for(ScalePoint* scalePoint: scalePoints) {
                 if(SIMILAR(lv2Val, scalePoint->value)) {
-//                    printf("describe scalepoint");
-//                    return scalePoint->label.c_str();
                     sprintf(text, "%s", scalePoint->label.c_str());
                     return text;
                 }
             }
         }
 
-//        printf("describe float");
         sprintf(text, "%f", lv2Val);
-//        printf(": ");
         return text;
     }
 };
