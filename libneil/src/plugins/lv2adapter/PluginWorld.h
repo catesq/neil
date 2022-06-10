@@ -41,7 +41,7 @@ extern "C" {
 
 #include "suil/suil.h"
  
-#include "common.h"
+#include "zzub/zzub.h"
 
 // -----------------------------------------------------------------------
 
@@ -140,43 +140,43 @@ extern "C" {
 
 
 
-struct PlaybackPosition {
-    uint32_t sampleRate;
+//struct PlaybackPosition {
+//    uint32_t sampleRate;
 
-    uint32_t workPos;
+//    uint32_t workPos;
 
-    float bar;
-    float barBeat;
-    float ticksPerBeat;
-    float beatsPerBar;
-    float beatsPerMinute;
-    bool playing = true;
+//    float bar;
+//    float barBeat;
+//    float ticksPerBeat;
+//    float beatsPerBar;
+//    float beatsPerMinute;
+//    bool playing = true;
 
-public:
-    PlaybackPosition() {}
+//public:
+//    PlaybackPosition() {}
 
-    PlaybackPosition& update(zzub::master_info *masterInfo, zzub::mixer *mixer) {
-        if(workPos == mixer->work_position) {
-            return *this;
-        }
+//    PlaybackPosition& update(zzub::master_info *masterInfo, zzub::mixer *mixer) {
+//        if(workPos == mixer->work_position) {
+//            return *this;
+//        }
 
-        workPos = mixer->song_position;
+//        workPos = mixer->song_position;
 
-    //    if(info.beatsPerMinute != masterInfo->beats_per_minute || info.beatsPerBar != masterInfo->beats_per_bar ) {
-    //    }
-        beatsPerMinute = masterInfo->beats_per_minute;
-        beatsPerBar = 4;
-        ticksPerBeat = masterInfo->ticks_per_beat;
+//    //    if(info.beatsPerMinute != masterInfo->beats_per_minute || info.beatsPerBar != masterInfo->beats_per_bar ) {
+//    //    }
+//        beatsPerMinute = masterInfo->beats_per_minute;
+//        beatsPerBar = 4;
+//        ticksPerBeat = masterInfo->ticks_per_beat;
 
-        float song_ticks = mixer->song_position / (float) masterInfo->samples_per_tick;
-        float song_beats = song_ticks / masterInfo->ticks_per_beat;
+//        float song_ticks = mixer->song_position / (float) masterInfo->samples_per_tick;
+//        float song_beats = song_ticks / masterInfo->ticks_per_beat;
 
-        barBeat = std::fmod(song_beats, beatsPerBar);
-        bar = song_beats - barBeat;
+//        barBeat = std::fmod(song_beats, beatsPerBar);
+//        bar = song_beats - barBeat;
 
-        return *this;
-    }
-};
+//        return *this;
+//    }
+//};
 
 
 struct SymapUrids {
@@ -356,7 +356,7 @@ struct PluginWorld {
     // Base Types
 
 
-    PlaybackPosition playbackPosition{};
+//    PlaybackPosition playbackPosition{};
 
 
     // -------------------------------------------------------------------
