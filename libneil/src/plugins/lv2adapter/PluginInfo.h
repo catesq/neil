@@ -26,7 +26,6 @@ struct PluginInfo : zzub::info {
 
     unsigned zzubGlobalsLen = 0; // byte offset into the globals data populated by zzub
                                   // the globals data is a mix of 8 & 16 bit ints
-//    unsigned evbufMinSize;
     std::string zzubUri;
 	std::string lv2Uri;
     std::string lv2ClassUri;
@@ -57,7 +56,7 @@ struct PluginInfo : zzub::info {
     PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin);
     virtual ~PluginInfo();
     void add_generator_params();
-    uint32_t inline num_controls() { return controlPorts.size() + paramPorts.size(); }
+//    uint32_t inline num_controls() { return controlPorts.size() + paramPorts.size(); }
 private:
     Port *build_port(uint32_t index);
 };
