@@ -39,6 +39,8 @@
 #include <cstdlib>
 #include "X11/Xlib.h"
 
+#include <iostream>
+
 const char *zzub_adapter_name = "zzub lv2 adapter";
 
 
@@ -540,8 +542,6 @@ void PluginAdapter::connectInstance(LilvInstance* pluginInstance) {
 
     uint8_t* globals = (uint8_t*) global_values;
     for(auto& paramPort: info->paramPorts) {
-//        values[paramPort->paramIndex] = paramPort->defaultVal;
-
         switch(paramPort->zzubParam->type) {
             case zzub::parameter_type_note:
             case zzub::parameter_type_byte:
@@ -915,10 +915,6 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
     }
 }
 
-
-zzub::plugin *PluginInfo::create_plugin() const {
-    return new PluginAdapter((PluginInfo*) &(*this));
-}
 
 struct lv2plugincollection : zzub::plugincollection {
     PluginWorld *world = PluginWorld::getInstance();

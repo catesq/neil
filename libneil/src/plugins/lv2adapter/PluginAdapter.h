@@ -134,9 +134,6 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     float*                  audioBufs         = nullptr;
     float*                  cvBufs            = nullptr;
 
-    float*                  paramPortValues   = nullptr;
-    float*                  controlPortValues = nullptr;
-
     std::vector<LV2_Evbuf*> midiBufs{};
     std::vector<LV2_Evbuf*> eventBufs{};
     MidiEvents              midiEvents{};
