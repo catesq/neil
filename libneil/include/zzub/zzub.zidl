@@ -271,6 +271,8 @@ namespace zzub:
 		set no_output	= bit 5 # deprecated
 		set control_plugin	= bit 6
 		set auxiliary	= bit 7
+		set is_effect = bit 8
+		set is_instrument = bit 9
 	
 		set is_root = bit 16 # master plugin only
 		set has_audio_input = bit 17 # for audio effects

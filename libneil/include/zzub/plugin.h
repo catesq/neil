@@ -1,4 +1,4 @@
-// zzub Plugin Interface
+    // zzub Plugin Interface
 // Copyright (C) 2006 Leonard Ritter (contact@leonard-ritter.com)
 //
 // This program is free software; you can redistribute it and/or
@@ -167,6 +167,9 @@ namespace zzub {
     plugin_flag_does_input_mixing = zzub_plugin_flag_does_input_mixing,
     plugin_flag_no_output = zzub_plugin_flag_no_output,
     plugin_flag_is_root = zzub_plugin_flag_is_root,
+    plugin_flag_is_instrument = zzub_plugin_flag_is_instrument,
+    plugin_flag_is_effect = zzub_plugin_flag_is_effect,
+    plugin_flag_control_plugin = zzub_plugin_flag_control_plugin,
     plugin_flag_has_audio_input = zzub_plugin_flag_has_audio_input,
     plugin_flag_has_audio_output = zzub_plugin_flag_has_audio_output,
     plugin_flag_has_event_input = zzub_plugin_flag_has_event_input,
