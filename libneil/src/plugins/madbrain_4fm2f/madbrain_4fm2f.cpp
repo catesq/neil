@@ -1518,7 +1518,7 @@ const char *zzub_get_signature() { return ZZUB_SIGNATURE; }
 
 struct C4fm2f_plugin_info : zzub::info {
   C4fm2f_plugin_info() {
-    this->flags = zzub::plugin_flag_has_audio_output;
+    this->flags = zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
     this->min_tracks = 1;
     this->max_tracks = MAX_CHANNELS;
     this->name = "Madbrain's 4fm2f";

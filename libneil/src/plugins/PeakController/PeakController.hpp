@@ -75,7 +75,7 @@ public:
 
 struct PeakControllerInfo : zzub::info {
   PeakControllerInfo() {
-    this->flags = zzub::plugin_flag_has_event_output | zzub::plugin_flag_has_audio_input;
+    this->flags = zzub::plugin_flag_has_event_output | zzub::plugin_flag_has_audio_input | zzub::plugin_flag_control_plugin;
     this->min_tracks = 1;
     this->max_tracks = 1;
     this->name = "Peak Controller";

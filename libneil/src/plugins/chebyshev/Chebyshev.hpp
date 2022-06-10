@@ -74,7 +74,7 @@ public:
 struct ChebyshevInfo : zzub::info {
   ChebyshevInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->name = "SoMono Chebyshev";
     this->short_name = "Chebyshev";
     this->author = "SoMono";

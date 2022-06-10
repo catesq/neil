@@ -762,7 +762,7 @@ public:
 
 struct m4wii_plugin_info : zzub::info {
 	m4wii_plugin_info() {
-		this->flags = zzub::plugin_flag_plays_waves | zzub::plugin_flag_has_audio_output;
+        this->flags = zzub::plugin_flag_plays_waves | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
 		this->min_tracks = 1;
 		this->max_tracks = MAX_TRACKS;
 		this->name = "M4wII";

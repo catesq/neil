@@ -101,7 +101,7 @@ public:
 struct MuffinInfo : zzub::info {
   MuffinInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
     this->min_tracks = 1;
     this->max_tracks = 16;
     this->name = "SoMono Muffin";

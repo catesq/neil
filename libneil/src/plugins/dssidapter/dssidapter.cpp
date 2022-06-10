@@ -98,8 +98,9 @@ void enumerate_dssiplugin
 	  i->m_maker = desc->LADSPA_Plugin->Maker;
 	  // We set this flag even if it's not true, because otherwise Aldrin
 	  // gets confused and thinks the Oscilloscope is a generator?
-	  i->flags = zzub::plugin_flag_has_audio_output |
-		  zzub::plugin_flag_has_custom_gui;
+//      i->flags = zzub::plugin_flag_has_audio_output | zzub::plugin_flag_has_custom_gui;
+      // rmeove prev lines if this works
+      i->flags = zzub::plugin_flag_has_custom_gui;
 	  i->name = strdup(i->m_name.c_str());
 	  i->min_tracks = 1;
 	  i->max_tracks = 16;
@@ -161,6 +162,19 @@ void enumerate_dssiplugin
 	  if (i->m_audioins.size()) {
 	       i->flags |= zzub::plugin_flag_has_audio_input;
 	  }
+      if(i->m_audioouts.size()) {
+            i->flags |= zzub::plugin_flag_has_audio_output;
+      }
+
+      if((i->flags & zzub::plugin_flag_has_audio_output) != 0) {
+          if(i->flags & zzub::plugin_flag_has_audio_input) {
+              i->flags |= zzub::plugin_flag_is_effect;
+          } else {
+              i->flags |= zzub::plugin_flag_is_instrument;
+          }
+      } else {
+          i->flags |= zzub::plugin_flag_control_plugin;
+      }
 	  if (verbose) printf("plugin %s: flags: input = %d, output = %d\n", i->name.c_str(),
 			      i->flags & zzub::plugin_flag_has_audio_input,
 			      i->flags & zzub::plugin_flag_has_audio_output);

@@ -73,7 +73,7 @@ public:
 		zzub::parameter* _param_q;
 
 		info() {
-			this->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+            this->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
 			this->min_tracks = MIN_NBR_BANDS;
 			this->max_tracks = MAX_NBR_BANDS;
 			this->name = "FireSledge ParamEQ";

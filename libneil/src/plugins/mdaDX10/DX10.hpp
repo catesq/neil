@@ -142,7 +142,7 @@ public:
 struct DX10Info : zzub::info {
   DX10Info() {
     this->flags = 
-      zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
     this->min_tracks = 1;
     this->max_tracks = 8;
     this->name = "mda DX10";

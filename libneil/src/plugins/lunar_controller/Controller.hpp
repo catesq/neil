@@ -82,8 +82,7 @@ public:
 
 struct LunarControllerInfo : zzub::info {
   LunarControllerInfo() {
-    this->flags = 
-      zzub::plugin_flag_has_event_output;
+    this->flags = zzub::plugin_flag_has_event_output | zzub::plugin_flag_control_plugin;
     this->name = "Lunar Controller";
     this->short_name = "Controller";
     this->author = "SoMono";

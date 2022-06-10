@@ -100,8 +100,7 @@ public:
 
 struct FM303Info : zzub::info {
   FM303Info() {
-    this->flags = 
-      zzub::plugin_flag_has_audio_output;
+    this->flags = zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
     this->min_tracks = 1;
     this->max_tracks = 1;
     this->name = "SoMono FM303";
@@ -197,18 +196,14 @@ struct SoMono_FM303_PluginCollection : zzub::plugincollection {
   virtual void initialize(zzub::pluginfactory *factory) {
     factory->register_info(&MachineInfo);
   }
-  virtual const zzub::info *get_info(const char *uri, zzub::archive *data) { 
-    return 0; 
-  }
-  virtual void destroy() { 
-    delete this; 
-  }
-  virtual const char *get_uri() { 
-    return 0;
-  }
-  virtual void configure(const char *key, const char *value) {
 
-  }
+  virtual const zzub::info *get_info(const char *uri, zzub::archive *data) {  return 0;  }
+
+  virtual void destroy() {  delete this;  }
+
+  virtual const char *get_uri() {  return 0; }
+
+  virtual void configure(const char *key, const char *value) { }
 };
 
 zzub::plugincollection *zzub_get_plugincollection() {

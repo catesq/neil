@@ -366,7 +366,7 @@ const char *zzub_get_signature() { return ZZUB_SIGNATURE; }
 
 struct btdsys_ringmod_plugin_info : zzub::info {
   btdsys_ringmod_plugin_info() {
-    this->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_does_input_mixing;
+    this->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_does_input_mixing | zzub::plugin_flag_is_effect;
     this->min_tracks = 0;
     this->max_tracks = 0;
     this->name = "BTDSys RingMod";

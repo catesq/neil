@@ -76,7 +76,7 @@ void enumerate_ladspaplugin
       i->m_label = desc->Label;
       i->m_name = desc->Name;		
       i->m_maker = desc->Maker;
-      i->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+      i->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
       i->name = i->m_name.c_str();
       i->short_name = i->m_label.c_str();
       i->author = i->m_maker.c_str();

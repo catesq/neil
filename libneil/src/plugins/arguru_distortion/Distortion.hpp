@@ -92,7 +92,7 @@ public:
 struct DistortionInfo : zzub::info {
   DistortionInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->name = "Arguru Distortion";
     this->short_name = "Distortion";
     this->author = "Arguru";

@@ -111,7 +111,8 @@ livejump::livejump() {
 	scheduled_note = current_note = zzub::note_value_none;
 	snap = paraSnap->value_default;
 	mode = paraMode->value_default;
-	enabled = paraEnable->value_default;
+    enabled = paraEnable->value_default;
+    flags = zzub::plugin_flag_control_plugin;
 }
 
 void livejump::init(zzub::archive * const pi) {

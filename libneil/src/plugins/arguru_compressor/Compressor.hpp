@@ -96,7 +96,7 @@ public:
 struct CompressorInfo : zzub::info {
   CompressorInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->name = "Arguru Compressor";
     this->short_name = "Compressor";
     this->author = "Arguru";

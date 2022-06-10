@@ -85,7 +85,7 @@ public:
 struct ThruZeroInfo : zzub::info {
   ThruZeroInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->name = "Lunar ThruZero";
     this->short_name = "ThruZero";
     this->author = "SoMono";

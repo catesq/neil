@@ -74,6 +74,11 @@ PluginInfo::PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin)
 
     if(lv2ClassUri == LV2_CORE__InstrumentPlugin) {
         add_generator_params();
+        flags |= zzub::plugin_flag_is_instrument;
+    } else if (flags & zzub::plugin_flag_has_audio_output) {
+        flags |= zzub::plugin_flag_is_effect;
+    } else {
+        flags |= zzub::plugin_flag_control_plugin;
     }
 
     LilvNodes *extDataNodes = lilv_plugin_get_extension_data(lilvPlugin);

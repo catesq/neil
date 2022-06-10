@@ -190,7 +190,7 @@ public:
 struct JX10Info : zzub::info {
   JX10Info() {
     this->flags = 
-      zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
     this->min_tracks = 1;
     this->max_tracks = NVOICES;
     this->name = "mda JX10";

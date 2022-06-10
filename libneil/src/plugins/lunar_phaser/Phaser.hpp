@@ -151,7 +151,7 @@ public:
 struct LunarPhaserInfo : zzub::info {
   LunarPhaserInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->name = "Lunar Phaser";
     this->short_name = "Phaser";
     this->author = "SoMono";

@@ -77,7 +77,7 @@ public:
 struct EnvelopeInfo : zzub::info {
   EnvelopeInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->min_tracks = 1;
     this->max_tracks = 1;
     this->name = "mda Envelope";

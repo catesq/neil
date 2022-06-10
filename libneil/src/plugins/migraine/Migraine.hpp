@@ -144,7 +144,7 @@ public:
 struct MigraineInfo : zzub::info {
   MigraineInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->name = "Edsca Migraine";
     this->short_name = "Migraine";
     this->author = "Edsca";

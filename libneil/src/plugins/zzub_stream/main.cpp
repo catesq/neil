@@ -102,7 +102,7 @@ const zzub::attribute *attrOffsetFromPlayPos = 0;
 stream_machine_info::stream_machine_info() {
 	this->flags = zzub::plugin_flag_plays_waves 
 	| zzub::plugin_flag_has_audio_output
-	| zzub::plugin_flag_stream;
+    | zzub::plugin_flag_stream | zzub::plugin_flag_is_instrument;
 	
 	paraNote = &add_global_parameter()
 		.set_note();

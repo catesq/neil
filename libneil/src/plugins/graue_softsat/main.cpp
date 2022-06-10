@@ -156,9 +156,7 @@ const char *zzub_get_signature() {
 
 struct graue_softsat_plugin_info : zzub::info {
   graue_softsat_plugin_info() {
-    this->flags = 
-      zzub::plugin_flag_has_audio_input | 
-      zzub::plugin_flag_has_audio_output;
+    this->flags = zzub::plugin_flag_has_audio_input |  zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->name = "Graue SoftSat";
     this->short_name = "SoftSat";
     this->author = "Graue";

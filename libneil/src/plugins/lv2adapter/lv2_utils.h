@@ -6,6 +6,11 @@
 #include "lv2_defines.h"
 #include "zzub/plugin.h"
 
+#define DESCRIBE_CHAN(data) std::to_string(data[0] & 0x0f)
+#define DESCRIBE_NOTE(byte) std::to_string(byte)
+#define DESCRIBE_VOL(byte)  std::to_string(byte)
+#define DESCRIBE_NOTE_AND_VOL(data, size) ((size == 3) ? DESCRIBE_NOTE(data[1]) + "(" + DESCRIBE_VOL(data[2]) + ")" : DESCRIBE_NOTE(data[1]))
+
 
 inline std::string as_hex(u_int8_t byte) {
     static char hexchars[16] {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
@@ -14,18 +19,13 @@ inline std::string as_hex(u_int8_t byte) {
 
 
 inline char *note_param_to_str(u_int8_t note_value, char *text) {
-    text[0] = ('A' + (note_value & 0xFF));
+    text[0] = 'A' + (note_value & 0xFF);
     text[1] = '-';
-    text[2] = ('0' + std::min((note_value >> 4) & 0xFF, 9));
+    text[2] = '0' + std::min((note_value >> 4) & 0xFF, 9);
     text[3] = '\0';
     return text;
 }
 
-#define DESCRIBE_CHAN(data) std::to_string(data[0] & 0x0f)
-
-#define DESCRIBE_NOTE(byte) std::to_string(byte)
-#define DESCRIBE_VOL(byte) std::to_string(byte)
-#define DESCRIBE_NOTE_AND_VOL(data, size) ((size == 3) ? DESCRIBE_NOTE(data[1]) + "(" + DESCRIBE_VOL(data[2]) + ")" : DESCRIBE_NOTE(data[1]))
 
 inline std::string describe_midi_sys(uint8_t* data) {
     switch(data[0]) {
@@ -45,6 +45,7 @@ inline std::string describe_midi_sys(uint8_t* data) {
     }
 }
 
+
 inline std::string describe_midi_voice(uint8_t* data, uint8_t size) {
     switch(data[0] & 0xf0) {
         case 0x80: return "note off(" + DESCRIBE_CHAN(data) + ") " +  DESCRIBE_NOTE_AND_VOL(data, size);
@@ -58,6 +59,7 @@ inline std::string describe_midi_voice(uint8_t* data, uint8_t size) {
     }
 }
 
+
 inline std::string describe_midi(uint8_t* data, uint8_t size) {
     if(lv2_midi_is_voice_message(data)) {
         return describe_midi_voice(data, size);
@@ -66,7 +68,7 @@ inline std::string describe_midi(uint8_t* data, uint8_t size) {
     }
 }
 
-//from JUCE MidiMessage::getMessageLengthFromFirstByte in midi_manager.h
+
 inline uint8_t midi_msg_len(uint8_t cmd) {
     // this method only works for valid starting bytes of a short midi message
     assert (cmd >= 0x80 && cmd != 0xf0 && cmd != 0xf7);
@@ -89,25 +91,27 @@ inline uint8_t midi_msg_len(uint8_t cmd) {
 //use to read midi messages from the midi track column of the tracker, used in PluginAdapter and PluginInfo
 #pragma pack(1)
 
-struct attrvals {
-    int channel{};
-    int ui{};
-};
 
 union midi_msg {
     uint8_t bytes[3]{};
     struct {
-        uint8_t cmd{};
-        uint16_t data{};
+        uint8_t  cmd;
+        uint16_t data;
     } midi;
 };
 
-struct tvals {
-    uint8_t note = zzub::note_value_none;
+struct trackvals {
+    uint8_t note   = zzub::note_value_none;
     uint8_t volume = 0x40;
     midi_msg msg_1;
     midi_msg msg_2;
 };
+
+struct attrvals {
+    int channel;
+    int ui;
+};
+
 
 #pragma pack()
 
@@ -125,18 +129,22 @@ struct MidiEvent {
     uint8_t size;
     uint8_t data[3];
 
-    MidiEvent(uint64_t offset, std::initializer_list<uint8_t> _data) {
+    MidiEvent(uint64_t offset, std::initializer_list<uint8_t> bytes) {
         time = offset;
-        size = _data.size();
+        size = bytes.size();
+
         uint8_t* dst = data;
-        for(auto _byte: _data)
-            *dst++ = _byte;
+        for(auto byte: bytes)
+            *dst++ = byte;
     }
 
     MidiEvent(uint64_t offset, midi_msg& msg) {
         time = offset;
         size = midi_msg_len(msg.midi.cmd);
-        memcpy(data, msg.bytes, size);
+
+        data[0] = msg.midi.cmd;
+        data[1] = (msg.midi.data & 0xff00) >> 8;
+        data[2] = (msg.midi.data & 0x00ff) >> 8;
     }
 
     std::string str() {

@@ -156,7 +156,7 @@ public:
 struct LunarEpianoInfo : zzub::info {
   LunarEpianoInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
     this->min_tracks = 1;
     this->max_tracks = 32;
     this->name = "Lunar ePiano";

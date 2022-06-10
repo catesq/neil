@@ -12,21 +12,22 @@ static int verbose = 0;
 #include "lv2/uri-map/uri-map.h"
 #include "lv2/state/state.h"
 #include "lv2/buf-size/buf-size.h"
-#include "lv2/lv2plug.in/ns/ext/midi/midi.h"
-#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
-#include "lv2/lv2plug.in/ns/ext/parameters/parameters.h"
-#include "lv2/lv2plug.in/ns/ext/time/time.h"
-#include "lv2/lv2plug.in/ns/ext/port-groups/port-groups.h"
-#include "lv2/lv2plug.in/ns/ext/event/event.h"
+#include "lv2/midi/midi.h"
+#include "lv2/atom/forge.h"
+#include "lv2/parameters/parameters.h"
+#include "lv2/time/time.h"
+#include "lv2/port-groups/port-groups.h"
+#include "lv2/event/event.h"
+#include "lv2/worker/worker.h"
+#include "lv2/instance-access/instance-access.h"
 
-#include "lv2/lv2plug.in/ns/ext/port-props/port-props.h"  
+#include "lv2/port-props/port-props.h"
 
 #include "ext/lv2_programs.h"
 
 #define ZZUB_BUFLEN zzub_buffer_size
 #define EVENT_BUF_CYCLES 8
 #define EVENT_BUF_SIZE ZZUB_BUFLEN * EVENT_BUF_CYCLES 
-#define NUM_OPTIONS 5
 #define TRACKVAL_VOLUME_UNDEFINED 0x0FF
 #define TRACKVAL_NO_MIDI_CMD 0x00
 #define TRACKVAL_NO_MIDI_DATA 0xFFFF
@@ -37,7 +38,7 @@ static int verbose = 0;
 #define SIMILAR(a, b) (a > b - F_THRESHOLD && a < b + F_THRESHOLD)
 #define GTK3_URI "http://lv2plug.in/ns/extensions/ui#Gtk3UI"
 
-
+#define MAX_PATHLEN 1024
 
 // -----------------------------------------------------------------------
 
@@ -50,28 +51,33 @@ typedef struct {
 
 
 struct Lv2HostParams {
-    float sample_rate = 0.0f;
-    int32_t blockLength = ZZUB_BUFLEN;
-    int32_t minBlockLength = 16;
-    int32_t bufSize = EVENT_BUF_SIZE;
-    char *tempDir = nullptr;
+    int32_t     blockLength = ZZUB_BUFLEN;
+    int32_t     minBlockLength = 16;
+    int32_t     bufSize = EVENT_BUF_SIZE;
+    std::string tempDir = "";
 };
 
-typedef struct {
-    LV2_Feature uri_map_feature = { LV2_URI_MAP_URI, NULL };
-    LV2_Feature map_feature = { LV2_URID__map, NULL };
-	LV2_Feature unmap_feature = { LV2_URID__unmap, NULL };
-	LV2_Feature make_path_feature = { LV2_STATE__makePath, NULL };
-	LV2_Feature program_host_feature = { LV2_PROGRAMS__Host, NULL };
-    LV2_Feature bounded_buf_feature = { LV2_BUF_SIZE__boundedBlockLength, NULL };
-    LV2_Feature default_state_feature = { LV2_STATE__loadDefaultState, NULL };
-    LV2_Feature data_access_feature = { LV2_DATA_ACCESS_URI, NULL };
+typedef struct _LV2Features {
+    LV2_Feature                map_feature;
+    LV2_Feature                unmap_feature;
+    LV2_Feature                bounded_buf_feature;
+    LV2_Feature                make_path_feature ;
+    LV2_Feature                options_feature;
+    LV2_Feature                data_access_feature;
+    LV2_Feature                program_host_feature;
+    LV2_Feature                worker_feature;
 
-	LV2_Options_Option         options[NUM_OPTIONS];
-	LV2_Feature                options_feature       = { LV2_OPTIONS__options, NULL };
+    LV2_Feature                ui_instance_feature;
+    LV2_Feature                ui_parent_feature;
+    LV2_Feature                ui_data_access_feature;
+    LV2_Feature                ui_idle_feature;
 
-	LV2_Extension_Data_Feature ext_data;
-} Lv2Features;
+    void*                      options;
+    LV2_Extension_Data_Feature ext_data{nullptr};
+    LV2_Worker_Schedule        worker_schedule;
+    LV2_Feature                default_state_feature;
+    LV2_Programs_Host          program_host;
+} LV2Features;
 
 
 // -----------------------------------------------------------------------
@@ -366,7 +372,7 @@ typedef uint32_t LV2_Property;
 
 #define LV2_KXSTUDIO_PROPERTIES__NonAutomable             LV2_KXSTUDIO_PROPERTIES_PREFIX "NonAutomable"
 #define LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat LV2_KXSTUDIO_PROPERTIES_PREFIX "TimePositionTicksPerBeat"
-//#define LV2_KXSTUDIO_PROPERTIES__TransientWindowId        LV2_KXSTUDIO_PROPERTIES_PREFIX "TransientWindowId"
+#define LV2_KXSTUDIO_PROPERTIES__TransientWindowId        LV2_KXSTUDIO_PROPERTIES_PREFIX "TransientWindowId"
 
 #define LV2_EXTERNAL_UI_URI     "http://kxstudio.sf.net/ns/lv2ext/external-ui"
 #define LV2_EXTERNAL_UI_PREFIX  LV2_EXTERNAL_UI_URI "#"

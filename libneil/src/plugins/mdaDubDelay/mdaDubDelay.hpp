@@ -93,7 +93,7 @@ public:
 struct mdaDubDelayInfo : zzub::info {
   mdaDubDelayInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->name = "SoMono mdaDubDelay";
     this->short_name = "mdaDubDelay";
     this->author = "SoMono";

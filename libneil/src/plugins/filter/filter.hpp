@@ -87,8 +87,7 @@ public:
 
 struct FilterInfo : zzub::info {
   FilterInfo() {
-    this->flags = 
-      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+    this->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->name = "SoMono Filter";
     this->short_name = "Filter";
     this->author = "SoMono";

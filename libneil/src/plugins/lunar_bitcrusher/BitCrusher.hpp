@@ -80,7 +80,7 @@ public:
 struct LunarBitCrusherInfo : zzub::info {
   LunarBitCrusherInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->name = "Lunar BitCrusher";
     this->short_name = "BitCrusher";
     this->author = "SoMono";

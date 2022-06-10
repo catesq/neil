@@ -575,7 +575,7 @@ const char *zzub_get_signature()
 
 struct geonik_primifun_plugin_info : zzub::info {
     geonik_primifun_plugin_info() {
-        this->flags = zzub::plugin_flag_has_audio_output;
+        this->flags = zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
         this->min_tracks = 1;
         this->max_tracks = MaxTracks;
         this->name = "Geonik Primifun";

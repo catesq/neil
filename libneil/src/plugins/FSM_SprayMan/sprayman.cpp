@@ -571,7 +571,7 @@ const char *zzub_get_signature() { return ZZUB_SIGNATURE; }
 
 struct sprayman_plugin_info : zzub::info {
   sprayman_plugin_info() {
-    this->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output;
+    this->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
     this->min_tracks = 1;
     this->max_tracks = 1;
     this->name = "FSM SprayMan";

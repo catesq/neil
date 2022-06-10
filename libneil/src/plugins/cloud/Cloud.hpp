@@ -102,7 +102,7 @@ public:
 struct CloudInfo : zzub::info {
   CloudInfo() {
     this->flags = 
-      zzub::plugin_flag_has_audio_output;
+      zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
     this->min_tracks = 0;
     this->max_tracks = 0;
     this->name = "SoMono Cloud";
