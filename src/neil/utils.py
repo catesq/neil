@@ -23,7 +23,7 @@ Provides utility functions needed all over the place,
 which have no specific module or class they belong to.
 """
 
-import time, sys, math, os, zzub, imp
+import sys, math, os, zzub, imp
 from string import ascii_letters, digits
 import struct
 import gi
@@ -33,6 +33,7 @@ from gi.repository import GObject
 import weakref
 import neil.com as com
 import ctypes
+from datetime import datetime, timedelta
 
 from enum import Enum
 
@@ -43,6 +44,20 @@ class PluginType(Enum):
     Controller = 4
     Streamer = 5
     Other = 6
+
+class SlowDraw:
+    def __init__(self, max_updates_per_sec=10):
+        self.interval  = timedelta(milliseconds=max(1, int(1000/max_updates_per_sec)))
+        self.last_time = datetime.min
+
+    def update(self):
+        currtime = datetime.now()
+        timediff = currtime - self.last_time
+        print(timediff, self.interval)
+        if timediff > self.interval:
+            self.last_time  = currtime
+            return True
+        return False
 
 #https://stackoverflow.com/questions/23021327/how-i-can-get-drawingarea-window-handle-in-gtk3/27236258#27236258
 #http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=examples/gtkvlc.py;hb=HEAD
@@ -944,20 +959,32 @@ def get_adapter_name(pluginloader):
 def get_plugin_type(plugin):
     flags = plugin.get_flags()
 
-    if flags & zzub.zzub_plugin_flag_has_audio_input:
-        if flags & zzub.zzub_plugin_flag_is_root:
-            return PluginType.Root
-        elif flags & zzub.zzub_plugin_flag_has_audio_output:
-            return PluginType.Effect
-    
-    if flags & zzub.zzub_plugin_flag_stream:
-        return PluginType.Streamer
-    
-    if flags & zzub.zzub_plugin_flag_has_audio_output:
+    if flags & zzub.zzub_plugin_flag_is_effect:
+        return PluginType.Effect
+    elif flags & zzub.zzub_plugin_flag_is_instrument:
         return PluginType.Generator
-    
-    if flags & (zzub.zzub_plugin_flag_has_event_output|zzub.zzub_plugin_flag_has_cv_output):
+    elif flags & zzub.zzub_plugin_flag_is_root:
+        return PluginType.Root
+    elif flags & zzub.zzub_plugin_flag_control_plugin:
         return PluginType.Controller
+    elif flags & zzub.zzub_plugin_flag_stream:
+        return PluginType.Streamer
+
+#    if flags & zzub.zzub_plugin_flag_has_audio_input:
+#        if flags & zzub.zzub_plugin_flag_is_root:
+#            return PluginType.Root
+#        elif flags & zzub.zzub_plugin_flag_has_audio_output:
+#            return PluginType.Effect
+    
+#    if flags & zzub.zzub_plugin_flag_stream:
+#        return PluginType.Streamer
+    
+#    if flags & zzub.zzub_plugin_flag_has_audio_output:
+#        return PluginType.Generator
+
+    
+#    if flags & (zzub.zzub_plugin_flag_has_event_output|zzub.zzub_plugin_flag_has_cv_output):
+#        return PluginType.Controller
 
     return PluginType.Other
 
@@ -969,16 +996,16 @@ def is_other(plugin):
     return not (is_effect(plugin) or is_generator(plugin) or is_controller(plugin) or is_root(plugin))
 
 def is_effect(plugin):
-    return (plugin.get_flags() & AUDIO_IO_FLAGS) == AUDIO_IO_FLAGS
+    return plugin.get_flags() & zzub.zzub_plugin_flag_is_effect # or (plugin.get_flags() & AUDIO_IO_FLAGS) == AUDIO_IO_FLAGS
 
 def is_generator(plugin):
-    return (plugin.get_flags() & zzub.zzub_plugin_flag_has_audio_output) and not (plugin.get_flags() & zzub.zzub_plugin_flag_has_audio_input)
+    return plugin.get_flags() & zzub.zzub_plugin_flag_is_instrument #(plugin.get_flags() & zzub.zzub_plugin_flag_has_audio_output) and not (plugin.get_flags() & zzub.zzub_plugin_flag_has_audio_input)
 
 def is_controller(plugin):
-    return (plugin.get_flags() & EVENT_IO_FLAGS) and not (plugin.get_flags() & AUDIO_IO_FLAGS)
+    return plugin.get_flags() & zzub.zzub_plugin_flag_control_plugin or ((plugin.get_flags() & EVENT_IO_FLAGS) and not (plugin.get_flags() & AUDIO_IO_FLAGS))
 
 def is_root(plugin):
-    return plugin.get_flags() & zzub.zzub_plugin_flag_is_root & AUDIO_IO_FLAGS
+    return plugin.get_flags() & zzub.zzub_plugin_flag_is_root
 
 def is_streamer(plugin):
     return plugin.get_flags() & zzub.zzub_plugin_flag_stream
