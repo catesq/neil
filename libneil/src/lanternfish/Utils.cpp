@@ -92,4 +92,20 @@ namespace lanternfish {
     }
     return sqrt(result / float(n));
   }
+
+
+  DcFilter::DcFilter(float pole) : pole(pole), itl1(0.0), otl1(0.0), itr1(0.0), otr1(0.0) {}
+
+  void DcFilter::process(float *left_input, float *left_output, float *right_in, float *right_output, unsigned sample_count) {
+      for(unsigned pos = 0; pos < sample_count; pos++) {
+          otl1 = pole * otl1 + *left_input - itl1;
+          itl1 = *left_input++;
+          *left_output++ = otl1;
+
+          otr1 = pole * otr1 + *right_in - itr1;
+          itr1 = *right_in++;
+          *right_output++ = otr1;
+      }
+  }
+
 }

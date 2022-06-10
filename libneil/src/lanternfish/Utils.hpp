@@ -13,6 +13,14 @@ namespace lanternfish {
   float note_to_freq(int note);
   float *make_sine_table(int size);
   float rms(float *buffer, int n);
+
+  class DcFilter {
+  public:
+      DcFilter(float pole = 0.995);
+      void process(float *left_input, float *left_output, float *right_in, float *right_output, unsigned sample_count);
+  private:
+      float pole, itl1, otl1, itr1, otr1;
+  };
 }
 
 #endif // LANTERNFISH_UTILS_HPP
