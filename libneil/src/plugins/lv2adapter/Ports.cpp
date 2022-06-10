@@ -21,6 +21,8 @@ Port::Port(
 
     name = as_string(lilv_port_get_name(info->lilvPlugin, lilvPort), true);
     symbol = as_string(lilv_port_get_symbol(info->lilvPlugin, lilvPort));
+
+    build_port_info();
 }
 
 BufPort::BufPort(
@@ -28,8 +30,8 @@ BufPort::BufPort(
         const LilvPort *lilvPort, 
         PortFlow flow,
         PortType type,
-        unsigned index, 
-        unsigned bufIndex
+        uint32_t index,
+        uint32_t bufIndex
     ) : Port(info, lilvPort, flow, type, index),
         bufIndex(bufIndex) { }
 
@@ -37,8 +39,8 @@ CvBufPort::CvBufPort(
         PluginInfo *info, 
         const LilvPort *lilvPort, 
         PortFlow flow, 
-        unsigned index, 
-        unsigned bufIndex
+        uint32_t index,
+        uint32_t bufIndex
     ) : BufPort(info, lilvPort, flow, PortType::CV, index, bufIndex) { }
 
 
@@ -46,8 +48,8 @@ AudioBufPort::AudioBufPort(
         PluginInfo *info, 
         const LilvPort *lilvPort, 
         PortFlow flow, 
-        unsigned index, 
-        unsigned bufIndex
+        uint32_t index,
+        uint32_t bufIndex
     ) : BufPort(info, lilvPort, flow, PortType::Audio, index, bufIndex) { }
 
 
@@ -67,25 +69,40 @@ MidiPort::MidiPort(
         PluginInfo *info, 
         const LilvPort *lilvPort, 
         PortFlow portFlow, 
-        unsigned index, 
-        unsigned bufIndex
+        uint32_t index,
+        uint32_t bufIndex
     ) : EventPort(info, lilvPort, portFlow, PortType::Midi, index, bufIndex) {}
 
 
 ControlPort::ControlPort(
-        PluginInfo *info, 
+        PluginInfo *info,
+        const LilvPort *lilvPort,
+        PortFlow portFlow,
+        uint32_t index,
+        uint32_t controlIndex)
+    : Port(info, lilvPort, portFlow, PortType::Control, index),
+      controlIndex(controlIndex) {
+}
+
+ControlPort::ControlPort(
+        PluginInfo *info,
         const LilvPort *lilvPort, 
         PortFlow portFlow, 
+        PortType portType,
         uint32_t index, 
         uint32_t controlIndex)
-    : Port(info, lilvPort, portFlow, PortType::Control, index), 
+    : Port(info, lilvPort, portFlow, portType, index),
       controlIndex(controlIndex) {
+}
+
+
+void ControlPort::build_port_info() {
     LilvNode *default_val_node, *min_val_node, *max_val_node;
     lilv_port_get_range(info->lilvPlugin, lilvPort, &default_val_node, &min_val_node, &max_val_node);
 
-    defaultVal   = default_val_node != NULL ? as_float(default_val_node) : 0.f;
-    float minVal = min_val_node != NULL     ? as_float(min_val_node) : 0.f;
-    float maxVal = min_val_node != NULL     ? as_float(max_val_node) : 0.f;
+    defaultVal = default_val_node != NULL ? as_float(default_val_node) : 0.f;
+    minVal     = min_val_node != NULL     ? as_float(min_val_node) : 0.f;
+    maxVal     = min_val_node != NULL     ? as_float(max_val_node) : 0.f;
 
 //    if(verbose) { printf("\nbuild port %s: ", name.c_str()); }
 
@@ -94,65 +111,55 @@ ControlPort::ControlPort(
     }
 }
 
-
 ParamPort::ParamPort(
         PluginInfo *info, 
         const LilvPort *lilvPort, 
         PortFlow portFlow, 
         uint32_t index, 
-        uint32_t paramIndex,
-        uint32_t byteOffset
-    ) : Port(info, lilvPort, portFlow, PortType::Param, index),
-        byteOffset(byteOffset),
-        paramIndex(paramIndex){
-                                
-    zzubParam = new zzub::parameter();
+        uint32_t controlIndex,
+        uint32_t zubbDataOffset
+    ) : ControlPort(info, lilvPort, portFlow, PortType::Param, index, controlIndex),
+        zubbDataOffset(zubbDataOffset) {
+}
 
-    zzubParam->flags = zzub::parameter_flag_state;
+void ParamPort::build_port_info() {
+    // the min, max and default values are collected in the control port.
+    ControlPort::build_port_info();
 
-    LilvNode *default_val_node, *min_val_node, *max_val_node;
-    lilv_port_get_range(info->lilvPlugin, lilvPort, &default_val_node, &min_val_node, &max_val_node);
+    zzubParam.flags = zzub::parameter_flag_state;
 
-    minVal = as_float(min_val_node);
-    maxVal = as_float(max_val_node);
-    defaultVal = as_float(default_val_node);
 
-//    if(verbose) { printf("\nbuild port %s: ", name.c_str()); }
-
-    if(defaultVal < minVal || defaultVal > maxVal) {
-        defaultVal = (maxVal - minVal) / 2.0f;
-    }
 
     LilvScalePoints *lilv_scale_points = lilv_port_get_scale_points(info->lilvPlugin, lilvPort);
     unsigned scale_points_size = scale_size(lilv_scale_points);
 
     if (LV2_IS_PORT_TOGGLED(properties) || LV2_IS_PORT_TRIGGER(properties)) {
 //        if(verbose) { printf(" As switch param "); }
-        zzubParam->set_switch();
-        zzubParam->value_default = zzub::switch_value_off;
+        zzubParam.set_switch();
+        zzubParam.value_default = zzub::switch_value_off;
     } else if(LV2_IS_PORT_ENUMERATION(properties)) {
 //        if(verbose) { printf(" As options list "); }
-        (scale_points_size <= 128) ?  zzubParam->set_byte() : zzubParam->set_word();
-        zzubParam->value_default = (int) defaultVal;
-        zzubParam->value_max = scale_points_size;
+        (scale_points_size <= 128) ?  zzubParam.set_byte() : zzubParam.set_word();
+        zzubParam.value_default = (int) defaultVal;
+        zzubParam.value_max = scale_points_size;
     } else if (LV2_IS_PORT_INTEGER(properties)) {
 //        if(verbose) { printf(" as integer val "); }
-        (maxVal - minVal <= 128) ? zzubParam->set_byte() : zzubParam->set_word();
-        zzubParam->value_default = (int) defaultVal;
-        zzubParam->value_min = 0;
-        zzubParam->value_max = std::min((int)(maxVal - minVal), 32768);
+        (maxVal - minVal <= 128) ? zzubParam.set_byte() : zzubParam.set_word();
+        zzubParam.value_default = (int) defaultVal;
+        zzubParam.value_min = 0;
+        zzubParam.value_max = std::min((int)(maxVal - minVal), 32768);
     } else {
 //        if(verbose) { printf(" as word len slider "); }
         //TODO check if logarithm, check for other properties
-        zzubParam->set_word();
-        zzubParam->value_min = 0;
-        zzubParam->value_max = 32768;
-        zzubParam->value_default = lilv_to_zzub_value(defaultVal);
+        zzubParam.set_word();
+        zzubParam.value_min = 0;
+        zzubParam.value_max = 32768;
+        zzubParam.value_default = lilv_to_zzub_value(defaultVal);
     }
 
-    byteSize = zzubParam->get_bytesize();
-    zzubParam->name = name.c_str();
-    zzubParam->description = zzubParam->name;
+    zzubDataSize = zzubParam.get_bytesize();
+    zzubParam.name = name.c_str();
+    zzubParam.description = zzubParam.name;
 
     if(lilv_scale_points != NULL ) {
         LILV_FOREACH(scale_points, spIter,lilv_scale_points) {
