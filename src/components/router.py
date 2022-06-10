@@ -624,20 +624,29 @@ class RouteView(Gtk.DrawingArea):
         @type rootwindow: NeilFrame
         """
         Gtk.DrawingArea.__init__(self)
-        self.panel = parent
-        self.surface = None
-        # self.peaks = {}
-        eventbus = com.get('neil.core.eventbus')
-        eventbus.zzub_connect += self.on_zzub_redraw_event
-        eventbus.zzub_disconnect += self.on_zzub_redraw_event
-        eventbus.zzub_plugin_changed += self.on_zzub_plugin_changed
-        eventbus.document_loaded += self.redraw
+
+        self.panel                       = parent
+        self.surface                     = None
+        self.autoconnect_target          = None
+        self.chordnotes                  = []
+        self.volume_slider               = VolumeSlider(self)
+
+        eventbus                         = com.get('neil.core.eventbus')
+        eventbus.zzub_connect           += self.on_zzub_redraw_event
+        eventbus.zzub_disconnect        += self.on_zzub_redraw_event
+        eventbus.zzub_plugin_changed    += self.on_zzub_plugin_changed
+        eventbus.document_loaded        += self.redraw
         eventbus.active_plugins_changed += self.on_active_plugins_changed
-        self.autoconnect_target = None
-        self.chordnotes = []
-        self.update_colors()
-        self.volume_slider = VolumeSlider(self)
+
+        self.last_drop_ts = 0
+        self.connect('drag_motion', self.on_drag_motion)
+        self.connect('drag_drop', self.on_drag_drop)
+        self.connect('drag_data_received', self.on_drag_data_received)
+        self.connect('drag_leave', self.on_drag_leave)
+        self.drag_dest_set(Gtk.DestDefaults.ALL, DRAG_TARGETS, Gdk.DragAction.COPY)
+
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
+        self.update_colors()
         self.set_can_focus(True)
         self.connect('button-press-event', self.on_left_down)
         self.connect('button-release-event', self.on_left_up)
@@ -645,17 +654,10 @@ class RouteView(Gtk.DrawingArea):
         self.connect("draw", self.on_draw)
         self.connect('key-press-event', self.on_key_jazz, None)
         self.connect('key-release-event', self.on_key_jazz_release, None)
-        # self.connect('size-allocate', self.on_size_allocate)
         self.connect('configure-event', self.on_configure_event)
-        if config.get_config().get_led_draw() == True:
-            GObject.timeout_add(100, self.on_draw_led_timer)
-        self.drag_dest_set(Gtk.DestDefaults.ALL, DRAG_TARGETS, Gdk.DragAction.COPY)
 
-        self.last_drop_ts = 0
-        self.connect('drag_motion', self.on_drag_motion)
-        self.connect('drag_drop', self.on_drag_drop)
-        self.connect('drag_data_received', self.on_drag_data_received)
-        self.connect('drag_leave', self.on_drag_leave)
+        if config.get_config().get_led_draw() == True:
+            GObject.timeout_add(500, self.on_draw_led_timer)
 
     def on_active_plugins_changed(self, *args):
        # player = com.get('neil.core.player')
@@ -1070,6 +1072,7 @@ class RouteView(Gtk.DrawingArea):
         # TODO: find some other way to find out whether we are really visible
         #if self.rootwindow.get_current_panel() != self.panel:
         #       return True
+        # TODO: find a better way
         if self.is_visible():
             player = com.get('neil.core.player')
             rect = self.get_allocation()
@@ -1082,7 +1085,7 @@ class RouteView(Gtk.DrawingArea):
             for mp, (rx, ry) in ((mp, get_pixelpos(*mp.get_position())) for mp in player.get_plugin_list()):
                 rx, ry = rx - PW, ry - PH
                 rect = Gdk.Rectangle(int(rx), int(ry), PLUGINWIDTH, PLUGINHEIGHT)
-                self.get_window().invalidate_rect(rect, False)
+#                self.get_window().invalidate_rect(rect, False)
         return True
 
     def redraw(self):
