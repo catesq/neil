@@ -112,7 +112,7 @@ livejump::livejump() {
 	snap = paraSnap->value_default;
 	mode = paraMode->value_default;
     enabled = paraEnable->value_default;
-    flags = zzub::plugin_flag_control_plugin;
+
 }
 
 void livejump::init(zzub::archive * const pi) {
@@ -286,6 +286,8 @@ struct livejump_info : zzub::info {
 			.set_value_min(0)
 			.set_value_max(17)
 			.set_value_default(0);
+
+        flags = zzub::plugin_flag_control_plugin;
 
 		const int noteattr_name_length = 16; // at least "F#9 Jump Tick\0"
 		static char noteStrings[12*8 * noteattr_name_length];
