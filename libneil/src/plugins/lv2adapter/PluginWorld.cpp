@@ -9,22 +9,22 @@
 extern "C" {
 
     LV2_URID map_uri(LV2_URID_Map_Handle handle, const char *uri) {
-        PluginWorld* world = (PluginWorld*)handle;
-        const LV2_URID id = symap_map(world->symap, uri);
+        SharedAdapterCache* cache = (SharedAdapterCache*)handle;
+        const LV2_URID id = symap_map(cache->symap, uri);
 //        printf("mapped %u from %s\n", id, uri);
         return id;
     }
 
     const char* unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid) {
-        PluginWorld* world = (PluginWorld*)handle;
-        const char* uri = symap_unmap(world->symap, urid);
+        SharedAdapterCache* cache = (SharedAdapterCache*)handle;
+        const char* uri = symap_unmap(cache->symap, urid);
 //        printf("unmapped %u to %s\n", urid, uri);
         return uri;
     }
 
     char* lv2_make_path(LV2_State_Make_Path_Handle handle, const char *path) {
-        PluginWorld *world = (PluginWorld*)handle;
-        std::string fname = world->hostParams.tempDir + FILE_SEPARATOR + std::string(path);
+        SharedAdapterCache *cache = (SharedAdapterCache*)handle;
+        std::string fname = cache->hostParams.tempDir + FILE_SEPARATOR + std::string(path);
         return strdup(fname.c_str());
     }
 
@@ -32,7 +32,7 @@ extern "C" {
 
 //-----------------------------------------------------------------------------------
 
-LilvNodeCache::LilvNodeCache(LilvWorld* world)
+Nodes::Nodes(LilvWorld* world)
     : port                (lilv_new_uri(world, LV2_CORE__port)),
       symbol              (lilv_new_uri(world, LV2_CORE__symbol)),
       designation         (lilv_new_uri(world, LV2_CORE__designation)),
@@ -99,7 +99,7 @@ LilvNodeCache::LilvNodeCache(LilvWorld* world)
       rdf_type            (lilv_new_uri(world, NS_rdf "type")) {
 }
 
-LilvNodeCache::~LilvNodeCache() {
+Nodes::~Nodes() {
     LilvNode** node = &this->port;
     do {
         lilv_node_free(*node);
@@ -108,7 +108,7 @@ LilvNodeCache::~LilvNodeCache() {
 }
 
 
-PluginWorld::~PluginWorld() {
+SharedAdapterCache::~SharedAdapterCache() {
 
 }
 
@@ -153,7 +153,7 @@ PluginWorld::~PluginWorld() {
 //   preset_preset      (new_uri(LV2_PRESETS__Preset)),
 //   patch_message      (new_uri(LV2_PATCH__Message)),
 
-PluginWorld::PluginWorld()
+SharedAdapterCache::SharedAdapterCache()
     : lilvWorld(lilv_world_new()),
       nodes(lilvWorld),
       symap(symap_new()),
@@ -225,7 +225,7 @@ PluginWorld::PluginWorld()
 
 }
 
-void PluginWorld::init_suil() {
+void SharedAdapterCache::init_suil() {
     suil_mtx.lock();
 
     if(!suil_is_init) {

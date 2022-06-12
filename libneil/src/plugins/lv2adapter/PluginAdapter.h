@@ -84,7 +84,7 @@ uint32_t lv2_port_index(
 
 struct PluginInfo;
 struct ParamPort;
-struct PluginWorld;
+struct SharedAdapterCache;
 
 extern "C" {
     void on_window_destroy(GtkWidget* widget, gpointer data);
@@ -93,10 +93,11 @@ extern "C" {
 
 struct PluginAdapter : zzub::plugin, zzub::event_handler {
     PluginInfo*             info              = nullptr;
-    PluginWorld*            world             = nullptr;
+    SharedAdapterCache*     cache             = nullptr;
     LilvInstance*           lilvInstance      = nullptr;
     zzub_plugin_t*          metaPlugin        = nullptr;
 
+    LilvUIs*                uis               = nullptr;
     const LilvUI*           lilv_ui_type      = nullptr;
     const LilvNode*         lilv_ui_type_node = nullptr;
     SuilHost*               suil_ui_host      = nullptr;            // < Plugin UI host support
@@ -127,15 +128,19 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     ZixRing*                plugin_events;   // Port events from plugin
     ZixSem                  work_lock;       // lock for the LV2Worker
 
+    std::vector<AudioBufPort*> audioInPorts;
+    std::vector<AudioBufPort*> audioOutPorts;
 
-    float*                  audioIn;
-    float*                  audioOut;
+    std::vector<AudioBufPort*> cvPorts;
 
-    float*                  audioBufs         = nullptr;
-    float*                  cvBufs            = nullptr;
+    std::vector<EventBufPort*> eventPorts;
+    std::vector<EventBufPort*> midiPorts;
 
-    std::vector<LV2_Evbuf*> midiBufs{};
-    std::vector<LV2_Evbuf*> eventBufs{};
+    std::vector<ControlPort*>  controlPorts;
+    std::vector<ParamPort*>    paramPorts;
+
+    std::vector<Port*> ports;
+
     MidiEvents              midiEvents{};
 
     bool                    update_from_program_change = false;
@@ -165,18 +170,19 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
 
 
 private:
-    bool ui_open();
-    bool is_ui_resizable();
-    bool isExternalUI(const LilvUI* ui);
-    void                process_track_midi_events(midi_msg &vals_msg, midi_msg& state_msg);
-    void                update_port(ParamPort* port, float float_val);
-    void                ui_event_import();
-    const bool          ui_select(const char *native_ui_type, const LilvUI** ui_type_ui, const LilvNode** ui_type_node);
-    GtkWidget*          ui_open_window(GtkWidget** root_container, GtkWidget** parent_container);
-    void                init_static_features();
+    bool       ui_open();
+    bool       is_ui_resizable();
+    bool       isExternalUI(const LilvUI* ui);
+    void       process_track_midi_events(midi_msg &vals_msg, midi_msg& state_msg);
+    void       update_port(ParamPort* port, float float_val);
+    void       ui_event_import();
+    const bool ui_select(const char *native_ui_type, const LilvUI** ui_type_ui, const LilvNode** ui_type_node);
+    GtkWidget* ui_open_window(GtkWidget** root_container, GtkWidget** parent_container);
+    void       init_static_features();
+
     const LV2UI_Idle_Interface* idle_interface = nullptr;
     const LV2UI_Show_Interface* show_interface = nullptr;
-    bool showing_interface = false;
+    bool showing_interface                     = false;
 
     // virtual void process_controller_events();
     // virtual void attributes_changed();

@@ -12,35 +12,41 @@
 
 
 struct PluginInfo : zzub::info {
-    PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin);
+    PluginInfo(SharedAdapterCache *cache, const LilvPlugin *lilvPlugin);
 
-    const PluginWorld* world;
+    const LilvWorld*    lilvWorld;
 
-    const LilvPlugin*  lilvPlugin;
+    const LilvPlugin*   lilvPlugin;
 
-    std::string        zzubUri;
+    SharedAdapterCache* cache;
 
-    std::string        lv2Uri;
+    std::vector<Port*>  ports;
 
-    std::string        lv2ClassUri;
+    std::string         zzubUri;
 
-    std::string        libraryPath;
+    std::string         lv2Uri;
 
-    std::string        bundlePath;
+    std::string         lv2ClassUri;
 
-    std::vector<Port*> ports;
+    std::string         libraryPath;
+
+    std::string         bundlePath;
+
+    unsigned            zzubTotalDataSize;
 
     virtual      zzub::plugin* create_plugin() const;
-
     virtual bool store_info(zzub::archive *) const { return false; }
-
     void         add_generator_params();
 
 private:
-    void         build_ports();
-    Port*        build_port(uint32_t index);
+    uint32_t     mixin_plugin_flag(Port* port);
+    Port*        build_port(uint32_t index, uint32_t* paramPortCount, uint32_t* controlPortCount);
 
-    PortType     get_port_type(const LilvPort* lilvPort);
+    Port*        setup_base_port(Port* port, const LilvPort* lilvPort);
+    Port*        setup_control_val_port(ValuePort* port,const LilvPort* lilvPort);
+    Port*        setup_param_port(ParamPort* port,const LilvPort* lilvPort);
+
+    PortType     get_port_type(const LilvPort* lilvPort, PortFlow flow);
     PortFlow     get_port_flow(const LilvPort* lilvPort);
 };
 
