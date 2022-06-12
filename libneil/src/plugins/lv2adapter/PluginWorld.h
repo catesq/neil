@@ -40,13 +40,12 @@ extern "C" {
 #include "lv2_defines.h"
 
 #include "suil/suil.h"
- 
-#include "common.h"
+
 
 // -----------------------------------------------------------------------
 
 //forward declaration for function declarations blah
-struct PluginWorld;
+struct SharedAdapterCache;
 struct PluginInfo;
 struct LilvZzubParamPort;
 
@@ -64,7 +63,7 @@ inline std::string free_string(char* owned_lilv_str) {
     return dup_str;
 }
 
-inline std::string as_string(LilvNode *node, bool canFreeNode = false) {
+inline std::string as_string(LilvNode *node, bool freeNode = false) {
     std::string val("");
 
     if(node == nullptr) {
@@ -77,7 +76,7 @@ inline std::string as_string(LilvNode *node, bool canFreeNode = false) {
         val.append(lilv_node_as_uri(node));
     }
 
-    if(canFreeNode) {
+    if(freeNode) {
         lilv_node_free(node);
     }
 
@@ -140,43 +139,43 @@ extern "C" {
 
 
 
-struct PlaybackPosition {
-    uint32_t sampleRate;
+//struct PlaybackPosition {
+//    uint32_t sampleRate;
 
-    uint32_t workPos;
+//    uint32_t workPos;
 
-    float bar;
-    float barBeat;
-    float ticksPerBeat;
-    float beatsPerBar;
-    float beatsPerMinute;
-    bool playing = true;
+//    float bar;
+//    float barBeat;
+//    float ticksPerBeat;
+//    float beatsPerBar;
+//    float beatsPerMinute;
+//    bool playing = true;
 
-public:
-    PlaybackPosition() {}
+//public:
+//    PlaybackPosition() {}
 
-    PlaybackPosition& update(zzub::master_info *masterInfo, zzub::mixer *mixer) {
-        if(workPos == mixer->work_position) {
-            return *this;
-        }
+//    PlaybackPosition& update(zzub::master_info *masterInfo, zzub::mixer *mixer) {
+//        if(workPos == mixer->work_position) {
+//            return *this;
+//        }
 
-        workPos = mixer->song_position;
+//        workPos = mixer->song_position;
 
-    //    if(info.beatsPerMinute != masterInfo->beats_per_minute || info.beatsPerBar != masterInfo->beats_per_bar ) {
-    //    }
-        beatsPerMinute = masterInfo->beats_per_minute;
-        beatsPerBar = 4;
-        ticksPerBeat = masterInfo->ticks_per_beat;
+//    //    if(info.beatsPerMinute != masterInfo->beats_per_minute || info.beatsPerBar != masterInfo->beats_per_bar ) {
+//    //    }
+//        beatsPerMinute = masterInfo->beats_per_minute;
+//        beatsPerBar = 4;
+//        ticksPerBeat = masterInfo->ticks_per_beat;
 
-        float song_ticks = mixer->song_position / (float) masterInfo->samples_per_tick;
-        float song_beats = song_ticks / masterInfo->ticks_per_beat;
+//        float song_ticks = mixer->song_position / (float) masterInfo->samples_per_tick;
+//        float song_beats = song_ticks / masterInfo->ticks_per_beat;
 
-        barBeat = std::fmod(song_beats, beatsPerBar);
-        bar = song_beats - barBeat;
+//        barBeat = std::fmod(song_beats, beatsPerBar);
+//        bar = song_beats - barBeat;
 
-        return *this;
-    }
-};
+//        return *this;
+//    }
+//};
 
 
 struct SymapUrids {
@@ -259,9 +258,9 @@ struct SymapUrids {
 // LilvNode *unit_unit;
 
 
-struct LilvNodeCache {
-    LilvNodeCache(LilvWorld* world);
-    ~LilvNodeCache();
+struct Nodes {
+    Nodes(LilvWorld* world);
+    ~Nodes();
 
     LilvNode *port;
     LilvNode *symbol;
@@ -333,16 +332,16 @@ struct LilvNodeCache {
 // -----------------------------------------------------------------------
 // Our LV2 World class
 
-struct PluginWorld {
-    
+struct SharedAdapterCache {
+
     LilvWorld *lilvWorld;
 
-    LilvNodeCache nodes;
+    Nodes nodes;
 
     Lv2HostParams hostParams;
     LV2_URID_Map map;
     LV2_URID_Unmap unmap;
-    LV2_State_Make_Path make_path; 
+    LV2_State_Make_Path make_path;
 //    LV2_URI_Map_Feature uri_map;
 
     Symap* symap;
@@ -356,12 +355,12 @@ struct PluginWorld {
     // Base Types
 
 
-    PlaybackPosition playbackPosition{};
+//    PlaybackPosition playbackPosition{};
 
 
     // -------------------------------------------------------------------
 
-    ~PluginWorld();
+    ~SharedAdapterCache();
 
     void init_suil();
 
@@ -370,8 +369,8 @@ struct PluginWorld {
         return lilv_world_get_all_plugins(lilvWorld);
     }
 
-    static PluginWorld* getInstance() {
-        static PluginWorld instance{};
+    static SharedAdapterCache* getInstance() {
+        static SharedAdapterCache instance{};
         return &instance;
     }
 
@@ -380,6 +379,6 @@ struct PluginWorld {
     // const LV2_Feature** getLv2Features();
 
 private:
-    PluginWorld();
+    SharedAdapterCache();
 };
 

@@ -2,7 +2,9 @@
 
 static int verbose = 0; 
 
-#include "common.h"
+#include <string>
+
+#include "zzub/zzub.h"
 #include "lilv/lilv.h"
 
 #include "lv2.h"

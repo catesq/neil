@@ -39,17 +39,24 @@
 #include <cstdlib>
 #include "X11/Xlib.h"
 
+#include <iostream>
+
 const char *zzub_adapter_name = "zzub lv2 adapter";
 
 
 bool
 PluginAdapter::isExternalUI(const LilvUI * ui) {
-    const LilvNodes * ui_classes = lilv_ui_get_classes (ui);
+    printf("UI: %lu\n", (long unsigned) ui);
+    const LilvNodes* ui_classes = lilv_ui_get_classes(ui);
+    printf("UI classes: %lu\n", (long unsigned) ui);
 
-    LILV_FOREACH (nodes, t, ui_classes) {
-        const LilvNode * ui_type = lilv_nodes_get (ui_classes, t);
+    std::string name = as_string(lilv_ui_get_uri(ui));
+    printf("UI name: %s", name.c_str());
 
-        if (lilv_node_equals( ui_type, lilv_new_uri(world->lilvWorld, "http://kxstudio.sf.net/ns/lv2ext/external-ui#Widget"))) {
+    LILV_FOREACH (nodes, it, ui_classes) {
+        const LilvNode* ui_type = lilv_nodes_get (ui_classes, it);
+
+        if (lilv_node_equals(ui_type, lilv_new_uri(cache->lilvWorld, "http://kxstudio.sf.net/ns/lv2ext/external-ui#Widget"))) {
             return true;
         }
     }
@@ -59,56 +66,77 @@ PluginAdapter::isExternalUI(const LilvUI * ui) {
 
 
 
-PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), world(info->world) {
-    if (verbose) { printf("plugin <%s>: in constructor\n", info->name.c_str()); }
+PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) {
+    if (verbose) { printf("plugin <%s>: in constructor. data size: %d\n", info->name.c_str(), info->zzubTotalDataSize); }
 
-    if(info->zzubGlobalsLen) {
-        global_values = malloc(info->zzubGlobalsLen);
-        memset(global_values, 0, info->zzubGlobalsLen);
+    if(info->zzubTotalDataSize) {
+        global_values = malloc(info->zzubTotalDataSize);
+        memset(global_values, 0, info->zzubTotalDataSize);
     }
 
-    if (info->paramPorts.size() > 0)
-        paramPortValues = (float*) malloc(sizeof(float) * info->paramPorts.size());
-
-    if(info->controlPorts.size() > 0)
-        controlPortValues = (float*) malloc(sizeof(float) * info->controlPorts.size());
-
+    uis           = lilv_plugin_get_uis(info->lilvPlugin);
     ui_events     = zix_ring_new(EVENT_BUF_SIZE);
     plugin_events = zix_ring_new(EVENT_BUF_SIZE);
 
-    track_values = trak_values;
+    track_values = &trak_values[0];
     attributes   = (int *) &attr_values;
 
-    if (info->audioPorts.size() > 0) {
-        audioBufs = (float *) malloc(info->audioPorts.size() * sizeof(float*) * ZZUB_BUFLEN);
-        memset(audioBufs, 0.0f, sizeof(float) * ZZUB_BUFLEN * info->audioPorts.size());
-        audioIn = audioBufs;
-        audioOut = audioBufs + info->audio_in_count * ZZUB_BUFLEN;
+
+    for(Port* port: info->ports) {
+        switch(port->type) {
+        case PortType::Control:
+            controlPorts.push_back(new ControlPort(*static_cast<ControlPort*>(port)));
+            ports.push_back(controlPorts.back());
+            break;
+
+
+        case PortType::Param:
+            paramPorts.push_back(new ParamPort(*static_cast<ParamPort*>(port)));
+            ports.push_back(paramPorts.back());
+            break;
+
+        case PortType::Audio:
+            if(port->flow == PortFlow::Input) {
+                audioInPorts.push_back(new AudioBufPort(*static_cast<AudioBufPort*>(port)));
+                audioInPorts.back()->buf = (float*) malloc(sizeof(float) * ZZUB_BUFLEN);
+                ports.push_back(std::ref(audioInPorts.back()));
+            } else if (port->flow == PortFlow::Output) {
+                audioOutPorts.push_back(new AudioBufPort(*static_cast<AudioBufPort*>(port)));
+                audioOutPorts.back()->buf = (float*) malloc(sizeof(float) * ZZUB_BUFLEN);
+                ports.push_back(audioOutPorts.back());
+            }
+            break;
+
+
+        case PortType::CV:
+            cvPorts.push_back(new AudioBufPort(*static_cast<AudioBufPort*>(port)));
+            cvPorts.back()->buf = (float*) malloc(sizeof(float) * ZZUB_BUFLEN);
+            ports.push_back(cvPorts.back());
+            break;
+
+        case PortType::Event:
+            eventPorts.push_back(new EventBufPort(*static_cast<EventBufPort*>(port)));
+            eventPorts.back()->eventBuf = lv2_evbuf_new(cache->hostParams.bufSize, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
+            ports.push_back(eventPorts.back());
+            break;
+
+
+        case PortType::Midi:
+            midiPorts.push_back(new EventBufPort(*static_cast<EventBufPort*>(port)));
+            midiPorts.back()->eventBuf = lv2_evbuf_new(cache->hostParams.bufSize, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
+            ports.push_back(midiPorts.back());
+            break;
+
+        default:
+            ports.push_back(new Port(*port));
+            break;
+        }
     }
 
-    if(info->cvPorts.size() > 0) {
-        cvBufs = (float *) malloc(info->cvPorts.size() * ZZUB_BUFLEN * sizeof(float));
-        memset(cvBufs, 0.0f, sizeof(float) * ZZUB_BUFLEN * info->cvPorts.size());
-    }
-
-    for(int i=0; i < info->midiPorts.size(); i++) {
-        midiBufs.push_back(lv2_evbuf_new(world->hostParams.bufSize, world->urids.atom_Chunk, world->urids.atom_Sequence));
-    }
-
-    for(int i=0; i < info->eventPorts.size(); i++) {
-        eventBufs.push_back(lv2_evbuf_new(world->hostParams.bufSize, world->urids.atom_Chunk, world->urids.atom_Sequence));
-    }
-
-    if(info->flags | zzub::plugin_flag_has_custom_gui) {
-        std::cout << "init suil on thread: " << std::this_thread::get_id() << std::endl;
-        world->init_suil();
-    }
-
-    if(verbose) { printf("Construted buffers. audio & cv buflen: %u, event buflen: %i.\n", ZZUB_BUFLEN, world->hostParams.bufSize); }
+    if(verbose) { printf("Construted buffers. audio & cv buflen: %u, event buflen: %i.\n", ZZUB_BUFLEN, cache->hostParams.bufSize); }
 }
 
 PluginAdapter::~PluginAdapter() {
-
     halting = true;
     lv2_worker_finish(&this->worker);
 
@@ -119,25 +147,15 @@ PluginAdapter::~PluginAdapter() {
     zix_ring_free(plugin_events);
     zix_sem_destroy(&worker.sem);
 
+    for(auto port: ports)
+        delete port;
+
     if (lilvInstance != nullptr)
         lilv_instance_free(lilvInstance);
 
+    lilv_uis_free(uis);
+
     free(global_values);
-
-    free(audioBufs);
-    free(cvBufs);
-
-    free(paramPortValues);
-    free(controlPortValues);
-
-    for(auto buf: midiBufs)
-        lv2_evbuf_free(buf);
-
-    for(auto buf: eventBufs)
-        lv2_evbuf_free(buf);
-
-    midiBufs.clear();
-    eventBufs.clear();
 }
 
 
@@ -150,51 +168,51 @@ void PluginAdapter::init(zzub::archive *arc) {
        {
             LV2_OPTIONS_INSTANCE,
             0,
-            this->world->urids.param_sampleRate,
+            cache->urids.param_sampleRate,
             sizeof(float),
-            this->world->urids.atom_Float,
+            cache->urids.atom_Float,
             &sample_rate
        },
        {
             LV2_OPTIONS_INSTANCE, 0,
-            this->world->urids.minBlockLength,
+            cache->urids.minBlockLength,
             sizeof(int32_t),
-            this->world->urids.atom_Int,
-            &world->hostParams.minBlockLength
+            cache->urids.atom_Int,
+            &cache->hostParams.minBlockLength
        },
        {
             LV2_OPTIONS_INSTANCE, 0,
-            this->world->urids.maxBlockLength,
+            cache->urids.maxBlockLength,
             sizeof(int32_t),
-            this->world->urids.atom_Int,
-            &world->hostParams.blockLength
+            cache->urids.atom_Int,
+            &cache->hostParams.blockLength
        },
        {
             LV2_OPTIONS_INSTANCE, 0,
-            this->world->urids.bufSeqSize,
+            cache->urids.bufSeqSize,
             sizeof(int32_t),
-            this->world->urids.atom_Int,
-            &world->hostParams.bufSize
+            cache->urids.atom_Int,
+            &cache->hostParams.bufSize
        },
        {
             LV2_OPTIONS_INSTANCE, 0,
-            this->world->urids.ui_updateRate,
+            cache->urids.ui_updateRate,
             sizeof (float),
-            this->world->urids.atom_Float,
+            cache->urids.atom_Float,
             &update_rate
        },
        {
             LV2_OPTIONS_INSTANCE, 0,
-            this->world->urids.ui_scaleFactor,
+            cache->urids.ui_scaleFactor,
             sizeof (float),
-            this->world->urids.atom_Float,
+            cache->urids.atom_Float,
             &ui_scale
        },
        {
             LV2_OPTIONS_INSTANCE, 0,
-            this->world->urids.ui_transientWindowId,
+            cache->urids.ui_transientWindowId,
             sizeof (long),
-            this->world->urids.atom_Long,
+            cache->urids.atom_Long,
             &transient_wid
        },
        {
@@ -210,10 +228,10 @@ void PluginAdapter::init(zzub::archive *arc) {
     features.options = malloc(sizeof(options));
     memcpy(features.options, &options[0], sizeof(options));
 
-    features.map_feature            = { LV2_URID__map,                    &this->world->map };
-    features.unmap_feature          = { LV2_URID__unmap,                  &this->world->unmap };
-    features.bounded_buf_feature    = { LV2_BUF_SIZE__boundedBlockLength, &this->world->hostParams.blockLength };
-    features.make_path_feature      = { LV2_STATE__makePath,              &this->world->make_path };
+    features.map_feature            = { LV2_URID__map,                    &cache->map };
+    features.unmap_feature          = { LV2_URID__unmap,                  &cache->unmap };
+    features.bounded_buf_feature    = { LV2_BUF_SIZE__boundedBlockLength, &cache->hostParams.blockLength };
+    features.make_path_feature      = { LV2_STATE__makePath,              &cache->make_path };
     features.options_feature        = { LV2_OPTIONS__options,             features.options};
     features.program_host_feature   = { LV2_PROGRAMS__Host,               &features.program_host };
     features.data_access_feature    = { LV2_DATA_ACCESS_URI,              NULL };
@@ -245,10 +263,6 @@ void PluginAdapter::init(zzub::archive *arc) {
         NULL
     };
 
-    for(auto& paramPort: info->paramPorts) {
-        paramPortValues[paramPort->paramIndex] = paramPort->defaultVal;
-    }
-
     lilvInstance = lilv_plugin_instantiate(info->lilvPlugin, _master_info->samples_per_second, feature_list);
 
     metaPlugin     = _host->get_metaplugin();
@@ -257,7 +271,7 @@ void PluginAdapter::init(zzub::archive *arc) {
     features.ext_data.data_access = lilv_instance_get_descriptor(lilvInstance)->extension_data;
     features.ui_instance_feature.data = lilv_instance_get_handle(lilvInstance);
 
-    worker.enable = lilv_plugin_has_extension_data(info->lilvPlugin, world->nodes.worker_iface);
+    worker.enable = lilv_plugin_has_extension_data(info->lilvPlugin, cache->nodes.worker_iface);
     if (worker.enable) {
         auto iface = lilv_instance_get_extension_data (lilvInstance, LV2_WORKER__interface);
         lv2_worker_init(this, &worker, (const LV2_Worker_Interface*) iface, true);
@@ -266,11 +280,6 @@ void PluginAdapter::init(zzub::archive *arc) {
     connectInstance(lilvInstance);
 
     lilv_instance_activate(lilvInstance);
-
-    for(auto paramPort: info->paramPorts) {
-        if(paramPortValues[paramPort->paramIndex] != paramPort->defaultVal)
-            printf("port value for %s is now %f\n", paramPort->name.c_str(), paramPort->defaultVal);
-    }
 }
 
 
@@ -349,23 +358,23 @@ bool PluginAdapter::ui_open() {
     }
 
         // Set initial control port values
-    for (auto& port: info->paramPorts) {
+    for (auto& paramPort: paramPorts) {
         suil_instance_port_event(
             suil_ui_instance,
-            port->index,
+            paramPort->index,
             sizeof(float),
             0,
-            &paramPortValues[port->paramIndex]
+            &paramPort->value
         );
     }
 
-    for (auto& port: info->controlPorts) {
+    for (auto& controlPort: controlPorts) {
         suil_instance_port_event(
             suil_ui_instance,
-            port->index,
+            controlPort->index,
             sizeof(float),
             0,
-            &controlPortValues[port->controlIndex]
+            &controlPort->value
         );
     }
 
@@ -404,12 +413,12 @@ bool PluginAdapter::is_ui_resizable() {
         return false;
 
     const LilvNode* s   = lilv_ui_get_uri(lilv_ui_type);
-    LilvNode*       p   = lilv_new_uri(world->lilvWorld, LV2_CORE__optionalFeature);
-    LilvNode*       fs  = lilv_new_uri(world->lilvWorld, LV2_UI__fixedSize);
-    LilvNode*       nrs = lilv_new_uri(world->lilvWorld, LV2_UI__noUserResize);
+    LilvNode*       p   = lilv_new_uri(cache->lilvWorld, LV2_CORE__optionalFeature);
+    LilvNode*       fs  = lilv_new_uri(cache->lilvWorld, LV2_UI__fixedSize);
+    LilvNode*       nrs = lilv_new_uri(cache->lilvWorld, LV2_UI__noUserResize);
 
-    LilvNodes* fs_matches  = lilv_world_find_nodes(world->lilvWorld, s, p, fs);
-    LilvNodes* nrs_matches = lilv_world_find_nodes(world->lilvWorld, s, p, nrs);
+    LilvNodes* fs_matches  = lilv_world_find_nodes(cache->lilvWorld, s, p, fs);
+    LilvNodes* nrs_matches = lilv_world_find_nodes(cache->lilvWorld, s, p, nrs);
 
     lilv_nodes_free(nrs_matches);
     lilv_nodes_free(fs_matches);
@@ -471,18 +480,21 @@ const bool PluginAdapter::ui_select(const char *native_ui_type, const LilvUI** u
     //   nullptr if LV2_UI__showInterface was a required feature for this plugin
     //   GTK3    if LV2_UI__showInterface is an optional feature or not supported
 
+
+
     if(native_ui_type != nullptr) {
         // Try to find an embeddable UI
-        LilvNode* native_type = lilv_new_uri(world->lilvWorld, native_ui_type);
+        LilvNode* native_type = lilv_new_uri(cache->lilvWorld, native_ui_type);
 
-        LILV_FOREACH (uis, u, info->uis) {
-            const LilvUI*   ui_type        = lilv_uis_get(info->uis, u);
+        LILV_FOREACH (uis, u, uis) {
+            const LilvUI*   ui_type   = lilv_uis_get(uis, u);
             const LilvNode* ui_node   = NULL;
             const bool      supported = lilv_ui_is_supported(ui_type, suil_ui_supported, native_type, &ui_node);
 
             if (supported) {
                 const char *str = lilv_node_as_uri(ui_node);
                 lilv_node_free(native_type);
+
                 *ui_type_node = ui_node;
                 *ui_type_ui = ui_type;
                 return true;
@@ -494,18 +506,18 @@ const bool PluginAdapter::ui_select(const char *native_ui_type, const LilvUI** u
 
     } else  {
         // Try to find a UI with ui:showInterface
-        LILV_FOREACH (uis, u, info->uis) {
-            const LilvUI*   ui      = lilv_uis_get(info->uis, u);
+        LILV_FOREACH (uis, u, uis) {
+            const LilvUI*   ui      = lilv_uis_get(uis, u);
             const LilvNode* ui_node = lilv_ui_get_uri(ui);
 
-            lilv_world_load_resource(world->lilvWorld, ui_node);
+            lilv_world_load_resource(cache->lilvWorld, ui_node);
 
-            const bool supported = lilv_world_ask(world->lilvWorld,
+            const bool supported = lilv_world_ask(cache->lilvWorld,
                                                   ui_node,
-                                                  world->nodes.extensionData,
-                                                  world->nodes.showInterface);
+                                                  cache->nodes.extensionData,
+                                                  cache->nodes.showInterface);
 
-            lilv_world_unload_resource(world->lilvWorld, ui_node);
+            lilv_world_unload_resource(cache->lilvWorld, ui_node);
 
             if (supported) {
                 *ui_type_node = ui_node;
@@ -538,45 +550,24 @@ void PluginAdapter::destroy() {
 void PluginAdapter::connectInstance(LilvInstance* pluginInstance) {
     if(verbose) { printf("in connectInstance\n"); }
 
-    uint8_t* globals = (uint8_t*) global_values;
-    for(auto& paramPort: info->paramPorts) {
-//        values[paramPort->paramIndex] = paramPort->defaultVal;
-
-        switch(paramPort->zzubParam->type) {
+    uint8_t* tmp_globals_p = (uint8_t*) global_values;
+    for(auto& paramPort: paramPorts) {
+        switch(paramPort->zzubParam.type) {
             case zzub::parameter_type_note:
             case zzub::parameter_type_byte:
             case zzub::parameter_type_switch:
-                *globals = (uint8_t) paramPort->zzubParam->value_default;
+                *tmp_globals_p = (uint8_t) paramPort->zzubParam.value_default;
                 break;
             case zzub::parameter_type_word:
-                *((uint16_t*)globals) = (uint16_t) paramPort->zzubParam->value_default;
+                *((uint16_t*)tmp_globals_p) = (uint16_t) paramPort->zzubParam.value_default;
                 break;
         }
         
-        globals += paramPort->byteSize;
-        lilv_instance_connect_port(pluginInstance, paramPort->index, &paramPortValues[paramPort->paramIndex]);
+        tmp_globals_p += paramPort->zzubValSize;
     }
 
-    for(auto& controlPort: info->controlPorts) {
-        controlPortValues[controlPort->controlIndex] = controlPort->defaultVal;
-        lilv_instance_connect_port(pluginInstance, controlPort->index, &controlPortValues[controlPort->controlIndex]);
-    }
-
-    for(auto& audioPort: info->audioPorts) {
-        lilv_instance_connect_port(pluginInstance, audioPort->index, &audioBufs[audioPort->bufIndex * ZZUB_BUFLEN]);
-    }
-
-    for(auto& cvPort: info->cvPorts) {
-        lilv_instance_connect_port(pluginInstance, cvPort->index, &cvBufs[cvPort->bufIndex * ZZUB_BUFLEN]);
-    }
-
-    for(auto& midiPort: info->midiPorts) {
-        lilv_instance_connect_port(pluginInstance, midiPort->index, lv2_evbuf_get_buffer(midiBufs[midiPort->bufIndex]));
-    }
-
-    for(auto& eventPort: info->eventPorts) {
-        lilv_instance_connect_port(pluginInstance, eventPort->index, lv2_evbuf_get_buffer(eventBufs[eventPort->bufIndex]));
-    }
+    for(auto port: ports)
+        lilv_instance_connect_port(pluginInstance, port->index, port->data_pointer());
 }
 
 
@@ -591,13 +582,13 @@ void PluginAdapter::load(zzub::archive *arc) {
 
 void PluginAdapter::save(zzub::archive *arc) {
     if (verbose) printf("PluginAdapter: in save()!\n");
-    const char *dir = world->hostParams.tempDir.c_str();
+    const char *dir = cache->hostParams.tempDir.c_str();
     LilvState* const state = lilv_state_new_from_instance(
-                info->lilvPlugin, lilvInstance, &world->map,
+                info->lilvPlugin, lilvInstance, &cache->map,
                 dir, dir, dir, dir,
                 get_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
 
-    char *state_str = lilv_state_to_string(world->lilvWorld, &world->map, &world->unmap, state, "http://uri", nullptr);
+    char *state_str = lilv_state_to_string(cache->lilvWorld, &cache->map, &cache->unmap, state, "http://uri", nullptr);
     zzub::outstream *po = arc->get_outstream("");
     po->write((uint32_t) strlen(state_str));
     po->write(state_str, strlen(state_str));
@@ -606,8 +597,8 @@ void PluginAdapter::save(zzub::archive *arc) {
 
 const char *PluginAdapter::describe_value(int param, int value) {
     static char text[256];
-    if(param < info->paramPorts.size()) {
-        return info->paramPorts[param]->describeValue(value, text);
+    if(param < paramPorts.size()) {
+        return paramPorts[param]->describeValue(value, text);
     }
     return 0;
 }
@@ -625,12 +616,11 @@ void PluginAdapter::set_track_count(int ntracks) {
 }
 
 ParamPort* PluginAdapter::get_param_port(std::string symbol) {
-    Port* port = info->port_by_symbol(symbol);
+    for(auto& port: paramPorts)
+        if(symbol == port->symbol)
+            return port;
 
-    if(port->flow == PortFlow::Input && port->type == PortType::Control)
-        return static_cast<ParamPort*>(port);
-    else
-        return nullptr;
+    return nullptr;
 }
 
 void PluginAdapter::stop() {}
@@ -648,16 +638,13 @@ void PluginAdapter::ui_event_import() {
             break;
         }
         assert(ev.index < info->ports.size());
-        Port* port = info->ports[ev.index];
+        Port* port = ports[ev.index];
 
         if (ev.protocol == 0 && port->type == PortType::Param) {
-            update_port((ParamPort*) port, *((float*) body));
-        } else if (ev.protocol == world->urids.atom_eventTransfer) {
-            if(port->type != PortType::Event)
-                continue;
-
-            EventPort* evt_port = (EventPort*) port;
-            LV2_Evbuf_Iterator e = lv2_evbuf_end(eventBufs[evt_port->bufIndex]);
+            update_port(static_cast<ParamPort*>(port), *((float*) body));
+        } else if (ev.protocol == cache->urids.atom_eventTransfer && port->type == PortType::Event) {
+            EventBufPort* eventPort = static_cast<EventBufPort*>(port);
+            LV2_Evbuf_Iterator e = lv2_evbuf_end(eventPort->eventBuf);
 
             const LV2_Atom* const atom = (const LV2_Atom*)body;
             lv2_evbuf_write(&e, samp_count, 0, atom->type, atom->size,
@@ -707,8 +694,8 @@ void PluginAdapter::process_events() {
     uint8_t* globals = (u_int8_t*) global_values;
     int value = 0;
 
-    for (ParamPort *port: info->paramPorts) {
-        switch(port->zzubParam->type) {
+    for (auto &paramPort: paramPorts) {
+        switch(paramPort->zzubParam.type) {
         case zzub::parameter_type_word:
             value = *((unsigned short*) globals);
             break;
@@ -719,10 +706,10 @@ void PluginAdapter::process_events() {
             break;
         }
 
-        globals += port->byteSize;
+        globals += paramPort->zzubValSize;
         
-        if (value != port->zzubParam->value_none) {
-            paramPortValues[port->paramIndex] = port->zzub_to_lilv_value(value);
+        if (value != paramPort->zzubParam.value_none) {
+            paramPort->value = paramPort->zzub_to_lilv_value(value);
         }
     }
 
@@ -826,23 +813,23 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
         return false;
     }
 
-    for(EventPort *port: info->midiPorts) {
-        if(port->flow != PortFlow::Input) {
+    for(EventBufPort* midiPort: midiPorts) {
+        if(midiPort->flow != PortFlow::Input) {
             continue;
         }
 
-        lv2_evbuf_reset(midiBufs[port->bufIndex], true);
+        lv2_evbuf_reset(midiPort->eventBuf, true);
 
         if(midiEvents.count() == 0) {
             continue;
         }
 
-        LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiBufs[port->bufIndex]);
+        LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiPort->eventBuf);
 
         for (auto& midi_event: midiEvents.data) {
             lv2_evbuf_write(&buf_iter, 
                              midi_event.time, 0,
-                             world->urids.midi_MidiEvent,
+                             cache->urids.midi_MidiEvent,
                              midi_event.size,
                              midi_event.data);
         }
@@ -852,28 +839,26 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
 
     samp_count += numsamples;
     if(samp_count - last_update > update_every) {
-
         ui_event_import();
         last_update = samp_count;
     }
 
-    float *tmp_sampbuf;
-
-    switch(info->audio_in_count) {
+    switch(audioInPorts.size()) {
     case 0:    // No audio inputs
         break;
 
-    case 1:
-        tmp_sampbuf = audioBufs;
+    case 1: {
+        float *sample = audioInPorts[0]->buf;
         for (int i = 0; i < numsamples; i++) {
-            *tmp_sampbuf++ = (pin[0][i] + pin[1][i]) * 0.5f;
+            *sample++ = (pin[0][i] + pin[1][i]) * 0.5f;
         }
         break;
+    }
 
     case 2:
     default:   // FIXME if it's greater than 2, should mix some of them.
-        memcpy(audioIn, pout[0], sizeof(float) * numsamples);
-        memcpy(audioIn+ZZUB_BUFLEN, pout[1], sizeof(float) * numsamples);
+        memcpy(audioInPorts[0]->buf, pout[0], sizeof(float) * numsamples);
+        memcpy(audioInPorts[1]->buf, pout[1], sizeof(float) * numsamples);
         break;
     }
 
@@ -891,37 +876,33 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
     }
 
 
-    for(EventPort *port: info->eventPorts) {
+    for(EventBufPort* port: eventPorts) {
         if(port->flow == PortFlow::Input) {
             continue;
         }
 
-        lv2_evbuf_reset(eventBufs[port->bufIndex], true);
+        lv2_evbuf_reset(port->eventBuf, true);
     }
 
 
-    switch(info->audio_out_count) {
+    switch(audioOutPorts.size()) {
     case 0:
         return true;
     case 1:
-        memcpy(pout[0], audioOut, sizeof(float) * numsamples);
-        memcpy(pout[1], audioOut, sizeof(float) * numsamples);
+        memcpy(pout[0], audioOutPorts[0]->buf, sizeof(float) * numsamples);
+        memcpy(pout[1], audioOutPorts[0]->buf, sizeof(float) * numsamples);
         return true;
     case 2:
     default:
-        memcpy(pout[0], audioOut, sizeof(float) * numsamples);
-        memcpy(pout[1], audioOut+ZZUB_BUFLEN, sizeof(float) * numsamples);
+        memcpy(pout[0], audioOutPorts[0]->buf, sizeof(float) * numsamples);
+        memcpy(pout[1], audioOutPorts[1]->buf, sizeof(float) * numsamples);
         return true;
     }
 }
 
 
-zzub::plugin *PluginInfo::create_plugin() const {
-    return new PluginAdapter((PluginInfo*) &(*this));
-}
-
 struct lv2plugincollection : zzub::plugincollection {
-    PluginWorld *world = PluginWorld::getInstance();
+    SharedAdapterCache *world = SharedAdapterCache::getInstance();
    
     virtual void initialize(zzub::pluginfactory *factory) {
         const LilvPlugins* const collection = world->get_all_plugins();
@@ -971,8 +952,8 @@ void write_events_from_ui(void* const adapter_handle,
 
     PluginAdapter* const adapter = (PluginAdapter *) adapter_handle;
 
-    if (protocol != 0 && protocol != adapter->world->urids.atom_eventTransfer) {
-        fprintf(stderr, "UI write with unsupported protocol %u (%s)\n", protocol, unmap_uri(adapter->world, protocol));
+    if (protocol != 0 && protocol != adapter->cache->urids.atom_eventTransfer) {
+        fprintf(stderr, "UI write with unsupported protocol %u (%s)\n", protocol, unmap_uri(adapter->cache, protocol));
         return;
     }
 
@@ -995,17 +976,19 @@ void write_events_from_ui(void* const adapter_handle,
 uint32_t lv2_port_index(void* const adapter_handle, const char* symbol) { 
     PluginAdapter* const adapter = (PluginAdapter *) adapter_handle;
 
-    Port* port = adapter->info->port_by_symbol(symbol);
+//    Port* port = adapter->info->port_by_symbol(symbol);
+    for(auto& port: adapter->info->ports)
+        if(strncmp(port->symbol.c_str(), symbol, port->symbol.size()) == 0)
+            return port->index;
 
-    return port ? port->index : LV2UI_INVALID_PORT_INDEX;
+    return LV2UI_INVALID_PORT_INDEX;
 }
 
 
 const void* get_port_value(const char* port_symbol,
                            void*       user_data,
                            uint32_t*   size,
-                           uint32_t*   type)
-{
+                           uint32_t*   type) {
     printf("PluginAdapter::get_port_value\n");
 
     PluginAdapter* adapter = (PluginAdapter*) user_data;
@@ -1013,8 +996,8 @@ const void* get_port_value(const char* port_symbol,
 
     if (port != nullptr) {
         *size = sizeof(float);
-        *type = adapter->world->forge.Float;
-        return &adapter->paramPortValues[port->paramIndex];
+        *type = adapter->cache->forge.Float;
+        return &port->value;
     }
 
     *size = *type = 0;
@@ -1040,21 +1023,21 @@ void set_port_value(const char* port_symbol,
     }
 
     float fvalue;
-    if (type == adapter->world->forge.Float) {
+    if (type == adapter->cache->forge.Float) {
         fvalue = *(const float*)value;
-    } else if (type == adapter->world->forge.Double) {
+    } else if (type == adapter->cache->forge.Double) {
         fvalue = *(const double*)value;
-    } else if (type == adapter->world->forge.Int) {
+    } else if (type == adapter->cache->forge.Int) {
         fvalue = *(const int32_t*)value;
-    } else if (type == adapter->world->forge.Long) {
+    } else if (type == adapter->cache->forge.Long) {
         fvalue = *(const int64_t*)value;
     } else {
         fprintf(stderr, "error: Preset `%s' value has bad type <%s>\n",
-                port_symbol, adapter->world->unmap.unmap(adapter->world->unmap.handle, type));
+                port_symbol, adapter->cache->unmap.unmap(adapter->cache->unmap.handle, type));
         return;
     }
 
-    adapter->paramPortValues[port->paramIndex] = fvalue;
+    port->value = fvalue;
 
     if (adapter->suil_ui_instance) {
         // Update UI

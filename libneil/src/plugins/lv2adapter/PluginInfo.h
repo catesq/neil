@@ -12,52 +12,41 @@
 
 
 struct PluginInfo : zzub::info {
-	PluginWorld *world;
-    const LilvPlugin *lilvPlugin;
+    PluginInfo(SharedAdapterCache *cache, const LilvPlugin *lilvPlugin);
 
+    const LilvWorld*    lilvWorld;
 
-    // float *defaultValues;
+    const LilvPlugin*   lilvPlugin;
 
-    LilvUIs *uis;
+    SharedAdapterCache* cache;
 
-    // uint64_t pluginType = 0;
-    int audio_in_count = 0;
-    int audio_out_count = 0;
+    std::vector<Port*>  ports;
 
-    unsigned zzubGlobalsLen = 0; // byte offset into the globals data populated by zzub
-                                  // the globals data is a mix of 8 & 16 bit ints
-    std::string zzubUri;
-	std::string lv2Uri;
-    std::string lv2ClassUri;
-    std::string libraryPath;
-    std::string bundlePath;
+    std::string         zzubUri;
 
-    std::vector<Port*> ports;
-    std::vector<std::string> paramNames{};
-    std::unordered_map<std::string, Port*> portSymbol{};
+    std::string         lv2Uri;
 
-    std::vector<ControlPort *> controlPorts;
-    std::vector<ParamPort *> paramPorts;
+    std::string         lv2ClassUri;
 
-    std::vector<EventPort*> midiPorts{};
+    std::string         libraryPath;
 
-    std::vector<EventPort*> eventPorts{};
+    std::string         bundlePath;
 
-    std::vector<AudioBufPort*> audioPorts{};
+    unsigned            zzubTotalDataSize;
 
-    std::vector<CvBufPort*> cvPorts{};
-
-
-    virtual zzub::plugin* create_plugin() const;
+    virtual      zzub::plugin* create_plugin() const;
     virtual bool store_info(zzub::archive *) const { return false; }
-    Port* port_by_symbol(std::string symbol);
-    // void setMinBufSize(unsigned);
+    void         add_generator_params();
 
-    PluginInfo(PluginWorld *world, const LilvPlugin *lilvPlugin);
-    virtual ~PluginInfo();
-    void add_generator_params();
-//    uint32_t inline num_controls() { return controlPorts.size() + paramPorts.size(); }
 private:
-    Port *build_port(uint32_t index);
+    uint32_t     mixin_plugin_flag(Port* port);
+    Port*        build_port(uint32_t index, uint32_t* paramPortCount, uint32_t* controlPortCount);
+
+    Port*        setup_base_port(Port* port, const LilvPort* lilvPort);
+    Port*        setup_control_val_port(ValuePort* port,const LilvPort* lilvPort);
+    Port*        setup_param_port(ParamPort* port,const LilvPort* lilvPort);
+
+    PortType     get_port_type(const LilvPort* lilvPort, PortFlow flow);
+    PortFlow     get_port_flow(const LilvPort* lilvPort);
 };
 
