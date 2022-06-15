@@ -84,7 +84,7 @@ uint32_t lv2_port_index(
 
 struct PluginInfo;
 struct ParamPort;
-struct SharedAdapterCache;
+struct SharedCache;
 
 extern "C" {
     void on_window_destroy(GtkWidget* widget, gpointer data);
@@ -92,41 +92,47 @@ extern "C" {
 }
 
 struct PluginAdapter : zzub::plugin, zzub::event_handler {
-    PluginInfo*             info              = nullptr;
-    SharedAdapterCache*     cache             = nullptr;
-    LilvInstance*           lilvInstance      = nullptr;
-    zzub_plugin_t*          metaPlugin        = nullptr;
+    // zzub engine boilerplate - trak_states are the previous plugin port values, trak_values are the new port values. attr_values are legacy.
+    trackvals       trak_values[16]{};
+    trackvals       trak_states[16]{};
+    attrvals        attr_values;
 
-    LilvUIs*                uis               = nullptr;
-    const LilvUI*           lilv_ui_type      = nullptr;
-    const LilvNode*         lilv_ui_type_node = nullptr;
-    SuilHost*               suil_ui_host      = nullptr;            // < Plugin UI host support
-    SuilInstance*           suil_ui_instance  = nullptr;    // < Plugin UI instance (shared library)
-    SuilHandle              suil_ui_handle    = nullptr;
+    PluginInfo*     info              = nullptr;
+    SharedCache*    cache             = nullptr;
+    LilvInstance*   lilvInstance      = nullptr;
+    zzub_plugin_t*  metaPlugin        = nullptr;
 
-    GtkWidget*              gtk_ui_window     = nullptr;
-    GtkWidget*              gtk_ui_root_box   = nullptr;
-    GtkWidget*              gtk_ui_parent_box = nullptr;
-    void*                   transient_wid     = nullptr;
+    LilvUIs*        uis               = nullptr;
+    const LilvUI*   lilv_ui_type      = nullptr;
+    const LilvNode* lilv_ui_type_node = nullptr;
+    SuilHost*       suil_ui_host      = nullptr;    // < Plugin UI host support
+    SuilInstance*   suil_ui_instance  = nullptr;    // < Plugin UI instance (shared library)
+    SuilHandle      suil_ui_handle    = nullptr;
+    GtkWidget*      gtk_ui_window     = nullptr;
+    GtkWidget*      gtk_ui_root_box   = nullptr;
+    GtkWidget*      gtk_ui_parent_box = nullptr;
+    void*           transient_wid     = nullptr;
 
-    uint32_t                samp_count        = 0;        //number of samples played
-    uint32_t                last_update       = 0;
-    uint32_t                update_every      = 767;    //update from ui after every x samples
-    int32_t                 trackCount        = 0;
-    float                   ui_scale          = 2.0;    // for displaying ui of plugins on high density displays. only updated when the ui_window is created in PluginAdapter::invoke
-    float                   sample_rate       = 44100;
-    float                   update_rate       = 10;
+    uint32_t        samp_count        = 0;         //number of samples played
+    uint32_t        last_update       = 0;
+    uint32_t        update_every      = 767;       //update from ui after every x samples
+    int32_t         trackCount        = 0;
 
-    trackvals               trak_values[16]{};
-    trackvals               trak_states[16]{};
-    attrvals                attr_values;
+    float           ui_scale          = 2.0;       // for displaying ui of plugins on high density displays. only updated when the ui_window is created in PluginAdapter::invoke
+    float           sample_rate       = 44100;
+    float           update_rate       = 10;
 
-    LV2Features             features;
-    LV2Worker               worker;
+    MidiEvents      midiEvents{};
+    bool            program_change_update = false;
+    bool            halting                    = false;
 
-    ZixRing*                ui_events;       // Port events from ui
-    ZixRing*                plugin_events;   // Port events from plugin
-    ZixSem                  work_lock;       // lock for the LV2Worker
+    LV2Features     features;
+    LV2Worker       worker;
+    ZixRing*        ui_events;       // Port events from ui
+    ZixRing*        plugin_events;   // Port events from plugin
+    ZixSem          work_lock;       // lock for the LV2Worker
+
+    std::vector<Port*>         ports;
 
     std::vector<AudioBufPort*> audioInPorts;
     std::vector<AudioBufPort*> audioOutPorts;
@@ -139,20 +145,12 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     std::vector<ControlPort*>  controlPorts;
     std::vector<ParamPort*>    paramPorts;
 
-    std::vector<Port*> ports;
-
-    MidiEvents              midiEvents{};
-
-    bool                    update_from_program_change = false;
-    bool                    halting                    = false;
 
     PluginAdapter(PluginInfo *info);
     ~PluginAdapter();
 
-    ParamPort*          get_param_port(std::string symbol);
 
-    void                connectInstance(LilvInstance* pluginInstance);
-    void                connectPluginUI();
+    void                connect(LilvInstance* pluginInstance);
     void                ui_destroy();
     void                update_all_from_ui();
     
@@ -168,12 +166,14 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     virtual void        load(zzub::archive *arc);
     virtual void        save(zzub::archive *arc);
 
+    ParamPort*          get_param_port(std::string symbol);
 
 private:
     bool       ui_open();
     bool       is_ui_resizable();
     bool       isExternalUI(const LilvUI* ui);
-    void       process_track_midi_events(midi_msg &vals_msg, midi_msg& state_msg);
+    void       process_all_midi_tracks();
+    void       process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg);
     void       update_port(ParamPort* port, float float_val);
     void       ui_event_import();
     const bool ui_select(const char *native_ui_type, const LilvUI** ui_type_ui, const LilvNode** ui_type_node);

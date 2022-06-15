@@ -41,28 +41,8 @@
 
 #include <iostream>
 
-const char *zzub_adapter_name = "zzub lv2 adapter";
+//const char *zzub_adapter_name = "zzub lv2 adapter";
 
-
-bool
-PluginAdapter::isExternalUI(const LilvUI * ui) {
-    printf("UI: %lu\n", (long unsigned) ui);
-    const LilvNodes* ui_classes = lilv_ui_get_classes(ui);
-    printf("UI classes: %lu\n", (long unsigned) ui);
-
-    std::string name = as_string(lilv_ui_get_uri(ui));
-    printf("UI name: %s", name.c_str());
-
-    LILV_FOREACH (nodes, it, ui_classes) {
-        const LilvNode* ui_type = lilv_nodes_get (ui_classes, it);
-
-        if (lilv_node_equals(ui_type, lilv_new_uri(cache->lilvWorld, "http://kxstudio.sf.net/ns/lv2ext/external-ui#Widget"))) {
-            return true;
-        }
-    }
-
-    return false;
-}
 
 
 
@@ -74,11 +54,14 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
         memset(global_values, 0, info->zzubTotalDataSize);
     }
 
+    memset(trak_values, 0, sizeof(trackvals) * 16);
+    memset(trak_states, 0, sizeof(trackvals) * 16);
+
     uis           = lilv_plugin_get_uis(info->lilvPlugin);
     ui_events     = zix_ring_new(EVENT_BUF_SIZE);
     plugin_events = zix_ring_new(EVENT_BUF_SIZE);
 
-    track_values = &trak_values[0];
+    track_values = trak_values;
     attributes   = (int *) &attr_values;
 
 
@@ -159,88 +142,76 @@ PluginAdapter::~PluginAdapter() {
 }
 
 
-void PluginAdapter::init(zzub::archive *arc) {
+void
+PluginAdapter::init(zzub::archive *arc) {
     bool use_show_ui = false;
     sample_rate = _master_info->samples_per_second;
     ui_scale = get_scale_factor();
 
     LV2_Options_Option options[] = {
-       {
-            LV2_OPTIONS_INSTANCE,
-            0,
-            cache->urids.param_sampleRate,
-            sizeof(float),
-            cache->urids.atom_Float,
-            &sample_rate
-       },
-       {
-            LV2_OPTIONS_INSTANCE, 0,
-            cache->urids.minBlockLength,
-            sizeof(int32_t),
-            cache->urids.atom_Int,
-            &cache->hostParams.minBlockLength
-       },
-       {
-            LV2_OPTIONS_INSTANCE, 0,
-            cache->urids.maxBlockLength,
-            sizeof(int32_t),
-            cache->urids.atom_Int,
-            &cache->hostParams.blockLength
-       },
-       {
-            LV2_OPTIONS_INSTANCE, 0,
-            cache->urids.bufSeqSize,
-            sizeof(int32_t),
-            cache->urids.atom_Int,
-            &cache->hostParams.bufSize
-       },
-       {
-            LV2_OPTIONS_INSTANCE, 0,
-            cache->urids.ui_updateRate,
-            sizeof (float),
-            cache->urids.atom_Float,
-            &update_rate
-       },
-       {
-            LV2_OPTIONS_INSTANCE, 0,
-            cache->urids.ui_scaleFactor,
-            sizeof (float),
-            cache->urids.atom_Float,
-            &ui_scale
-       },
-       {
-            LV2_OPTIONS_INSTANCE, 0,
-            cache->urids.ui_transientWindowId,
-            sizeof (long),
-            cache->urids.atom_Long,
-            &transient_wid
-       },
-       {
-            LV2_OPTIONS_INSTANCE,
-            0,
-            0,
-            0,
-            0,
-            NULL
+        {
+             LV2_OPTIONS_INSTANCE, 0,
+             cache->urids.param_sampleRate,
+             sizeof(float), cache->urids.atom_Float,
+             &sample_rate
+        },
+        {
+             LV2_OPTIONS_INSTANCE, 0,
+             cache->urids.minBlockLength,
+             sizeof(int32_t), cache->urids.atom_Int,
+             &cache->hostParams.minBlockLength
+        },
+        {
+             LV2_OPTIONS_INSTANCE, 0,
+             cache->urids.maxBlockLength,
+             sizeof(int32_t), cache->urids.atom_Int,
+             &cache->hostParams.blockLength
+        },
+        {
+             LV2_OPTIONS_INSTANCE, 0,
+             cache->urids.bufSeqSize,
+             sizeof(int32_t), cache->urids.atom_Int,
+             &cache->hostParams.bufSize
+        },
+        {
+             LV2_OPTIONS_INSTANCE, 0,
+             cache->urids.ui_updateRate,
+             sizeof (float), cache->urids.atom_Float,
+             &update_rate
+        },
+        {
+             LV2_OPTIONS_INSTANCE, 0,
+             cache->urids.ui_scaleFactor,
+             sizeof (float), cache->urids.atom_Float,
+             &ui_scale
+        },
+        {
+             LV2_OPTIONS_INSTANCE, 0,
+             cache->urids.ui_transientWindowId,
+             sizeof (long), cache->urids.atom_Long,
+             &transient_wid
+        },
+        {
+             LV2_OPTIONS_INSTANCE, 0, 0, 0, 0, NULL
         }
     };
 
     features.options = malloc(sizeof(options));
-    memcpy(features.options, &options[0], sizeof(options));
+    memcpy(features.options, options, sizeof(options));
 
-    features.map_feature            = { LV2_URID__map,                    &cache->map };
-    features.unmap_feature          = { LV2_URID__unmap,                  &cache->unmap };
-    features.bounded_buf_feature    = { LV2_BUF_SIZE__boundedBlockLength, &cache->hostParams.blockLength };
-    features.make_path_feature      = { LV2_STATE__makePath,              &cache->make_path };
-    features.options_feature        = { LV2_OPTIONS__options,             features.options};
-    features.program_host_feature   = { LV2_PROGRAMS__Host,               &features.program_host };
-    features.data_access_feature    = { LV2_DATA_ACCESS_URI,              NULL };
-    features.worker_feature         = { LV2_WORKER__schedule,             &features.worker_schedule };
+    features.map_feature                   = { LV2_URID__map,                    &cache->map };
+    features.unmap_feature                 = { LV2_URID__unmap,                  &cache->unmap };
+    features.bounded_buf_feature           = { LV2_BUF_SIZE__boundedBlockLength, &cache->hostParams.blockLength };
+    features.make_path_feature             = { LV2_STATE__makePath,              &cache->make_path };
+    features.options_feature               = { LV2_OPTIONS__options,             features.options};
+    features.program_host_feature          = { LV2_PROGRAMS__Host,               &features.program_host };
+    features.data_access_feature           = { LV2_DATA_ACCESS_URI,              NULL };
+    features.worker_feature                = { LV2_WORKER__schedule,             &features.worker_schedule };
 
-    features.ui_parent_feature      = { LV2_UI__parent  ,                 NULL};
-    features.ui_instance_feature    = { LV2_INSTANCE_ACCESS_URI,          NULL };
-    features.ui_idle_feature        = { LV2_UI__idleInterface,            NULL };
-    features.ui_data_access_feature = { LV2_DATA_ACCESS_URI,              &features.ext_data };
+    features.ui_parent_feature             = { LV2_UI__parent  ,                 NULL};
+    features.ui_instance_feature           = { LV2_INSTANCE_ACCESS_URI,          NULL };
+    features.ui_idle_feature               = { LV2_UI__idleInterface,            NULL };
+    features.ui_data_access_feature        = { LV2_DATA_ACCESS_URI,              &features.ext_data };
 
     features.program_host.handle           = this;
     features.program_host.program_changed  = &program_changed;
@@ -248,9 +219,6 @@ void PluginAdapter::init(zzub::archive *arc) {
     worker.plugin                          = this;
     features.worker_schedule.handle        = &worker;
     features.worker_schedule.schedule_work = &lv2_worker_schedule;
-
-    zix_sem_init(&worker.sem, 0);
-    zix_sem_init(&work_lock, 1);
 
     const LV2_Feature* feature_list[] = {
         &features.map_feature,
@@ -263,28 +231,48 @@ void PluginAdapter::init(zzub::archive *arc) {
         NULL
     };
 
+    zix_sem_init(&worker.sem, 0);
+    zix_sem_init(&work_lock, 1);
+
     lilvInstance = lilv_plugin_instantiate(info->lilvPlugin, _master_info->samples_per_second, feature_list);
 
-    metaPlugin     = _host->get_metaplugin();
+    metaPlugin = _host->get_metaplugin();
     _host->set_event_handler(metaPlugin, this);
 
-    features.ext_data.data_access = lilv_instance_get_descriptor(lilvInstance)->extension_data;
+    features.ext_data.data_access     = lilv_instance_get_descriptor(lilvInstance)->extension_data;
     features.ui_instance_feature.data = lilv_instance_get_handle(lilvInstance);
 
     worker.enable = lilv_plugin_has_extension_data(info->lilvPlugin, cache->nodes.worker_iface);
+
     if (worker.enable) {
         auto iface = lilv_instance_get_extension_data (lilvInstance, LV2_WORKER__interface);
         lv2_worker_init(this, &worker, (const LV2_Worker_Interface*) iface, true);
     }
 
-    connectInstance(lilvInstance);
+    connect(lilvInstance);
 
     lilv_instance_activate(lilvInstance);
 }
 
+bool
+PluginAdapter::isExternalUI(const LilvUI * ui) {
+    const LilvNodes* ui_classes = lilv_ui_get_classes(ui);
+    std::string name = as_string(lilv_ui_get_uri(ui));
+
+    LILV_FOREACH (nodes, it, ui_classes) {
+        const LilvNode* ui_type = lilv_nodes_get(ui_classes, it);
+
+        if (lilv_node_equals(ui_type, lilv_new_uri(cache->lilvWorld, "http://kxstudio.sf.net/ns/lv2ext/external-ui#Widget")))
+            return true;
+    }
+
+    return false;
+}
 
 
-bool PluginAdapter::ui_open() {
+
+bool
+PluginAdapter::ui_open() {
     attr_values.ui = 0;
     bool use_show_ui = false;
 
@@ -537,7 +525,7 @@ void program_changed(LV2_Programs_Handle handle, int32_t index) {
 
     PluginAdapter* adapter = (PluginAdapter*) handle;
     adapter->update_all_from_ui();
-    adapter->update_from_program_change = true;
+    adapter->program_change_update = true;
 }
 
 
@@ -547,7 +535,7 @@ void PluginAdapter::destroy() {
 
 
 
-void PluginAdapter::connectInstance(LilvInstance* pluginInstance) {
+void PluginAdapter::connect(LilvInstance* pluginInstance) {
     if(verbose) { printf("in connectInstance\n"); }
 
     uint8_t* tmp_globals_p = (uint8_t*) global_values;
@@ -713,24 +701,35 @@ void PluginAdapter::process_events() {
         }
     }
 
+    if(info->flags & zzub_plugin_flag_is_instrument)
+        process_all_midi_tracks();
+}
+
+void PluginAdapter::process_all_midi_tracks() {
+    printf("Plugin %s has midi\n", info->name.c_str());
     for (int t = 0; t < trackCount; t++) {
         if (trak_values[t].volume != TRACKVAL_VOLUME_UNDEFINED)
-
+            printf("midi track %d: set track volumne\n", t);
             trak_states[t].volume = trak_values[t].volume;
 
         if (trak_values[t].note == zzub::note_value_none) {
 
-            if(trak_values[t].volume != TRACKVAL_VOLUME_UNDEFINED && trak_states[t].note != zzub::note_value_none)
+
+            if(trak_values[t].volume != TRACKVAL_VOLUME_UNDEFINED && trak_states[t].note != zzub::note_value_none) {
                 midiEvents.aftertouch(attr_values.channel, trak_states[t].note, trak_states[t].volume);
+                printf("midi track %d: no note got aftertouch\n", t);
+            }
 
         } else if(trak_values[t].note != zzub::note_value_off) {
 
             midiEvents.noteOn(attr_values.channel, trak_values[t].note, trak_states[t].volume);
             trak_states[t].note = trak_values[t].note;
+            printf("midi track %d: note on\n", t);
 
         } else if(trak_states[t].note != zzub::note_value_none) {
 
             midiEvents.noteOff(attr_values.channel, trak_states[t].note);
+            printf("midi track %d: note off\n", t);
             // this is wrong but some synths glitch when an aftertouch is sent after a note off
             // it relies on state.note being a valid note.
             // if a note off with volume 0 is set then clear state.note to prevent aftertouch
@@ -738,12 +737,18 @@ void PluginAdapter::process_events() {
                 trak_states[t].note = zzub::note_value_none;
         }
 
-        process_track_midi_events(trak_values[t].msg_1, trak_states[t].msg_1);
-        process_track_midi_events(trak_values[t].msg_2, trak_states[t].msg_2);
+        printf("command 1\n");
+        process_one_midi_track(trak_values[t].msg_1, trak_states[t].msg_1);
+        printf("command 2\n");
+        process_one_midi_track(trak_values[t].msg_2, trak_states[t].msg_2);
     }
 }
 
-void PluginAdapter::process_track_midi_events(midi_msg &vals_msg, midi_msg& state_msg) {
+
+
+void PluginAdapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg) {
+    std::cout << vals_msg << std::endl;
+    std::cout << state_msg << std::endl;
     if(vals_msg.midi.cmd != TRACKVAL_NO_MIDI_CMD) {
         state_msg.midi.cmd = vals_msg.midi.cmd;
 
@@ -807,32 +812,28 @@ void PluginAdapter::update_all_from_ui() {
 
 bool PluginAdapter::process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) { return false; }
 
+
 bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, int const mode) {
-    if (halting || mode == zzub::process_mode_no_io) {
-        // printf("mode no io process_stereo() returning false\n");
+    if (halting || mode == zzub::process_mode_no_io)
         return false;
-    }
 
     for(EventBufPort* midiPort: midiPorts) {
-        if(midiPort->flow != PortFlow::Input) {
+        if(midiPort->flow != PortFlow::Input)
             continue;
-        }
 
         lv2_evbuf_reset(midiPort->eventBuf, true);
 
-        if(midiEvents.count() == 0) {
+        if(midiEvents.count() == 0)
             continue;
-        }
 
         LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiPort->eventBuf);
 
-        for (auto& midi_event: midiEvents.data) {
+        for (auto& midi_event: midiEvents.data)
             lv2_evbuf_write(&buf_iter, 
                              midi_event.time, 0,
                              cache->urids.midi_MidiEvent,
                              midi_event.size,
                              midi_event.data);
-        }
 
         midiEvents.reset();
     }
@@ -849,9 +850,8 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
 
     case 1: {
         float *sample = audioInPorts[0]->buf;
-        for (int i = 0; i < numsamples; i++) {
+        for (int i = 0; i < numsamples; i++)
             *sample++ = (pin[0][i] + pin[1][i]) * 0.5f;
-        }
         break;
     }
 
@@ -866,7 +866,6 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
 
     /* Process any worker replies. */
     if(worker.enable) {
-
         lv2_worker_emit_responses(&worker, lilvInstance);
 
         /* Notify the plugin the run() cycle is finished */
@@ -888,10 +887,12 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
     switch(audioOutPorts.size()) {
     case 0:
         return true;
+
     case 1:
         memcpy(pout[0], audioOutPorts[0]->buf, sizeof(float) * numsamples);
         memcpy(pout[1], audioOutPorts[0]->buf, sizeof(float) * numsamples);
         return true;
+
     case 2:
     default:
         memcpy(pout[0], audioOutPorts[0]->buf, sizeof(float) * numsamples);
@@ -902,7 +903,7 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
 
 
 struct lv2plugincollection : zzub::plugincollection {
-    SharedAdapterCache *world = SharedAdapterCache::getInstance();
+    SharedCache *world = SharedCache::getInstance();
    
     virtual void initialize(zzub::pluginfactory *factory) {
         const LilvPlugins* const collection = world->get_all_plugins();
@@ -913,22 +914,12 @@ struct lv2plugincollection : zzub::plugincollection {
         }
     }
 
-    // Called by the host upon song loading. If the collection
-    // can not provide a plugin info based on the uri or
-    // the metainfo passed, it should return a null pointer.
     virtual const zzub::info *get_info(const char *uri, zzub::archive *data) { return 0; }
 
-    // Returns the uri of the collection to be identified,
-    // return zero for no uri. Collections without uri can not be
-    // configured.
     virtual const char *get_uri() { return 0; }
 
-    // Called by the host to set specific configuration options,
-    // usually related to paths.
     virtual void configure(const char *key, const char *value) {}
 
-    // Called by the host upon destruction. You should
-    // delete the instance in this function
     virtual void destroy() {
         delete this;
     }
@@ -969,14 +960,12 @@ void write_events_from_ui(void* const adapter_handle,
     ev->size     = buffer_size;
     memcpy(ev->body, buffer, buffer_size);
     zix_ring_write(adapter->ui_events, buf, sizeof(buf));
-
 }
 
 
 uint32_t lv2_port_index(void* const adapter_handle, const char* symbol) { 
     PluginAdapter* const adapter = (PluginAdapter *) adapter_handle;
 
-//    Port* port = adapter->info->port_by_symbol(symbol);
     for(auto& port: adapter->info->ports)
         if(strncmp(port->symbol.c_str(), symbol, port->symbol.size()) == 0)
             return port->index;
