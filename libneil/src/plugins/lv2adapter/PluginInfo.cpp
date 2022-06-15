@@ -20,7 +20,7 @@ zzub::plugin *PluginInfo::create_plugin() const {
     return new PluginAdapter((PluginInfo*) &(*this));
 }
 
-PluginInfo::PluginInfo(SharedAdapterCache *cache, const LilvPlugin *lilvPlugin)
+PluginInfo::PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin)
     : zzub::info(),
       cache(cache),
       lilvWorld(cache->lilvWorld),
@@ -61,7 +61,15 @@ PluginInfo::PluginInfo(SharedAdapterCache *cache, const LilvPlugin *lilvPlugin)
 
     printf("Registered plugin: name='%s', uri='%s', path='%s'\n", name.c_str(), uri.c_str(), bundlePath.c_str());
 
+    // one of these is incremented each time a paramport or controlport is constructed in build_port
+    uint32_t paramIndex = 0;
+    uint32_t controlIndex = 0;
 
+    for(uint32_t i = 0; i < lilv_plugin_get_num_ports(lilvPlugin); i++) {
+        auto port = build_port(i, &paramIndex, &controlIndex);
+        ports.push_back(port);
+        flags |= mixin_plugin_flag(port);
+    }
 
     if(lv2ClassUri == LV2_CORE__InstrumentPlugin) {
         add_generator_params();
@@ -73,15 +81,6 @@ PluginInfo::PluginInfo(SharedAdapterCache *cache, const LilvPlugin *lilvPlugin)
     }
 
 
-    // one of these is incremented each time a paramport or controlport is constructed in build_port
-    uint32_t paramIndex = 0;
-    uint32_t controlIndex = 0;
-
-    for(uint32_t i = 0; i < lilv_plugin_get_num_ports(lilvPlugin); i++) {
-        auto port = build_port(i, &paramIndex, &controlIndex);
-        ports.push_back(port);
-        flags |= mixin_plugin_flag(port);
-    }
 
 //    LilvNodes *extDataNodes = lilv_plugin_get_extension_data(lilvPlugin);
 //    LILV_FOREACH(nodes, dataIter, extDataNodes) {
@@ -200,7 +199,6 @@ Port* PluginInfo::setup_param_port(ParamPort* port, const LilvPort* lilvPort) {
     port->zzubParam.name = name.c_str();
     port->zzubParam.description = port->zzubParam.name;
 
-
     LilvScalePoints *lilv_scale_points = lilv_port_get_scale_points(lilvPlugin, lilvPort);
     unsigned scale_points_size = scale_size(lilv_scale_points);
 
@@ -239,6 +237,8 @@ Port* PluginInfo::setup_param_port(ParamPort* port, const LilvPort* lilvPort) {
 
         lilv_scale_points_free(lilv_scale_points);
     }
+
+    global_parameters.push_back(&port->zzubParam);
 
     return port;
 }
