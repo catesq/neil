@@ -100,6 +100,14 @@ union midi_msg {
     } midi;
 };
 
+inline std::ostream& operator<<(std::ostream& stream, const midi_msg& msg) {
+    char str[20];
+
+    sprintf(str, "cmd: %x, data: %x%x", msg.bytes[0], msg.bytes[1], msg.bytes[2]);
+    stream << std::string(str);
+    return stream;
+}
+
 struct trackvals {
     uint8_t note   = zzub::note_value_none;
     uint8_t volume = 0x40;
