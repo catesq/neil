@@ -97,7 +97,7 @@ ParamPort::ParamPort(PortFlow portFlow,
 //-----------------------------------------------------------------------------------
 
 
-uint32_t get_port_properties(const SharedAdapterCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
+uint32_t get_port_properties(const SharedCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
     uint32_t properties = 0;
     
     if (lilv_port_has_property(lilvPlugin, lilvPort, cache->nodes.pprop_optional))
@@ -152,7 +152,7 @@ uint32_t get_port_properties(const SharedAdapterCache *cache, const LilvPlugin *
 //-----------------------------------------------------------------------------------
 
 
-uint32_t get_port_designation(const SharedAdapterCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
+uint32_t get_port_designation(const SharedCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
     uint32_t designation = 0;
 
     if (lilv_port_has_property(lilvPlugin, lilvPort, cache->nodes.reportsLatency))
