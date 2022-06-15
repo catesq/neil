@@ -1,7 +1,7 @@
 // globalny tuning
-// zakres dla suwaków (cutoff, resonance, modulation)
+// zakres dla suwakï¿½w (cutoff, resonance, modulation)
 // lepszy tryb mono
-// sustain 0 -> b³¹d
+// sustain 0 -> bï¿½ï¿½d
 // startuje -> bzdury
 // bug w seq<->buzz
 
@@ -1407,7 +1407,7 @@ static bool DoWorkChannel(float *pout, mi *pmi, int c, CChannel *chn)
   {
     float PitchDeviation=float(log(chn->Frequency*pmi->pMasterInfo->SamplesPerSec/264.0)/log(pow(2.0,1/12.0))); // semitones
   	KeyTrackAmount=float((pmi->gvalAct.vFilterTrack-120)/60.0);
-    KeyTrack=chn->inrKeyTrack.Process(float(KeyTrackAmount*(PitchDeviation/12.0)*240.0/6.0),c); // 240 - zakres cutoffa, 6 - iloœæ oktaw przypadaj¹cych na ca³¹ skalê
+    KeyTrack=chn->inrKeyTrack.Process(float(KeyTrackAmount*(PitchDeviation/12.0)*240.0/6.0),c); // 240 - zakres cutoffa, 6 - iloï¿½ï¿½ oktaw przypadajï¿½cych na caï¿½ï¿½ skalï¿½
     if (chn->AmpEnv.m_nState==4 /*|| (chn->AmpEnv.m_nState>=1 && chn->AmpEnv.m_fLast<1/64.0)*/)
     {
       chn->AmpEnv.ProcessSample(c);
@@ -1426,7 +1426,7 @@ static bool DoWorkChannel(float *pout, mi *pmi, int c, CChannel *chn)
       return false;
     }
     float PitchDeviation=float(log(chn->Frequency*pmi->pMasterInfo->SamplesPerSec/264.0)/log(pow(2.0,1/12.0))); // semitones
-    KeyTrack=float(KeyTrackAmount*(PitchDeviation/12.0)*240.0/6.0); // 240 - zakres cutoffa, 6 - iloœæ oktaw przypadaj¹cych na ca³¹ skalê
+    KeyTrack=float(KeyTrackAmount*(PitchDeviation/12.0)*240.0/6.0); // 240 - zakres cutoffa, 6 - iloï¿½ï¿½ oktaw przypadajï¿½cych na caï¿½ï¿½ skalï¿½
   }
 
 
