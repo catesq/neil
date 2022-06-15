@@ -701,7 +701,7 @@ namespace fsm {
       {
 	float PitchDeviation=float(log(chn->Frequency*pmi->_master_info->samples_per_second/264.0)/log(pow(2.0,1/12.0))); // semitones
   	KeyTrackAmount=float((pmi->gvalAct.vFilterTrack-120)/60.0);
-	KeyTrack=chn->inrKeyTrack.Process(float(KeyTrackAmount*(PitchDeviation/12.0)*240.0/6.0),c); // 240 - zakres cutoffa, 6 - iloœæ oktaw przypadaj¹cych na ca³¹ skalê
+    KeyTrack=chn->inrKeyTrack.Process(float(KeyTrackAmount*(PitchDeviation/12.0)*240.0/6.0),c); // 240 - zakres cutoff, 6 - ilo oktaw przypadajcych na ca skal
 	if (chn->AmpEnv.m_nState==4 /*|| (chn->AmpEnv.m_nState>=1 && chn->AmpEnv.m_fLast<1/64.0)*/)
 	  {
 	    chn->AmpEnv.ProcessSample(c);
@@ -720,7 +720,7 @@ namespace fsm {
 	    return false;
 	  }
 	float PitchDeviation=float(log(chn->Frequency*pmi->_master_info->samples_per_second/264.0)/log(pow(2.0,1/12.0))); // semitones
-	KeyTrack=float(KeyTrackAmount*(PitchDeviation/12.0)*240.0/6.0); // 240 - zakres cutoffa, 6 - iloœæ oktaw przypadaj¹cych na ca³¹ skalê
+    KeyTrack=float(KeyTrackAmount*(PitchDeviation/12.0)*240.0/6.0); // 240 - zakres cutoff, 6 - ilo oktaw przypadajcych na ca skal
       }
 
 

@@ -100,7 +100,7 @@ unsigned char CTrack::AllocChannel()
     return last;
 
 
-  // zaimplementowaæ jakiœ inny sprytny algorytm channel stealingu
+  // zaimplementowa jaky inny sprytny algorytm channel stealingu
 
 	//__asm { 
 	//	int 0x03;
@@ -133,7 +133,7 @@ void CTrack::PlayNote(unsigned char note, unsigned char _accent, unsigned char _
 		chn->pTrack=NULL;
   }
   chn=Chn();
-  if (chn->pTrack && chn->pTrack!=this) // w³aœnie ukradliœmy komuœ kana³
+  if (chn->pTrack && chn->pTrack!=this) // waœnie ukradliœmy komuœ kana
     chn->pTrack->channel=-1;
 	*/
 

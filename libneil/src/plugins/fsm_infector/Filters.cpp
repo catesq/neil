@@ -1,7 +1,7 @@
 // globalny tuning
-// zakres dla suwaków (cutoff, resonance, modulation)
+// zakres dla suwakw (cutoff, resonance, modulation)
 // lepszy tryb mono
-// sustain 0 -> b³¹d
+// sustain 0 -> b31d
 // startuje -> bzdury
 // bug w seq<->buzz
 
@@ -51,7 +51,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -68,7 +68,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=16000) cf=16000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=16000) cf=16000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/22000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -86,7 +86,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -103,7 +103,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/21000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -120,7 +120,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -137,7 +137,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -154,7 +154,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -171,7 +171,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float fQ=(float)(1.0+4*(240-Resonance)/240.0);
 
@@ -186,7 +186,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/22000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -203,7 +203,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -222,7 +222,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)(CurCutoff/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -241,7 +241,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)((240-CurCutoff)/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     //~ float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -260,7 +260,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(66*pow((float)64,(float)((CurCutoff)/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     //float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -279,7 +279,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(66*pow((float)64,(float)((CurCutoff)/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowosci przy koncu charakterystyki
     if (cf<33) cf=(float)(33.0);
     float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
@@ -297,7 +297,7 @@ namespace fsm {
 
     float CutoffFreq=(float)(132*pow((float)64,(float)((CurCutoff)/240.0)));
     float cf=(float)CutoffFreq;
-    if (cf>=20000) cf=20000; // próba wprowadzenia nieliniowoœci przy koñcu charakterystyki
+    if (cf>=20000) cf=20000; // proba wprowadzenia nieliniowo?ci przy ko?cu charakterystyki
     if (cf<33) cf=(float)(33.0);
     //~ float ScaleResonance=(float)pow((float)(cf/20000.0),ThevFactor);
     // float ScaleResonance=1.0;
