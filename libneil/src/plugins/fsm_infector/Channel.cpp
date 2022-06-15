@@ -16,6 +16,11 @@ CChannel::CChannel()
   Frequency=0.01f;
   FilterEnv.m_nState=4;
   pTrack=NULL;
+  PhaseOSC1=0.0f;
+  PhaseOSC2=0.0f;
+  PhaseOSC3=0.0f;
+  Phase1=0;
+  Phase2=0;
 }
 
 void CChannel::init()

@@ -3,6 +3,7 @@
 
 #include <zzub/plugin.h>
 #include <zzub/signature.h>
+#include "DSPChips.h"
 
 namespace fsm {
 
@@ -190,8 +191,8 @@ public:
   int NoTrig;
 	float SlideCounter, SlideEnd, SlideRange;
 
-  float LFOPhase, LFO2Phase;
-  float CurLFO, CurLFO2;
+  float LFOPhase =0.f, LFO2Phase = 0.f;
+  float CurLFO = 0.f, CurLFO2 = 0.f;
 
   CInertia inrLFO1;
   CInertia inrLFO2;
