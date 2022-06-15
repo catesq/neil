@@ -9,21 +9,21 @@
 extern "C" {
 
     LV2_URID map_uri(LV2_URID_Map_Handle handle, const char *uri) {
-        SharedAdapterCache* cache = (SharedAdapterCache*)handle;
+        SharedCache* cache = (SharedCache*)handle;
         const LV2_URID id = symap_map(cache->symap, uri);
 //        printf("mapped %u from %s\n", id, uri);
         return id;
     }
 
     const char* unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid) {
-        SharedAdapterCache* cache = (SharedAdapterCache*)handle;
+        SharedCache* cache = (SharedCache*)handle;
         const char* uri = symap_unmap(cache->symap, urid);
 //        printf("unmapped %u to %s\n", urid, uri);
         return uri;
     }
 
     char* lv2_make_path(LV2_State_Make_Path_Handle handle, const char *path) {
-        SharedAdapterCache *cache = (SharedAdapterCache*)handle;
+        SharedCache *cache = (SharedCache*)handle;
         std::string fname = cache->hostParams.tempDir + FILE_SEPARATOR + std::string(path);
         return strdup(fname.c_str());
     }
@@ -108,7 +108,7 @@ Nodes::~Nodes() {
 }
 
 
-SharedAdapterCache::~SharedAdapterCache() {
+SharedCache::~SharedCache() {
 
 }
 
@@ -153,7 +153,7 @@ SharedAdapterCache::~SharedAdapterCache() {
 //   preset_preset      (new_uri(LV2_PRESETS__Preset)),
 //   patch_message      (new_uri(LV2_PATCH__Message)),
 
-SharedAdapterCache::SharedAdapterCache()
+SharedCache::SharedCache()
     : lilvWorld(lilv_world_new()),
       nodes(lilvWorld),
       symap(symap_new()),
@@ -225,7 +225,7 @@ SharedAdapterCache::SharedAdapterCache()
 
 }
 
-void SharedAdapterCache::init_suil() {
+void SharedCache::init_suil() {
     suil_mtx.lock();
 
     if(!suil_is_init) {

@@ -29,8 +29,8 @@ enum PortType : unsigned {
     Midi    = 64
 };
 
-u_int32_t get_port_properties(const SharedAdapterCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
-u_int32_t get_port_designation(const SharedAdapterCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
+u_int32_t get_port_properties(const SharedCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
+u_int32_t get_port_designation(const SharedCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

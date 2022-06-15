@@ -45,7 +45,7 @@ extern "C" {
 // -----------------------------------------------------------------------
 
 //forward declaration for function declarations blah
-struct SharedAdapterCache;
+struct SharedCache;
 struct PluginInfo;
 struct LilvZzubParamPort;
 
@@ -332,7 +332,7 @@ struct Nodes {
 // -----------------------------------------------------------------------
 // Our LV2 World class
 
-struct SharedAdapterCache {
+struct SharedCache {
 
     LilvWorld *lilvWorld;
 
@@ -360,7 +360,7 @@ struct SharedAdapterCache {
 
     // -------------------------------------------------------------------
 
-    ~SharedAdapterCache();
+    ~SharedCache();
 
     void init_suil();
 
@@ -369,8 +369,8 @@ struct SharedAdapterCache {
         return lilv_world_get_all_plugins(lilvWorld);
     }
 
-    static SharedAdapterCache* getInstance() {
-        static SharedAdapterCache instance{};
+    static SharedCache* getInstance() {
+        static SharedCache instance{};
         return &instance;
     }
 
@@ -379,6 +379,6 @@ struct SharedAdapterCache {
     // const LV2_Feature** getLv2Features();
 
 private:
-    SharedAdapterCache();
+    SharedCache();
 };
 

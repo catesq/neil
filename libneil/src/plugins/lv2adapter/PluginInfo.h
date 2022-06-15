@@ -12,13 +12,13 @@
 
 
 struct PluginInfo : zzub::info {
-    PluginInfo(SharedAdapterCache *cache, const LilvPlugin *lilvPlugin);
+    PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin);
 
     const LilvWorld*    lilvWorld;
 
     const LilvPlugin*   lilvPlugin;
 
-    SharedAdapterCache* cache;
+    SharedCache* cache;
 
     std::vector<Port*>  ports;
 
