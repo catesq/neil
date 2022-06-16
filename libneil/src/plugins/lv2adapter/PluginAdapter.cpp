@@ -82,7 +82,7 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
             if(port->flow == PortFlow::Input) {
                 audioInPorts.push_back(new AudioBufPort(*static_cast<AudioBufPort*>(port)));
                 audioInPorts.back()->buf = (float*) malloc(sizeof(float) * ZZUB_BUFLEN);
-                ports.push_back(std::ref(audioInPorts.back()));
+                ports.push_back(audioInPorts.back());
             } else if (port->flow == PortFlow::Output) {
                 audioOutPorts.push_back(new AudioBufPort(*static_cast<AudioBufPort*>(port)));
                 audioOutPorts.back()->buf = (float*) malloc(sizeof(float) * ZZUB_BUFLEN);
