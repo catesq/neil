@@ -34,4 +34,4 @@ lv2_pluginenv.Append(LIBS=['lilv-0', 'suil-0', 'gtk-3'])
 lv2_pluginenv.Append(CCFLAGS='-pthread `pkg-config gtk+-3.0 suil-0 lilv-0 --cflags` -Ilibneil/src/libzzub -Ilibneil/src/plugins/lv2adapter')
 
 if pluginenv['LV2'] == True:
-    lv2_build = build_plugin(lv2_pluginenv, 'lv2adapter', [ 'PluginAdapter.cpp', 'Ports.cpp', 'PluginInfo.cpp', 'PluginWorld.cpp', 'ext/lv2_evbuf.c', 'ext/symap.c', 'zix/ring.c', 'features/worker.cpp'])
+    lv2_build = build_plugin(lv2_pluginenv, 'lv2adapter', [ 'PluginAdapter.cpp', 'PluginAdapterUI.cpp', 'Ports.cpp', 'PluginInfo.cpp', 'PluginWorld.cpp', 'ext/lv2_evbuf.c', 'ext/symap.c', 'zix/ring.c', 'features/worker.cpp'])
