@@ -95,7 +95,7 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     // zzub engine boilerplate - trak_states are the previous plugin port values, trak_values are the new port values. attr_values are legacy.
     trackvals       trak_values[16]{};
     trackvals       trak_states[16]{};
-    attrvals        attr_values;
+    attrvals        attr_values{0,0};
 
     PluginInfo*     info              = nullptr;
     SharedCache*    cache             = nullptr;
@@ -183,27 +183,5 @@ private:
     const LV2UI_Idle_Interface* idle_interface = nullptr;
     const LV2UI_Show_Interface* show_interface = nullptr;
     bool showing_interface                     = false;
-
-    // virtual void process_controller_events();
-    // virtual void attributes_changed();
-    // virtual void command(int);
-    // virtual void mute_track(int);
-    // virtual bool is_track_muted(int) const;
-    // virtual void event(unsigned int);
-    // virtual const zzub::envelope_info** get_envelope_infos();
-    // virtual bool play_wave(int, int, float);
-    // virtual void stop_wave();
-    // virtual int get_wave_envelope_play_position(int);
-    // virtual const char* describe_param(int);
-    // virtual bool set_instrument(const char*);
-    // virtual void get_sub_menu(int, zzub::outstream*);
-    // virtual void add_input(const char*);
-    // virtual void delete_input(const char*);
-    // virtual void rename_input(const char*, const char*);
-    // virtual void input(float**, int, float);
-    // virtual void midi_control_change(int, int, int);
-    // virtual bool handle_input(int, int, int);
-
-
 };
 
