@@ -54,9 +54,6 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
         memset(global_values, 0, info->zzubTotalDataSize);
     }
 
-    memset(trak_values, 0, sizeof(trackvals) * 16);
-    memset(trak_states, 0, sizeof(trackvals) * 16);
-
     uis           = lilv_plugin_get_uis(info->lilvPlugin);
     ui_events     = zix_ring_new(EVENT_BUF_SIZE);
     plugin_events = zix_ring_new(EVENT_BUF_SIZE);
