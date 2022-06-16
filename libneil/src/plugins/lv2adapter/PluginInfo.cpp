@@ -79,15 +79,6 @@ PluginInfo::PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin)
     } else {
         flags |= zzub::plugin_flag_control_plugin;
     }
-
-
-
-//    LilvNodes *extDataNodes = lilv_plugin_get_extension_data(lilvPlugin);
-//    LILV_FOREACH(nodes, dataIter, extDataNodes) {
-//        const LilvNode *lilvNode = lilv_nodes_get(extDataNodes, dataIter);
-//    }
-//    lilv_nodes_free(extDataNodes);
-
 }
 
 PortFlow PluginInfo::get_port_flow(const LilvPort* port) {
@@ -138,8 +129,6 @@ uint32_t PluginInfo::mixin_plugin_flag(Port* port) {
 
 Port* PluginInfo::build_port(uint32_t index, uint32_t* paramIndex, uint32_t* controlIndex) {
     const LilvPort *lilvPort = lilv_plugin_get_port_by_index(lilvPlugin, index);
-
-    auto name = as_string(lilv_port_get_symbol(lilvPlugin, lilvPort));
 
     PortFlow flow = get_port_flow(lilvPort);
     PortType type = get_port_type(lilvPort, flow);
@@ -196,8 +185,7 @@ Port* PluginInfo::setup_param_port(ParamPort* port, const LilvPort* lilvPort) {
     setup_control_val_port(port, lilvPort);
 
     port->zzubParam.flags = zzub::parameter_flag_state;
-    port->zzubParam.name = name.c_str();
-    port->zzubParam.description = port->zzubParam.name;
+
 
     LilvScalePoints *lilv_scale_points = lilv_port_get_scale_points(lilvPlugin, lilvPort);
     unsigned scale_points_size = scale_size(lilv_scale_points);
@@ -221,9 +209,11 @@ Port* PluginInfo::setup_param_port(ParamPort* port, const LilvPort* lilvPort) {
         port->zzubParam.value_default = port->lilv_to_zzub_value(port->defaultValue);
     }
 
-    port->zzubValSize   = port->zzubParam.get_bytesize();
-    port->zzubValOffset = zzubTotalDataSize;
-    zzubTotalDataSize   += port->zzubValSize;
+    port->zzubParam.name        = port->name.c_str();
+    port->zzubParam.description = port->zzubParam.name;
+    port->zzubValSize           = port->zzubParam.get_bytesize();
+    port->zzubValOffset         = zzubTotalDataSize;
+    zzubTotalDataSize           += port->zzubValSize;
 
     if(lilv_scale_points != NULL ) {
         LILV_FOREACH(scale_points, spIter,lilv_scale_points) {
