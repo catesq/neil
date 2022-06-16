@@ -7,7 +7,6 @@ cwd = Path(__file__).resolve().parent
 dest = cwd.parent
 home = Path.home()
 
-
 paths = {
     "linux": {
         "LV2_PATH": "/usr/lib/lv2:/usr/local/lib/lv2:{HOME}/.lv2:/usr/local/lib64/lv2:/usr/lib64/lv2",
@@ -23,17 +22,36 @@ paths = {
 
 updated_env = False
 
+
+# manjaro had /usr/lib/64 symlinked to /usr/lib - this polluted logs with many warnings about duplicate lv2 plugins
+def remove_symlinks(pathstr, separator=':'):
+    paths = [str(Path(path).resolve()) for path in pathstr.split(separator)]
+    remove = []
+    for (pos, path) in enumerate(paths[:-1]):
+        for cmp_to in range(pos + 1, len(paths)):
+            if path == str(paths[cmp_to]):
+                remove.append(cmp_to)
+
+    for pos in reversed(remove):
+        del paths[pos]
+
+    return separator.join(paths)
+
+
+
 for key, path in paths['xplatform'].items():
     if key not in os.environ:
         updated_env = True
         os.environ[key] = path.format(DEST=dest, HOME=home)
 
-if sys.platform.startswith('linux'):
 
+
+if sys.platform.startswith('linux'):
     for key, path in paths['linux'].items():
         if key not in os.environ:
             updated_env = True
-            os.environ[key] = path.format(DEST=dest, HOME=home)
+            paths = path.format(DEST=dest, HOME=home)
+            os.environ[key] = remove_symlinks(path.format(DEST=dest, HOME=home))
 
     if "LD_LIBRARY_PATH" not in os.environ or "zzub" not in os.environ["LD_LIBRARY_PATH"]:
         updated_env = True
@@ -43,10 +61,14 @@ if sys.platform.startswith('linux'):
         os.execv(sys.argv[0], sys.argv)
 
 
+
 if '--debug' in sys.argv:
     sys.argv.remove('--debug')
     os.system('gdb --eval-command=start -q --args python "%s"$*' % sys.argv[0])
     raise SystemExit(0)
+
+
+
 if '--pydebug' in sys.argv:
     sys.argv.remove('--pydebug')
     os.system('winpdb "%s"$*' % sys.argv[0])
