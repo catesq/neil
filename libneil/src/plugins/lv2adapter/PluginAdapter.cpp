@@ -554,6 +554,10 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
         return false;
 
     samp_count += numsamples;
+
+    for(EventBufPort* eventPort: eventPorts)
+        lv2_evbuf_reset(eventPort->eventBuf, false);
+
     if(samp_count - last_update > update_every) {
         ui_event_import();
         last_update = samp_count;
