@@ -71,7 +71,15 @@ enum PortType : unsigned {
 struct Lv2HostParams {
     int32_t     blockLength = ZZUB_BUFLEN;
     int32_t     minBlockLength = 16;
-    int32_t     bufSize = EVENT_BUF_SIZE;
+    int32_t     bufSize        = EVENT_BUF_SIZE;
+
+    // zynaddsubfx use an PortType::Event with PortFlow::Out to inform the ui about state changes.
+    // this was triggered by reloading the previous plugin state/patch when a song was loaded as it overflowed the 4096 byte buffer
+    // so PortType::Event with PortFlow::Out get a 32768 buffer .
+    // The other obvious option was sniffing the plugin/plort combination - this was not viable as the relevant code was in the DPF plugin
+    // framework - in run() arounf line 688 in DistrhoPluginLV2.cpp, usually hidden by the WANT_STATE #if check.
+
+    int32_t     paddedBufSize  = 32768;
     std::string tempDir = "";
 };
 
