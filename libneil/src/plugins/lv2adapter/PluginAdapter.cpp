@@ -142,7 +142,8 @@ void
 PluginAdapter::init(zzub::archive *arc) {
     bool use_show_ui = false;
     sample_rate = _master_info->samples_per_second;
-    ui_scale = get_scale_factor();
+
+    ui_scale    = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
 
     LV2_Options_Option options[] = {
         {
@@ -471,6 +472,27 @@ void PluginAdapter::process_all_midi_tracks() {
         process_one_midi_track(trak_values[t].msg_1, trak_states[t].msg_1);
         process_one_midi_track(trak_values[t].msg_2, trak_states[t].msg_2);
     }
+
+    for(EventBufPort* midiPort: midiPorts) {
+        if(midiPort->flow != PortFlow::Input)
+            continue;
+
+        lv2_evbuf_reset(midiPort->eventBuf, true);
+
+        if(midiEvents.count() == 0)
+            continue;
+
+        LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiPort->eventBuf);
+
+        for (auto& midi_event: midiEvents.data)
+            lv2_evbuf_write(&buf_iter,
+                            midi_event.time, 0,
+                            cache->urids.midi_MidiEvent,
+                            midi_event.size,
+                            midi_event.data);
+    }
+
+    midiEvents.reset();
 }
 
 
@@ -530,27 +552,6 @@ bool PluginAdapter::process_offline(float **pin, float **pout, int *numsamples, 
 bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, int const mode) {
     if (halting || mode == zzub::process_mode_no_io)
         return false;
-
-    for(EventBufPort* midiPort: midiPorts) {
-        if(midiPort->flow != PortFlow::Input)
-            continue;
-
-        lv2_evbuf_reset(midiPort->eventBuf, true);
-
-        if(midiEvents.count() == 0)
-            continue;
-
-        LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiPort->eventBuf);
-
-        for (auto& midi_event: midiEvents.data)
-            lv2_evbuf_write(&buf_iter,
-                            midi_event.time, 0,
-                            cache->urids.midi_MidiEvent,
-                            midi_event.size,
-                            midi_event.data);
-
-        midiEvents.reset();
-    }
 
     samp_count += numsamples;
     if(samp_count - last_update > update_every) {
