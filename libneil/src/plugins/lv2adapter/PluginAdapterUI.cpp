@@ -127,7 +127,6 @@ PluginAdapter::ui_open() {
 
 
 
-
 GtkWidget*
 PluginAdapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_container) {
     GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -221,18 +220,20 @@ PluginAdapter::ui_event_import() {
         } else if (ev.protocol == cache->urids.atom_eventTransfer && port->type == PortType::Event) {
             EventBufPort* eventPort = static_cast<EventBufPort*>(port);
             LV2_Evbuf_Iterator e = lv2_evbuf_end(eventPort->eventBuf);
-
             const LV2_Atom* const atom = (const LV2_Atom*)body;
-            lv2_evbuf_write(&e, samp_count, 0, atom->type, atom->size,
-                            (const uint8_t*)LV2_ATOM_BODY_CONST(atom));
+            lv2_evbuf_write(&e, samp_count, 0, atom->type, atom->size, (const uint8_t*)LV2_ATOM_BODY_CONST(atom));
         } else {
-            fprintf(stderr, "error: Unknown control change protocol %u\n",
-                    ev.protocol);
+            fprintf(stderr, "error: Unknown control change protocol %u\n", ev.protocol);
         }
     }
+    zix_ring_reset(ui_events);
 }
 
 
+void
+PluginAdapter::ui_event_dispatch() {
+    zix_ring_reset(plugin_events);
+}
 
 void
 PluginAdapter::update_all_from_ui() {
@@ -409,14 +410,14 @@ set_port_value(const char* port_symbol,
 
     port->value = fvalue;
 
-    if (adapter->suil_ui_instance) {
-        // Update UI
-        char buf[sizeof(ControlChange) + sizeof(fvalue)];
-        ControlChange* ev = (ControlChange*)buf;
-        ev->index    = port->index;
-        ev->protocol = 0;
-        ev->size     = sizeof(fvalue);
-        *(float*)ev->body = fvalue;
-        zix_ring_write(adapter->plugin_events, buf, sizeof(buf));
-    }
+//    if (adapter->suil_ui_instance) {
+//        // Update UI
+//        char buf[sizeof(ControlChange) + sizeof(fvalue)];
+//        ControlChange* ev = (ControlChange*)buf;
+//        ev->index    = port->index;
+//        ev->protocol = 0;
+//        ev->size     = sizeof(fvalue);
+//        *(float*)ev->body = fvalue;
+//        zix_ring_write(adapter->plugin_events, buf, sizeof(buf));
+//    }
 }
