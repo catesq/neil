@@ -248,6 +248,20 @@ PluginAdapter::init(zzub::archive *arc) {
     connect(lilvInstance);
 
     lilv_instance_activate(lilvInstance);
+
+
+    auto* instream = arc->get_instream("");
+    if(instream->size() > 4) {
+        uint32_t state_len;
+        instream->read(state_len);
+        char* state_str        = (char*) malloc(state_len + 1);
+        instream->read(state_str, state_len);
+        state_str[state_len]   = 0;
+        LilvState* lilvState   = lilv_state_new_from_string(cache->lilvWorld, &cache->map, state_str);
+        lilv_state_restore(lilvState, lilvInstance, &set_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
+    }
+
+
 }
 
 
