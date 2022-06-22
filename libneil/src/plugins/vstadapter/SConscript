@@ -1,0 +1,11 @@
+Import('pluginenv', 'build_plugin')
+
+vst_pluginenv = pluginenv.Clone()
+vst_pluginenv.Append(LIBS=['lilv-0', 'suil-0', 'gtk-3'])
+
+#lv2_pluginenv.Append(CCFLAGS=[ '-DUSE_LILV', '-DUSE_LV2' ])
+
+vst_pluginenv.Append(CCFLAGS='-pthread `pkg-config gtk+-3.0 suil-0 lilv-0 --cflags` -Ilibneil/src/libzzub -Ilibneil/src/plugins/vstadapter')
+
+if pluginenv['LV2'] == True:
+    lv2_build = build_plugin(vst_pluginenv, 'vstadapter', [ 'VstAdapter.cpp'])
