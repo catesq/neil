@@ -13,21 +13,6 @@ struct PluginAdapter;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-enum PortFlow : unsigned {
-    Unknown = 0,
-    Input   = 1,
-    Output  = 2,
-};
-
-enum PortType : unsigned {
-    BadPort = 0,
-    Audio   = 2,
-    Control = 4,
-    Param   = 8,
-    CV      = 16,
-    Event   = 32,
-    Midi    = 64
-};
 
 u_int32_t get_port_properties(const SharedCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
 u_int32_t get_port_designation(const SharedCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
