@@ -118,7 +118,7 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
 
     MidiEvents      midiEvents{};
     bool            program_change_update = false;
-    bool            halting                    = false;
+    bool            halting               = false;
 
     LV2Features     features;
     LV2Worker       worker;
@@ -169,7 +169,13 @@ private:
     void       process_all_midi_tracks();
     void       process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg);
     void       update_port(ParamPort* port, float float_val);
+
+    //
     void       ui_event_import();
+
+    // sends events to the ui - eg when a new patch has been loaded and all the controls have been changed
+    void       ui_event_dispatch();
+
     const bool ui_select(const char *native_ui_type, const LilvUI** ui_type_ui, const LilvNode** ui_type_node);
     GtkWidget* ui_open_window(GtkWidget** root_container, GtkWidget** parent_container);
     void       init_static_features();
