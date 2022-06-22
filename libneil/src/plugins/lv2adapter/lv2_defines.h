@@ -28,8 +28,7 @@ static int verbose = 0;
 #include "ext/lv2_programs.h"
 
 #define ZZUB_BUFLEN zzub_buffer_size
-#define EVENT_BUF_CYCLES 8
-#define EVENT_BUF_SIZE ZZUB_BUFLEN * EVENT_BUF_CYCLES 
+#define EVENT_BUF_SIZE 4096
 #define TRACKVAL_VOLUME_UNDEFINED 0x0FF
 #define TRACKVAL_NO_MIDI_CMD 0x00
 #define TRACKVAL_NO_MIDI_DATA 0xFFFF
@@ -69,7 +68,7 @@ enum PortType : unsigned {
 };
 
 struct Lv2HostParams {
-    int32_t     blockLength = ZZUB_BUFLEN;
+    int32_t     blockLength    = ZZUB_BUFLEN;
     int32_t     minBlockLength = 16;
     int32_t     bufSize        = EVENT_BUF_SIZE;
 

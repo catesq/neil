@@ -247,7 +247,6 @@ PluginAdapter::init(zzub::archive *arc) {
     }
 
     connect(lilvInstance);
-
     lilv_instance_activate(lilvInstance);
 
 
@@ -342,7 +341,7 @@ void PluginAdapter::save(zzub::archive *arc) {
     LilvState* const state = lilv_state_new_from_instance(
                 info->lilvPlugin, lilvInstance, &cache->map,
                 dir, dir, dir, dir,
-                get_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
+                &get_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
 
     char *state_str = lilv_state_to_string(cache->lilvWorld, &cache->map, &cache->unmap, state, "http://uri", nullptr);
     zzub::outstream *po = arc->get_outstream("");
@@ -440,8 +439,15 @@ void PluginAdapter::process_events() {
         }
     }
 
+
     if(info->flags & zzub_plugin_flag_is_instrument)
         process_all_midi_tracks();
+
+
+
+
+
+
 }
 
 void PluginAdapter::process_all_midi_tracks() {
@@ -563,6 +569,7 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
         ui_event_dispatch();
         last_update = samp_count;
     }
+
 
     switch(audioInPorts.size()) {
     case 0:    // No audio inputs
