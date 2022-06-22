@@ -37,12 +37,6 @@
 #include "features/worker.h"
 
 
-inline float get_scale_factor() {
-    GtkWidget* test_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    float scale_factor =  gtk_widget_get_scale_factor(test_window);
-    gtk_widget_destroy(test_window);
-    return scale_factor;
-}
 
 
 void program_changed(
