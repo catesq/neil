@@ -560,6 +560,7 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
 
     if(samp_count - last_update > update_every) {
         ui_event_import();
+        ui_event_dispatch();
         last_update = samp_count;
     }
 
