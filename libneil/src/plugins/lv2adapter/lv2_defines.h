@@ -52,6 +52,22 @@ typedef struct {
 } ControlChange;
 
 
+enum PortFlow : unsigned {
+    Unknown = 0,
+    Input   = 1,
+    Output  = 2,
+};
+
+enum PortType : unsigned {
+    BadPort = 0,
+    Audio   = 2,
+    Control = 4,
+    Param   = 8,
+    CV      = 16,
+    Event   = 32,
+    Midi    = 64
+};
+
 struct Lv2HostParams {
     int32_t     blockLength = ZZUB_BUFLEN;
     int32_t     minBlockLength = 16;
