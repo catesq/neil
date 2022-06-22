@@ -74,12 +74,12 @@ struct Lv2HostParams {
 
     // zynaddsubfx use an PortType::Event with PortFlow::Out to inform the ui about state changes.
     // this was triggered by reloading the previous plugin state/patch when a song was loaded as it overflowed the 4096 byte buffer
-    // so PortType::Event with PortFlow::Out get a 32768 buffer .
+    // so PortType::Event with PortFlow::Out get a 32768 buffer (and now it's grown to 38k!)
     // The other obvious option was sniffing the plugin/plort combination - this was not viable as the relevant code was in the DPF plugin
     // framework - in run() arounf line 688 in DistrhoPluginLV2.cpp, usually hidden by the WANT_STATE #if check.
 
-    int32_t     paddedBufSize  = 32768;
-    std::string tempDir = "";
+    int32_t     paddedBufSize  = 32768*1.5;
+    std::string tempDir        = "";
 };
 
 typedef struct _LV2Features {
@@ -399,10 +399,10 @@ typedef uint32_t LV2_Property;
 #define LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat LV2_KXSTUDIO_PROPERTIES_PREFIX "TimePositionTicksPerBeat"
 #define LV2_KXSTUDIO_PROPERTIES__TransientWindowId        LV2_KXSTUDIO_PROPERTIES_PREFIX "TransientWindowId"
 
-#define LV2_EXTERNAL_UI_URI     "http://kxstudio.sf.net/ns/lv2ext/external-ui"
-#define LV2_EXTERNAL_UI_PREFIX  LV2_EXTERNAL_UI_URI "#"
-#define LV2_EXTERNAL_UI__Host   LV2_EXTERNAL_UI_PREFIX "Host"
-#define LV2_EXTERNAL_UI__Widget LV2_EXTERNAL_UI_PREFIX "Widget"
+#define LV2_EXTERNAL_UI_URI            "http://kxstudio.sf.net/ns/lv2ext/external-ui"
+#define LV2_EXTERNAL_UI_PREFIX         LV2_EXTERNAL_UI_URI "#"
+#define LV2_EXTERNAL_UI__Host          LV2_EXTERNAL_UI_PREFIX "Host"
+#define LV2_EXTERNAL_UI__Widget        LV2_EXTERNAL_UI_PREFIX "Widget"
 /** This extension used to be defined by a lv2plug.in URI */
 #define LV2_EXTERNAL_UI_DEPRECATED_URI "http://lv2plug.in/ns/extensions/ui#external"
 
