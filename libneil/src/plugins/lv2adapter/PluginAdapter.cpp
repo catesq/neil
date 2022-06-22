@@ -95,7 +95,7 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
 
         case PortType::Event:
             eventPorts.push_back(new EventBufPort(*static_cast<EventBufPort*>(port)));
-            eventPorts.back()->eventBuf = lv2_evbuf_new(cache->hostParams.bufSize, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
+            eventPorts.back()->eventBuf = lv2_evbuf_new(cache->hostParams.paddedBufSize, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
             ports.push_back(eventPorts.back());
             break;
 
