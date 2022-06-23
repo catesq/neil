@@ -67,6 +67,8 @@ enum PortType : unsigned {
     Midi    = 64
 };
 
+
+
 struct Lv2HostParams {
     int32_t     blockLength    = ZZUB_BUFLEN;
     int32_t     minBlockLength = 16;

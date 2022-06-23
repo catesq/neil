@@ -232,6 +232,7 @@ PluginAdapter::ui_event_import() {
 
 void
 PluginAdapter::ui_event_dispatch() {
+
     zix_ring_reset(plugin_events);
 }
 
@@ -383,7 +384,7 @@ set_port_value(const char* port_symbol,
                uint32_t    type)
 {
     // if(verbose)
-    printf("SET PORT VALUE %s\n", port_symbol);
+//    printf("SET PORT VALUE %s\n", port_symbol);
     PluginAdapter* adapter = (PluginAdapter*) user_data;
     //			                                                   port->lilv_port);
     ParamPort* port = adapter->get_param_port(port_symbol);
