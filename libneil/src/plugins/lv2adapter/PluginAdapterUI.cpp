@@ -217,7 +217,7 @@ PluginAdapter::ui_event_import() {
 
         if (ev.protocol == 0 && port->type == PortType::Param) {
             update_port(static_cast<ParamPort*>(port), *((float*) body));
-        } else if (ev.protocol == cache->urids.atom_eventTransfer && port->type == PortType::Event) {
+        } else if (ev.protocol == cache->urids.atom_eventTransfer && (port->type == PortType::Event || port->type == PortType::Midi)) {
             EventBufPort* eventPort = static_cast<EventBufPort*>(port);
             LV2_Evbuf_Iterator e = lv2_evbuf_end(eventPort->eventBuf);
             const LV2_Atom* const atom = (const LV2_Atom*)body;
