@@ -95,7 +95,11 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
 
         case PortType::Event:
             eventPorts.push_back(new EventBufPort(*static_cast<EventBufPort*>(port)));
-            eventPorts.back()->eventBuf = lv2_evbuf_new(cache->hostParams.paddedBufSize, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
+            eventPorts.back()->eventBuf = lv2_evbuf_new(
+                is_distrho_event_out_port(port) ? cache->hostParams.paddedBufSize : cache->hostParams.bufSize,
+                cache->urids.atom_Chunk,
+                cache->urids.atom_Sequence
+            );
             ports.push_back(eventPorts.back());
             break;
 
@@ -250,7 +254,14 @@ PluginAdapter::init(zzub::archive *arc) {
     lilv_instance_activate(lilvInstance);
 
 
+    if(arc == nullptr)
+        return;
+
     auto* instream = arc->get_instream("");
+
+    if(instream == nullptr)
+        return;
+
     if(instream->size() > 4) {
         uint32_t state_len;
         instream->read(state_len);
