@@ -16,11 +16,14 @@ struct Port;
 std::string
 describe_port_type(PortType type);
 
+
 float
 get_ui_scale_factor(zzub::host* host);
 
+
 std::string
 as_hex(u_int8_t byte);
+
 
 char *
 note_param_to_str(u_int8_t note_value, char *text);

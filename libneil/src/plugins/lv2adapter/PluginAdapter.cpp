@@ -145,9 +145,8 @@ PluginAdapter::~PluginAdapter() {
 void
 PluginAdapter::init(zzub::archive *arc) {
     bool use_show_ui = false;
-    sample_rate = _master_info->samples_per_second;
-
-    ui_scale    = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
+    sample_rate      = _master_info->samples_per_second;
+    ui_scale         = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
 
     LV2_Options_Option options[] = {
         {
@@ -235,15 +234,16 @@ PluginAdapter::init(zzub::archive *arc) {
     zix_sem_init(&worker.sem, 0);
     zix_sem_init(&work_lock, 1);
 
-    lilvInstance = lilv_plugin_instantiate(info->lilvPlugin, _master_info->samples_per_second, feature_list);
-
-    metaPlugin = _host->get_metaplugin();
-    _host->set_event_handler(metaPlugin, this);
+    lilvInstance                      = lilv_plugin_instantiate(info->lilvPlugin, _master_info->samples_per_second, feature_list);
 
     features.ext_data.data_access     = lilv_instance_get_descriptor(lilvInstance)->extension_data;
+
     features.ui_instance_feature.data = lilv_instance_get_handle(lilvInstance);
 
-    worker.enable = lilv_plugin_has_extension_data(info->lilvPlugin, cache->nodes.worker_iface);
+    worker.enable                     = lilv_plugin_has_extension_data(info->lilvPlugin, cache->nodes.worker_iface);
+
+    metaPlugin                        = _host->get_metaplugin();
+    _host->set_event_handler(metaPlugin, this);
 
     if (worker.enable) {
         auto iface = lilv_instance_get_extension_data (lilvInstance, LV2_WORKER__interface);
