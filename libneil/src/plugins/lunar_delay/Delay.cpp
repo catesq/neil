@@ -151,15 +151,24 @@ LunarDelay::LunarDelay() {
 void LunarDelay::init(zzub::archive *pi) {
   rb_init(&rb[0]);
   rb_init(&rb[1]);
-  wet = 0.0f;
-  dry = 0.0f;
-  fb = 0.0f;
-  l_incr = -1;
-  r_incr = -1;
+  wet     = 0.0f;
+  dry     = 0.0f;
+  fb      = 0.0f;
+  l_incr  = -1;
+  r_incr  = -1;
   l_count = 0;
   r_count = 0;
+
+#ifdef USE_CUTOFF_NOTE
+  _host->set_event_handler(_host->get_metaplugin(), this);
+  meta_plugin       =  _host->get_metaplugin();
+  cutoff_note       = para_cutoff_note->value_default;
+  cutoff_cents      = para_cutoff_cents->value_default;
+  note_to_freq_base = pow(2.0, 1.0/1200.0);
+#endif
 }
-	
+
+
 void LunarDelay::update_buffer() {
   ldelay = ldelay_ticks * _master_info->samples_per_tick;
   rdelay = rdelay_ticks * _master_info->samples_per_tick;
@@ -171,6 +180,7 @@ void LunarDelay::update_buffer() {
 	
 void LunarDelay::process_events() {
   int update = 0;
+  bool update_cutoff_from_note = false;
   if (gval.l_delay_ticks != 0xffff) {
     ldelay_ticks = 0.25 + 
       (gval.l_delay_ticks / (float)para_l_delay_ticks->value_max) * 
@@ -181,10 +191,44 @@ void LunarDelay::process_events() {
       (gval.r_delay_ticks / (float)para_r_delay_ticks->value_max) *
       (32.0 - 0.25);
   }
+
   if (gval.filter_mode != 0xff) {
     filter_mode = gval.filter_mode;
     update = 1;
+
   }
+
+
+#ifdef USE_CUTOFF_NOTE
+  if (gval.cutoff_note != para_cutoff_note->value_none) {
+    cutoff_note = gval.cutoff_note;
+    update_cutoff_from_note = true;
+  }
+
+  if (gval.cutoff_cents != para_cutoff_cents->value_none) {
+      cutoff_cents = gval.cutoff_cents - 128;
+      update_cutoff_from_note = true;
+  }
+
+  if(update_cutoff_from_note) {
+    cutoff = (float) note_params_to_freq(cutoff_note, cutoff_cents);
+    _host->set_parameter(meta_plugin, 1, 0, PARAM_CUTOFF_FREQ, (int) cutoff);
+    if(!first_event_process) {
+        zzub_event_data event_data = { zzub_event_type_parameter_changed };
+        event_data.change_parameter.plugin = meta_plugin;
+        event_data.change_parameter.group = 1;
+        event_data.change_parameter.track = 0;
+        event_data.change_parameter.param = PARAM_CUTOFF_FREQ;
+        event_data.change_parameter.value = (int) cutoff;
+        zzub_plugin_invoke_event(meta_plugin, &event_data, false);
+    }
+
+    gval.cutoff = (int) cutoff;
+    update = 1;
+    first_event_process = false;
+  }
+#endif
+
   if (gval.cutoff != 0xffff) {
     cutoff = (float)gval.cutoff;
     update = 1;
@@ -214,6 +258,7 @@ void LunarDelay::process_events() {
       filters[i].setup((float)srate, this->cutoff, this->resonance, 0.0);
     }
   }
+
 }
 
 bool LunarDelay::process_stereo(float **pin, float **pout, int n, int mode) {
@@ -226,16 +271,29 @@ bool LunarDelay::process_stereo(float **pin, float **pout, int n, int mode) {
   return true;
 }
 
+#ifdef USE_CUTOFF_NOTE
+
+unsigned
+LunarDelay::note_params_to_freq(int note_index, int note_cents) {
+    float num_semitones = 100.0f * (note_index - DISPLAY_NOTE_A3) + (float)(note_cents);
+    float note_freq     = 440.0f * pow(note_to_freq_base, num_semitones);
+    return std::min(para_cutoff->value_max, std::max(para_cutoff->value_min, (int) note_freq));
+}
+
+#endif
+
+
 const char *LunarDelay::describe_value(int param, int value) {
-  static char txt[20];
+
+  static char txt[24];
   switch(param) {
-  case 0:
+  case PARAM_LDELAY_TICKS:
     sprintf(txt, "%.2f ticks", ldelay_ticks);
     break;
-  case 1:
+  case PARAM_RDELAY_TICKS:
     sprintf(txt, "%.2f ticks", rdelay_ticks);
     break;
-  case 2:
+  case PARAM_FILTER_MODE:
     switch(filter_mode) {
     case 0:
       sprintf(txt, "Low");
@@ -251,22 +309,30 @@ const char *LunarDelay::describe_value(int param, int value) {
       break;
     }
     break;
-  case 3:
+#ifdef USE_CUTOFF_NOTE
+  case PARAM_CUTOFF_NOTE:
+    sprintf(txt, "%s (%5u Hz)", note_param_to_str(value).c_str(), note_params_to_freq(value, cutoff_cents));
+    break;
+  case PARAM_CUTOFF_CENTS:
+    sprintf(txt, "%4d (%5u Hz)", value - 128, note_params_to_freq(cutoff_note, value - 128));
+    break;
+#endif
+  case PARAM_CUTOFF_FREQ:
     sprintf(txt, "%d Hz", (int)cutoff);
     break;
-  case 4:
+  case PARAM_RESONANCE:
     sprintf(txt, "%.2f", resonance);
     break;
-  case 5:
+  case PARAM_FEEDBACK:
     sprintf(txt, "%.2f", 10.0 * log10(fb));
     break;
-  case 6:
+  case PARAM_WET_AMP:
     sprintf(txt, "%.2f", 10.0 * log10(wet));
     break;
-  case 7:
+  case PARAM_DRY_AMP:
     sprintf(txt, "%.2f", 10.0 * log10(dry));
     break;
-  case 8:
+  case PARAM_DIRECTION:
     switch(value) {
     case 0: 
       sprintf(txt, "Straight");

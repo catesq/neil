@@ -1,8 +1,16 @@
 Import('pluginenv', 'build_plugin')
 
-localenv = pluginenv.Clone()
+delayenv = pluginenv.Clone()
+
+
+notedelayenv = pluginenv.Clone()
+notedelayenv.Append(CCFLAGS=['-DUSE_CUTOFF_NOTE=1'])
+notedelayenv['OBJPREFIX'] = 'note_'    # so scons will build a note_Delay.o as well as Delay.o - instead of reusing whichever one gets built first
+notedelayenv.Append(LIBS=['zzub'])     # need libzzub to invoke event when the cutoff_note is changed, this is so the cutoff freq is also updated in the rack display
 
 files = ["Delay.cpp"]
 
-build_plugin(localenv, "lunar_delay", files)
+build_plugin(delayenv, "lunar_delay", files)
+build_plugin(notedelayenv, "lunar_note_delay", files)
+
 	     

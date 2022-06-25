@@ -10,10 +10,79 @@
 #include <zzub/signature.h>
 #include <zzub/plugin.h>
 
+//#define USE_CUTOFF_NOTE 1
+
+// The cutoff frequency is calculated relative to note A-3 (note A, octave 3, freq 440Hz):
+//     cutoff_frequency = 440 * pow(distance_in_semitones, pow(2, 1/12))
+
+#ifdef USE_CUTOFF_NOTE
+#define DISPLAY_NOTE_DIFF    8                          // The default display note must round to 0 when % 12 . 0x40 leaves a remainder of 4, we shift up by 8 from 64 to 72
+#define DISPLAY_OCTAVE_DIFF   2                         // then we shift two octaves down - as the usuable octave range (for 20hx to 20kHz) is -1 to +9. Going 4 down and shifting down one octave
+                                                        // means the octaves -1 and -2 wrap round and are both dispolayed as octave -1
+
+#define DISPLAY_NOTE_C4     0x40                        // The note parameter's default value is C-4
+#define DISPLAY_NOTE_A3     (DISPLAY_NOTE_C4 - 3)
+
+
+inline std::string note_of(u_int8_t note_value) {
+    switch((note_value+DISPLAY_NOTE_DIFF) % 12) {
+    case 0: return "C";
+    case 1: return "C#";
+    case 2: return "D";
+    case 3: return "D#";
+    case 4: return "E";
+    case 5: return "F";
+    case 6: return "F#";
+    case 7: return "G";
+    case 8: return "G#";
+    case 9: return "A";
+    case 10: return "A#";
+    case 11: return "B";
+    default: return "?";
+    }
+}
+
+inline std::string
+note_param_to_str(u_int8_t note_value) {
+    return note_of(note_value) + std::to_string(((note_value + DISPLAY_NOTE_DIFF) / 12) - DISPLAY_OCTAVE_DIFF);
+}
+
+#endif
+
+
+#define PARAM_LDELAY_TICKS  0
+#define PARAM_RDELAY_TICKS  1
+#define PARAM_FILTER_MODE   2
+#ifdef USE_CUTOFF_NOTE
+#define PARAM_CUTOFF_NOTE   3
+#define PARAM_CUTOFF_CENTS  4
+#define PARAM_CUTOFF_FREQ   5
+#define PARAM_RESONANCE     6
+#define PARAM_FEEDBACK      7
+#define PARAM_WET_AMP       8
+#define PARAM_DRY_AMP       9
+#define PARAM_DIRECTION     10
+#else
+#define PARAM_CUTOFF_NOTE  -1
+#define PARAM_CUTOFF_CENTS -2
+#define PARAM_CUTOFF_FREQ   3
+#define PARAM_RESONANCE     4
+#define PARAM_FEEDBACK      5
+#define PARAM_WET_AMP       6
+#define PARAM_DRY_AMP       7
+#define PARAM_DIRECTION     8
+#endif
+
+
+// when you press play - these are updated with row from the pattern view
 struct Gvals {
   uint16_t l_delay_ticks;
   uint16_t r_delay_ticks;
   uint8_t filter_mode;
+#ifdef USE_CUTOFF_NOTE
+    uint8_t cutoff_note;
+    uint8_t cutoff_cents;
+#endif
   uint16_t cutoff;
   uint16_t resonance;
   uint16_t fb;
@@ -22,9 +91,14 @@ struct Gvals {
   uint8_t mode;
 } __attribute__((__packed__));
 
+
 const zzub::parameter *para_l_delay_ticks = 0;
 const zzub::parameter *para_r_delay_ticks = 0;
 const zzub::parameter *para_filter_mode = 0;
+#ifdef USE_CUTOFF_NOTE
+const zzub::parameter *para_cutoff_note = 0;
+const zzub::parameter *para_cutoff_cents = 0;
+#endif
 const zzub::parameter *para_cutoff = 0;
 const zzub::parameter *para_resonance = 0;
 const zzub::parameter *para_fb = 0;
@@ -32,9 +106,11 @@ const zzub::parameter *para_wet = 0;
 const zzub::parameter *para_dry = 0;
 const zzub::parameter *para_mode = 0;
 
+
 const char *zzub_get_signature() { 
   return ZZUB_SIGNATURE; 
 }
+
 
 class Svf {
 private:
@@ -52,7 +128,7 @@ public:
   float sample(float sample, int mode);
 };
 
-class LunarDelay : public zzub::plugin {
+class LunarDelay : public zzub::plugin, public zzub::event_handler {
 private:
   Gvals gval;
   struct ringbuffer_t {
@@ -70,6 +146,15 @@ private:
   float dry;
   float fb;
   int mode, filter_mode, l_incr, r_incr, l_count, r_count;
+
+#ifdef USE_CUTOFF_NOTE
+  bool first_event_process = true;
+  zzub_plugin_t* meta_plugin;
+  uint8_t cutoff_note, cutoff_cents;
+  float note_to_freq_base;
+
+  unsigned note_params_to_freq(int note_index, int note_cents);
+#endif
   float cutoff, resonance;
   Svf filters[2];
   inline float dbtoamp(float db, float limit) {
@@ -98,15 +183,15 @@ public:
   virtual void process_controller_events() {}
   virtual void destroy() {}
   virtual void stop() {}
-  virtual void load(zzub::archive *arc) {}
+  virtual void load(zzub::archive *arc) { }
   virtual void save(zzub::archive*) {}
   virtual void attributes_changed() {}
-  virtual void command(int) {}
+  virtual void command(int) { }
   virtual void set_track_count(int) {}
   virtual void mute_track(int) {}
   virtual bool is_track_muted(int) const { return false; }
   virtual void midi_note(int, int, int) {}
-  virtual void event(unsigned int) {}
+  virtual void event(unsigned int data) { }
   virtual const zzub::envelope_info** get_envelope_infos() { return 0; }
   virtual bool play_wave(int, int, float) { return false; }
   virtual void stop_wave() {}
@@ -117,7 +202,7 @@ public:
   virtual void add_input(const char*, zzub::connection_type) {}
   virtual void delete_input(const char*, zzub::connection_type) {}
   virtual void rename_input(const char*, const char*) {}
-  virtual void input(float**, int, float) {}
+  virtual void input(float**, int, float) { }
   virtual void midi_control_change(int, int, int) {}
   virtual bool handle_input(int, int, int) { return false; }
   virtual void process_midi_events(zzub::midi_message* pin, int nummessages) {}
@@ -125,17 +210,25 @@ public:
   virtual void set_stream_source(const char* resource) {}
   virtual const char* get_stream_source() { return 0; }
   virtual void play_pattern(int index) {}
-  virtual void configure(const char *key, const char *value) {}
+  virtual void configure(const char *key, const char *value) { }
+
 };
 
 struct LunarDelayInfo : zzub::info {
   LunarDelayInfo() {
     this->flags = 
       zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect;
-    this->name = "Lunar Delay";
-    this->short_name = "Delay";
-    this->author = "SoMono";
-    this->uri = "@trac.zeitherrschaft.org/aldrin/lunar/effect/delay;1";
+#ifdef USE_CUTOFF_NOTE
+          this->name = "Lunar Note Delay";
+          this->short_name = "Note Delay";
+          this->author = "SoMono";
+          this->uri = "@trac.zeitherrschaft.org/aldrin/lunar/effect/notedelay;1";
+#else
+          this->name = "Lunar Delay";
+          this->short_name = "Delay";
+          this->author = "SoMono";
+          this->uri = "@trac.zeitherrschaft.org/aldrin/lunar/effect/delay;1";
+#endif
     para_l_delay_ticks = &add_global_parameter()
       .set_word()
       .set_name("Delay L")
@@ -163,12 +256,32 @@ struct LunarDelayInfo : zzub::info {
       .set_value_none(0xff)
       .set_value_default(0)
       .set_state_flag();
+#ifdef USE_CUTOFF_NOTE
+        para_cutoff_note = &add_global_parameter()
+          .set_byte()
+          .set_name("Cutoff note")
+          .set_description("Filter cutoff note")
+          .set_value_default(DISPLAY_NOTE_C4)
+          .set_value_none(255)
+          .set_value_max(128)
+          .set_value_min(8)
+          .set_state_flag();
+        para_cutoff_cents = &add_global_parameter()
+          .set_byte()
+          .set_name("Cutoff note cents")
+          .set_description("Filter cutoff +/- cents")
+          .set_value_min(0)
+          .set_value_max(254)
+          .set_value_default(128)
+          .set_value_none(0xff)
+          .set_state_flag();
+#endif
     para_cutoff = &add_global_parameter()
       .set_word()
       .set_name("Cutoff")
       .set_description("Filter cutoff frequency")
-      .set_value_min(20)
-      .set_value_max(20000)
+      .set_value_min(19)
+      .set_value_max(21074)
       .set_value_none(0xffff)
       .set_value_default(10000)
       .set_state_flag();
@@ -220,11 +333,11 @@ struct LunarDelayInfo : zzub::info {
   }
   virtual zzub::plugin* create_plugin() const { return new LunarDelay(); }
   virtual bool store_info(zzub::archive *data) const { return false; }
-} MachineInfo;
+} machineInfo;
 
 struct LunarDelay_PluginCollection : zzub::plugincollection {
   virtual void initialize(zzub::pluginfactory *factory) {
-    factory->register_info(&MachineInfo);
+    factory->register_info(&machineInfo);
   }
   virtual const zzub::info *get_info(const char *uri, zzub::archive *data) { 
     return 0; 
