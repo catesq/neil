@@ -211,7 +211,7 @@ public:
   virtual const char* get_stream_source() { return 0; }
   virtual void play_pattern(int index) {}
   virtual void configure(const char *key, const char *value) { }
-
+  virtual bool invoke(zzub_event_data_t& data) { return true; }
 };
 
 struct LunarDelayInfo : zzub::info {

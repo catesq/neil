@@ -160,8 +160,6 @@ void LunarDelay::init(zzub::archive *pi) {
   r_count = 0;
 
 #ifdef USE_CUTOFF_NOTE
-  _host->set_event_handler(_host->get_metaplugin(), this);
-  meta_plugin       =  _host->get_metaplugin();
   cutoff_note       = para_cutoff_note->value_default;
   cutoff_cents      = para_cutoff_cents->value_default;
   note_to_freq_base = pow(2.0, 1.0/1200.0);
@@ -195,7 +193,6 @@ void LunarDelay::process_events() {
   if (gval.filter_mode != 0xff) {
     filter_mode = gval.filter_mode;
     update = 1;
-
   }
 
 
