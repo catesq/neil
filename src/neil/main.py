@@ -60,6 +60,7 @@ def run(argv, initfunc = init_neil):
 
 #    print([(key, os.environ[key]) for key in sorted(os.environ.keys())]);
 #    sys.exit();
+    GObject.threads_init()
     Gtk.init(argv)
 
     contextlog.init()
@@ -75,7 +76,7 @@ def run(argv, initfunc = init_neil):
     print(argv)
 
 
-    GObject.threads_init()
+
     options = com.get('neil.core.options')
     options.parse_args(argv)
 
