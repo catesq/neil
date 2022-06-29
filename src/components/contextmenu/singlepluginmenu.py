@@ -31,7 +31,7 @@ class SinglePluginMenu(Menu):
         Menu.__init__(self)
         player = com.get('neil.core.player')
 
-        self.add_check_item("_Mute", common.get_plugin_infos().get(metaplugin).muted, on_popup_mute, metaplugin)
+        self.add_check_item("_Mute", player.plugin_is_muted(metaplugin), on_popup_mute, metaplugin)
 
         if is_generator(metaplugin):
             self.add_check_item("_Solo", player.solo_plugin == metaplugin, on_popup_solo, metaplugin)
