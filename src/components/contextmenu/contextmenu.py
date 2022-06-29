@@ -33,7 +33,8 @@ from neil.com import com
 from neil.utils import (Menu, filenameify, gettext, iconpath, is_effect,
                         is_generator, is_root, prepstr, show_machine_manual)
 from neil.preset import Preset
-
+import sys
+from contextmenus.plugin import PluginMenu
 
 class ContextMenu(Menu):
     __neil__ = dict(
@@ -69,6 +70,10 @@ class ContextMenu(Menu):
             item.populate_contextmenu(self)
         self.rootwindow = parent
         return Menu.popup(self, parent, event)
+
+
+
+
 
 
 class PluginContextMenu(Gtk.Menu):
@@ -311,6 +316,13 @@ class PluginContextMenu(Gtk.Menu):
                 param = mi.get_parameter(3, i)
                 print((param.get_name()))
 
+    def populate_pluginchainmenu(self, menu):
+        active_plugins = menu.context
+        for plugin in active_plugins:
+            print(plugin)
+        menu.add_item("_Parameters...", self.on_popup_copy_chain, active_plugins)
+        menu.add_item("_Parameters...", self.on_popup_copy_chain, active_plugins)
+
     def populate_pluginmenu(self, menu):
         mp = menu.context
         player = com.get('neil.core.player')
@@ -328,9 +340,10 @@ class PluginContextMenu(Gtk.Menu):
         menu.add_item("P_resets...", self.on_popup_show_presets, mp)
         menu.add_separator()
         menu.add_item("_Rename...", self.on_popup_rename, mp)
-        menu.add_item("_Clone...", self.on_popup_clone, mp)
+
         if not is_root(mp):
             menu.add_item("_Delete plugin", self.on_popup_delete, mp)
+            menu.add_item("Clone _instrument", self.on_popup_clone, mp)
         if is_effect(mp) or is_root(mp):
             menu.add_separator()
             menu.add_check_item("Default Target",
@@ -357,113 +370,116 @@ class PluginContextMenu(Gtk.Menu):
         menu.add_separator()
         menu.add_item("_Help", self.on_machine_help, mp)
 
-    def on_machine_help(self, widget, mp):
-        name = filenameify(mp.get_pluginloader().get_name())
-        if not show_machine_manual(name):
-            info = Gtk.MessageDialog(self.get_toplevel(), flags=0, type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, message_format="Sorry, there's no help for this plugin yet")
-            info.run()
-            info.destroy()
+#    def on_machine_help(self, widget, mp):
+#        name = filenameify(mp.get_pluginloader().get_name())
+#        if not show_machine_manual(name):
+#            info = Gtk.MessageDialog(self.get_toplevel(), flags=0, type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, message_format="Sorry, there's no help for this plugin yet")
+#            info.run()
+#            info.destroy()
 
-    def on_popup_clone(self, widget, mp):
-        player = com.get('neil.core.player')
-        pluginloader = mp.get_pluginloader()
-        new_plugin = player.create_plugin(pluginloader)
-        print("on clone", pluginloader, new_plugin, player)
-        preset = Preset()
-        preset.pickup(mp)
-        preset.apply(new_plugin)
-        player.history_commit("Clone plugin %s" % pluginloader.get_short_name())
+#    def on_popup_copy_chain(self, widget, plugins):
+#        pass
 
-    def on_popup_rename(self, widget, mp):
-        text = gettext(self, "Enter new plugin name:", prepstr(mp.get_name()))
-        if text:
-            player = com.get('neil.core.player')
-            mp.set_name(text)
-            player.history_commit("rename plugin")
+#    def on_popup_clone(self, widget, mp):
+#        player = com.get('neil.core.player')
+#        pluginloader = mp.get_pluginloader()
+#        new_plugin = player.create_plugin(pluginloader)
+#        print("on clone", pluginloader, new_plugin, player)
+#        preset = Preset()
+#        preset.pickup(mp)
+#        preset.apply(new_plugin)
+#        player.history_commit("Clone plugin %s" % pluginloader.get_short_name())
 
-    def on_popup_solo(self, widget, mp):
-        """
-        Event handler for the "Mute" context menu option.
+#    def on_popup_rename(self, widget, mp):
+#        text = gettext(self, "Enter new plugin name:", prepstr(mp.get_name()))
+#        if text:
+#            player = com.get('neil.core.player')
+#            mp.set_name(text)
+#            player.history_commit("rename plugin")
 
-        @param event: Menu event.
-        @type event: wx.MenuEvent
-        """
-        player = com.get('neil.core.player')
-        if player.solo_plugin != mp:
-            player.solo(mp)
-        else:
-            player.solo(None)
+#    def on_popup_solo(self, widget, mp):
+#        """
+#        Event handler for the "Mute" context menu option.
 
-    def on_popup_bypass(self, widget, mp):
-        """
-        Event handler for the "Bypass" context menu option.
+#        @param event: Menu event.
+#        @type event: wx.MenuEvent
+#        """
+#        player = com.get('neil.core.player')
+#        if player.solo_plugin != mp:
+#            player.solo(mp)
+#        else:
+#            player.solo(None)
 
-        @param event: Menu event.
-        @type event: wx.MenuEvent
-        """
-        player = com.get('neil.core.player')
-        player.toggle_bypass(mp)
+#    def on_popup_bypass(self, widget, mp):
+#        """
+#        Event handler for the "Bypass" context menu option.
 
-    def on_popup_mute(self, widget, mp):
-        """
-        Event handler for the "Mute" context menu option.
+#        @param event: Menu event.
+#        @type event: wx.MenuEvent
+#        """
+#        player = com.get('neil.core.player')
+#        player.toggle_bypass(mp)
 
-        @param event: Menu event.
-        @type event: wx.MenuEvent
-        """
-        player = com.get('neil.core.player')
-        player.toggle_mute(mp)
+#    def on_popup_mute(self, widget, mp):
+#        """
+#        Event handler for the "Mute" context menu option.
 
-    def on_popup_delete(self, widget, mp):
-        """
-        Event handler for the "Delete" context menu option.
-        """
-        player = com.get('neil.core.player')
-        player.delete_plugin(mp)
+#        @param event: Menu event.
+#        @type event: wx.MenuEvent
+#        """
+#        player = com.get('neil.core.player')
+#        player.toggle_mute(mp)
 
-    def on_popup_disconnect(self, widget, mp, index):
-        """
-        Event handler for the "Disconnect" context menu option.
+#    def on_popup_delete(self, widget, mp):
+#        """
+#        Event handler for the "Delete" context menu option.
+#        """
+#        player = com.get('neil.core.player')
+#        player.delete_plugin(mp)
 
-        @param event: Menu event.
-        @type event: wx.MenuEvent
-        """
-        plugin = mp.get_input_connection_plugin(index)
-        conntype = mp.get_input_connection_type(index)
-        mp.delete_input(plugin, conntype)
-        player = com.get('neil.core.player')
-        player.history_commit("disconnect")
+#    def on_popup_disconnect(self, widget, mp, index):
+#        """
+#        Event handler for the "Disconnect" context menu option.
 
-    def on_popup_show_attribs(self, widget, mp):
-        """
-        Event handler for the "Attributes..." context menu option.
+#        @param event: Menu event.
+#        @type event: wx.MenuEvent
+#        """
+#        plugin = mp.get_input_connection_plugin(index)
+#        conntype = mp.get_input_connection_type(index)
+#        mp.delete_input(plugin, conntype)
+#        player = com.get('neil.core.player')
+#        player.history_commit("disconnect")
 
-        @param event: Menu event.
-        @type event: wx.MenuEvent
-        """
-        dlg = com.get('neil.core.attributesdialog', mp, self)
-        dlg.run()
-        dlg.destroy()
+#    def on_popup_show_attribs(self, widget, mp):
+#        """
+#        Event handler for the "Attributes..." context menu option.
 
-    def on_popup_show_presets(self, widget, plugin):
-        """
-        Event handler for the "Presets..." context menu option.
+#        @param event: Menu event.
+#        @type event: wx.MenuEvent
+#        """
+#        dlg = com.get('neil.core.attributesdialog', mp, self)
+#        dlg.run()
+#        dlg.destroy()
 
-        @param event: Menu event.
-        @type event: wx.MenuEvent
-        """
-        manager = com.get('neil.core.presetdialog.manager')
-        manager.show(plugin, widget)
+#    def on_popup_show_presets(self, widget, plugin):
+#        """
+#        Event handler for the "Presets..." context menu option.
 
-    def on_popup_show_params(self, widget, mp):
-        """
-        Event handler for the "Parameters..." context menu option.
+#        @param event: Menu event.
+#        @type event: wx.MenuEvent
+#        """
+#        manager = com.get('neil.core.presetdialog.manager')
+#        manager.show(plugin, widget)
 
-        @param event: Menu event.
-        @type event: wx.MenuEvent
-        """
-        manager = com.get('neil.core.parameterdialog.manager')
-        manager.show(mp, widget)
+#    def on_popup_show_params(self, widget, mp):
+#        """
+#        Event handler for the "Parameters..." context menu option.
+
+#        @param event: Menu event.
+#        @type event: wx.MenuEvent
+#        """
+#        manager = com.get('neil.core.parameterdialog.manager')
+#        manager.show(mp, widget)
 
     def on_popup_new_plugin(self, widget, pluginloader, kargs={}): #pylint: disable=dangerous-default-value
         """
@@ -481,36 +497,37 @@ class PluginContextMenu(Gtk.Menu):
             plugin = None
         player.create_plugin(pluginloader, connection=conn, plugin=plugin)
 
-    def on_popup_unmute_all(self, widget):
-        """
-        Event handler for unmute all menu option
-        """
-        player = com.get('neil.core.player')
-        for mp in reversed(list(player.get_plugin_list())):
-            info = common.get_plugin_infos().get(mp)
-            info.muted = False
-            mp.set_mute(info.muted)
-            info.reset_plugingfx()
+#    def on_popup_unmute_all(self, widget):
+#        """
+#        Event handler for unmute all menu option
+#        """
+#        player = com.get('neil.core.player')
+#        for mp in reversed(list(player.get_plugin_list())):
+#            info = common.get_plugin_infos().get(mp)
+#            info.muted = False
+#            mp.set_mute(info.muted)
+#            info.reset_plugingfx()
 
-    def on_popup_command(self, widget, plugin, subindex, index):
-        """
-        Event handler for plugin commands
-        """
-        plugin.command((subindex << 8) | index)
+#    def on_popup_command(self, widget, plugin, subindex, index):
+#        """
+#        Event handler for plugin commands
+#        """
+#        plugin.command((subindex << 8) | index)
 
-    def on_popup_set_target(self, widget, plugin):
-        """
-        Event handler for menu option to set machine as target for default connection
-        """
-        player = com.get('neil.core.player')
-        if player.autoconnect_target == plugin:
-            player.autoconnect_target = None
-        else:
-            player.autoconnect_target = plugin
+#    def on_popup_set_target(self, widget, plugin):
+#        """
+#        Event handler for menu option to set machine as target for default connection
+#        """
+#        player = com.get('neil.core.player')
+#        if player.autoconnect_target == plugin:
+#            player.autoconnect_target = None
+#        else:
+#            player.autoconnect_target = plugin
 
 __neil__ = dict(
     classes = [
         ContextMenu,
         PluginContextMenu,
+        PluginMenu
     ],
 )
