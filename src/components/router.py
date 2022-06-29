@@ -787,16 +787,19 @@ class RouteView(Gtk.DrawingArea):
         res = self.get_plugin_at((mx, my))
         if res:
             mp, (x, y), area = res
-            menu = com.get('neil.core.contextmenu', 'plugin', mp)
+            if mp in player.active_plugins and len(player.active_plugins) > 1:
+                menu = com.get('neil.core.contextmenu.multipleplugins', player.active_plugins)
+            else:
+                menu = com.get('neil.core.contextmenu.singleplugin', mp)
         else:
             res = self.get_connection_at((mx, my))
             if res:
                 mp, index = res
-                menu = com.get('neil.core.contextmenu',
-                               'connection', (mp, index))
+                menu = com.get('neil.core.contextmenu.connection', metaplugin, index)
             else:
                 point = self.pixel_to_float((mx, my))
-                menu = com.get('neil.core.contextmenu', 'router', point)
+                menu = com.get('neil.core.contextmenu.router', point)
+
         menu.popup(self, event)
 
     def float_to_pixel(self, xxx_todo_changeme1):
