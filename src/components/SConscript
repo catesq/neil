@@ -18,6 +18,7 @@
 
 Import('env', 'install', 'install_recursive')
 import glob
+import os.path
 
 for filename in glob.glob('*.neil-component'):
 	install('${SHARE_PATH}/components', filename)
@@ -25,3 +26,5 @@ for filename in glob.glob('*.neil-component'):
 for filename in glob.glob('*.py'):
 	install('${SHARE_PATH}/components', filename)
 
+for (dirname, filename) in [os.path.split(filename) for filename in glob.glob('**/*.py')]:
+    install('${SHARE_PATH}/components/' + dirname, dirname + '/' + filename)
