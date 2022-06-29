@@ -25,6 +25,8 @@ PluginAdapter::ui_open() {
     attr_values.ui = 0;
     bool use_show_ui = false;
 
+    cache->init_x_threads();
+
     suil_ui_host = suil_host_new(write_events_from_ui, lv2_port_index, nullptr, nullptr); //&update_port, &remove_port);
     ui_select(use_show_ui ? NULL : GTK3_URI, &lilv_ui_type, &lilv_ui_type_node);
 
@@ -121,7 +123,6 @@ PluginAdapter::ui_open() {
     }
 
     attr_values.ui = 1;
-    printf("leave PluginAdapter::ui_open\n");
     return true;
 }
 
@@ -147,14 +148,10 @@ PluginAdapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_con
     *root_container                 = vbox;
     features.ui_parent_feature.data = *parent_container;
     ui_scale                        = gtk_widget_get_scale_factor(window);
-    printf("is this a window 1?\n");
 
     gtk_box_pack_start(GTK_BOX(vbox), alignment, TRUE, TRUE, 0);
-    printf("is this a widget 1?\n");
 
     gtk_widget_show_all(GTK_WIDGET(alignment));
-
-    printf("is this a window 1b?\n");
 
     gtk_window_present(GTK_WINDOW(window));
 

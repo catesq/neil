@@ -157,7 +157,8 @@ SharedCache::SharedCache()
     : lilvWorld(lilv_world_new()),
       nodes(lilvWorld),
       symap(symap_new()),
-      suil_is_init(false)  {
+      suil_is_init(false),
+      are_threads_init(false) {
 
     lilv_world_load_all(lilvWorld);
     
@@ -232,10 +233,20 @@ void SharedCache::init_suil() {
         suil_is_init = true;
         suil_init(0, NULL, SUIL_ARG_NONE);
     }
+
     suil_mtx.unlock();
 }
 
+void SharedCache::init_x_threads() {
+    suil_mtx.lock();
 
+    if(!are_threads_init) {
+        are_threads_init = true;
+        XInitThreads();
+    }
+
+    suil_mtx.unlock();
+}
 
 
 // const LV2_Feature** PluginWorld::getLv2Features() {

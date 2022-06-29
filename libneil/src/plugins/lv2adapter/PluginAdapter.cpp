@@ -394,7 +394,7 @@ void PluginAdapter::stop() {}
 
 
 void PluginAdapter::update_port(ParamPort* port, float float_val) {
-    printf("Update port: %s => %f\n", port->name.c_str(), float_val);
+    printf("Update port: index=%d, name='%s', value=%f\n", port->index, port->name.c_str(), float_val);
 //    int zzub_val = port->lilv_to_zzub_value(float_val);
 //    values[port->paramIndex] = float_val;
 //    port->putData((uint8_t*) global_values, zzub_val);
@@ -419,14 +419,6 @@ void PluginAdapter::process_events() {
         }
 
     }
-
-//    if(ui_instance != nullptr) {
-//        if(gtk_wi:qdget_is_visible((GtkWidget*)suil_instance_get_widget(ui_instance))) {
-//            printf("widget is visible\n");
-//        } else {
-//            printf("widget is not visible\n");
-//        }
-//    }
 
     uint8_t* globals = (u_int8_t*) global_values;
     int value = 0;
@@ -453,12 +445,6 @@ void PluginAdapter::process_events() {
 
     if(info->flags & zzub_plugin_flag_is_instrument)
         process_all_midi_tracks();
-
-
-
-
-
-
 }
 
 void PluginAdapter::process_all_midi_tracks() {
@@ -491,12 +477,7 @@ void PluginAdapter::process_all_midi_tracks() {
     }
 
     for(EventBufPort* midiPort: midiPorts) {
-        if(midiPort->flow != PortFlow::Input)
-            continue;
-
-        lv2_evbuf_reset(midiPort->eventBuf, true);
-
-        if(midiEvents.count() == 0)
+        if(midiPort->flow != PortFlow::Input || midiEvents.count() == 0)
             continue;
 
         LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiPort->eventBuf);
@@ -573,7 +554,8 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
     samp_count += numsamples;
 
     for(EventBufPort* eventPort: eventPorts)
-        lv2_evbuf_reset(eventPort->eventBuf, false);
+        if(eventPort->flow == PortFlow::Output)
+            lv2_evbuf_reset(eventPort->eventBuf, false);
 
     if(samp_count - last_update > update_every) {
         ui_event_import();
@@ -613,13 +595,9 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
     }
 
 
-    for(EventBufPort* port: eventPorts) {
-        if(port->flow == PortFlow::Input) {
-            continue;
-        }
-
-        lv2_evbuf_reset(port->eventBuf, true);
-    }
+    for(EventBufPort* port: midiPorts)
+        if(port->flow == PortFlow::Input)
+            lv2_evbuf_reset(port->eventBuf, true);
 
 
     switch(audioOutPorts.size()) {

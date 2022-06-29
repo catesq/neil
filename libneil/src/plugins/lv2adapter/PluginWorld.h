@@ -349,8 +349,7 @@ struct SharedCache {
 
     LV2_Atom_Forge forge;
 
-    std::mutex suil_mtx;
-    bool suil_is_init;
+
 
     // Base Types
 
@@ -363,6 +362,7 @@ struct SharedCache {
     ~SharedCache();
 
     void init_suil();
+    void init_x_threads();
 
 
     const LilvPlugins *get_all_plugins() {
@@ -379,6 +379,11 @@ struct SharedCache {
     // const LV2_Feature** getLv2Features();
 
 private:
+    std::mutex suil_mtx;
+    bool suil_is_init;
+    bool are_threads_init;
+
+
     SharedCache();
 };
 
