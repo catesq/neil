@@ -26,5 +26,6 @@ for filename in glob.glob('*.neil-component'):
 for filename in glob.glob('*.py'):
 	install('${SHARE_PATH}/components', filename)
 
-for (dirname, filename) in [os.path.split(filename) for filename in glob.glob('**/*.py')]:
-    install('${SHARE_PATH}/components/' + dirname, dirname + '/' + filename)
+for (modulename, _) in [os.path.split(filename) for filename in glob.glob('**/__init__.py')]:
+    for (dirname, filename) in [os.path.split(filename) for filename in glob.glob(f'{modulename}/*')]:
+        install('${SHARE_PATH}/components/' + dirname, dirname + '/' + filename)
