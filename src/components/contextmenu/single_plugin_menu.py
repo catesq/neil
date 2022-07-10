@@ -3,7 +3,9 @@ import os.path
 import zzub
 from neil.com import com
 import neil.common as common
-from neil.utils import Menu, is_generator, is_root, is_effect
+from neil.utils import Menu, is_generator, is_root, is_effect, prepstr
+
+from .submenus import restore_selection_submenu
 
 from .actions import ( on_popup_mute,
                        on_popup_solo,
@@ -13,18 +15,19 @@ from .actions import ( on_popup_mute,
                        on_popup_show_presets,
                        on_popup_rename,
                        on_popup_delete,
-                       on_popup_clone,
+                       on_popup_clone_plugin,
+                       on_popup_clone_chain,
                        on_popup_set_target,
                        on_popup_command,
                        on_machine_help
                        )
 
+
 class SinglePluginMenu(Menu):
     __neil__ = dict(
         id = 'neil.core.contextmenu.singleplugin',
         singleton = False,
-        categories = [
-        ],
+        categories = [],
     )
 
     def __init__(self, metaplugin):
@@ -46,15 +49,21 @@ class SinglePluginMenu(Menu):
 
         if not is_root(metaplugin):
             self.add_item("_Delete plugin", on_popup_delete, metaplugin)
-            self.add_item("Clone _instrument", on_popup_clone, metaplugin)
+            self.add_item("Clone _instrument", on_popup_clone_plugin, metaplugin)
+            self.add_item("_Clone chain", on_popup_clone_chain, metaplugin)
 
         if is_effect(metaplugin) or is_root(metaplugin):
             self.add_separator()
             self.add_check_item("Default Target", player.autoconnect_target == metaplugin, on_popup_set_target, metaplugin)
 
+        router = com.get('neil.core.router.view')
+        if router.selection_count() > 0:
+            self.add_separator()
+            self.add_submenu("_Restore selection", restore_selection_submenu())
+
         commands = metaplugin.get_commands().split('\n')
         if commands != ['']:
-            menu.add_separator()
+            self.add_separator()
             submenuindex = 0
             for index in range(len(commands)):
                 cmd = commands[index]
