@@ -915,6 +915,9 @@ namespace zzub:
 		"Save current project in the CCM file format to disk."
 		def save_ccm(string fileName): int
 
+		"Save selected plugins from the current project in the CCM file format to disk."
+		def save_ccm_selected(string fileName, int[size] plugins, uint size): int
+
 		"Returns one of the values in the state enumeration."
 		def get_state(): int
 

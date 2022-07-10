@@ -259,6 +259,16 @@ extern "C"
     if (!f.save(fileName, player)) return -1;
     return 0;
   }
+  
+  int zzub_player_save_ccm_selected(zzub_player_t *player, const char* fileName, const int* plugins, unsigned int size) {
+    CcmWriter f;
+    printf("number of plugins to save: %d\n", size);
+    for(int i=0; i<size; i++) {
+        printf("  Plugin id: %d\n", plugins[i]);
+    }
+    if(!f.saveSelected(fileName, player, plugins, size)) return -1;
+    return 0;
+  }
 
   int zzub_player_get_state(zzub_player_t *player) {
     return (int)player->front.state;

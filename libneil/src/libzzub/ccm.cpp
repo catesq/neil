@@ -1055,6 +1055,11 @@ bool CcmWriter::save(std::string fileName, zzub::player* player) {
     return true;
 }
 
+bool CcmWriter::saveSelected(std::string filename, zzub::player* player, const int* plugins, unsigned int size) {
+    printf("save selected plugins...\n");
+    return false;
+}
+
 
 static FLAC__StreamEncoderWriteStatus flac_stream_encoder_write_callback(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[], size_t bytes, unsigned samples, unsigned current_frame, void *client_data) {
     zzub::outstream* writer=(zzub::outstream*)client_data;

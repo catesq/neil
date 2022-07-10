@@ -112,6 +112,7 @@ namespace zzub {
     xml_node saveEnvelopes(xml_node &parent, zzub::wave_info_ex &info);
   public:
     bool save(std::string fileName, zzub::player* player);
+    bool saveSelected(std::string filename, zzub::player* player, const int* plugins, unsigned int size);
   };
 
   class CcmReader : xml_tree_walker {
