@@ -615,7 +615,6 @@ class RouteView(Gtk.DrawingArea):
     COLOR_BORDER_SELECT = 8
     COLOR_TEXT = 9
 
-
     def __init__(self, parent):
         """
         Initializer.
@@ -630,6 +629,7 @@ class RouteView(Gtk.DrawingArea):
         self.autoconnect_target          = None
         self.chordnotes                  = []
         self.volume_slider               = VolumeSlider(self)
+        self.selections                  = {}                    #slections stored using the remember selction option
 
         eventbus                         = com.get('neil.core.eventbus')
         eventbus.zzub_connect           += self.on_zzub_redraw_event
@@ -774,6 +774,21 @@ class RouteView(Gtk.DrawingArea):
     def on_focus(self, event):
         self.redraw()
 
+    def store_selection(self, index, plugins):
+        self.selections[index] = [plugin.get_id() for plugin in plugins]
+
+    def restore_selection(self, index):
+        if self.has_selection(index):
+            player = com.get('neil.core.player')
+            plugins = player.get_plugin_list()
+            player.active_plugins = [plugin for plugin in plugins if plugin.get_id() in self.selections[index]]
+
+    def has_selection(self, index):
+        return index in self.selections
+
+    def selection_count(self):
+        return len(self.selections)
+
     def on_context_menu(self, widget, event):
         """
         Event handler for requests to show the context menu.
@@ -794,11 +809,11 @@ class RouteView(Gtk.DrawingArea):
         else:
             res = self.get_connection_at((mx, my))
             if res:
-                mp, index = res
+                metaplugin, index = res
                 menu = com.get('neil.core.contextmenu.connection', metaplugin, index)
             else:
-                point = self.pixel_to_float((mx, my))
-                menu = com.get('neil.core.contextmenu.router', point)
+                (x, y) = self.pixel_to_float((mx, my))
+                menu = com.get('neil.core.contextmenu.router', x, y)
 
         menu.popup(self, event)
 
