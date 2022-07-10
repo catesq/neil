@@ -284,6 +284,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self.get_plugin(0).add_input(self.__streamplayer, zzub.zzub_connection_type_audio)
         self.set_machine_non_song(self.__streamplayer, True)
 
+
     def preview_file(self, filepath):
         base, ext = os.path.splitext(filepath)
         if not ext.lower() in self.__stream_ext_uri_mappings:
@@ -292,12 +293,15 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self.play_stream((4 << 4) + 1, uri, filepath)
         return True
 
+
     def preview_wave(self, w):
         self.play_stream((4 << 4) + 1, "@zzub.org/stream/wavetable;1", str(w.get_index() + 1))
+
 
     def stop_preview(self):
         if self.__streamplayer:
             self.__streamplayer.play_midi_note(zzub.zzub_note_value_off, (4 << 4) + 1, 0)
+
 
     def load_wave(self, wave, filepath):
         stream = zzub.Input.open_file(filepath)
@@ -309,10 +313,12 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             self.active_waves = [wave]
         return res != 0
 
+
     def save_wave(self, wave, filepath):
         stream = zzub.Output.create_file(filepath)
         #res = wave.save_sample(0, stream)
         stream.destroy()
+
 
     def play_stream(self, note, plugin_uri, data_url):
         if self.__streamplayer:
@@ -328,18 +334,22 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             self.__streamplayer.play_midi_note(note, 0, 0)
         self.history_flush_last()
 
+
     def register_locals(self, locs):
         locs.update(dict(
             lazy_commits = self._enable_lazy_commits,
             event_stats = self._enable_event_stats,
         ))
 
+
     def _enable_event_stats(self, enable=True):
         self.__event_stats = enable
+
 
     def _enable_lazy_commits(self, enable=True):
         """not to be used outside of tests."""
         self.__lazy_commits = enable
+
 
     def on_pre_delete_pattern(self, plugin, index):
         sel = self.active_patterns
@@ -347,6 +357,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         if pair in sel:
             sel.remove(pair)
             self.active_patterns = sel
+
 
     def on_pre_delete_plugin(self, plugin):
         sel = self.active_plugins
@@ -358,6 +369,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             if selplugin == plugin:
                 sel.remove((selplugin, index))
         self.active_patterns = sel
+
 
     def load_ccm(self, filename):
         self.clear()
@@ -373,6 +385,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self.active_plugins = [self.get_plugin(0)]
         return res
 
+
     def save_ccm(self, filename):
         self.delete_stream_player()
         self.delete_stream_recorder()
@@ -383,6 +396,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             self.document_path = filename
         return res
 
+
     def clear(self):
         self.delete_stream_player()
         self.delete_stream_recorder()
@@ -390,6 +404,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self.history_flush_last()
         zzub.Player.clear(self)
         self.document_path = ''
+
 
     def on_handle_events(self):
         """
@@ -419,15 +434,18 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             self._cbtime = t
         return True
 
+
     def play(self):
         self.playstarttime = time.time()
         self.set_state(zzub.zzub_player_state_playing)
+
 
     def stop(self):
         if self.get_state() != zzub.zzub_player_state_playing:
             self.set_position(0)
         else:
             self.set_state(zzub.zzub_player_state_stopped)
+
 
     def get_plugin_list(self):
         for plugin in zzub.Player.get_plugin_list(self):
@@ -436,6 +454,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             if plugin == self.__streamrecorder:
                 continue
             yield plugin
+
 
     def activate_wave(self, direction):
         """
@@ -457,6 +476,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         else:
             pindex = waves.index(self.active_waves[0])
             self.active_waves = [waves[(pindex + offset) % len(waves)]]
+
 
     def activate_pattern(self, direction):
         """
@@ -489,6 +509,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             pindex = patterns.index(self.active_patterns[0])
             self.active_patterns = [patterns[(pindex + offset) % len(patterns)]]
 
+
     def activate_plugin(self, direction):
         """
         activates plugin with the name alphabetically relative to the currently
@@ -514,6 +535,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             self.active_patterns = [(self.active_plugins[0], 0)]
         else:
             self.active_patterns = []
+
 
     def handle_event(self, player, plugin, data, tag):
         """
@@ -551,21 +573,26 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             refresh_gui()
         return result
 
+
     def document_unchanged(self):
         self.last_history_pos = self.history_get_position()
+
 
     def can_undo(self):
         pos = self.history_get_position()
         historysize = self.history_get_size()
         return (pos > 0) and ((pos - 1) < historysize)
 
+
     def can_redo(self):
         pos = self.history_get_position()
         historysize = self.history_get_size()
         return pos < historysize
 
+
     def document_changed(self):
         return self.last_history_pos != self.history_get_position()
+
 
     def get_track_list(self):
         """
@@ -573,8 +600,10 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         """
         return [self.get_sequence(i) for i in range(self.get_sequence_track_count())]
 
+
     def get_current_sequencer(self):
         return self
+
 
     def init_lunar(self):
         """
@@ -594,8 +623,8 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             os.makedirs(userlunarpath)
         pc.configure("local_storage_dir", userlunarpath)
 
-    def solo(self, plugin):
 
+    def solo(self, plugin):
         if not plugin or plugin == self.solo_plugin: # pylint: disable=access-member-before-definition
             # soloing deactived so apply muted states
             self.solo_plugin = None
@@ -615,6 +644,23 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
                     plugin.set_mute(info.muted)
                     info.reset_plugingfx()
 
+
+    def group_is_muted(self, metaplugins):
+        return True in [common.get_plugin_infos().get(metaplugin).muted for metaplugin in metaplugins]
+
+
+    def toggle_group_mute(self, metaplugins):
+        group_mute = not self.group_muted(metaplugins)
+
+        for metaplugin in metaplugins:
+            if common.get_plugin_infos().get(metaplugin).muted == group_mute:
+                self.toggle_mute()
+
+
+    def plugin_is_muted(self, metaplugin):
+        return common.get_plugin_infos().get(metaplugin).muted
+
+
     def toggle_mute(self, plugin):
         pi = common.get_plugin_infos().get(plugin)
         pi.muted = not pi.muted
@@ -623,11 +669,13 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             plugin.set_mute(pi.muted)
         pi.reset_plugingfx()
 
+
     def toggle_bypass(self, plugin):
         pi = common.get_plugin_infos().get(plugin)
         pi.bypassed = not pi.bypassed
         plugin.set_bypass(pi.bypassed)
         pi.reset_plugingfx()
+
 
     def create_plugin(self, pluginloader, connection=None, plugin=None):
         # find an unique name for the new plugin
