@@ -378,7 +378,7 @@ class SequencerPanel(Gtk.VBox):
                 delete.connect('activate', on_delete, path[0][0] - 2)
                 delete.show()
             if hasattr(self, 'plugin') and self.plugin != None:
-                menu.popup(None, None, None, event.button, event.time)
+                menu.popup(None, None, None, None, event.button, event.time)
 
     def on_mouse_over(self, widget, event):
         widget.grab_focus()
@@ -1306,7 +1306,7 @@ class SequencerView(Gtk.DrawingArea):
         elif event.button == 3:
             if (x < self.seq_left_margin) and (track < track_count):
                 mp = player.get_sequence(track).get_plugin()
-                menu = com.get('neil.core.contextmenu', 'plugin', mp)
+                menu = com.get('neil.core.contextmenu.singleplugin', mp)
                 menu.popup(self, event)
                 return
             self.on_context_menu(event)
