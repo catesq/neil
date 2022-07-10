@@ -45,19 +45,46 @@ class PluginType(Enum):
     Streamer = 5
     Other = 6
 
-class SlowDraw:
-    def __init__(self, max_updates_per_sec=10):
-        self.interval  = timedelta(milliseconds=max(1, int(1000/max_updates_per_sec)))
-        self.last_time = datetime.min
 
-    def update(self):
-        currtime = datetime.now()
-        timediff = currtime - self.last_time
-        print(timediff, self.interval)
-        if timediff > self.interval:
-            self.last_time  = currtime
-            return True
-        return False
+def rename_plugin(player, plugin):
+    num = 1
+    name = plugin.get_name() + f"_{num}"
+
+    while name in [plugin.get_name() for plugin in player.get_plugin_list()]:
+        name = plugin.get_name() + f"_{num}"
+        num += 1
+
+    return name
+
+def clone_plugin(player, src_plugin):
+    new_plugin = player.create_plugin(src_plugin.get_pluginloader())
+    new_plugin.set_name(rename_plugin(player, src_plugin));
+    return new_plugin
+
+def clone_plugin_and_patterns(src_plugin, new_plugin):
+    new_plugin = clone_plugin(player, plugin)
+    clone_plugin_patterns(plugin, new_plugin)
+
+def clone_preset(src_plugin, new_plugin):
+    preset = Preset()
+    preset.pickup(plugin.get_pluginloader())
+    preset.apply(new_plugin)
+    player.history_commit("Clone plugin %s" % pluginloader.get_short_name())
+
+
+def clone_plugin_patterns(plugin, new_plugin):
+    for index, pattern in [(index, plugin.get_pattern(index)) for index in range(plugin.get_pattern_count())]:
+        new_pattern = new_plugin.create_pattern(pattern.get_row_count())
+        new_pattern.set_name(pattern.get_name())
+
+        for group in range(pattern.get_group_count()):
+            for track in range(pattern.get_track_count(group)):
+                for row in range(pattern.get_row_count()):
+                    for column in range(pattern.get_column_count(group, track)):
+                        val = pattern.get_value(row, group, track, column)
+                        new_pattern.set_value(row, group, track, column, val)
+
+        new_plugin.add_pattern(new_pattern)
 
 #https://stackoverflow.com/questions/23021327/how-i-can-get-drawingarea-window-handle-in-gtk3/27236258#27236258
 #http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=examples/gtkvlc.py;hb=HEAD
@@ -203,7 +230,7 @@ def db2linear(val, limit = -48.0):
     """
     Translates a dB volume to a linear amplitude.
 
-    @param val: Volume in dB.
+    @param val: Volume in dB.utils
     @type val: float
     @param limit: If val is lower than limit, 0.0 will be returned.
     @type limit: float
@@ -1033,11 +1060,13 @@ class CancelException(Exception):
     modal UI dialogs.
     """
 
+
 def make_submenu_item(submenu, name, use_underline=False):
     item = Gtk.MenuItem(label=name)
     item.set_use_underline(use_underline)
     item.set_submenu(submenu)
     return item
+
 
 def make_stock_menu_item(stockid, func, frame=None, shortcut=None, *args):
     item = Gtk.ImageMenuItem.new_from_stock(stockid, None)
@@ -1048,11 +1077,13 @@ def make_stock_menu_item(stockid, func, frame=None, shortcut=None, *args):
         item.connect('activate', func, *args)
     return item
 
+
 def make_stock_tool_item(stockid, func, *args):
     item = Gtk.ToolButton(stockid)
     if func:
         item.connect('clicked', func, *args)
     return item
+
 
 def make_stock_toggle_item(stockid, func, *args):
     item = Gtk.ToggleToolButton(stockid)
@@ -1060,11 +1091,13 @@ def make_stock_toggle_item(stockid, func, *args):
         item.connect('toggled', func, *args)
     return item
 
+
 def make_stock_radio_item(stockid, func, *args):
     item = Gtk.RadioToolButton(stock_id=stockid)
     if func:
         item.connect('toggled', func, *args)
     return item
+
 
 def make_menu_item(label, desc, func, underline=False, *args):
     item = Gtk.MenuItem(label=label)
@@ -1075,6 +1108,7 @@ def make_menu_item(label, desc, func, underline=False, *args):
         item.connect('activate', func, *args)
     return item
 
+
 def make_check_item(label, desc, func, *args):
     item = Gtk.CheckMenuItem(label=label)
     if desc:
@@ -1082,6 +1116,7 @@ def make_check_item(label, desc, func, *args):
     if func:
         item.connect('toggled', func, *args)
     return item
+
 
 def make_radio_item(label, desc, func, *args):
     item = Gtk.RadioMenuItem(label=label)
@@ -1091,6 +1126,7 @@ def make_radio_item(label, desc, func, *args):
         item.connect('toggled', func, *args)
     return item
 
+
 def camelcase_to_unixstyle(s):
     o = ''
     for c in s:
@@ -1098,6 +1134,7 @@ def camelcase_to_unixstyle(s):
             o += '_'
         o += c.lower()
     return o
+
 
 def test_view(classname):
     obj = com.get(classname)
@@ -1108,6 +1145,7 @@ def test_view(classname):
     elif isinstance(obj, Gtk.Widget) and not obj.get_parent():
         dlg = com.get('neil.test.dialog', embed=obj, destroy_on_close=False)
 
+
 def show_manual():
     """
     Invoke yelp program with the Neil manual.
@@ -1115,6 +1153,7 @@ def show_manual():
     import webbrowser
     path = docpath("manual")
     webbrowser.open_new("%s/index.html" % path)
+
 
 def show_machine_manual(name):
     """
@@ -1129,6 +1168,7 @@ def show_machine_manual(name):
         return True
     else:
         return False
+
 
 class ObjectHandlerGroup:
     """
@@ -1169,10 +1209,10 @@ class Menu(Gtk.Menu):
     def add_separator(self):
         self.append(Gtk.SeparatorMenuItem())
 
-    def add_submenu(self, label, submenu = None):
+    def add_submenu(self, label, submenu = None, use_underline=True):
         if not submenu:
             submenu = Menu()
-        item = Gtk.MenuItem(label=label)
+        item = Gtk.MenuItem(label=label, use_underline=True)
         item.set_submenu(submenu)
         self.append(item)
         return item, submenu
@@ -1190,7 +1230,7 @@ class Menu(Gtk.Menu):
         return item
 
     def add_check_item(self, label, toggled, func, *args):
-        item = Gtk.CheckMenuItem(label=label)
+        item = Gtk.CheckMenuItem(label=label, use_underline=True)
         item.set_active(toggled)
         item.connect('toggled', func, *args)
         self.append(item)
