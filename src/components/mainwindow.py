@@ -32,6 +32,7 @@ from neil import com
 import neil.common as common
 from functools import cmp_to_key
 import ctypes
+import re
 
 MARGIN = common.MARGIN
 MARGIN2 = common.MARGIN2
@@ -690,6 +691,7 @@ class NeilFrame(Gtk.Window):
         self.set_title(title)
         return True
 
+
     def open_file(self, filename):
         """
         Loads a song from disk. The old document will be wiped, and
@@ -702,8 +704,8 @@ class NeilFrame(Gtk.Window):
             return
         self.clear()
         player = com.get('neil.core.player')
-        base,ext = os.path.splitext(filename)
-        if ext.lower() in ('.ccm',):
+        base, ext = os.path.splitext(filename)
+        if re.search(r"""\.ccm$|\.ccm.\d\d\d\.bak$""", filename):
             dlg = Gtk.Dialog('Neil', parent=self, flags=Gtk.DialogFlags.MODAL)
             progBar = Gtk.ProgressBar()
             progBar.set_text('Loading CCM Song...')
