@@ -1259,7 +1259,6 @@ class Menu(Gtk.Menu):
         else:
             event_button = 0
             event_time = 0
-        # return super().popup(None, None, None, None, event_button, event_time)
         return super().popup(None, None, None, None, event_button, event_time)
 
 
