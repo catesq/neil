@@ -1,32 +1,3 @@
-#encoding: latin-1
-
-# Neil
-# Modular Sequencer
-# Copyright (C) 2006,2007,2008 The Neil Development Team
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-"""
-Contains all classes and functions needed to render the sequence
-editor and its associated components.
-"""
-
-if __name__ == '__main__':
-    import os
-    os.system('../../bin/neil-combrowser neil.core.sequencerpanel')
-    raise SystemExit
 
 import gi
 gi.require_version('PangoCairo', '1.0')
@@ -37,20 +8,22 @@ from gi.repository import GObject
 import cairo
 import sys
 
-from neil.utils import prepstr, get_item_count
-from neil.utils import get_clipboard_text, set_clipboard_text, add_scrollbars
-from neil.utils import is_effect, is_generator, is_controller
-from neil.utils import is_root, get_new_pattern_name
-from neil.utils import Menu, wave_names_generator
+from neil.utils import (
+    prepstr, get_item_count, add_scrollbars, get_new_pattern_name,
+    is_effect, is_generator, is_controller, is_root,
+    get_clipboard_text, set_clipboard_text,
+    wave_names_generator,
+    Menu,
+)
+
 import random
 import config
+
 import neil.common as common
-MARGIN = common.MARGIN
-MARGIN2 = common.MARGIN2
-MARGIN3 = common.MARGIN3
-MARGIN0 = common.MARGIN0
 import neil.com as com
 import zzub
+
+from .add_track import AddSequencerTrackDialog
 
 SEQKEYS = '0123456789abcdefghijklmnopqrstuvwxyz'
 SEQKEYMAP = dict(zip(SEQKEYS, range(0x10, len(SEQKEYS) + 0x10)))
@@ -66,402 +39,13 @@ def get_random_color(seed):
     b = random.random() * 0.4 + 0.599
     return (r, g, b)
 
+
 class PatternNotFoundException(Exception):
     """
     Exception thrown when pattern is not found.
     """
     pass
 
-
-class AddSequencerTrackDialog(Gtk.Dialog):
-    """
-    Sequencer Dialog Box.
-
-    This dialog is used to create a new track for an existing machine.
-    """
-    def __init__(self, parent, machines):
-        Gtk.Dialog.__init__(self,
-                "Add track",
-                parent.get_toplevel(),
-                Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                None
-        )
-        self.btnok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
-        self.btncancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
-        self.combo = Gtk.ComboBoxText()
-        for machine in sorted(machines, key=lambda m: m.lower()):
-            self.combo.append_text(machine)
-        # Set a default.
-        self.combo.set_active(0)
-        self.get_content_area().add(self.combo)
-        self.show_all()
-
-
-class SequencerToolBar(Gtk.HBox):
-    """
-    Sequencer Toolbar
-
-    Allows to set the step size for the sequencer view.
-    """
-    def __init__(self, seqview):
-        """
-        Initialization.
-        """
-        Gtk.HBox.__init__(self, False, MARGIN)
-        self.seqview = seqview
-        self.set_border_width(MARGIN)
-        self.steplabel = Gtk.Label()
-        self.steplabel.set_text_with_mnemonic("_Step")
-        self.steps = [1, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64]
-        self.stepselect = Gtk.ComboBoxText.new()
-        for step in self.steps:
-            self.stepselect.append_text(str(step))
-
-        self.stepselect.connect('changed', self.on_stepselect)
-        self.stepselect.connect('key_release_event', self.on_stepselect)
-        self.stepselect.set_size_request(60, -1)
-        self.steplabel.set_mnemonic_widget(self.stepselect)
-        # Follow song checkbox.
-        self.followsong = Gtk.CheckButton("Follow Song Position")
-        self.followsong.set_active(False)
-        # Display all the components.
-        self.pack_start(self.steplabel, False, True, 0)
-        self.pack_start(self.stepselect, False, True, 0)
-        self.pack_start(self.followsong, False, True, 0)
-
-    def increase_step(self):
-        if self.seqview.step < 64:
-            self.seqview.step *= 2
-        self.update_stepselect()
-        self.seqview.update()
-
-    def decrease_step(self):
-        if self.seqview.step > 1:
-            self.seqview.step >>= 1
-        self.update_stepselect()
-        self.seqview.update()
-
-    def update_all(self):
-        """
-        Updates the toolbar to reflect sequencer changes.
-        """
-        self.update_stepselect()
-
-    def update_stepselect(self):
-        """
-        Updates the step selection choice box.
-        """
-        player = com.get('neil.core.player')
-        try:
-            self.stepselect.set_active(self.steps.index(self.seqview.step))
-            config.get_config().set_default_int('SequencerStep', self.seqview.step)
-            player.sequence_step = self.seqview.step
-        except ValueError:
-            pass
-        self.seqview.adjust_scrollbars()
-
-    def on_stepselect(self, widget, event=False):
-        """
-        Handles events sent from the choice box when a step size is being selected.
-        """
-        try:
-            step = int(widget.get_active_text())
-        except:
-            self.seqview.step = 1
-            return
-        if widget.get_active() == -1 and event == False:
-            return
-        if self.seqview.step == step:
-            return
-        if (step > 128):
-            self.seqview.step = 128
-        if (step < 1):
-            self.seqview.step = 1
-        else:
-            self.seqview.step = step
-        self.seqview.update()
-        player = com.get('neil.core.player')
-        player.set_seqstep(step)
-
-
-class SequencerPanel(Gtk.VBox):
-    """
-    Sequencer pattern panel.
-
-    Displays all the patterns available for the current track.
-    """
-    __neil__ = dict(
-            id = 'neil.core.sequencerpanel',
-            singleton = True,
-            categories = [
-                    'neil.viewpanel',
-                    'view',
-            ]
-    )
-
-    __view__ = dict(
-                    label = "Sequencer",
-                    stockid = "neil_sequencer",
-                    shortcut = 'F4',
-                    order = 4,
-    )
-
-    def __init__(self):
-        """
-        Initialization.
-        """
-        Gtk.VBox.__init__(self)
-        self.splitter = Gtk.HPaned()
-        self.seqliststore = Gtk.ListStore(str, str)
-        self.seqpatternlist = Gtk.TreeView(self.seqliststore)
-        self.seqpatternlist.set_rules_hint(True)
-        self.seqpatternlist.connect("button-press-event", self.on_pattern_list_button)
-        self.seqpatternlist.connect("enter-notify-event", self.on_mouse_over)
-        self.seqpatternlist.connect("row-activated", self.on_visit_pattern)
-        tvkey = Gtk.TreeViewColumn("Key")
-        tvkey.set_resizable(True)
-        tvpname = Gtk.TreeViewColumn("Pattern Name")
-        tvpname.set_resizable(True)
-        cellkey = Gtk.CellRendererText()
-        cellpname = Gtk.CellRendererText()
-        tvkey.pack_start(cellkey, True)
-        tvpname.pack_start(cellpname, True)
-        tvkey.add_attribute(cellkey, 'text', 0)
-        tvpname.add_attribute(cellpname, 'text', 1)
-        self.seqpatternlist.append_column(tvkey)
-        self.seqpatternlist.append_column(tvpname)
-        self.seqpatternlist.set_search_column(0)
-        tvkey.set_sort_column_id(0)
-        tvpname.set_sort_column_id(1)
-
-        vscroll = Gtk.VScrollbar()
-        hscroll = Gtk.HScrollbar()
-
-        self.seqview = SequencerView(self, hscroll, vscroll)
-        self.seqview.connect("enter-notify-event", self.on_mouse_over)
-        self.viewport = Gtk.Viewport()
-        self.viewport.add(self.seqview)
-        scrollwin = Gtk.Table(2, 2)
-        scrollwin.attach(self.viewport, 0, 1, 0, 1,
-                         Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND,
-                         Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND)
-        scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL)
-        scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, 0)
-
-        self.splitter.pack1(add_scrollbars(self.seqpatternlist), False, False)
-        self.splitter.pack2(scrollwin, True, True)
-        self.view = self.seqview
-        self.toolbar = SequencerToolBar(self.seqview)
-
-        self.statusbar = Gtk.HBox(False, MARGIN)
-        self.statusbar.set_border_width(MARGIN0)
-
-        self.pack_start(self.toolbar, False, True, 0)
-        self.pack_start(self.splitter, True, True, 0)
-        self.pack_end(self.statusbar, False, True, 0)
-
-        self.__set_properties()
-        self.__do_layout()
-        # end wxGlade
-        self.update_list()
-        self.toolbar.update_all()
-        self.seqview.connect('size-allocate', self.on_sash_pos_changed)
-        self.seqview.grab_focus()
-        eventbus = com.get('neil.core.eventbus')
-        eventbus.edit_sequence_request += self.edit_sequence_request
-
-    def on_visit_pattern(self, treeview, treeiter, path):
-        pattern = treeiter[0] - 2
-        if pattern < 0:
-            return
-        else:
-            self.seqview.jump_to_pattern(self.plugin, pattern)
-
-    def on_pattern_list_button(self, treeview, event):
-        def on_create(item):
-            from patterns import show_pattern_dialog
-            from patterns import DLGMODE_NEW
-            from neil.utils import get_new_pattern_name
-            result = show_pattern_dialog(treeview,
-                                         get_new_pattern_name(self.plugin),
-                                         self.seqview.step, DLGMODE_NEW, False)
-            if result == None:
-                return
-            else:
-                name, length, switch = result
-                plugin = self.plugin
-                pattern = plugin.create_pattern(length)
-                pattern.set_name(name)
-                plugin.add_pattern(pattern)
-                player = com.get('neil.core.player')
-                player.history_commit("new pattern")
-
-        def on_clone(item, pattern):
-            from patterns import show_pattern_dialog
-            from patterns import DLGMODE_COPY
-            from neil.utils import get_new_pattern_name
-            result = show_pattern_dialog(treeview,
-                                         get_new_pattern_name(self.plugin),
-                                         self.seqview.step, DLGMODE_COPY, False)
-            if result == None:
-                return
-            else:
-                name, patternsize, switch = result
-                m = self.plugin
-                p = m.get_pattern(pattern)
-                p.set_name(name)
-                m.add_pattern(p)
-                player = com.get('neil.core.player')
-                player.history_commit("clone pattern")
-
-        def on_rename(item, pattern):
-            from patterns import show_pattern_dialog
-            from patterns import DLGMODE_CHANGE
-            from neil.utils import get_new_pattern_name
-            result = show_pattern_dialog(treeview,
-                                         self.plugin.get_pattern_name(pattern),
-                                         self.plugin.get_pattern_length(pattern),
-                                         DLGMODE_CHANGE, False)
-            if result == None:
-                return
-            else:
-                name, length, switch = result
-                plugin = self.plugin
-                plugin.set_pattern_name(pattern, name)
-                plugin.set_pattern_length(pattern, length)
-                player = com.get('neil.core.player')
-                player.history_commit("change pattern properties")
-            self.view.redraw()
-
-        def on_clear(item, pattern):
-            plugin = self.plugin
-            length = plugin.get_pattern_length(pattern)
-            name = plugin.get_pattern_name(pattern)
-            new_pattern = plugin.create_pattern(length)
-            new_pattern.set_name(name)
-            plugin.update_pattern(pattern, new_pattern)
-            player = com.get('neil.core.player')
-            player.history_commit("clear pattern")
-
-        def on_delete(item, pattern):
-            plugin = self.plugin
-            if pattern >= 0:
-                plugin.remove_pattern(pattern)
-                player = com.get('neil.core.player')
-                player.history_commit("remove pattern")
-
-        if event.button == 3:
-            x = int(event.x)
-            y = int(event.y)
-            path = treeview.get_path_at_pos(x, y)
-            menu = Gtk.Menu()
-            new = Gtk.MenuItem("New pattern")
-            clone = Gtk.MenuItem("Clone pattern")
-            rename = Gtk.MenuItem("Pattern properties")
-            clear = Gtk.MenuItem("Clear pattern")
-            delete = Gtk.MenuItem("Delete pattern")
-            menu.append(new)
-            new.connect('activate', on_create)
-            menu.append(clone)
-            menu.append(rename)
-            menu.append(clear)
-            menu.append(delete)
-            if hasattr(self, 'plugin') and self.plugin != None:
-                new.show()
-            if path != None:
-                clone.connect('activate', on_clone, path[0][0] - 2)
-                clone.show()
-                rename.connect('activate', on_rename, path[0][0] - 2)
-                rename.show()
-                clear.connect('activate', on_clear, path[0][0] - 2)
-                clear.show()
-                delete.connect('activate', on_delete, path[0][0] - 2)
-                delete.show()
-            if hasattr(self, 'plugin') and self.plugin != None:
-                menu.popup(None, None, None, None, event.button, event.time)
-
-    def on_mouse_over(self, widget, event):
-        widget.grab_focus()
-
-    def edit_sequence_request(self, track=None, row=None):
-        framepanel = com.get('neil.core.framepanel')
-        framepanel.select_viewpanel(self)
-        #TODO: add active_tracks option to allow track, row position change
-        #player.active_tracks = [(track, row)]
-        #framepanel = com.get('neil.core.framepanel')
-        #framepanel.select_viewpanel(self)
-
-    def handle_focus(self):
-        self.view.needfocus = True
-
-    def update_all(self):
-        """
-        Updates everything to reflect changes in the sequencer.
-        """
-        self.update_list()
-        self.toolbar.update_all()
-        for k, v in self.view.plugin_info.items():
-            v.patterngfx = {}
-        self.view.update()
-        self.seqview.set_cursor_pos(0, 0)
-        self.seqview.adjust_scrollbars()
-        self.seqview.redraw()
-        self.seqview.adjust_scrollbars()
-
-    def update_list(self):
-        """
-        Updates the panel to reflect a sequence view change.
-        """
-        self.seqliststore.clear()
-        self.seqliststore.append(['-', 'Mute'])
-        self.seqliststore.append([',', 'Break'])
-        track = self.seqview.get_track()
-        if track:
-            for pattern, key in zip(track.get_plugin().get_pattern_list(),
-                                    SEQKEYS):
-                self.seqliststore.append([key, pattern.get_name()])
-            self.plugin = track.get_plugin()
-
-    def on_sash_pos_changed(self, widget, *args):
-        """
-        Sent when the sash position changes.
-
-        @param event: Event.
-        @type event: wx.Event
-        """
-        if not self.splitter.is_visible():
-            return
-        config.get_config().save_window_pos("SequencerSplitter", self.splitter)
-
-    def __set_properties(self):
-        """
-        Sets properties during initialization.
-        """
-        # begin wxGlade: SequencerFrame.__set_properties
-        self.statuslabels = []
-
-        label = Gtk.Label()
-        vsep = Gtk.VSeparator()
-        self.statuslabels.append(label)
-        self.statusbar.pack_start(label, False, True, 0)
-        self.statusbar.pack_start(vsep, False, True, 0)
-
-        label = Gtk.Label()
-        vsep = Gtk.VSeparator()
-        self.statuslabels.append(label)
-        self.statusbar.pack_start(label, False, True, 0)
-        self.statusbar.pack_start(vsep, False, True, 0)
-        # end wxGlade
-
-    def __do_layout(self):
-        """
-        Arranges children components during initialization.
-        """
-        self.show_all()
-        config.get_config().load_window_pos("SequencerSplitter", self.splitter)
-        # end wxGlade
-
-# end of class SequencerFrame
 
 
 class SequencerView(Gtk.DrawingArea):
@@ -537,7 +121,7 @@ class SequencerView(Gtk.DrawingArea):
         if track == -1:
             y = 0
         else:
-            y = (((track - self.starttrack) * self.seq_track_size) + self.seq_top_margin)
+            y = ((track - self.starttrack) * self.seq_track_size) + self.seq_top_margin
         return x, y
 
     def pos_to_track_row(self, xxx_todo_changeme1):
@@ -1847,17 +1431,3 @@ class SequencerView(Gtk.DrawingArea):
         self.draw_loop_points(ctx, colors)
         self.draw_cursors(ctx)
         self.draw_playpos(ctx)
-
-
-__all__ = [
-'PatternNotFoundException',
-'SequencerPanel',
-'SequencerView',
-]
-
-__neil__ = dict(
-        classes = [
-                SequencerPanel,
-                SequencerView,
-        ],
-)
