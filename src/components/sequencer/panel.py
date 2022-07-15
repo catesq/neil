@@ -8,6 +8,7 @@ from .toolbar import SequencerToolBar
 from neil.common import MARGIN, MARGIN0
 import config
 from neil.com import com
+from .utils import Seq
 
 class SequencerPanel(Gtk.VBox):
     """
@@ -245,7 +246,7 @@ class SequencerPanel(Gtk.VBox):
         track = self.seqview.get_track()
         if track:
             for pattern, key in zip(track.get_plugin().get_pattern_list(),
-                                    SEQKEYS):
+                                    Seq.keys):
                 self.seqliststore.append([key, pattern.get_name()])
             self.plugin = track.get_plugin()
 

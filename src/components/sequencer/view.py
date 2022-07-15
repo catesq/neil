@@ -24,11 +24,8 @@ import neil.com as com
 import zzub
 
 from .add_track import AddSequencerTrackDialog
+from .utils import Seq
 
-SEQKEYS = '0123456789abcdefghijklmnopqrstuvwxyz'
-SEQKEYMAP = dict(zip(SEQKEYS, range(0x10, len(SEQKEYS) + 0x10)))
-SEQKEYMAP[chr(45)] = 0x00
-SEQKEYMAP[chr(44)] = 0x01
 
 
 def get_random_color(seed):
@@ -691,9 +688,9 @@ class SequencerView(Gtk.DrawingArea):
         elif k == 'Down' or k == 'KP_Down':
             self.set_cursor_pos(self.track + 1, self.row)
             self.adjust_scrollbars()
-        elif ((kv < 256) and (chr(kv).lower() in SEQKEYMAP) and
+        elif ((kv < 256) and (chr(kv).lower() in Seq.map) and
               self.selection_start == None and self.selection_end == None):
-            idx = SEQKEYMAP[chr(kv).lower()]
+            idx = Seq.map[chr(kv).lower()]
             t = self.get_track()
             if t:
                 mp = t.get_plugin()

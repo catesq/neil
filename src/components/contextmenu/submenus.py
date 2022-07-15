@@ -7,6 +7,7 @@ from neil.preset import Preset
 from .actions import on_popup_bypass, on_store_selection, on_restore_selection
 import os.path
 import json
+from neil.pathconfig import get_settings_dir
 
 #class Connection:
 #    def __init__(self, metaplugin, connection_id):
@@ -35,11 +36,10 @@ def restore_selection_submenu():
 
 #used by machine_tree_submenu below
 def load_plugin_list(filename):
-    with open(filename, "r") as jsonfile:
-        return json.load(jsonfile)
-
-    with open(os.path.join(os.path.dirname(__file__), filename)) as jsonfile:
-        return json.load(jsonfile)
+    for dirname in ["", os.path.dirname(os.path.realpath(__file__)), get_settings_dir]:
+        if os.path.isfile(os.path.join(dirname, filename)):
+            with open(os.path.join(dirname, filename), "r") as jsonfile:
+                return json.load(jsonfile)
 
     return {}
 
