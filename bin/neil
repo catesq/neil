@@ -12,6 +12,7 @@ paths = {
         "LV2_PATH": "/usr/lib/lv2:/usr/local/lib/lv2:{HOME}/.lv2:/usr/local/lib64/lv2:/usr/lib64/lv2",
 #		"DSSI_PATH": "/usr/local/lib/dssi:/usr/lib/x86_64-linux-gnu/dssi/:/usr/lib/dssi",
 #		"LADSPA_PATH": "/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa",
+        "VST_PATH": "{HOME}/.vst"
     },
 
     "xplatform": {
