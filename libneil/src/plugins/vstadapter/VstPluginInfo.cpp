@@ -8,8 +8,15 @@
 
 
 VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCategory category) : filename(filename), category(category) {
-    vst_name = get_plugin_name(plugin);
+    version = dispatch(plugin, effGetVendorVersion);
+
+    name = get_plugin_string(plugin, effGetEffectName, kVstMaxEffectNameLen);
+    short_name = get_plugin_string(plugin, effGetEffectName, kVstMaxEffectNameLen);
+    author = get_plugin_string(plugin, effGetVendorString, kVstMaxVendorStrLen);
+
     is_synth = plugin->flags & effFlagsIsSynth;
+
+    uri = "@zzub.org/vstadapter/" + name +" /" + std::to_string(version);
 
     for(int idx=0; idx < plugin->numParams; idx++) {
         param_names.push_back(get_param_name(plugin, idx));

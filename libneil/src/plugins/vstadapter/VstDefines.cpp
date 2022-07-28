@@ -6,20 +6,24 @@ extern "C" {
     }
 }
 
-std::string get_plugin_name(AEffect* plugin) {
-    char name[34];
-    dispatch(plugin, effGetEffectName, 0, &name[0]);
-    name[33]=0;
 
-    return name;
-}
+
 
 std::string get_param_name(AEffect* plugin, int index) {
-    char name[10];
-    dispatch(plugin, effGetParamName, index, &name[0]);
-    name[9]=0;
+    return get_plugin_string(plugin, effGetParamName, kVstMaxParamStrLen, index);
+}
 
-    return name;
+
+std::string get_plugin_string(AEffect* plugin, VstInt32 opcode, unsigned maxlen, int index) {
+    char* vst_char_p= (char*) malloc(maxlen+1);
+    vst_char_p[maxlen]=0;
+
+    dispatch(plugin, opcode, index, vst_char_p);
+
+    std::string vst_string(vst_char_p);
+    free(vst_char_p);
+
+    return vst_string;
 }
 
 

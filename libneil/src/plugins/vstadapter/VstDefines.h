@@ -7,8 +7,10 @@
 
 #define VOLUME_DEFAULT 0x40
 
+std::string get_plugin_string(AEffect* plugin, VstInt32 opcode, unsigned maxlen, int index = 0);
 std::string get_plugin_name(AEffect* plugin);
 std::string get_param_name(AEffect* plugin, int index);
+
 VstParameterProperties* get_param_props(AEffect* plugin, int index);
 AEffect* load_vst(boost::dll::shared_library& lib, std::string vst_filename, AEffectDispatcherProc callback, void* user_p);
 
