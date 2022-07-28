@@ -1,19 +1,7 @@
 #include "VstPlugins.h"
 #include <cstdlib>
 
-extern "C" {
-    // only used by VstPlugins class when searching for plugins in the vst folders. plugins tend to ask what version of vst the host supports (opcode 1).
-    // not replying makes the plugin
-    VstIntPtr VSTCALLBACK dummyHostCallback(AEffect *effect, VstInt32 opcode, VstInt32 index, VstInt32 value, void *ptr, float opt) {
-        return 2400;
-    }
-}
 
-// lib is a shread librayr opened by boost::dll::shared_library() - it is an argument as lib is closed and all function pointer are invalid when lib goes out of scope
-// vst_path is the name of the vst dll/.so
-//AEffect* loadPlugin(boost::dll::shared_library lib, boost::filesystem::path vst_path, HostCallbackFunc hostCallback = nullptr) {
-//    auto entryPoint =
-//}
 
 
 VstPlugins::VstPlugins(const char* vst_path) {
@@ -23,13 +11,8 @@ VstPlugins::VstPlugins(const char* vst_path) {
 void VstPlugins::initialize(zzub::pluginfactory *factory) {
     for(auto& plugin_description: VstDescriptions(vst_path)) {
         printf("here now\n");
-        printf("vst plugin: %s %s\n", plugin_description.name.c_str(), plugin_description.filename.c_str());
+        printf("vst plugin: %s\n", plugin_description.name.c_str());
     }
-//    LILV_FOREACH(plugins, iter, collection) {
-//        const LilvPlugin *plugin = lilv_plugins_get(collection, iter);
-//        PluginInfo *info = new PluginInfo(world, plugin);
-//        factory->register_info(info);
-//    }
     exit(0);
 }
 

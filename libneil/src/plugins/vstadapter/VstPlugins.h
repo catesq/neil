@@ -4,12 +4,14 @@
 #include "zzub/plugin.h"
 #include "zzub/signature.h"
 #include <boost/filesystem.hpp>
-#include <boost/dll.hpp>
+
 
 #include "aeffect.h"
-#include "aeffectx.h"
 
-#if defined(_MSC_VER)
+#include "VstPluginInfo.h"
+#include "VstDefines.h"
+
+#if defined(WINOS)
 #define strtok_r strtok_s
 #endif
 
@@ -23,30 +25,19 @@
 #define VST_EXT ".???"  // ide does not pick up on the platform constants defined in scons, this is a kludge to silence some warnings about unknown constant
 #endif
 
-extern "C" {
-    typedef VstIntPtr(*HostCallbackFunc)(AEffect *effect, VstInt32 opcode, VstInt32 index, VstInt32 value, void *ptr, float opt);
-    VstIntPtr VSTCALLBACK dummyHostCallback(AEffect *effect, VstInt32 opcode, VstInt32 index, VstInt32 value, void *ptr, float opt);
-}
 
-struct VstDescription {
-    VstDescription(std::string name, std::string filename, bool is_synth) : name(name), filename(filename), isSynth(is_synth) {}
 
-    std::string name;
-    std::string filename;
-    bool isSynth;
-};
 
 struct VstDescriptions {
     VstDescriptions(const char* path_str) {
         read_vsts(path_str);
     }
 
-
-    std::vector<VstDescription>::iterator begin() {
+    std::vector<VstPluginInfo>::iterator begin() {
         return vsts.begin();
     }
 
-    std::vector<VstDescription>::iterator end() {
+    std::vector<VstPluginInfo>::iterator end() {
         return vsts.end();
     }
 
@@ -87,31 +78,28 @@ private:
         if(path.extension().string() != VST_EXT)
             return;
 
-        boost::system::error_code ec{};
-        boost::dll::shared_library lib(path.string(), ec);
+        boost::dll::shared_library lib{};
+        AEffect* plugin = load_vst(lib, path.string(), dummyHostCallback, nullptr);
 
-        if(ec)
+        if(plugin == nullptr)
             return;
 
-        auto entryPoint = lib.get<AEffect*(HostCallbackFunc)>("VSTPluginMain");
+        VstPlugCategory category = (VstPlugCategory) dispatch(plugin, effGetPlugCategory);
 
-        if(!entryPoint)
+        if(category == kPlugCategOfflineProcess  || category == kPlugCategUnknown)
             return;
 
-        typedef VstIntPtr (*dispatcherFuncPtr)(AEffect *effect, VstInt32 opCode, VstInt32 index, VstInt32 value, void *ptr, float opt);
-        AEffect* plugin = entryPoint(dummyHostCallback);
-
-        char vst_name[34];
-        dispatcherFuncPtr dispatcher = (dispatcherFuncPtr) plugin->dispatcher;
-        dispatcher(plugin, effGetEffectName, 0, 0, &vst_name[0], 0);
-        vst_name[33]=0;
-
-        bool issynth = plugin->flags & effFlagsIsSynth;
-
-        vsts.emplace_back(vst_name, path.string(), issynth);
+        if(category == kPlugCategShell)
+            add_next_plugin(lib, plugin);
+        else
+            vsts.push_back(VstPluginInfo(plugin, path.string(), category));
     }
 
-    std::vector<VstDescription> vsts;
+    void add_next_plugin(boost::dll::shared_library& lib, AEffect* plugin) {
+
+    }
+
+    std::vector<VstPluginInfo> vsts;
 };
 
 

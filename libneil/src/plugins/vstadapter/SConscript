@@ -3,9 +3,6 @@ Import('pluginenv', 'build_plugin')
 vst_pluginenv = pluginenv.Clone()
 vst_pluginenv.Append(LIBS=['boost_system', 'boost_filesystem'])
 
-#lv2_pluginenv.Append(CCFLAGS=[ '-DUSE_LILV', '-DUSE_LV2' ])
-
 vst_pluginenv.Append(CCFLAGS='-pthread `pkg-config gtk+-3.0 --cflags` -Ilibneil/src/libzzub -Ilibneil/src/plugins/vstadapter -Ilibneil/src/plugins/vstadapter/VST_SDK_2.4/pluginterfaces/vst2.x -Ilibneil/src/plugins/vstadapter/VST_SDK_2.4/public.sdk/source/vst2.x ')
 
-#if pluginenv['LV2'] == True:
 vst_build = build_plugin(vst_pluginenv, 'vstadapter', [ 'VstAdapter.cpp', 'VstPlugins.cpp'])
