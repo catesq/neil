@@ -106,7 +106,7 @@ struct MidiEvent {
 
         data[0] = msg.midi.cmd;
         data[1] = (msg.midi.data & 0xff00) >> 8;
-        data[2] = (msg.midi.data & 0x00ff) >> 8;
+        data[2] = (msg.midi.data & 0x00ff);
     }
 
     std::string str() {
