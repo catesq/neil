@@ -26,6 +26,8 @@
 #define VSTADAPTER(effect) ((VstAdapter*) effect->resvd1)
 //#endif
 
+
+/// TODO proper set/get parameter handling and opcodes: 42,43 & 44 used by oxefm
 VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt) {
     switch(opcode) {
     case audioMasterVersion:
