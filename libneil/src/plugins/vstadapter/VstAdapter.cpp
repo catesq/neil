@@ -5,34 +5,50 @@
 #include <gtk/gtk.h>
 
 
-#if GDK_WINDOWING_WIN32
+//#if GDK_WINDOWING_WIN32
 
-#define WIN_ID_TYPE HWND
-#define WIN_ID_FUNC(widget) GDK_WINDOW_HWND(gtk_widget_get_window(widget));
-#include <gdk/win32/gdkwin32.h>
+//#include <gdk/win32/gdkwin32.h>
+//#define WIN_ID_TYPE HWND
+//#define WIN_ID_FUNC(widget) GDK_WINDOW_HWND(gtk_widget_get_window(widget));
 
-#elif GDK_WINDOWING_QUARTZ
+//#elif GDK_WINDOWING_QUARTZ
 
-#define WIN_ID_TYPE widget
-#define WIN_ID_FUNC(WIDGET) gdk_quartz_window_get_nsview(gtk_widget_get_window(widget));
-#include <gdk/quartz/gdkquartz.h>
+//#include <gdk/quartz/gdkquartz.h>
+//#define WIN_ID_TYPE widget
+//#define WIN_ID_FUNC(WIDGET) gdk_quartz_window_get_nsview(gtk_widget_get_window(widget));
 
-#else // GDK_WINDOWING_X11
+//#else // GDK_WINDOWING_X11
 
+#include <gdk/gdkx.h>
 #define WIN_ID_TYPE gulong
 #define WIN_ID_FUNC(widget) GDK_WINDOW_XID(gtk_widget_get_window(widget))
-#include <gdk/gdkx.h>
 
-#endif
+#define VSTADAPTER(effect) ((VstAdapter*) effect->resvd1)
+//#endif
 
 VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt) {
     switch(opcode) {
     case audioMasterVersion:
         return 2400;
+
     case audioMasterIdle:
         dispatch(effect, effEditIdle);
         break;
 
+    case audioMasterGetTime: {
+        VstAdapter *vst_adapter = (VstAdapter*) effect->resvd1;
+        VstTimeInfo* vst_time_info = vst_adapter->get_vst_time_info();
+
+        vst_time_info->samplePos  = vst_adapter->sample_pos;
+        vst_time_info->sampleRate = vst_adapter-> _master_info->samples_per_second;
+        vst_time_info->tempo      = vst_adapter->_master_info->beats_per_minute;
+
+        return (VstIntPtr) vst_time_info;
+    }
+
+    default:
+        printf("vst callback: missing opcode %d index %d\n", opcode, index);
+        break;
     }
 
     return 0;
@@ -46,22 +62,46 @@ extern "C" {
 
 
 VstAdapter::VstAdapter(const VstPluginInfo* info) : info(info) {
-    for(auto& trackval: trackvals) {
-        trackval.note = zzub::note_value_none;
-        trackval.volume = VOLUME_DEFAULT;
+    for(int idx=0; idx < MAX_TRACKS; idx++) {
+        trackvalues[idx].note = zzub::note_value_none;
+        trackvalues[idx].volume = VOLUME_DEFAULT;
+        trackstates[idx].note = zzub::note_value_none;
+        trackstates[idx].volume = VOLUME_DEFAULT;
     }
 
     globalvals = (uint16_t*) malloc(sizeof(uint16_t) * info->get_param_count());
 
-    track_values = &trackvals[0];
+    track_values = &trackvalues[0];
     global_values = globalvals;
 
-    if(info->get_is_synth())
+    if(info->flags & zzub_plugin_flag_is_instrument) {
         num_tracks = 1;
+        set_track_count(num_tracks);
+    }
+
+    memset(&vst_time_info, 0, sizeof(VstTimeInfo));
+    vst_events = (VstEvents*) malloc(sizeof(VstEvents) + sizeof(VstEvent*) * (MAX_EVENTS - 2));
+    vst_events->numEvents = 0;
+
+    vst_time_info.flags = kVstTempoValid | kVstTransportPlaying;
+
 }
 
 VstAdapter::~VstAdapter() {
+    dispatch(plugin, effMainsChanged, 0, 0, NULL, 0.0f);
+    dispatch(plugin, effClose);
+
     delete globalvals;
+    clear_vst_events();
+    free(vst_events);
+}
+
+void VstAdapter::clear_vst_events() {
+    for(int idx=0; idx < vst_events->numEvents; idx++) {
+        free(vst_events->events[idx]);
+        vst_events->events[idx] = nullptr;
+    }
+    vst_events->numEvents = 0;
 }
 
 void VstAdapter::init(zzub::archive* pi) {
@@ -71,8 +111,8 @@ void VstAdapter::init(zzub::archive* pi) {
         return;
 
     dispatch(plugin, effOpen);
-    dispatch(plugin, effSetSampleRate, (float) _master_info->samples_per_second);
-    dispatch(plugin, effSetBlockSize, (VstIntPtr) 256);
+    dispatch(plugin, effSetSampleRate, 0, 0, nullptr, (float) _master_info->samples_per_second);
+    dispatch(plugin, effSetBlockSize, 0, (VstIntPtr) 256, nullptr, 0);
 
     if(plugin->numInputs != 2 && plugin->numInputs > 0)
         audioIn = (float**) malloc(sizeof(float*) * plugin->numInputs );
@@ -85,6 +125,7 @@ void VstAdapter::init(zzub::archive* pi) {
         audioOut = nullptr;
 
     _host->set_event_handler(_host->get_metaplugin(), this);
+    dispatch(plugin, effMainsChanged, 0, 1, NULL, 0.0f);
 }
 
 
@@ -95,17 +136,27 @@ bool VstAdapter::invoke(zzub_event_data_t& data) {
         return false;
 
     if(is_editor_open)
-        return true;
+        return true ;
 
-    GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), this);
 
     gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(_host->get_host_info()->host_ptr));
     gtk_window_set_title(GTK_WINDOW(window), info->name.c_str());
+    gtk_window_present(GTK_WINDOW(window));
 
-    WIN_ID_TYPE win_id = WIN_ID_FUNC(window);
+    auto win_id = WIN_ID_FUNC(window);
 
-    dispatch(plugin, effEditOpen, (void*) win_id);
+    dispatch(plugin, effEditOpen, 0, 0, (void*) win_id, 0);
+
+    ERect* gui_size;
+    dispatch(plugin, effEditGetRect, 0, 0, (void*) &gui_size, 0);
+
+    if(gui_size != 0)
+        gtk_widget_set_size_request(window, gui_size->right, gui_size->bottom);
+
+    gtk_window_set_resizable (GTK_WINDOW(window), FALSE);
+
     is_editor_open = true;
 
     return true;
@@ -116,8 +167,110 @@ void VstAdapter::ui_destroy() {
     is_editor_open = false;
 }
 
+inline VstMidiEvent* vst_midi_event(std::array<uint8_t, 3> data) {
+    auto event = new VstMidiEvent();
+    memset(event, 0, sizeof(VstMidiEvent));
+    event->type = kVstMidiType;
+    event->byteSize = sizeof(VstMidiEvent);
+    event->deltaFrames = 0;
+    event->noteLength = 0;
+    event->noteOffset = 0;
+    memcpy(event->midiData, &data[0], 3);
+    event->detune = 0;
+    event->noteOffVelocity = 0;
+
+    return event;
+}
+
+inline VstMidiEvent* midi_note_on(uint8_t note, uint8_t volume) {
+    return vst_midi_event({MIDI_MSG_NOTE_ON, MIDI_NOTE(note), volume});
+}
+
+
+inline VstMidiEvent* midi_note_off(uint8_t note) {
+    return vst_midi_event({MIDI_MSG_NOTE_OFF, MIDI_NOTE(note), 0});
+}
+
+inline VstMidiEvent* midi_note_aftertouch(uint8_t note, uint8_t volume) {
+    return vst_midi_event({MIDI_MSG_NOTE_PRESSURE, MIDI_NOTE(note), volume});
+}
+
+
+
+void VstAdapter::process_events() {
+    uint16_t* globals = globalvals;
+    uint16_t value = 0;
+
+    auto& params = info->get_vst_params();
+    for (auto idx = 0; idx > params.size(); idx++) {
+        auto& vst_param = params[idx];
+
+        switch(vst_param->zzub_param->type) {
+        case zzub::parameter_type_word:
+            value = *((unsigned short*) globals);
+            break;
+
+        case zzub::parameter_type_switch:
+        case zzub::parameter_type_note:
+        case zzub::parameter_type_byte:
+            value = *((unsigned char*) globals);
+            break;
+        }
+
+        globals += vst_param->data_size;
+
+        if (value != vst_param->zzub_param->value_none) {
+            ((AEffectSetParameterProc) plugin->setParameter)(plugin, idx, vst_param->zzub_to_vst_value(value));
+        }
+    }
+
+    if(!(info->flags & zzub_plugin_flag_is_instrument))
+        return;
+
+    for(int idx=0; idx < num_tracks; idx++) {
+        if (trackvalues[idx].volume != VOLUME_NONE)
+            trackstates[idx].volume = trackvalues[idx].volume;
+
+        if (trackvalues[idx].note == zzub::note_value_none) {
+
+            if(trackvalues[idx].volume != VOLUME_NONE && trackstates[idx].note != zzub::note_value_none) {
+                midi_events.push_back(midi_note_aftertouch(trackstates[idx].note, trackstates[idx].volume));
+            }
+
+        } else if(trackvalues[idx].note != zzub::note_value_off) {
+
+            midi_events.push_back(midi_note_on(trackvalues[idx].note, trackstates[idx].volume));
+            trackstates[idx].note = trackvalues[idx].note;
+
+        } else if(trackstates[idx].note != zzub::note_value_none) {
+
+            midi_events.push_back(midi_note_off(trackstates[idx].note));
+
+            // this is wrong but some synths glitch when an aftertouch is sent after a note off
+            // it relies on state.note being a valid note.
+            // if a note off with volume 0 is set then clear state.note to prevent aftertouch
+            if(trackvalues[idx].volume == 0)
+                trackstates[idx].note = zzub::note_value_none;
+        }
+    }
+}
+
+
 bool VstAdapter::process_stereo(float **pin, float **pout, int numsamples, int mode) {
-    if(mode != zzub::process_mode_no_io)
+    bool sent_note = false;
+
+    sample_pos += numsamples;
+
+    if(midi_events.size() > 0) {
+        memcpy(&vst_events->events[0], &midi_events[0], midi_events.size() * sizeof(VstMidiEvent*));
+        vst_events->numEvents = midi_events.size();
+        dispatch(plugin, effProcessEvents, 0, 0, vst_events, 0.f);
+        midi_events.clear();
+        clear_vst_events();
+        sent_note = true;
+    }
+
+    if(mode == zzub::process_mode_no_io)
         return 1;
 
     float **inputs = audioIn ? audioIn : pin;
