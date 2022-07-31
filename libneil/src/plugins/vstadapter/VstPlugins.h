@@ -33,11 +33,11 @@ struct VstDescriptions {
         read_vsts(path_str);
     }
 
-    std::vector<VstPluginInfo>::iterator begin() {
+    std::vector<VstPluginInfo*>::iterator begin() {
         return vsts.begin();
     }
 
-    std::vector<VstPluginInfo>::iterator end() {
+    std::vector<VstPluginInfo*>::iterator end() {
         return vsts.end();
     }
 
@@ -92,14 +92,15 @@ private:
         if(category == kPlugCategShell)
             add_next_plugin(lib, plugin);
         else
-            vsts.push_back(VstPluginInfo(plugin, path.string(), category));
+            vsts.push_back(new VstPluginInfo(plugin, path.string(), category));
+
     }
 
     void add_next_plugin(boost::dll::shared_library& lib, AEffect* plugin) {
 
     }
 
-    std::vector<VstPluginInfo> vsts;
+    std::vector<VstPluginInfo*> vsts;
 };
 
 

@@ -1,69 +1,86 @@
 #include "VstPluginInfo.h"
 #include "VstDefines.h"
 #include "aeffectx.h"
+#include "aeffect.h"
+
 
 #include "VstDefines.h"
 #include "VstAdapter.h"
 #include "VstParameter.h"
+#include <string>
+#include <iostream>
 
 
-VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCategory category) : filename(filename), category(category) {
+VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCategory category) : zzub::info(), filename(filename), category(category) {
+    dispatch(plugin, effOpen);
+
     version = dispatch(plugin, effGetVendorVersion);
 
-    name = get_plugin_string(plugin, effGetEffectName, kVstMaxEffectNameLen);
-    short_name = get_plugin_string(plugin, effGetEffectName, kVstMaxEffectNameLen);
-    author = get_plugin_string(plugin, effGetVendorString, kVstMaxVendorStrLen);
+    name = get_plugin_string(plugin, effGetEffectName, 0);
+    short_name = get_plugin_string(plugin, effGetEffectName, 0);
+    author = get_plugin_string(plugin, effGetVendorString, 0);
 
-    is_synth = plugin->flags & effFlagsIsSynth;
+    if(plugin->flags & effFlagsHasEditor)
+        flags |= zzub_plugin_flag_has_custom_gui;
 
-    uri = "@zzub.org/vstadapter/" + name +" /" + std::to_string(version);
+    uri = "@zzub.org/vstadapter/" + name + "/" + std::to_string(version);
 
+    uint16_t offset = 0;
     for(int idx=0; idx < plugin->numParams; idx++) {
-        param_names.push_back(get_param_name(plugin, idx));
         auto param_properties = get_param_props(plugin, idx);
+        param_names.push_back(get_plugin_string(plugin, effGetParamName, idx));
 
-        auto zzub_param = add_global_parameter().set_word()
-                                                .set_name(param_names[idx].c_str())
-                                                .set_description(param_names[idx].c_str())
-                                                .set_state_flag();
+        add_global_parameter().set_word()
+                              .set_name(param_names[idx].c_str())
+                              .set_description(param_names[idx].c_str())
+                              .set_state_flag();
 
-        vst_params.push_back(VstParameter::build(param_properties, &zzub_param));
-    }
-
-    if(is_synth) {
-        add_track_parameter().set_note();
-        add_track_parameter().set_byte()
-                             .set_name("Volume")
-                             .set_description("Volume")
-                             .set_value_min(0)
-                             .set_value_max(0x007F)
-                             .set_value_none(255)
-                             .set_value_default(VOLUME_DEFAULT);
+        vst_params.push_back(VstParameter::build(param_properties, global_parameters[idx], offset));
+        offset += vst_params[idx]->data_size;
     }
 
     switch(category) {
-        kPlugCategEffect:
-        kPlugCategMastering:
-        kPlugCategSpacializer:
-        kPlugCategRoomFx:
-        kPlugSurroundFx:
-        kPlugCategRestoration:
-        kPlugCategAnalysis:
-            flags |= (zzub::plugin_flag_is_effect & zzub::plugin_flag_has_audio_input & zzub::plugin_flag_has_audio_output);
+        case kPlugCategEffect:
+        case kPlugCategMastering:
+        case kPlugCategSpacializer:
+        case kPlugCategRoomFx:
+        case kPlugSurroundFx:
+        case kPlugCategRestoration:
+        case kPlugCategAnalysis:
+            flags |= (zzub::plugin_flag_is_effect | zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect);
             break;
 
-        kPlugCategSynth:
-        kPlugCategGenerator:
-            flags |= (zzub::plugin_flag_is_instrument  & zzub::plugin_flag_has_audio_output);
+        case kPlugCategSynth:
+            add_track_parameter().set_note();
+
+            add_track_parameter().set_byte()
+                                 .set_name("Volume")
+                                 .set_description("Volume")
+                                 .set_value_min(0)
+                                 .set_value_max(0x007F)
+                                 .set_value_none(VOLUME_NONE)
+                                 .set_value_default(VOLUME_DEFAULT);
+
+            min_tracks = 1;
+            max_tracks = 16;
+
+            flags |= zzub::plugin_flag_has_midi_input;
+
+        case kPlugCategGenerator:
+            flags |= (zzub::plugin_flag_is_instrument | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument);
             break;
 
+        case kPlugCategUnknown:
         default:
+                printf("vst: Unknown plugin category %d for %s\n", category, name.c_str());
             break;
+
+        dispatch(plugin, effClose);
     }
 }
 
 bool VstPluginInfo::get_is_synth() const {
-    return is_synth;
+    return flags & zzub::plugin_flag_is_instrument;
 }
 
 std::string VstPluginInfo::get_filename() const {

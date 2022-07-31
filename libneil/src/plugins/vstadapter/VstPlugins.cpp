@@ -9,11 +9,10 @@ VstPlugins::VstPlugins(const char* vst_path) {
 }
 
 void VstPlugins::initialize(zzub::pluginfactory *factory) {
-    for(auto& plugin_description: VstDescriptions(vst_path)) {
-        printf("here now\n");
-        printf("vst plugin: %s\n", plugin_description.name.c_str());
+    for(auto plugin_info: VstDescriptions(vst_path)) {
+        factory->register_info(plugin_info);
+        printf("registered vst2 plugin: %s\n", plugin_info->name.c_str());
     }
-    exit(0);
 }
 
 const zzub::info *VstPlugins::get_info(const char *uri, zzub::archive *data) {
