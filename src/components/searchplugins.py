@@ -105,6 +105,10 @@ class SearchPluginsDialog(Gtk.Window):
         self.check_containers[1].add(self.show_lv2_button)
         self.show_lv2_button.connect("toggled", self.on_checkbox_changed)
 
+        self.show_vst2_button = Gtk.CheckButton(label="VST2")
+        self.check_containers[1].add(self.show_vst2_button)
+        self.show_vst2_button.connect("toggled", self.on_checkbox_changed)
+
         self.show_ladspa_button = Gtk.CheckButton(label="Ladspa")
         self.check_containers[1].add(self.show_ladspa_button)
         self.show_ladspa_button.connect("toggled", self.on_checkbox_changed)
@@ -134,6 +138,7 @@ class SearchPluginsDialog(Gtk.Window):
         self.show_controllers_button.set_active(cfg.pluginlistbrowser_show_controllers)
         self.show_aswell_or_only_switch.set_active(cfg.pluginlistbrowser_show_aswell_or_only)
         self.show_lv2_button.set_active(cfg.pluginlistbrowser_show_lv2)
+        self.show_vst2_button.set_active(cfg.pluginlistbrowser_show_vst2)
         self.show_ladspa_button.set_active(cfg.pluginlistbrowser_show_ladspa)
         self.set_size_request(400, 600)
         self.connect('realize', self.realize)
@@ -157,6 +162,8 @@ class SearchPluginsDialog(Gtk.Window):
             return 'psycle' 
         if uri.startswith('@zzub.org/lv2adapter/'):
             return 'lv2'
+        if uri.startswith('@zzub.org/vstadapter/'):
+            return 'vst2'
         filename = pluginloader.get_name()
         filename = filename.strip().lower()
         for c in '():[]/,.!"\'$%&\\=?*#~+-<>`@ ':
@@ -194,6 +201,8 @@ class SearchPluginsDialog(Gtk.Window):
             cfg.pluginlistbrowser_show_controllers = active
         elif lbl == "LV2":
             cfg.pluginlistbrowser_show_lv2 = active
+        elif lbl == "VST2":
+            cfg.pluginlistbrowser_show_vst2 = active
         elif lbl == "Ladspa":
             cfg.pluginlistbrowser_show_ladpsa = active
         elif lbl == "Dssi":
@@ -208,6 +217,8 @@ class SearchPluginsDialog(Gtk.Window):
 
     def filter_item(self, model, it, data):
         pluginloader = model.get(it, 2)[0]
+#        if get_adapter_name(pluginloader) == "vst2":
+        print("SEARCH", pluginloader.get_loader_name(), "is gen", is_generator(pluginloader), is_effect(pluginloader), is_controller(pluginloader))
 
         if is_other(pluginloader):
             return False 
@@ -221,6 +232,7 @@ class SearchPluginsDialog(Gtk.Window):
 
         adapter_name = get_adapter_name(pluginloader)
 
+
         if adapter_name == "lv2" and not self.show_lv2_button.get_active():
             return False
         elif adapter_name == "ladspa" and not self.show_ladspa_button.get_active():
@@ -228,6 +240,8 @@ class SearchPluginsDialog(Gtk.Window):
         elif adapter_name == "dssi" and not self.show_dssi_button.get_active():
             return False
         elif adapter_name == "zzub" and self.show_aswell_or_only_switch.get_active():
+            return False
+        elif adapter_name == "vst2" and not self.show_vst2_button.get_active():
             return False
 
         name = pluginloader.get_name().lower()
@@ -260,6 +274,8 @@ class SearchPluginsDialog(Gtk.Window):
                 return 2
             if uri.startswith('@zzub.org/lv2adapter/'):
                 return 3
+            if uri.startswith('@zzub.org/vstadapter/'):
+                return 4
             return 0
         def get_icon_rating(n):
             icon = self.get_icon_name(n)

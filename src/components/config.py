@@ -110,6 +110,8 @@ CONFIG_OPTIONS = dict(
                            default='false', vtype=bool, doc="Show lv2 plugins."),
         ShowDssi=dict(func='pluginlistbrowser_show_dssi',
                             default='false', vtype=bool, doc="Show dssi plugins"),
+        ShowVst2=dict(func='pluginlistbrowser_show_vst2',
+                           default='false', vtype=bool, doc="Show vst2 plugins."),
     ),
     WavetablePaths=dict(
         Path=dict(list=True, func='wavetable_paths', vtype=str,

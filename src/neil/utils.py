@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -973,11 +971,11 @@ def padded_partition(iterable, part_len, pad_val=None):
 # EFFECT_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output
 # CONTROLLER_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_event_output
 
-adapters = {"lv2adapter": "lv2", "ladspadapter": "ladspa", "dssidapter": "dssi"}
+adapters = {"lv2adapter": "lv2", "ladspadapter": "ladspa", "dssidapter": "dssi", "vstadapter": "vst2"}
 def get_adapter_name(pluginloader):
     name = pluginloader.get_loader_name()
 
-    typename = name[10:name.find("/", 10)]
+    typename = name[10:name.find("/", 10)] # all the adapter plugin have a 10 char prefix "@zzub.org/" then the adapter name then "/" then the plugin name
     if typename in adapters.keys():
         return adapters[typename]
 
