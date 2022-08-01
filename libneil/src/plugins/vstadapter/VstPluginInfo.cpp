@@ -14,6 +14,7 @@
 VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCategory category) : zzub::info(), filename(filename), category(category) {
     dispatch(plugin, effOpen);
 
+    vst_id = plugin->uniqueID;
     version = dispatch(plugin, effGetVendorVersion);
 
     name = get_plugin_string(plugin, effGetEffectName, 0);
