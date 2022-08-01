@@ -21,6 +21,7 @@ struct VstPluginInfo : zzub::info {
     const std::vector<VstParameter*>& get_vst_params() const;
 
 private:
+    int32_t vst_id;
     std::string filename;
     VstPlugCategory category;
     std::vector<std::string> param_names;
