@@ -66,7 +66,7 @@ private:
     }
 
     void read_vst_dir(std::string dir) {
-        for(auto& entry: boost::filesystem::directory_iterator(dir)) {
+        for(auto& entry: boost::filesystem::recursive_directory_iterator(dir)) {
             try_vst_load(entry.path());
         }
     }
