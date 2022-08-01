@@ -16,7 +16,6 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
 
     vst_id = plugin->uniqueID;
     version = dispatch(plugin, effGetVendorVersion);
-
     name = get_plugin_string(plugin, effGetEffectName, 0);
     short_name = get_plugin_string(plugin, effGetEffectName, 0);
     author = get_plugin_string(plugin, effGetVendorString, 0);
@@ -56,7 +55,6 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
             max_tracks = 16;
             flags |= zzub::plugin_flag_has_midi_input;
             add_track_parameter().set_note();
-
             add_track_parameter().set_byte()
                                  .set_name("Volume")
                                  .set_description("Volume")
@@ -64,11 +62,6 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
                                  .set_value_max(0x007F)
                                  .set_value_none(VOLUME_NONE)
                                  .set_value_default(VOLUME_DEFAULT);
-
-            min_tracks = 1;
-            max_tracks = 16;
-
-            flags |= zzub::plugin_flag_has_midi_input;
 
         case kPlugCategGenerator:
             flags |= (zzub::plugin_flag_is_instrument | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument);
