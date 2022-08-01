@@ -52,6 +52,9 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
             break;
 
         case kPlugCategSynth:
+            min_tracks = 1;
+            max_tracks = 16;
+            flags |= zzub::plugin_flag_has_midi_input;
             add_track_parameter().set_note();
 
             add_track_parameter().set_byte()
