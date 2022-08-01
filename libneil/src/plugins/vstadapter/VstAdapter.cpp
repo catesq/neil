@@ -48,6 +48,9 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
         return (VstIntPtr) vst_time_info;
     }
 
+    case audioMasterGetCurrentProcessLevel:
+        return kVstProcessLevelUnknown;
+
     default:
         printf("vst callback: missing opcode %d index %d\n", opcode, index);
         break;
