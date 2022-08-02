@@ -32,11 +32,16 @@ struct VstAdapter : zzub::plugin, zzub::event_handler {
     void clear_vst_events();
     VstTimeInfo* get_vst_time_info() { return &vst_time_info; }
 
+    void update_parameter_from_gui(int index, float value);
+
     void ui_destroy();
 
     uint64_t sample_pos = 0;
 
 private:
+    int active_index = -1;   // keep track of which parameter index is being adjusted (see audioMasterBeginEdit audioMasterEndEdit). -1 indicates no parameter being changed
+                             // the octasine plugin - or the vst-rs module - sends a burst spurious EndEdit messages, with inaccurate indexes, *after* the EndEdit with the correct index has been sent
+                             // use the active_index to filter these out...
     float** audioIn;
     float** audioOut;
     unsigned num_tracks = 0;
