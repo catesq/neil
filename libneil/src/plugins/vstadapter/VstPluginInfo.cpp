@@ -77,9 +77,9 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
         default:
                 printf("vst: Unknown plugin category %d for %s\n", category, name.c_str());
             break;
-
-        dispatch(plugin, effClose);
     }
+
+    dispatch(plugin, effClose);
 }
 
 /// TODO make a move constructor and a move constructor - to reuse/free the malloc'd strings in the zuub::param in global_parameters and reallocte
