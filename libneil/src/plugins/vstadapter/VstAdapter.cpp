@@ -54,7 +54,7 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
         VstTimeInfo* vst_time_info = vst_adapter->get_vst_time_info();
 
         vst_time_info->samplePos  = vst_adapter->sample_pos;
-        vst_time_info->sampleRate = vst_adapter-> _master_info->samples_per_second;
+        vst_time_info->sampleRate = vst_adapter->_master_info->samples_per_second;
         vst_time_info->tempo      = vst_adapter->_master_info->beats_per_minute;
 
         return (VstIntPtr) vst_time_info;
