@@ -29,16 +29,28 @@
 
 /// TODO proper set/get parameter handling and opcodes: 42,43 & 44 used by oxefm
 VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt) {
-    switch(opcode) {
-    case audioMasterVersion:
+    if(opcode == audioMasterVersion)
         return 2400;
+
+    assert(effect != nullptr);
+
+    // avoid a segfault from unloaded plugins using this callback - with opcode audioMasterVersion - when vst_adapter is null
+    VstAdapter *vst_adapter = (VstAdapter*) effect->resvd1;
+
+    switch(opcode) {
+    case audioMasterBeginEdit:
+    case audioMasterEndEdit:   // so far I can get the same info from audioMasterAutomate
+        break;
+
+    case audioMasterAutomate:
+        vst_adapter->update_parameter_from_gui(index, opt);
+        break;
 
     case audioMasterIdle:
         dispatch(effect, effEditIdle);
         break;
 
     case audioMasterGetTime: {
-        VstAdapter *vst_adapter = (VstAdapter*) effect->resvd1;
         VstTimeInfo* vst_time_info = vst_adapter->get_vst_time_info();
 
         vst_time_info->samplePos  = vst_adapter->sample_pos;
@@ -52,7 +64,7 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
         return kVstProcessLevelUnknown;
 
     default:
-        printf("vst callback: missing opcode %d index %d\n", opcode, index);
+        printf("vst hostCallback: missing opcode %d index %d\n", opcode, index);
         break;
     }
 
@@ -119,6 +131,8 @@ void VstAdapter::init(zzub::archive* pi) {
     dispatch(plugin, effSetSampleRate, 0, 0, nullptr, (float) _master_info->samples_per_second);
     dispatch(plugin, effSetBlockSize, 0, (VstIntPtr) 256, nullptr, 0);
 
+    printf("plugin %s has %d programs\n", info->name.c_str(), plugin->numPrograms);
+
     if(plugin->numInputs != 2 && plugin->numInputs > 0)
         audioIn = (float**) malloc(sizeof(float*) * plugin->numInputs );
     else
@@ -131,6 +145,12 @@ void VstAdapter::init(zzub::archive* pi) {
 
     _host->set_event_handler(_host->get_metaplugin(), this);
     dispatch(plugin, effMainsChanged, 0, 1, NULL, 0.0f);
+
+
+    for(int idx=0; idx < info->global_parameters.size(); idx++) {
+        float vst_val = ((AEffectGetParameterProc)plugin->getParameter)(plugin, idx);
+        globalvals[idx] = info->get_vst_param(idx)->vst_to_zzub_value(vst_val);
+    }
 }
 
 
@@ -172,43 +192,20 @@ void VstAdapter::ui_destroy() {
     is_editor_open = false;
 }
 
-inline VstMidiEvent* vst_midi_event(std::array<uint8_t, 3> data) {
-    auto event = new VstMidiEvent();
-    memset(event, 0, sizeof(VstMidiEvent));
-    event->type = kVstMidiType;
-    event->byteSize = sizeof(VstMidiEvent);
-    event->deltaFrames = 0;
-    event->noteLength = 0;
-    event->noteOffset = 0;
-    memcpy(event->midiData, &data[0], 3);
-    event->detune = 0;
-    event->noteOffVelocity = 0;
-
-    return event;
+void VstAdapter::update_parameter_from_gui(int index, float float_val) {
+    globalvals[index] = info->get_vst_param(index)->vst_to_zzub_value(float_val);
 }
 
-inline VstMidiEvent* midi_note_on(uint8_t note, uint8_t volume) {
-    return vst_midi_event({MIDI_MSG_NOTE_ON, MIDI_NOTE(note), volume});
-}
-
-
-inline VstMidiEvent* midi_note_off(uint8_t note) {
-    return vst_midi_event({MIDI_MSG_NOTE_OFF, MIDI_NOTE(note), 0});
-}
-
-inline VstMidiEvent* midi_note_aftertouch(uint8_t note, uint8_t volume) {
-    return vst_midi_event({MIDI_MSG_NOTE_PRESSURE, MIDI_NOTE(note), volume});
-}
 
 
 
 void VstAdapter::process_events() {
-    uint16_t* globals = globalvals;
+    uint8_t* globals = (uint8_t*) global_values;
     uint16_t value = 0;
 
     auto& params = info->get_vst_params();
-    for (auto idx = 0; idx > params.size(); idx++) {
-        auto& vst_param = params[idx];
+    for (auto idx = 0; idx < params.size(); idx++) {
+        auto vst_param = params[idx];
 
         switch(vst_param->zzub_param->type) {
         case zzub::parameter_type_word:
@@ -225,6 +222,7 @@ void VstAdapter::process_events() {
         globals += vst_param->data_size;
 
         if (value != vst_param->zzub_param->value_none) {
+            printf("set param. idx: %i, name: '%s', zzubval %d, vst val %f\n", idx, vst_param->zzub_param->name, value, vst_param->zzub_to_vst_value(value));
             ((AEffectSetParameterProc) plugin->setParameter)(plugin, idx, vst_param->zzub_to_vst_value(value));
         }
     }
@@ -262,8 +260,6 @@ void VstAdapter::process_events() {
 
 
 bool VstAdapter::process_stereo(float **pin, float **pout, int numsamples, int mode) {
-    bool sent_note = false;
-
     sample_pos += numsamples;
 
     if(midi_events.size() > 0) {
@@ -272,7 +268,6 @@ bool VstAdapter::process_stereo(float **pin, float **pout, int numsamples, int m
         dispatch(plugin, effProcessEvents, 0, 0, vst_events, 0.f);
         midi_events.clear();
         clear_vst_events();
-        sent_note = true;
     }
 
     if(mode == zzub::process_mode_no_io)
