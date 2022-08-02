@@ -98,6 +98,9 @@ const std::vector<VstParameter*>& VstPluginInfo::get_vst_params() const {
     return vst_params;
 }
 
+VstParameter* VstPluginInfo::get_vst_param(int index) const {
+    return vst_params.at(index);
+}
 
 zzub::plugin* VstPluginInfo::create_plugin() const {
     return new VstAdapter(this);
