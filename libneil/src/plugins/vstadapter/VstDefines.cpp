@@ -15,15 +15,16 @@ std::string get_param_name(AEffect* plugin, int index) {
 
 
 std::string get_plugin_string(AEffect* plugin, VstInt32 opcode, int index) {
-    char vst_chars[64];
+    static char vst_chars[64];
 
-    vst_chars[0] = 0;
     dispatch(plugin, opcode, index, 0, (void*) vst_chars, 0.f);
+
+    if(*vst_chars == 0)
+        return "";
+
     vst_chars[63]=0;
-    std::string vst_string(vst_chars);
 
-
-    return vst_string;
+    return std::string(vst_chars);
 }
 
 

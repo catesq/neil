@@ -43,7 +43,7 @@ VstParameterProperties* get_param_props(AEffect* plugin, int index);
 
 AEffect* load_vst(boost::dll::shared_library& lib, std::string vst_filename, AEffectDispatcherProc callback, void* user_p);
 
-typedef VstIntPtr (*DispatcherProc) (AEffect* effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void* ptr, float opt);
+//typedef VstIntPtr (*DispatcherProc) (AEffect* effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void* ptr, float opt);
 
 
 extern "C" {
@@ -54,13 +54,40 @@ extern "C" {
 
 }
 
-
 inline VstInt32 dispatch(AEffect* plugin, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt) {
-    return ((DispatcherProc) plugin->dispatcher)(plugin, opcode, index, value, ptr, opt);
+    return ((AEffectDispatcherProc) plugin->dispatcher)(plugin, opcode, index, value, ptr, opt);
+}
+
+inline VstInt32 dispatch(AEffect* plugin, VstInt32 opcode) {
+    return dispatch(plugin, opcode, 0, 0, 0, 0);
 }
 
 
 
-inline VstInt32 dispatch(AEffect* plugin, VstInt32 opcode) {
-    return dispatch(plugin, opcode, 0, 0, 0, 0);
+inline VstMidiEvent* vst_midi_event(std::array<uint8_t, 3> data) {
+    auto event = new VstMidiEvent();
+    memset(event, 0, sizeof(VstMidiEvent));
+    event->type = kVstMidiType;
+    event->byteSize = sizeof(VstMidiEvent);
+    event->deltaFrames = 0;
+    event->noteLength = 0;
+    event->noteOffset = 0;
+    memcpy(event->midiData, &data[0], 3);
+    event->detune = 0;
+    event->noteOffVelocity = 0;
+
+    return event;
+}
+
+inline VstMidiEvent* midi_note_on(uint8_t note, uint8_t volume) {
+    return vst_midi_event({MIDI_MSG_NOTE_ON, MIDI_NOTE(note), volume});
+}
+
+
+inline VstMidiEvent* midi_note_off(uint8_t note) {
+    return vst_midi_event({MIDI_MSG_NOTE_OFF, MIDI_NOTE(note), 0});
+}
+
+inline VstMidiEvent* midi_note_aftertouch(uint8_t note, uint8_t volume) {
+    return vst_midi_event({MIDI_MSG_NOTE_PRESSURE, MIDI_NOTE(note), volume});
 }
