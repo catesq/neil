@@ -1,0 +1,3 @@
+[submodule "libneil/src/plugins/vst3adapter/vst3sdk"]
+	path = libneil/src/plugins/vst3adapter/vst3sdk
+	url = https://github.com/steinbergmedia/vst3sdk
