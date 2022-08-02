@@ -8,7 +8,7 @@
 
 struct VstPluginInfo : zzub::info {
     VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCategory category);
-    virtual ~VstPluginInfo() {}
+    virtual ~VstPluginInfo();
 
     virtual zzub::plugin* create_plugin() const;
 

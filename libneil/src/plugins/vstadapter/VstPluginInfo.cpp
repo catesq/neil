@@ -30,13 +30,19 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
         auto param_properties = get_param_props(plugin, idx);
         param_names.push_back(get_plugin_string(plugin, effGetParamName, idx));
 
+        int name_str_len = param_names[idx].size();
+        char *strcp = (char*) malloc(sizeof(char) * (name_str_len + 1));
+        strncpy(strcp, param_names[idx].c_str(), name_str_len);
+        strcp[name_str_len] = 0;
+
         add_global_parameter().set_word()
-                              .set_name(param_names[idx].c_str())
-                              .set_description(param_names[idx].c_str())
+                              .set_name(strcp)
+                              .set_description(strcp)
                               .set_state_flag();
 
-        vst_params.push_back(VstParameter::build(param_properties, global_parameters[idx], offset));
-        offset += vst_params[idx]->data_size;
+        auto param = VstParameter::build(param_properties, global_parameters[idx], offset);
+        vst_params.push_back(param);
+        offset += param->data_size;
     }
 
     switch(category) {
@@ -74,6 +80,11 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
 
         dispatch(plugin, effClose);
     }
+}
+
+/// TODO make a move constructor and a move constructor - to reuse/free the malloc'd strings in the zuub::param in global_parameters and reallocte
+/// the plugininfo will be reused and only be destroyed when the program is closed so putting this off is unclean but irrelevant
+VstPluginInfo::~VstPluginInfo() {
 }
 
 bool VstPluginInfo::get_is_synth() const {
