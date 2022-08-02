@@ -17,6 +17,11 @@
 
 #pragma once
 
+#include "lilv/lilv.h"
+#include <boost/algorithm/string/trim.hpp>
+#include <lv2/state/state.h>
+#include "lv2/atom/forge.h"
+
 
 #ifdef _WIN32
 #    include <io.h>  /* for _mktemp */
@@ -28,8 +33,6 @@
 #define FILE_SEPARATOR std::string("/")
 #endif
 
-#include "boost/algorithm/string.hpp"
-
 using boost::algorithm::trim;
 
 extern "C" {
@@ -38,9 +41,6 @@ extern "C" {
 
 #include <mutex>
 #include "lv2_defines.h"
-
-#include "suil/suil.h"
-
 
 // -----------------------------------------------------------------------
 

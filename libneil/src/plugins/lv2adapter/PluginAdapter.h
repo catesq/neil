@@ -4,7 +4,6 @@
 
 #include "lv2_defines.h"
 #include "lv2_utils.h"
-#include "ext/lv2_evbuf.h"
 #include "Ports.h"
 #include "PluginInfo.h"
 
@@ -28,7 +27,6 @@
     #define HAVE_MLOCK 1      // zix checks for HAVE_MLOCK before using mlock - in sys/mman.h - for memory locking
 #endif
 
-#include "zix/common.h"
 #include "zix/ring.h"
 #include "zix/sem.h"
 

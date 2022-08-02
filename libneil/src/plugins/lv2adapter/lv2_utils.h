@@ -5,6 +5,8 @@
 
 #include "lv2_defines.h"
 #include "zzub/plugin.h"
+#include "lv2/midi/midi.h"
+
 
 #define DESCRIBE_CHAN(data) std::to_string(data[0] & 0x0f)
 #define DESCRIBE_NOTE(byte) std::to_string(byte)

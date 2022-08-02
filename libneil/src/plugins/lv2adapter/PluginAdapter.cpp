@@ -17,8 +17,18 @@
 //     Copyright (C) 2006 Leonard Ritter (contact@leonard-ritter.com)
 //     Copyright (C) 2008 James McDermott (jamesmichaelmcdermott@gmail.com)
 
+
+
 #include "lv2_defines.h"
 #include "lv2_utils.h"
+
+
+#include "lv2/options/options.h"
+#include "lv2/instance-access/instance-access.h"
+#include "lv2/buf-size/buf-size.h"
+
+
+
 #include "PluginAdapter.h"
 #include "PluginInfo.h"
 #include <ostream>
@@ -33,22 +43,15 @@
 #include <gtk/gtk.h>
 #include "zzub/plugin.h"
 #include "lv2/state/state.h"
-#include "lv2/atom/atom.h"
 
 #include <thread>
 #include <cstdlib>
-#include "X11/Xlib.h"
 
 #include <iostream>
 
-//const char *zzub_adapter_name = "zzub lv2 adapter";
-
-
-
 
 PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) {
-    if (verbose) { printf("plugin <%s>: in constructor. data size: %d\n", info->name.c_str(), info->zzubTotalDataSize); }
-
+    //
     if(info->zzubTotalDataSize) {
         global_values = malloc(info->zzubTotalDataSize);
         memset(global_values, 0, info->zzubTotalDataSize);
@@ -271,8 +274,6 @@ PluginAdapter::init(zzub::archive *arc) {
         LilvState* lilvState   = lilv_state_new_from_string(cache->lilvWorld, &cache->map, state_str);
         lilv_state_restore(lilvState, lilvInstance, &set_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
     }
-
-
 }
 
 

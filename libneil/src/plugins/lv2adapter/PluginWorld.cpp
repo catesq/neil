@@ -1,7 +1,16 @@
 #include "PluginWorld.h"
-#include "lv2_utils.h"
+//#include "lv2_utils.h"
 #include "lilv/lilv.h"
 #include <X11/Xlib.h>
+
+#include "lv2/event/event.h"
+#include "lv2/port-props/port-props.h"
+#include "lv2/time/time.h"
+#include "lv2/buf-size/buf-size.h"
+#include "lv2/parameters/parameters.h"
+#include "lv2/midi/midi.h"
+
+#include "suil/suil.h"
 
 
 //-----------------------------------------------------------------------------------

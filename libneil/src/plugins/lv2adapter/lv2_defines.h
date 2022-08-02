@@ -5,26 +5,11 @@ static int verbose = 0;
 #include <string>
 
 #include "zzub/zzub.h"
-#include "lilv/lilv.h"
 
-#include "lv2.h"
+#include "lv2/core/lv2.h"
 
-#include "lv2/options/options.h"
 #include "lv2/data-access/data-access.h"
-#include "lv2/uri-map/uri-map.h"
-#include "lv2/state/state.h"
-#include "lv2/buf-size/buf-size.h"
-#include "lv2/midi/midi.h"
-#include "lv2/atom/forge.h"
-#include "lv2/parameters/parameters.h"
-#include "lv2/time/time.h"
-#include "lv2/port-groups/port-groups.h"
-#include "lv2/event/event.h"
 #include "lv2/worker/worker.h"
-#include "lv2/instance-access/instance-access.h"
-
-#include "lv2/port-props/port-props.h"
-
 #include "ext/lv2_programs.h"
 
 #define ZZUB_BUFLEN zzub_buffer_size

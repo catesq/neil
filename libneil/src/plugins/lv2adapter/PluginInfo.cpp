@@ -54,6 +54,7 @@ PluginInfo::PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin)
                    .set_value_min(0)
                    .set_value_max(16)
                    .set_value_default(0);
+
     add_attribute().set_name("Ui")
                    .set_value_min(0)
                    .set_value_max(1)
