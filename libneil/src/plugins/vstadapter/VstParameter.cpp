@@ -3,7 +3,7 @@
 
 VstParameter* VstParameter::build(VstParameterProperties* properties, const zzub::parameter* zzub_param, uint16_t offset) {
     if(!properties)
-        return new VstParameter(properties, zzub_param, offset);
+        return new VstFloatParameter(properties, zzub_param, offset);
     else if(properties->flags & kVstParameterIsSwitch)
         return new VstSwitchParameter(properties, zzub_param, offset);
     else if (properties->flags & kVstParameterUsesIntegerMinMax)
@@ -13,7 +13,11 @@ VstParameter* VstParameter::build(VstParameterProperties* properties, const zzub
 }
 
 
-VstParameter::VstParameter(VstParameterProperties* vst_props, const zzub::parameter* zzub_param, uint16_t offset) : vst_props(vst_props), zzub_param(zzub_param), data_size(2), data_offset(offset) { }
+VstParameter::VstParameter(VstParameterProperties* vst_props, const zzub::parameter* zzub_param, uint16_t offset)
+    : vst_props(vst_props),
+      zzub_param(zzub_param),
+      data_size(2),
+      data_offset(offset) { }
 
 
 
@@ -40,7 +44,8 @@ uint16_t VstIntParameter::vst_to_zzub_value(float vst_val) {
 
 
 float VstFloatParameter::zzub_to_vst_value(uint16_t zzub_val) {
-    return std::clamp(((float) (zzub_val) / zzub_param->value_max), 0.f, 1.0f);
+    printf("zzubval %d to vst val %f\n", zzub_val, (zzub_val / (float) zzub_param->value_max));
+    return std::clamp(( zzub_val / (float) zzub_param->value_max), 0.f, 1.0f);
 }
 
 uint16_t VstFloatParameter::vst_to_zzub_value(float vst) {

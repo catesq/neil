@@ -7,8 +7,8 @@
 struct VstParameter {
     VstParameter(VstParameterProperties*, const zzub::parameter* zzub_param, uint16_t offset);
 
-    virtual float zzub_to_vst_value(uint16_t zzub) { return 0.f; }
-    virtual uint16_t vst_to_zzub_value(float vst)  { return 0; }
+    virtual float zzub_to_vst_value(uint16_t zzub) = 0;
+    virtual uint16_t vst_to_zzub_value(float vst)  = 0;
 
     static VstParameter* build(VstParameterProperties* vst_props, const zzub::parameter* zzub_param, uint16_t offset);
 
