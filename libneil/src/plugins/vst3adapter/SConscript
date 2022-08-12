@@ -1,8 +1,23 @@
+import sys
 Import('pluginenv', 'build_plugin')
 
-vst_pluginenv = pluginenv.Clone()
-vst_pluginenv.Append(LIBS=['boost_system', 'boost_filesystem'])
+cmakefile = pluginenv.FindFile('CMakeLists.txt', 'vst3sdk')
+lib_subdir = 'vst3sdk/neil_build/lib/'
 
-vst_pluginenv.Append(CCFLAGS='-pthread `pkg-config gtk+-3.0 --cflags` -Ilibneil/src/libzzub -Ilibneil/src/plugins/vst3adapter/ -Ilibneil/src/plugins/vst3adapter/pluginterfaces -Ilibneil/src/plugins/vst3adapter/public.sdk -Ilibneil/src/plugins/vst3adapter/base -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui')
+vst_libs=['base', 'pluginterfaces', 'sdk', 'sdk_common', 'sdk_hosting', 'vstgui', 'vstgui_standalone', 'vstgui_support', 'vstgui_uidescription']
+vst_hosting_sources = [
+    'vst3sdk/public.sdk/source/vst/hosting/plugprovider.cpp',
+    'vst3sdk/public.sdk/source/common/threadchecker_linux.cpp',
+]
+#'vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp',
 
-vst_build = build_plugin(vst_pluginenv, 'vst3adapter', [ ])
+print(cmakefile)
+if not cmakefile:
+    print("No vst sdk")
+    sys.exit()
+
+
+vst3_pluginenv = pluginenv.Clone()
+vst3_pluginenv.Append(CCFLAGS='-pthread `pkg-config gtk+-3.0 --cflags` -Ilibneil/src/libzzub -Ilibneil/src/utils/ -Ilibneil/src/plugins/vst3adapter/ -Ilibneil/src/plugins/vst3adapter/vst3sdk -Ilibneil/src/plugins/vst3adapter/pluginterfaces -Ilibneil/src/plugins/vst3adapter/public.sdk -Ilibneil/src/plugins/vst3adapter/base -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui')
+vst3_pluginenv.Append(LIBS=['boost_system', 'boost_filesystem', 'stdc++fs']+vst_libs, LIBPATH=lib_subdir)
+vst3_build = build_plugin(vst3_pluginenv, 'vst3adapter', ['Vst3Plugins.cpp', 'Vst3PluginInfo.cpp', 'Vst3Defines.cpp'] + vst_hosting_sources)
