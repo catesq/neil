@@ -86,6 +86,7 @@
  	//return *(float *)&i;
 //}
 
+#include <ctime>
 typedef struct {
 	int size;
 	int mask;
@@ -1257,7 +1258,7 @@ struct m4wii_plugin_info : zzub::info {
 		paraLFO1PhaseDiff = &add_global_parameter()
 			.set_byte()
 			.set_name("LFO1 Ph Diff")
-			.set_description("Low Frequency Oscillator 1 Phase Difference: 00h=0°  40h=180°  7Fh=357°")
+            .set_description("Low Frequency Oscillator 1 Phase Difference: 00h=0<C2B0>  40h=180<C2B0>  7Fh=357<C2B0>")
 			.set_value_min(0)
 			.set_value_max(127)
 			.set_value_none(0xff)
@@ -1312,7 +1313,7 @@ struct m4wii_plugin_info : zzub::info {
 		paraLFO2PhaseDiff = &add_global_parameter()
 			.set_byte()
 			.set_name("LFO2 Ph Diff")
-			.set_description("Low Frequency Oscillator 2 Phase Difference: 00h=0°  40h=180°  7Fh=357°")
+            .set_description("Low Frequency Oscillator 2 Phase Difference: 00h=0<C2B0>  40h=180<C2B0>  7Fh=357<C2B0>")
 			.set_value_min(0)
 			.set_value_max(127)
 			.set_value_none(0xff)
@@ -3301,21 +3302,21 @@ const char * m4wii::describe_value(int const param, int const value)
 		case 7:
         case 12: // semi detune
                 if( value == 0x40)
-                        return "±0 halfnotes";
+                        return "<C2B1>0 halfnotes";
                 else
                         if( value > 0x40)
                                 sprintf( txt, "+%i halfnotes", value-0x40);
                         else
-                                sprintf( txt, "%i halfnotes", value-0x40);
+                                sprintf( txt, "-%i halfnotes", value-0x40);
                 break;
         case 13: // fine detune
                 if( value == 0x40)
-                        return "±0 cents";
+                        return "<C2B1>0 cents";
                 else
                         if( value > 0x40)
                                 sprintf( txt, "+%i cents", (int)((value-0x40)*100.0/63));
                         else
-                                sprintf( txt, "%i cents", (int)((value-0x40)*100.0/63));
+                                sprintf( txt, "-%i cents", (int)((value-0x40)*100.0/63));
                 break;
 
         case 31: // distortion
@@ -3411,7 +3412,7 @@ const char * m4wii::describe_value(int const param, int const value)
                 break;
         case 44: //LFO1PhaseDiff
         case 49: //LFO2PhaseDiff
-                        sprintf( txt, "%i°", value*360/128);
+                        sprintf( txt, "%i<C2B0>", value*360/128);
                         break;
 		case 52:
 				return ModDest1Tab[value];
