@@ -289,6 +289,7 @@ env['PLUGINS_SRC_PATH'] = '${ROOTPATH}/src/plugins'
 env['PYZZUB_SRC_PATH'] = '${ROOTPATH}/src/pyzzub'
 env['LANTERNFISH_SRC_PATH'] = '${ROOTPATH}/src/lanternfish'
 env['KISSFFT_SRC_PATH'] = '${ROOTPATH}/src/kiss_fft'
+env['UTILS_SRC_PATH'] = '${ROOTPATH}/src/utils'
 
 
 env['LIB_BUILD_PATH'] = '${ROOTPATH}/lib'
@@ -636,6 +637,7 @@ env.SConscript('${KISSFFT_SRC_PATH}/SConscript')
 env.SConscript('${LIBZZUB_SRC_PATH}/SConscript')
 env.SConscript('${PLUGINS_SRC_PATH}/SConscript')
 env.SConscript('${PYZZUB_SRC_PATH}/SConscript')
+env.SConscript('${UTILS_SRC_PATH}/SConscript')
 
 #######################################
 #
