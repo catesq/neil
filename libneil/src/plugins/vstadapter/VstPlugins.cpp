@@ -3,7 +3,6 @@
 
 
 
-
 VstPlugins::VstPlugins(const char* vst_path) {
     this->vst_path = vst_path;
 }
