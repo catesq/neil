@@ -60,6 +60,10 @@ struct zzub_flatapi_player : zzub::player {
       write_event_queue = 0;
     if (write_event_queue == read_event_queue) {
       std::cout << "warning: event queue overflow. need more calls to zzub_player_get_next_event()!" << std::endl;
+      std::cout << "read event queue: " << event_queue.size() << std::endl;
+      for(int i=read_event_queue; (i%event_queue.size()) != write_event_queue; i++) {
+          std::cout  << "event " << i << " type: " << data.type << std::endl;
+      }
     }
   }
 	
