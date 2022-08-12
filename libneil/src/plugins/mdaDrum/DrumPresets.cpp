@@ -4,6 +4,7 @@
 #include "zzub/plugin.h"
 #include "utils/iniparser.h"
 #include <string>
+#include <typeinfo>
 #include <boost/locale.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
