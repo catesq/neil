@@ -30,7 +30,8 @@ struct VstAdapter : zzub::plugin, zzub::event_handler {
     virtual bool invoke(zzub_event_data_t& data);
     virtual void process_events();
     void clear_vst_events();
-    VstTimeInfo* get_vst_time_info() { return &vst_time_info; }
+
+    VstTimeInfo* get_vst_time_info(bool update = false);
 
     void update_parameter_from_gui(int index, float value);
 

@@ -50,15 +50,8 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
         dispatch(effect, effEditIdle);
         break;
 
-    case audioMasterGetTime: {
-        VstTimeInfo* vst_time_info = vst_adapter->get_vst_time_info();
-
-        vst_time_info->samplePos  = vst_adapter->sample_pos;
-        vst_time_info->sampleRate = vst_adapter->_master_info->samples_per_second;
-        vst_time_info->tempo      = vst_adapter->_master_info->beats_per_minute;
-
-        return (VstIntPtr) vst_time_info;
-    }
+    case audioMasterGetTime:
+        return (VstIntPtr) vst_adapter->get_vst_time_info(true);
 
     case audioMasterGetCurrentProcessLevel:
         return kVstProcessLevelUnknown;
@@ -120,6 +113,19 @@ void VstAdapter::clear_vst_events() {
     }
     vst_events->numEvents = 0;
 }
+
+
+VstTimeInfo* VstAdapter::get_vst_time_info(bool update) {
+    if(!update)
+        return &vst_time_info;
+
+    vst_time_info.samplePos   = sample_pos;
+    vst_time_info.sampleRate = _master_info->samples_per_second;
+    vst_time_info.tempo      = _master_info->beats_per_minute;
+
+    return &vst_time_info;
+}
+
 
 void VstAdapter::init(zzub::archive* pi) {
     plugin = load_vst(lib, info->get_filename(), hostCallback, this);
