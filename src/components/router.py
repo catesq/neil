@@ -919,8 +919,7 @@ class RouteView(Gtk.DrawingArea):
         Event handler for left doubleclicks. If the doubleclick
         hits a plugin, the parameter window is being shown.
         """
-        #player = com.get('neil.core.player')
-        print("dcilck")
+        player = com.get('neil.core.player')
         mx, my = int(event.x), int(event.y)
         res = self.get_plugin_at((mx, my))
         if not res:
@@ -932,15 +931,10 @@ class RouteView(Gtk.DrawingArea):
         if area == AREA_ANY:
             data = zzub.zzub_event_data_t()
 
-            mp.invoke_event(data, 1)
-
-            if mp.get_pluginloader().get_uri().startswith('@zzub.org/lv2adapter/'):
-                ui_opened = mp.get_attribute_value(1)
-                if ui_opened == 1: # this attribute only == 1 when a custom ui has just been opened
-                    return          # if ui was already open - or no ui open - it == 0
-
-            #when not lv2adapter or lv2 ui already open/not opened then display ParameterDialog
-            com.get('neil.core.parameterdialog.manager').show(mp, self)
+            event_result = mp.invoke_event(data, 1)
+            # assume plugins with custom guis are opened by the double click event
+            if not mp.get_flags() & zzub.zzub_plugin_flag_has_custom_gui:
+                com.get('neil.core.parameterdialog.manager').show(mp, self)
 
     def on_left_down(self, widget, event):
         """
