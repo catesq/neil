@@ -49,7 +49,7 @@ class ParameterView(Gtk.VBox):
     UNBIND_ALL = 'unbind-all'
     CONTROLLER = 'controller'
 
-    DROP_TARGET_CTRL_SLIDER = 0
+    DROP_TARGET_CTRL_SLIDER = 321232123
     DROP_TARGETS = [
         Gtk.TargetEntry.new('application/x-controller-slider-drop', Gtk.TargetFlags.SAME_APP, DROP_TARGET_CTRL_SLIDER)
     ]
@@ -69,6 +69,7 @@ class ParameterView(Gtk.VBox):
         @type plugin: zzub.Plugin
         """
         Gtk.VBox.__init__(self)
+
         self.set_can_focus(True)
         self.plugin = plugin
         name = prepstr(self.plugin.get_name())
@@ -100,7 +101,6 @@ class ParameterView(Gtk.VBox):
         toplevelgroup = Gtk.VBox(False, MARGIN)
         toplevelgroup.set_border_width(MARGIN)
         toplevelgroup.pack_start(menugroup, False, False, 0)
-
         scrollwindow = Gtk.ScrolledWindow()
         scrollwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 
@@ -232,6 +232,7 @@ class ParameterView(Gtk.VBox):
             self.update_namelabel(g,t,i)
 
         def add_slider(g, t, i):
+
             p = plugin.get_parameter(g, t, i)
             if not (p.get_flags() & zzub.zzub_parameter_flag_state):
                 return add_nonstate_param(g, t, i)
@@ -247,11 +248,12 @@ class ParameterView(Gtk.VBox):
                 name = "%i-%s" % (t, prepstr(p.get_name()))
             else:
                 name = prepstr(p.get_name())
+
             namelabel = Gtk.Label()
             namelabel._default_name = name
-            slider = Gtk.HScale()
+            slider = Gtk.HScale.new()
             #slider.set_tooltip_markup(p.get_description())
-            slider.set_property('draw-value', False)
+            slider.set_draw_value(False)
             slider.set_range(p.get_value_min(),p.get_value_max())
             # set increment size for left and right arrow and mouse clicks
             increment = (p.get_value_max() - p.get_value_min()) / 10
