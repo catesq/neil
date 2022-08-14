@@ -21,7 +21,7 @@
 
 #include <gdk/gdkx.h>
 #define WIN_ID_TYPE gulong
-#define WIN_ID_FUNC(widget) GDK_WINDOW_XID(gtk_widget_get_window(widget))
+#define WIN_ID_FUNC(widget) gdk_x11_window_get_xid(gtk_widget_get_window(widget))
 
 #define VSTADAPTER(effect) ((VstAdapter*) effect->resvd1)
 //#endif
