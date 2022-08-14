@@ -24,11 +24,12 @@ extern "C" {
 struct VstAdapter : zzub::plugin, zzub::event_handler {
     VstAdapter(const VstPluginInfo* info);
     virtual ~VstAdapter();
-    virtual void init(zzub::archive* pi);
-    virtual bool process_stereo(float **pin, float **pout, int n, int mode);
-    virtual const char *describe_value(int param, int value);
-    virtual bool invoke(zzub_event_data_t& data);
-    virtual void process_events();
+    virtual void init(zzub::archive* pi) override;
+    virtual bool process_stereo(float **pin, float **pout, int n, int mode) override;
+    virtual const char *describe_value(int param, int value) override;
+    virtual bool invoke(zzub_event_data_t& data) override;
+    virtual void process_events() override;
+
     void clear_vst_events();
 
     VstTimeInfo* get_vst_time_info(bool update = false);

@@ -209,7 +209,7 @@ class ParameterView(Gtk.VBox):
                 name = prepstr(p.get_name())
             namelabel = Gtk.Label()
             namelabel._default_name = name
-            button = Gtk.Button('Drop here to connect')
+            button = Gtk.Button.new_with_label('Drop here to connect')
             button.drag_dest_set(Gtk.DestDefaults.ALL, self.DROP_TARGETS, Gdk.DragAction.COPY)
             button.connect('drag-data-received', self.on_drag_data_received, (g,t,i))
             button.connect('drag-drop', self.on_drag_drop, (g,t,i))

@@ -56,6 +56,9 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
     case audioMasterGetCurrentProcessLevel:
         return kVstProcessLevelUnknown;
 
+    case DECLARE_VST_DEPRECATED(audioMasterWantMidi):
+        return 0;
+
     default:
         printf("vst hostCallback: missing opcode %d index %d\n", opcode, index);
         break;
@@ -130,8 +133,12 @@ VstTimeInfo* VstAdapter::get_vst_time_info(bool update) {
 void VstAdapter::init(zzub::archive* pi) {
     plugin = load_vst(lib, info->get_filename(), hostCallback, this);
 
-    if(plugin == nullptr)
+    if(plugin == nullptr) {
+        printf("Unable to load vst: name='%s', file='%s'\n", info->name.c_str(), info->get_filename().c_str());
         return;
+    }
+
+    _host->set_event_handler(_host->get_metaplugin(), this);
 
     dispatch(plugin, effOpen);
     dispatch(plugin, effSetSampleRate, 0, 0, nullptr, (float) _master_info->samples_per_second);
@@ -149,7 +156,6 @@ void VstAdapter::init(zzub::archive* pi) {
     else
         audioOut = nullptr;
 
-    _host->set_event_handler(_host->get_metaplugin(), this);
     dispatch(plugin, effMainsChanged, 0, 1, NULL, 0.0f);
 
 
@@ -171,7 +177,6 @@ bool VstAdapter::invoke(zzub_event_data_t& data) {
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), this);
-
     gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(_host->get_host_info()->host_ptr));
     gtk_window_set_title(GTK_WINDOW(window), info->name.c_str());
     gtk_window_present(GTK_WINDOW(window));
@@ -187,7 +192,6 @@ bool VstAdapter::invoke(zzub_event_data_t& data) {
         gtk_widget_set_size_request(window, gui_size->right, gui_size->bottom);
 
     gtk_window_set_resizable (GTK_WINDOW(window), FALSE);
-
     is_editor_open = true;
 
     return true;
