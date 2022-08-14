@@ -161,13 +161,13 @@ void VstAdapter::init(zzub::archive* pi) {
 
 
 
-
+// double click in router/open gui - only returns true if a new gui window was opened...
 bool VstAdapter::invoke(zzub_event_data_t& data) {
     if (!plugin || data.type != zzub::event_type_double_click || !(info->flags & zzub_plugin_flag_has_custom_gui))
-        return false;
+        return true;
 
     if(is_editor_open)
-        return true ;
+        return true;
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), this);
@@ -183,7 +183,7 @@ bool VstAdapter::invoke(zzub_event_data_t& data) {
     ERect* gui_size;
     dispatch(plugin, effEditGetRect, 0, 0, (void*) &gui_size, 0);
 
-    if(gui_size != 0)
+    if(gui_size)
         gtk_widget_set_size_request(window, gui_size->right, gui_size->bottom);
 
     gtk_window_set_resizable (GTK_WINDOW(window), FALSE);
