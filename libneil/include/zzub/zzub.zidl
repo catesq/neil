@@ -273,6 +273,10 @@ namespace zzub:
 		set auxiliary	= bit 7
 		set is_effect = bit 8
 		set is_instrument = bit 9
+
+		# with the next two flags: plugin must implement preset_file_extensions() and load_preset_file() and/or save_preset_file()
+		set load_presets = bit 10 # the ui will open a file picoker to load a preset/bank file
+		set save_presets = bit 11 # the ui will open a file browser to save a preset/bank file
 	
 		set is_root = bit 16 # master plugin only
 		set has_audio_input = bit 17 # for audio effects
