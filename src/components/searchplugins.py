@@ -218,7 +218,7 @@ class SearchPluginsDialog(Gtk.Window):
     def filter_item(self, model, it, data):
         pluginloader = model.get(it, 2)[0]
 #        if get_adapter_name(pluginloader) == "vst2":
-        print("SEARCH", pluginloader.get_loader_name(), "is gen", is_generator(pluginloader), is_effect(pluginloader), is_controller(pluginloader))
+#        print("SEARCH", pluginloader.get_loader_name(), "is gen", is_generator(pluginloader), is_effect(pluginloader), is_controller(pluginloader))
 
         if is_other(pluginloader):
             return False 

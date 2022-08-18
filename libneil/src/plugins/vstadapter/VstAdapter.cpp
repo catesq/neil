@@ -3,6 +3,13 @@
 #include "VstDefines.h"
 #include <string>
 #include <gtk/gtk.h>
+#include <iostream>
+#include <fstream>
+#include <filesystem>
+#include "vstfxstore.h"
+#include <bit>
+#include <boost/endian/conversion.hpp>
+#include <boost/predef/other/endian.h>
 
 
 //#if GDK_WINDOWING_WIN32
@@ -34,6 +41,10 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
 
     assert(effect != nullptr);
 
+    if(!effect->resvd1) {
+        printf("no host pointers\n");
+        return 0;
+    }
     // avoid a segfault from unloaded plugins using this callback - with opcode audioMasterVersion - when vst_adapter is null
     VstAdapter *vst_adapter = (VstAdapter*) effect->resvd1;
 
@@ -43,15 +54,22 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
         break;
 
     case audioMasterAutomate:
+        printf("updating from ui: index %d, val %.2f\n", index, opt);
         vst_adapter->update_parameter_from_gui(index, opt);
         break;
+
+    case audioMasterProcessEvents: {
+        VstEvents* events = (VstEvents*) ptr;
+        printf("vst events COUNT: %d\n", events->numEvents);
+        break;
+    }
 
     case audioMasterIdle:
         dispatch(effect, effEditIdle);
         break;
 
     case audioMasterGetTime:
-        return (VstIntPtr) vst_adapter->get_vst_time_info(true);
+        return (VstIntPtr) vst_adapter->get_vst_time_info();
 
     case audioMasterGetCurrentProcessLevel:
         return kVstProcessLevelUnknown;
@@ -95,9 +113,7 @@ VstAdapter::VstAdapter(const VstPluginInfo* info) : info(info) {
     memset(&vst_time_info, 0, sizeof(VstTimeInfo));
     vst_events = (VstEvents*) malloc(sizeof(VstEvents) + sizeof(VstEvent*) * (MAX_EVENTS - 2));
     vst_events->numEvents = 0;
-
     vst_time_info.flags = kVstTempoValid | kVstTransportPlaying;
-
 }
 
 VstAdapter::~VstAdapter() {
@@ -118,10 +134,7 @@ void VstAdapter::clear_vst_events() {
 }
 
 
-VstTimeInfo* VstAdapter::get_vst_time_info(bool update) {
-    if(!update)
-        return &vst_time_info;
-
+VstTimeInfo* VstAdapter::get_vst_time_info() {
     vst_time_info.samplePos   = sample_pos;
     vst_time_info.sampleRate = _master_info->samples_per_second;
     vst_time_info.tempo      = _master_info->beats_per_minute;
@@ -139,6 +152,8 @@ void VstAdapter::init(zzub::archive* pi) {
     }
 
     _host->set_event_handler(_host->get_metaplugin(), this);
+    ui_scale = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
+
 
     dispatch(plugin, effOpen);
     dispatch(plugin, effSetSampleRate, 0, 0, nullptr, (float) _master_info->samples_per_second);
@@ -158,7 +173,10 @@ void VstAdapter::init(zzub::archive* pi) {
 
     dispatch(plugin, effMainsChanged, 0, 1, NULL, 0.0f);
 
+    update_zzub_globals_from_plugin();
+}
 
+void VstAdapter::update_zzub_globals_from_plugin() {
     for(int idx=0; idx < info->global_parameters.size(); idx++) {
         float vst_val = ((AEffectGetParameterProc)plugin->getParameter)(plugin, idx);
         globalvals[idx] = info->get_vst_param(idx)->vst_to_zzub_value(vst_val);
@@ -189,7 +207,7 @@ bool VstAdapter::invoke(zzub_event_data_t& data) {
     dispatch(plugin, effEditGetRect, 0, 0, (void*) &gui_size, 0);
 
     if(gui_size)
-        gtk_widget_set_size_request(window, gui_size->right, gui_size->bottom);
+        gtk_widget_set_size_request(window, gui_size->right / ui_scale, gui_size->bottom / ui_scale);
 
     gtk_window_set_resizable (GTK_WINDOW(window), FALSE);
     is_editor_open = true;
@@ -203,6 +221,7 @@ void VstAdapter::ui_destroy() {
 }
 
 void VstAdapter::update_parameter_from_gui(int index, float float_val) {
+    printf("param index: %d vst val %f zzub val %d \n", index, float_val, info->get_vst_param(index)->vst_to_zzub_value(float_val));
     globalvals[index] = info->get_vst_param(index)->vst_to_zzub_value(float_val);
 }
 
@@ -307,6 +326,94 @@ bool VstAdapter::process_stereo(float **pin, float **pout, int numsamples, int m
     }
 
     return 1;
+}
+
+const char *VstAdapter::get_preset_file_extensions() {
+    return "Preset file=.fxp:Preset bank=.fxb";
+}
+
+
+bool VstAdapter::save_preset_file(const char* filename) {
+    printf("Save preset: %s\n", filename);
+
+    return false;
+}
+
+
+bool VstAdapter::load_preset_file(const char* filename) {
+    printf("Load preset: %s\n", filename);
+
+    std::filesystem::path path{filename};
+
+    if(!std::filesystem::is_regular_file(path))
+        return false;
+
+    auto fsize = std::filesystem::file_size(path);
+
+    if(fsize < sizeof(fxProgram))
+       return false;
+
+    std::ifstream file(filename);
+
+    if(!file.is_open())
+        return false;
+
+    char* data = (char*) malloc(fsize);
+
+    if(!data)
+        return false;
+
+    file.read(data, fsize);
+
+    file.close();
+
+    struct fxProgram* program = (struct fxProgram*) data;
+    struct fxBank* bank = (struct fxBank*) data;
+
+    #ifdef BOOST_ENDIAN_LITTLE_BYTE
+        boost::endian::big_to_native_inplace(program->chunkMagic);
+        boost::endian::big_to_native_inplace(program->fxMagic);
+        boost::endian::big_to_native_inplace(program->byteSize);
+        boost::endian::big_to_native_inplace(program->version);
+        boost::endian::big_to_native_inplace(program->fxID);
+        boost::endian::big_to_native_inplace(program->fxVersion);
+        boost::endian::big_to_native_inplace(program->numParams);
+    #endif
+
+        printf("check chunj magic\n");
+    if(program->chunkMagic != cMagic)
+        goto load_preset_end_false;
+printf("check id \n");
+    if(program->fxID != plugin->uniqueID)
+        goto load_preset_end_false;
+printf("switch fx magic magic\n");
+    switch(program->fxMagic) {
+    case fMagic:
+        for(int index = 0; index < program->numParams; index++) {
+            boost::endian::big_to_native_inplace(program->content.params[index]);
+            plugin->setParameter(plugin, index, program->content.params[index]);
+        }
+        break;
+
+    case chunkPresetMagic:
+        boost::endian::big_to_native_inplace(program->content.data.size);
+        dispatch(plugin, effSetChunk, 1, program->content.data.size, program->content.data.chunk, 0);
+        break;
+
+    case bankMagic:
+        break;
+
+    case chunkBankMagic:
+        break;
+    }
+
+load_preset_end_true:
+    free(data);
+    return true;
+
+load_preset_end_false:
+    free(data);
+    return false;
 }
 
 const char *VstAdapter::describe_value(int param, int value) {

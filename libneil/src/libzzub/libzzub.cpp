@@ -1160,6 +1160,19 @@ extern "C"
     player->commit_operation();
     }*/
 
+  const char *zzub_plugin_get_preset_file_extensions(zzub_plugin_t *plugin) {
+    return plugin->_player->back.plugins[plugin->id]->plugin->get_preset_file_extensions();
+  }
+
+
+  bool zzub_plugin_load_preset_file(zzub_plugin_t *plugin,  const char* filename) {
+    return plugin->_player->back.plugins[plugin->id]->plugin->load_preset_file(filename);
+  }
+
+
+  bool zzub_plugin_save_preset_file(zzub_plugin_t *plugin, const char* filename) {
+    return plugin->_player->back.plugins[plugin->id]->plugin->save_preset_file(filename);
+  }
 
   int zzub_plugin_get_parameter_value(zzub_plugin_t *plugin, int group, int track, int column) {
 

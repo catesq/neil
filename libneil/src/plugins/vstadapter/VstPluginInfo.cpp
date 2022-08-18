@@ -20,6 +20,7 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
     short_name = get_plugin_string(plugin, effGetEffectName, 0);
     author = get_plugin_string(plugin, effGetVendorString, 0);
 
+    flags |= zzub_plugin_flag_load_presets | zzub_plugin_flag_save_presets;
     if(plugin->flags & effFlagsHasEditor)
         flags |= zzub_plugin_flag_has_custom_gui;
 

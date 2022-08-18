@@ -29,16 +29,21 @@ struct VstAdapter : zzub::plugin, zzub::event_handler {
     virtual const char *describe_value(int param, int value) override;
     virtual bool invoke(zzub_event_data_t& data) override;
     virtual void process_events() override;
+    virtual const char* get_preset_file_extensions() override;
+    virtual bool load_preset_file(const char*) override;
+    virtual bool save_preset_file(const char*) override;  // return pointer to data to be writter to a preset file - the memory will be freed after the preset file is saved
 
     void clear_vst_events();
 
-    VstTimeInfo* get_vst_time_info(bool update = false);
+    VstTimeInfo* get_vst_time_info();
 
     void update_parameter_from_gui(int index, float value);
 
     void ui_destroy();
 
     uint64_t sample_pos = 0;
+
+    void update_zzub_globals_from_plugin();
 
 private:
     int active_index = -1;   // keep track of which parameter index is being adjusted (see audioMasterBeginEdit audioMasterEndEdit). -1 indicates no parameter being changed
@@ -54,7 +59,9 @@ private:
     boost::dll::shared_library lib{};
     bool is_editor_open = false;
     GtkWidget* window = nullptr;
-    AEffect* plugin;
+    AEffect* plugin = nullptr;
+    float ui_scale = 1.0f;
+
     const VstPluginInfo* info;
     std::vector<VstMidiEvent*> midi_events;
     VstEvents* vst_events;

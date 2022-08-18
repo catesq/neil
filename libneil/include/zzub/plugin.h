@@ -772,6 +772,11 @@ namespace zzub {
     // usually related to paths.
     virtual void configure(const char *key, const char *value) {}
 
+    virtual const char* get_preset_file_extensions() { return nullptr; }
+    virtual bool load_preset_file(const char*) { return false; }
+    virtual bool save_preset_file(const char*) { return false; }  // return pointer to data to be writter to a preset file - the memory will be freed after the preset file is saved
+
+
     plugin() {
       global_values = 0;
       track_values = 0;

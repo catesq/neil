@@ -68,7 +68,7 @@ def on_popup_delete_group(widget, plugins):
 
 
 
-def on_popup_set_target(self, widget, plugin):
+def on_popup_set_target(widget, plugin):
     player = com.get('neil.core.player')
     if player.autoconnect_target == plugin:
         player.autoconnect_target = None
@@ -76,7 +76,7 @@ def on_popup_set_target(self, widget, plugin):
         player.autoconnect_target = plugin
 
 
-def on_popup_command(self, widget, plugin, subindex, index):
+def on_popup_command(widget, plugin, subindex, index):
     plugin.command((subindex << 8) | index)
 
 
@@ -203,4 +203,69 @@ def on_store_selection(widget, index, plugins):
 def on_restore_selection(widget, index):
     com.get('neil.core.router.view').restore_selection(index)
 
+
+# file chooser dialog extensions.
+# ext_str is separated with semicolons and an optional description
+# ext_str is ".ext", ".ext1:ext2", "description1=.ext1 : .ext2", "description1=ext1 : description2=ext2"
+def get_filters(exts):
+    def split_ext(str):
+        return str.split("=", 2) if str.find("=") > 0 else (str, str)
+
+    def file_filter(name, pattern):
+        filter = Gtk.FileFilter()
+        filter.set_name(name)
+        filter.add_pattern("*" + pattern.lstrip("*"))
+        return filter
+
+    if exts.strip() == "":
+        yield file_filter("*")
+
+    for name, ext in [split_ext(ext_str) for ext_str in exts.split(":")]:
+        yield file_filter(name,ext)
+
+
+def build_preset_dialog(default_action, action_title, extensions):
+    dialog = Gtk.FileChooserDialog(
+        title="Select file",
+        parent=None,
+        action=default_action
+    )
+
+    dialog.add_buttons("Close", Gtk.ResponseType.CANCEL, action_title, Gtk.ResponseType.OK)
+
+    for filter in get_filters(extensions):
+        dialog.add_filter(filter)
+
+    dialog.set_default_response(Gtk.ResponseType.OK)
+
+    return dialog
+
+
+def on_load_preset(widget, plugin):
+    dialog = build_preset_dialog(Gtk.FileChooserAction.OPEN, "Open", plugin.get_preset_file_extensions())
+    response = dialog.run()
+
+    while response == Gtk.ResponseType.OK:
+        print("load/save response")
+        plugin.load_preset(dialog.get_filename())
+        response = dialog.run()
+    else:
+        dialog.destroy()
+
+
+
+
+def on_save_preset(widget, plugin):
+    dialog = build_preset_dialog(Gtk.FileChooserAction.SAVE, "Save", plugin.get_preset_file_extensions())
+    response = dialog.run()
+
+    while response == Gtk.ResponseType.OK:
+        print("load/save response")
+        filename = dialog.get_filename()
+        plugin.save_preset(dialog.get_filename())
+        dialog.destroy()
+
+        dialog = build_preset_dialog(Gtk.FileChooserAction.SAVE, "Save", plugin.get_preset_file_extensions())
+        dialog.select_filename(filename)
+        response = dialog.run()
 

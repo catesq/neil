@@ -19,7 +19,9 @@ from .actions import ( on_popup_mute,
                        on_popup_clone_chain,
                        on_popup_set_target,
                        on_popup_command,
-                       on_machine_help
+                       on_machine_help,
+                       on_load_preset,
+                       on_save_preset
                        )
 
 
@@ -51,6 +53,14 @@ class SinglePluginMenu(Menu):
             self.add_item("_Delete plugin", on_popup_delete, metaplugin)
             self.add_item("Clone _instrument", on_popup_clone_plugin, metaplugin)
             self.add_item("_Clone chain", on_popup_clone_chain, metaplugin)
+
+        if metaplugin.get_flags() & zzub.zzub_plugin_flag_load_presets:
+            self.add_item("_Load preset", on_load_preset, metaplugin)
+            pass
+
+        if metaplugin.get_flags() & zzub.zzub_plugin_flag_save_presets:
+            self.add_item("_Save preset", on_save_preset, metaplugin)
+            pass
 
         if is_effect(metaplugin) or is_root(metaplugin):
             self.add_separator()
