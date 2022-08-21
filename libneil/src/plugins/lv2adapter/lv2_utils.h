@@ -144,11 +144,11 @@ struct MidiEvents {
     }
 
     void noteOff(uint8_t chan, uint8_t note, uint8_t velocity) {
-        add(0, MIDI_NOTE_OFF(chan), MIDI_NOTE(note), MIDI_DATA(velocity));
+        data.insert(data.begin(), MidiEvent(0, {MIDI_NOTE_OFF(chan), MIDI_NOTE(note), MIDI_DATA(velocity)}));
     }
 
     void noteOff(uint8_t chan, uint8_t note) {
-        add(0, MIDI_NOTE_OFF(chan), MIDI_NOTE(note), (uint8_t) 0);
+        data.insert(data.begin(), MidiEvent(0, {MIDI_NOTE_OFF(chan), MIDI_NOTE(note), 0}));
     }
 
     void aftertouch(uint8_t chan, uint8_t note, uint8_t velocity) {
