@@ -133,6 +133,18 @@ void VstAdapter::clear_vst_events() {
     vst_events->numEvents = 0;
 }
 
+void VstAdapter::set_track_count(int track_count) {
+    if (track_count < num_tracks) {
+        for (int t = num_tracks; t < track_count; t++) {
+            if (trackstates[t].note != zzub::note_value_none) {
+                midi_events.push_back(midi_note_off(trackstates[t].note));
+            }
+        }
+    }
+
+    num_tracks = track_count;
+}
+
 
 VstTimeInfo* VstAdapter::get_vst_time_info() {
     vst_time_info.samplePos   = sample_pos;
@@ -220,6 +232,19 @@ void VstAdapter::ui_destroy() {
     is_editor_open = false;
 }
 
+
+void VstAdapter::update_zzub_globals_from_plugin() {
+    uint8_t* globals = (uint8_t*) global_values;
+    printf("update all params\n");
+    for(int idx=0; idx < info->global_parameters.size(); idx++) {
+        float vst_val = ((AEffectGetParameterProc)plugin->getParameter)(plugin, idx);
+
+        globalvals[idx] = info->get_vst_param(idx)->vst_to_zzub_value(vst_val);
+        printf("Index: %d, vst val: %f, zzub val: %d\n", idx, vst_val, *((uint16_t*)(globals+idx*2)));
+    }
+}
+
+
 void VstAdapter::update_parameter_from_gui(int index, float float_val) {
     printf("param index: %d vst val %f zzub val %d \n", index, float_val, info->get_vst_param(index)->vst_to_zzub_value(float_val));
     globalvals[index] = info->get_vst_param(index)->vst_to_zzub_value(float_val);
@@ -231,6 +256,10 @@ void VstAdapter::update_parameter_from_gui(int index, float float_val) {
 void VstAdapter::process_events() {
     uint8_t* globals = (uint8_t*) global_values;
     uint16_t value = 0;
+
+    if(update_zzub_params) {
+        update_zzub_params = false;
+    }
 
     auto& params = info->get_vst_params();
     for (auto idx = 0; idx < params.size(); idx++) {
@@ -263,27 +292,59 @@ void VstAdapter::process_events() {
         if (trackvalues[idx].volume != VOLUME_NONE)
             trackstates[idx].volume = trackvalues[idx].volume;
 
-        if (trackvalues[idx].note == zzub::note_value_none) {
 
-            if(trackvalues[idx].volume != VOLUME_NONE && trackstates[idx].note != zzub::note_value_none) {
-                midi_events.push_back(midi_note_aftertouch(trackstates[idx].note, trackstates[idx].volume));
+        switch(trackvalues[idx].note) {
+        case zzub::note_value_none:
+            if(trackstates[idx].note != zzub::note_value_none) {
+                if(trackvalues[idx].volume == 0) {
+                    midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
+                    trackstates[idx].note = zzub::note_value_none;
+                } else if(trackvalues[idx].volume != VOLUME_NONE) {
+                    midi_events.insert(midi_events.begin(), midi_note_aftertouch(trackstates[idx].note, trackstates[idx].volume));
+                }
             }
 
-        } else if(trackvalues[idx].note != zzub::note_value_off) {
+            break;
+
+        case zzub::note_value_off:
+            if(trackstates[idx].volume == 0) {
+                for(int trk = 0; trk < num_tracks; trk++) {
+                    if(trackstates[trk].note != zzub::note_value_none && trackvalues[trk].note != zzub_note_value_none) {
+                        midi_events.insert(midi_events.begin(), midi_note_off(trackstates[trk].note));
+                        trackstates[trk].note = zzub::note_value_none;
+                    }
+                }
+            } else if(trackstates[idx].note != zzub::note_value_none) {
+                midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
+                trackstates[idx].note = zzub::note_value_none;
+            }
+
+            break;
+
+        default:
+            if(trackstates[idx].note != zzub::note_value_none) {
+                midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
+            }
 
             midi_events.push_back(midi_note_on(trackvalues[idx].note, trackstates[idx].volume));
             trackstates[idx].note = trackvalues[idx].note;
-
-        } else if(trackstates[idx].note != zzub::note_value_none) {
-
-            midi_events.push_back(midi_note_off(trackstates[idx].note));
-
-            // this is wrong but some synths glitch when an aftertouch is sent after a note off
-            // it relies on state.note being a valid note.
-            // if a note off with volume 0 is set then clear state.note to prevent aftertouch
-            if(trackvalues[idx].volume == 0)
-                trackstates[idx].note = zzub::note_value_none;
+            break;
         }
+
+        process_one_midi_track(trackvalues[idx].msg_1, trackstates[idx].msg_1);
+        process_one_midi_track(trackvalues[idx].msg_2, trackstates[idx].msg_2);
+    }
+}
+
+
+void VstAdapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg) {
+    if(vals_msg.midi.cmd != TRACKVAL_NO_MIDI_CMD) {
+        state_msg.midi.cmd = vals_msg.midi.cmd;
+
+        if (vals_msg.midi.data != TRACKVAL_NO_MIDI_DATA)
+            state_msg.midi.data = vals_msg.midi.data;
+
+        midi_events.push_back(midi_message(state_msg));
     }
 }
 
@@ -408,6 +469,7 @@ printf("switch fx magic magic\n");
     }
 
 load_preset_end_true:
+    update_zzub_params = true;
     free(data);
     return true;
 

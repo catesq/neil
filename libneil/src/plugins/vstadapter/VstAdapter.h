@@ -11,10 +11,9 @@
 #define MAX_EVENTS 256
 
 
-struct tvals {
-  uint8_t note = zzub::note_value_none;
-  uint8_t volume = VOLUME_NONE;
-} __attribute__((__packed__));
+
+
+
 
 extern "C" {
     void on_window_destroy(GtkWidget* widget, gpointer data);
@@ -29,6 +28,7 @@ struct VstAdapter : zzub::plugin, zzub::event_handler {
     virtual const char *describe_value(int param, int value) override;
     virtual bool invoke(zzub_event_data_t& data) override;
     virtual void process_events() override;
+    virtual void set_track_count(int track_count) override;
     virtual const char* get_preset_file_extensions() override;
     virtual bool load_preset_file(const char*) override;
     virtual bool save_preset_file(const char*) override;  // return pointer to data to be writter to a preset file - the memory will be freed after the preset file is saved
@@ -46,6 +46,9 @@ struct VstAdapter : zzub::plugin, zzub::event_handler {
     void update_zzub_globals_from_plugin();
 
 private:
+    void process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg);
+    void process_midi_tracks();
+
     int active_index = -1;   // keep track of which parameter index is being adjusted (see audioMasterBeginEdit audioMasterEndEdit). -1 indicates no parameter being changed
                              // the octasine plugin - or the vst-rs module - sends a burst spurious EndEdit messages, with inaccurate indexes, *after* the EndEdit with the correct index has been sent
                              // use the active_index to filter these out...
@@ -61,6 +64,7 @@ private:
     GtkWidget* window = nullptr;
     AEffect* plugin = nullptr;
     float ui_scale = 1.0f;
+    bool update_zzub_params = false;
 
     const VstPluginInfo* info;
     std::vector<VstMidiEvent*> midi_events;
