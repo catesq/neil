@@ -1165,13 +1165,13 @@ extern "C"
   }
 
 
-  bool zzub_plugin_load_preset_file(zzub_plugin_t *plugin,  const char* filename) {
-    return plugin->_player->back.plugins[plugin->id]->plugin->load_preset_file(filename);
+  int zzub_plugin_load_preset_file(zzub_plugin_t *plugin,  const char* filename) {
+    return plugin->_player->back.plugins[plugin->id]->plugin->load_preset_file(filename) ? 1: 0;
   }
 
 
-  bool zzub_plugin_save_preset_file(zzub_plugin_t *plugin, const char* filename) {
-    return plugin->_player->back.plugins[plugin->id]->plugin->save_preset_file(filename);
+  int zzub_plugin_save_preset_file(zzub_plugin_t *plugin, const char* filename) {
+    return plugin->_player->back.plugins[plugin->id]->plugin->save_preset_file(filename) ? 1 : 0;
   }
 
   int zzub_plugin_get_parameter_value(zzub_plugin_t *plugin, int group, int track, int column) {
