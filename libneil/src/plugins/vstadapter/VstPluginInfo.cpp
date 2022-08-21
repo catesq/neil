@@ -44,6 +44,7 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
         auto param = VstParameter::build(param_properties, global_parameters[idx], offset);
         vst_params.push_back(param);
         offset += param->data_size;
+        flags |= zzub_plugin_flag_has_event_input;
     }
 
     switch(category) {
@@ -54,7 +55,7 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
         case kPlugSurroundFx:
         case kPlugCategRestoration:
         case kPlugCategAnalysis:
-            flags |= (zzub::plugin_flag_is_effect | zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_effect);
+            flags |= (zzub::plugin_flag_is_effect | zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output);
             break;
 
         case kPlugCategSynth:
@@ -69,6 +70,38 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
                                  .set_value_max(0x007F)
                                  .set_value_none(VOLUME_NONE)
                                  .set_value_default(VOLUME_DEFAULT);
+
+            add_track_parameter().set_byte()
+                                 .set_name("Midi command 1")
+                                 .set_description("cmd(0xf0) chan(0x0f)")
+                                 .set_value_min(0x80)
+                                 .set_value_max(0xfe)
+                                 .set_value_none(TRACKVAL_NO_MIDI_CMD)
+                                 .set_value_default(TRACKVAL_NO_MIDI_CMD);
+
+            add_track_parameter().set_word()
+                                 .set_name("Midi data 1")
+                                 .set_description("byte1(0x7f00) byte2(0x007f)")
+                                 .set_value_min(0)
+                                 .set_value_max(0xfffe)
+                                 .set_value_none(0xffff)
+                                 .set_value_default(0);
+
+            add_track_parameter().set_byte()
+                                 .set_name("Midi command 2")
+                                 .set_description("status(0xf0) chan(0x0f)")
+                                 .set_value_min(0x80)
+                                 .set_value_max(0xfe)
+                                 .set_value_none(TRACKVAL_NO_MIDI_CMD)
+                                 .set_value_default(TRACKVAL_NO_MIDI_CMD);
+
+            add_track_parameter().set_word()
+                                 .set_name("Midi data 2")
+                                 .set_description("byte1(0x7f00) byte2(0x007f)")
+                                 .set_value_min(0)
+                                 .set_value_max(0xfffe)
+                                 .set_value_none(0xffff)
+                                 .set_value_default(0);
 
         case kPlugCategGenerator:
             flags |= (zzub::plugin_flag_is_instrument | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument);
