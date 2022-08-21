@@ -48,6 +48,6 @@ float VstFloatParameter::zzub_to_vst_value(uint16_t zzub_val) {
     return std::clamp(( zzub_val / (float) zzub_param->value_max), 0.f, 1.0f);
 }
 
-uint16_t VstFloatParameter::vst_to_zzub_value(float vst) {
-    return std::clamp(vst, 0.0f, 1.0f) * zzub_param->value_max;
+uint16_t VstFloatParameter::vst_to_zzub_value(float vst_val) {
+    return std::clamp(vst_val, 0.0f, 1.0f) * zzub_param->value_max;
 }
