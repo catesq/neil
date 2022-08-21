@@ -50,10 +50,15 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
 
     switch(opcode) {
     case audioMasterBeginEdit:
+        printf("opcode begin edit\n");
+        break;
+
     case audioMasterEndEdit:   // so far I can get the same info from audioMasterAutomate
+        printf("opcode end edit\n");
         break;
 
     case audioMasterAutomate:
+    case audioMasterUpdateDisplay:
         printf("updating from ui: index %d, val %.2f\n", index, opt);
         vst_adapter->update_parameter_from_gui(index, opt);
         break;
@@ -71,6 +76,10 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
     case audioMasterGetTime:
         return (VstIntPtr) vst_adapter->get_vst_time_info();
 
+    case audioMasterGetProductString:
+        strncpy((char*) ptr, "Neil modular sequencer", kVstMaxProductStrLen);
+        return true;
+
     case audioMasterGetCurrentProcessLevel:
         return kVstProcessLevelUnknown;
 
@@ -84,6 +93,7 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
 
     return 0;
 }
+
 
 extern "C" {
     void on_window_destroy(GtkWidget* widget, gpointer data) {
@@ -116,14 +126,16 @@ VstAdapter::VstAdapter(const VstPluginInfo* info) : info(info) {
     vst_time_info.flags = kVstTempoValid | kVstTransportPlaying;
 }
 
+
 VstAdapter::~VstAdapter() {
     dispatch(plugin, effMainsChanged, 0, 0, NULL, 0.0f);
     dispatch(plugin, effClose);
 
-    delete globalvals;
     clear_vst_events();
+    free(globalvals);
     free(vst_events);
 }
+
 
 void VstAdapter::clear_vst_events() {
     for(int idx=0; idx < vst_events->numEvents; idx++) {
@@ -166,7 +178,6 @@ void VstAdapter::init(zzub::archive* pi) {
     _host->set_event_handler(_host->get_metaplugin(), this);
     ui_scale = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
 
-
     dispatch(plugin, effOpen);
     dispatch(plugin, effSetSampleRate, 0, 0, nullptr, (float) _master_info->samples_per_second);
     dispatch(plugin, effSetBlockSize, 0, (VstIntPtr) 256, nullptr, 0);
@@ -188,12 +199,7 @@ void VstAdapter::init(zzub::archive* pi) {
     update_zzub_globals_from_plugin();
 }
 
-void VstAdapter::update_zzub_globals_from_plugin() {
-    for(int idx=0; idx < info->global_parameters.size(); idx++) {
-        float vst_val = ((AEffectGetParameterProc)plugin->getParameter)(plugin, idx);
-        globalvals[idx] = info->get_vst_param(idx)->vst_to_zzub_value(vst_val);
-    }
-}
+
 
 
 
@@ -227,6 +233,7 @@ bool VstAdapter::invoke(zzub_event_data_t& data) {
     return true;
 }
 
+
 void VstAdapter::ui_destroy() {
     dispatch(plugin, effEditClose);
     is_editor_open = false;
@@ -246,11 +253,9 @@ void VstAdapter::update_zzub_globals_from_plugin() {
 
 
 void VstAdapter::update_parameter_from_gui(int index, float float_val) {
-    printf("param index: %d vst val %f zzub val %d \n", index, float_val, info->get_vst_param(index)->vst_to_zzub_value(float_val));
+    printf("update param: index = %d, vst val = %f, zzub val = %d \n", index, float_val, info->get_vst_param(index)->vst_to_zzub_value(float_val));
     globalvals[index] = info->get_vst_param(index)->vst_to_zzub_value(float_val);
 }
-
-
 
 
 void VstAdapter::process_events() {
@@ -285,9 +290,12 @@ void VstAdapter::process_events() {
         }
     }
 
-    if(!(info->flags & zzub_plugin_flag_is_instrument))
-        return;
+    if(info->flags & zzub_plugin_flag_is_instrument)
+        process_midi_tracks();
+}
 
+
+void VstAdapter::process_midi_tracks() {
     for(int idx=0; idx < num_tracks; idx++) {
         if (trackvalues[idx].volume != VOLUME_NONE)
             trackstates[idx].volume = trackvalues[idx].volume;
@@ -441,13 +449,12 @@ bool VstAdapter::load_preset_file(const char* filename) {
         boost::endian::big_to_native_inplace(program->numParams);
     #endif
 
-        printf("check chunj magic\n");
     if(program->chunkMagic != cMagic)
         goto load_preset_end_false;
-printf("check id \n");
+
     if(program->fxID != plugin->uniqueID)
         goto load_preset_end_false;
-printf("switch fx magic magic\n");
+
     switch(program->fxMagic) {
     case fMagic:
         for(int index = 0; index < program->numParams; index++) {
