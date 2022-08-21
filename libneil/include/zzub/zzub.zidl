@@ -680,6 +680,13 @@ namespace zzub:
 		"Removes rows in a pattern. column_indices has a total length of 3 * num_indices, where each index is a triple of group, track and column."
 		def remove_pattern_rows(int pattern, int[num_indices*3] column_indices, int num_indices, int start, int rows)
 
+		""
+		def get_preset_file_extensions(): string
+
+		def load_preset_file(string file_name): bool
+
+		def save_preset_file(string file_name): bool
+
 		"Copies columns from an offline pattern to a live pattern. Source and target columns are set up in"
 		"the mappings array, which has 6 ints for each mapping: group, track and column for source and target"
 		"plugins."

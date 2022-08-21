@@ -247,7 +247,7 @@ def on_load_preset(widget, plugin):
 
     while response == Gtk.ResponseType.OK:
         print("load/save response")
-        plugin.load_preset(dialog.get_filename())
+        plugin.load_preset_file(dialog.get_filename())
         response = dialog.run()
     else:
         dialog.destroy()
