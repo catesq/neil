@@ -51,7 +51,6 @@
 
 
 PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) {
-    //
     if(info->zzubTotalDataSize) {
         global_values = malloc(info->zzubTotalDataSize);
         memset(global_values, 0, info->zzubTotalDataSize);
