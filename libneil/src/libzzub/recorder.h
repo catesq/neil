@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "zzub/plugin.h"
+
 namespace zzub {
 
   struct recorder_wavetable_plugin_info : zzub::info {

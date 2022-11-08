@@ -16,8 +16,13 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+
+
 #ifndef LIBNEIL_SONG_H
 #define LIBNEIL_SONG_H
+
+#include "zzub/plugin.h"
+#include "graph.h"
 
 using std::pair;
 using std::string;

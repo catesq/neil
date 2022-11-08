@@ -20,6 +20,7 @@
 #include "tools.h"
 #include "recorder.h"
 #include <sndfile.h>
+
 namespace zzub {
 
   /*! \struct recorder_wavetable_plugin

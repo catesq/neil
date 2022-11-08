@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/graph/directed_graph.hpp>
+
 using namespace boost;
 
 namespace zzub {
