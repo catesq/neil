@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -273,7 +271,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
 
         loader = self.get_pluginloader_by_name(uri)
         if not loader:
-            print("Can't find streamplayer plugin loader.", file=sys.stderr)
+            print("Can't find streamplayer plugin loader: %s." % uri, file=sys.stderr)
             return
 
         flags = zzub.zzub_plugin_flag_no_undo | zzub.zzub_plugin_flag_no_save
