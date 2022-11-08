@@ -70,7 +70,6 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
             ports.push_back(controlPorts.back());
             break;
 
-
         case PortType::Param:
             paramPorts.push_back(new ParamPort(*static_cast<ParamPort*>(port)));
             ports.push_back(paramPorts.back());
@@ -146,9 +145,10 @@ PluginAdapter::~PluginAdapter() {
 
 void
 PluginAdapter::init(zzub::archive *arc) {
-    bool use_show_ui = false;
+//    bool use_show_ui = false;
     sample_rate      = _master_info->samples_per_second;
     ui_scale         = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
+    printf("Current ui scale: %f\n", ui_scale);
 
     LV2_Options_Option options[] = {
         {
@@ -278,8 +278,8 @@ PluginAdapter::init(zzub::archive *arc) {
 
 
 extern "C" {
-    void on_window_destroy(GtkWidget* widget, gpointer data) {
-       static_cast<PluginAdapter*>(data)->ui_destroy();
+    bool on_window_destroy(GtkWidget* widget, gpointer data) {
+       return static_cast<PluginAdapter*>(data)->ui_destroy();
     }
 }
 
@@ -287,11 +287,17 @@ bool PluginAdapter::invoke(zzub_event_data_t& data) {
     if (data.type != zzub::event_type_double_click || !(info->flags & zzub_plugin_flag_has_custom_gui))
         return false;
 
-    if(suil_ui_host == nullptr) {
+    if(!ui_is_open) {
         return ui_open();
     } else {
-        printf("already hosted\n");
-        return false;
+        gtk_widget_show_all(gtk_ui_window);
+//        gtk_widget_show_all(suil_widget);
+//        gtk_widget_show_all(gtk_ui_root_box);
+//        gtk_widget_show_all(gtk_ui_parent_box);
+//        gtk_widget_show_now(gtk_ui_window);
+//        gtk_window_present(GTK_WINDOW(gtk_ui_window));
+        printf("redisplay window\n");
+        return true;
     }
 }
 
@@ -394,7 +400,7 @@ void PluginAdapter::stop() {}
 
 
 void PluginAdapter::update_port(ParamPort* port, float float_val) {
-    printf("Update port: index=%d, name='%s', value=%f\n", port->index, port->name.c_str(), float_val);
+//    printf("Update port: index=%d, name='%s', value=%f\n", port->index, port->name.c_str(), float_val);
 //    int zzub_val = port->lilv_to_zzub_value(float_val);
 //    values[port->paramIndex] = float_val;
 //    port->putData((uint8_t*) global_values, zzub_val);
@@ -406,19 +412,19 @@ void PluginAdapter::process_events() {
     if(halting)
         return;
 
-    if(show_interface != nullptr && suil_ui_handle != nullptr) {
-        if(!showing_interface) {
-            printf("Show feature for %s\n", info->name.c_str());
-            (show_interface->show)(suil_ui_handle);
-            showing_interface = true;
-        }
+//    if(show_interface != nullptr && suil_ui_handle != nullptr) {
+//        if(!showing_interface) {
+//            printf("Show feature for %s\n", info->name.c_str());
+//            (show_interface->show)(suil_ui_handle);
+//            showing_interface = true;
+//        }
 
-        if(showing_interface && idle_interface != nullptr) {
-//            printf("Run idle feature for %s\n", info->name.c_str());
-            (idle_interface->idle)(suil_ui_handle);
-        }
+//        if(showing_interface && idle_interface != nullptr) {
+////            printf("Run idle feature for %s\n", info->name.c_str());
+//            (idle_interface->idle)(suil_ui_handle);
+//        }
 
-    }
+//    }
 
     uint8_t* globals = (u_int8_t*) global_values;
     int value = 0;

@@ -38,39 +38,39 @@
 
 
 void program_changed(
-        LV2_Programs_Handle handle,
-        int32_t index
+    LV2_Programs_Handle handle,
+    int32_t index
 );
 
 const void* get_port_value(
-        const char* port_symbol,
-        void*       user_data,
-        uint32_t*   size,
-        uint32_t*   type
+    const char* port_symbol,
+    void*       user_data,
+    uint32_t*   size,
+    uint32_t*   type
 );
 
 
 void set_port_value(
-        const char* port_symbol,
-        void*       user_data,
-        const void* value,
-        uint32_t    size,
-        uint32_t    type
+    const char* port_symbol,
+    void*       user_data,
+    const void* value,
+    uint32_t    size,
+    uint32_t    type
 );
 
 
 void write_events_from_ui(
-        void* const adapter_handle,
-        uint32_t    port_index,
-        uint32_t    buffer_size,
-        uint32_t    protocol,
-        const void* buffer
+    void* const adapter_handle,
+    uint32_t    port_index,
+    uint32_t    buffer_size,
+    uint32_t    protocol,
+    const void* buffer
 );
 
 
 uint32_t lv2_port_index(
-        void* const lv2adapter_handle,
-        const char* symbol
+    void* const lv2adapter_handle,
+    const char* symbol
 );
 
 
@@ -79,7 +79,7 @@ struct ParamPort;
 struct SharedCache;
 
 extern "C" {
-    void on_window_destroy(GtkWidget* widget, gpointer data);
+    bool on_window_destroy(GtkWidget* widget, gpointer data);
     void finalise_plugin_ui(GtkWidget* widget, gpointer data);
 }
 
@@ -94,6 +94,7 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     LilvInstance*   lilvInstance      = nullptr;
     zzub_plugin_t*  metaPlugin        = nullptr;
 
+    bool            ui_is_open        = false;
     LilvUIs*        uis               = nullptr;
     const LilvUI*   lilv_ui_type      = nullptr;
     const LilvNode* lilv_ui_type_node = nullptr;
@@ -103,6 +104,7 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     GtkWidget*      gtk_ui_window     = nullptr;
     GtkWidget*      gtk_ui_root_box   = nullptr;
     GtkWidget*      gtk_ui_parent_box = nullptr;
+    GtkWidget*      suil_widget       = nullptr;
     void*           transient_wid     = nullptr;
 
     uint32_t        samp_count        = 0;         //number of samples played
@@ -143,7 +145,7 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
 
 
     void                connect(LilvInstance* pluginInstance);
-    void                ui_destroy();
+    bool                ui_destroy();
     void                update_all_from_ui();
     
     virtual bool        invoke(zzub_event_data_t& data);
@@ -178,8 +180,8 @@ private:
     GtkWidget* ui_open_window(GtkWidget** root_container, GtkWidget** parent_container);
     void       init_static_features();
 
-    const LV2UI_Idle_Interface* idle_interface = nullptr;
-    const LV2UI_Show_Interface* show_interface = nullptr;
-    bool showing_interface                     = false;
+//    const LV2UI_Idle_Interface* idle_interface = nullptr;
+//    const LV2UI_Show_Interface* show_interface = nullptr;
+//    bool showing_interface                     = false;
 };
 

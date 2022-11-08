@@ -4,8 +4,6 @@
 #include <string>
 #include <ostream>
 
-#include "suil/suil.h"
-
 
 inline void printport(const char *prefix, const LilvPlugin* lilvPlugin, const LilvPort* lilvPort, PortFlow flow) {
     printf("%s: Port '%s'. Plugin '%s'\nClasses:",
@@ -22,8 +20,8 @@ zzub::plugin *PluginInfo::create_plugin() const {
 
 PluginInfo::PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin)
     : zzub::info(),
-      cache(cache),
       lilvWorld(cache->lilvWorld),
+      cache(cache),
       lilvPlugin(lilvPlugin) {
 
     // gui's are created in invoke() after a double click

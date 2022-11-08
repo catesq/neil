@@ -23,13 +23,14 @@ PluginAdapter::isExternalUI(const LilvUI * ui) {
 
 bool
 PluginAdapter::ui_open() {
-    attr_values.ui = 0;
-    bool use_show_ui = false;
-
+    cache->init_suil();
     cache->init_x_threads();
+    if (!suil_ui_host)
+        suil_ui_host = suil_host_new(write_events_from_ui, lv2_port_index, nullptr, nullptr); //&update_port, &remove_port);
 
-    suil_ui_host = suil_host_new(write_events_from_ui, lv2_port_index, nullptr, nullptr); //&update_port, &remove_port);
-    ui_select(use_show_ui ? NULL : GTK3_URI, &lilv_ui_type, &lilv_ui_type_node);
+//    ui_select(use_show_interface_method ? NULL : GTK3_URI, &lilv_ui_type, &lilv_ui_type_node);
+
+    ui_select(GTK3_URI, &lilv_ui_type, &lilv_ui_type_node);
 
     if(lilv_ui_type != NULL) {
         std::string uiname = as_string(lilv_ui_type_node);
@@ -44,9 +45,10 @@ PluginAdapter::ui_open() {
     if(!lilv_ui_type)
         return false;
 
-    if(!use_show_ui) {
+//    if(!use_show_interface_method) {
         gtk_ui_window = ui_open_window(&gtk_ui_root_box, &gtk_ui_parent_box);
-    }
+
+//    }
 
     const char* bundle_uri  = lilv_node_as_uri(lilv_ui_get_bundle_uri(lilv_ui_type));
     const char* binary_uri  = lilv_node_as_uri(lilv_ui_get_binary_uri(lilv_ui_type));
@@ -66,23 +68,25 @@ PluginAdapter::ui_open() {
         &features.options_feature,
         NULL
     };
+//use_show_ui ? NULL : GTK3_URI,##
+    if(!suil_ui_instance) {
+        suil_ui_instance = suil_instance_new(suil_ui_host,
+                                             this,
+                                             GTK3_URI,
+                                             lilv_node_as_uri(lilv_plugin_get_uri(info->lilvPlugin)),
+                                             lilv_node_as_uri(lilv_ui_get_uri(lilv_ui_type)),
+                                             lilv_node_as_uri(lilv_ui_type_node),
+                                             bundle_path,
+                                             binary_path,
+                                             ui_features);
 
-    suil_ui_instance = suil_instance_new(suil_ui_host,
-                                         this,
-                                         use_show_ui ? NULL : GTK3_URI,
-                                         lilv_node_as_uri(lilv_plugin_get_uri(info->lilvPlugin)),
-                                         lilv_node_as_uri(lilv_ui_get_uri(lilv_ui_type)),
-                                         lilv_node_as_uri(lilv_ui_type_node),
-                                         bundle_path,
-                                         binary_path,
-                                         ui_features);
-
-    suil_ui_handle = suil_instance_get_handle(suil_ui_instance);
-
-    if(use_show_ui) {
-        idle_interface = (const LV2UI_Idle_Interface *) suil_instance_extension_data(suil_ui_instance, LV2_UI__idleInterface);
-        show_interface = (const LV2UI_Show_Interface *) suil_instance_extension_data(suil_ui_instance, LV2_UI__showInterface);
+        suil_ui_handle = suil_instance_get_handle(suil_ui_instance);
     }
+
+//    if(use_show_interface_method) {
+//        idle_interface = (const LV2UI_Idle_Interface *) suil_instance_extension_data(suil_ui_instance, LV2_UI__idleInterface);
+//        show_interface = (const LV2UI_Show_Interface *) suil_instance_extension_data(suil_ui_instance, LV2_UI__showInterface);
+//    }
 
     lilv_free(binary_path);
     lilv_free(bundle_path);
@@ -90,12 +94,16 @@ PluginAdapter::ui_open() {
     if(!suil_ui_instance)
         return false;
 
-    if(!use_show_ui) {
-        GtkWidget* suil_widget = (GtkWidget*)suil_instance_get_widget(suil_ui_instance);
+    printf("get ui instance\n");
+//    if(!use_show_interface_method) {
+    if(!suil_widget) {
+        suil_widget = (GtkWidget*)suil_instance_get_widget(suil_ui_instance);
+
+    }
         gtk_container_add(GTK_CONTAINER(gtk_ui_parent_box), suil_widget);
         gtk_widget_show_all(gtk_ui_root_box);
         gtk_widget_grab_focus(suil_widget);
-    }
+//    }
 
         // Set initial control port values
     for (auto& paramPort: paramPorts) {
@@ -123,7 +131,12 @@ PluginAdapter::ui_open() {
         printf("Idle feature for %s in invoke\n", info->name.c_str());
     }
 
-    attr_values.ui = 1;
+    printf("ui all done\n");
+    ui_is_open = true;
+    g_object_ref(gtk_ui_window);
+//    g_object_ref(suil_widget);
+//    g_object_ref(gtk_ui_root_box);
+//    g_object_ref(gtk_ui_parent_box);
     return true;
 }
 
@@ -132,7 +145,8 @@ PluginAdapter::ui_open() {
 GtkWidget*
 PluginAdapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_container) {
     GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), this);
+//    g_signal_connect(window, "delete-event", G_CALLBACK(on_window_destroy), this);
+    g_signal_connect(window, "delete-event", G_CALLBACK(gtk_widget_hide_on_delete), this);
 
     gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(_host->get_host_info()->host_ptr));
     gtk_window_set_title(GTK_WINDOW(window), info->name.c_str());
@@ -161,14 +175,22 @@ PluginAdapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_con
 
 
 
-void
+bool
 PluginAdapter::ui_destroy() {
-    gtk_widget_destroy(gtk_ui_window);
-    suil_instance_free(suil_ui_instance);
-    suil_host_free(suil_ui_host);
-    gtk_ui_window    = nullptr;
-    suil_ui_host     = nullptr;
-    suil_ui_instance = nullptr;
+    printf("kill suil host\n");
+
+    gtk_widget_hide(gtk_ui_window);
+//    gtk_container_remove(GTK_CONTAINER(gtk_ui_parent_box), suil_widget);
+//    gtk_widget_destroy(gtk_ui_parent_box);
+//    gtk_widget_destroy(gtk_ui_root_box);
+//    gtk_widget_destroy(gtk_ui_window);
+//    suil_instance_free(suil_ui_instance);
+//    suil_host_free(suil_ui_host);
+//    gtk_ui_window    = nullptr;
+//    ui_is_open       = false;
+//    suil_ui_host     = nullptr;
+//    suil_ui_instance = nullptr;
+    return true;
 }
 
 
