@@ -43,8 +43,11 @@ struct VstDescriptions {
 
 private:
     void read_vsts(const char* path_str) {
-        for(auto& dir: get_dirs((char*) path_str)){
-            read_vst_dir(dir);
+        if(boost::filesystem::is_directory(path_str)) {
+            for(auto& dir: get_dirs((char*) path_str))
+                read_vst_dir(dir);
+        } else {
+            printf("vst adapter vst search dir '%s' was not found\n", path_str);
         }
     }
 

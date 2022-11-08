@@ -36,16 +36,17 @@
 
 /// TODO proper set/get parameter handling and opcodes: 42,43 & 44 used by oxefm
 VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt) {
+    // the first call to this function, for opcode audioMasterVersion, is during vst startup
+    // and vst_effect->resvd1 is undefined
     if(opcode == audioMasterVersion)
         return 2400;
 
     assert(effect != nullptr);
 
     if(!effect->resvd1) {
-        printf("no host pointers\n");
         return 0;
     }
-    // avoid a segfault from unloaded plugins using this callback - with opcode audioMasterVersion - when vst_adapter is null
+
     VstAdapter *vst_adapter = (VstAdapter*) effect->resvd1;
 
     switch(opcode) {
@@ -59,7 +60,7 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
 
     case audioMasterAutomate:
     case audioMasterUpdateDisplay:
-        printf("updating from ui: index %d, val %.2f\n", index, opt);
+        printf("\nupdating from ui: index %d, val %.2f\n", index, opt);
         vst_adapter->update_parameter_from_gui(index, opt);
         break;
 
@@ -175,7 +176,8 @@ void VstAdapter::init(zzub::archive* pi) {
         return;
     }
 
-    _host->set_event_handler(_host->get_metaplugin(), this);
+    metaplugin = _host->get_metaplugin();
+    _host->set_event_handler(metaplugin, this);
     ui_scale = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
 
     dispatch(plugin, effOpen);
@@ -196,7 +198,7 @@ void VstAdapter::init(zzub::archive* pi) {
 
     dispatch(plugin, effMainsChanged, 0, 1, NULL, 0.0f);
 
-    update_zzub_globals_from_plugin();
+    update_zzub_globals_from_plugin(false);
 }
 
 
@@ -240,52 +242,61 @@ void VstAdapter::ui_destroy() {
 }
 
 
-void VstAdapter::update_zzub_globals_from_plugin() {
-    uint8_t* globals = (uint8_t*) global_values;
+void VstAdapter::update_zzub_globals_from_plugin(bool dispatch_control_change) {
+//    uint8_t* globals = (uint8_t*) global_values;
     printf("update all params\n");
     for(int idx=0; idx < info->global_parameters.size(); idx++) {
         float vst_val = ((AEffectGetParameterProc)plugin->getParameter)(plugin, idx);
 
         globalvals[idx] = info->get_vst_param(idx)->vst_to_zzub_value(vst_val);
-        printf("Index: %d, vst val: %f, zzub val: %d\n", idx, vst_val, *((uint16_t*)(globals+idx*2)));
+        if(dispatch_control_change)
+//            zzub_plugin_set_parameter_value_direct(metaplugin, 1, 0, idx, globalvals[idx], false);
+            _host->control_change(metaplugin, 1, 0, idx, globalvals[idx], false, true);
+
+//        printf("Index: %d, name: %s, vst val: %f, zzub val: %d\n", idx, info->get_vst_param(idx)->zzub_param->name, vst_val, *((uint16_t*)(globals+idx*2)));
     }
 }
 
 
-void VstAdapter::update_parameter_from_gui(int index, float float_val) {
-    printf("update param: index = %d, vst val = %f, zzub val = %d \n", index, float_val, info->get_vst_param(index)->vst_to_zzub_value(float_val));
-    globalvals[index] = info->get_vst_param(index)->vst_to_zzub_value(float_val);
+void VstAdapter::update_parameter_from_gui(int idx, float float_val) {
+    printf("update param: index = %d, name: %s,  vst val = %f, zzub val = %d \n", idx, info->get_vst_param(idx)->zzub_param->name, float_val, info->get_vst_param(idx)->vst_to_zzub_value(float_val));
+    globalvals[idx] = info->get_vst_param(idx)->vst_to_zzub_value(float_val);
+    _host->control_change(metaplugin, 1, 0, idx, globalvals[idx], false, true);
+//    zzub_plugin_set_parameter_value_direct(metaplugin, 1, 0, idx, globalvals[idx], false);
 }
 
 
 void VstAdapter::process_events() {
-    uint8_t* globals = (uint8_t*) global_values;
+//    uint8_t* globals = (uint8_t*) global_values;
     uint16_t value = 0;
 
     if(update_zzub_params) {
         update_zzub_params = false;
     }
 
-    auto& params = info->get_vst_params();
-    for (auto idx = 0; idx < params.size(); idx++) {
-        auto vst_param = params[idx];
+    for (auto idx = 0; idx < info->get_param_count(); idx++) {
+        auto vst_param = info->get_vst_param(idx);
 
-        switch(vst_param->zzub_param->type) {
-        case zzub::parameter_type_word:
-            value = *((unsigned short*) globals);
-            break;
 
-        case zzub::parameter_type_switch:
-        case zzub::parameter_type_note:
-        case zzub::parameter_type_byte:
-            value = *((unsigned char*) globals);
-            break;
-        }
+//        switch(vst_param->zzub_param->type) {
+//        case zzub::parameter_type_word:
+//            value = *((unsigned short*) globals);
+//            break;
 
-        globals += vst_param->data_size;
+//        case zzub::parameter_type_switch:
+//        case zzub::parameter_type_note:
+//        case zzub::parameter_type_byte:
+//            value = *((unsigned char*) globals);
+//            break;
+//        }
+
+//        globals += vst_param->data_size;
+
+        value = globalvals[idx];
+
 
         if (value != vst_param->zzub_param->value_none) {
-            printf("set param. idx: %i, name: '%s', zzubval %d, vst val %f\n", idx, vst_param->zzub_param->name, value, vst_param->zzub_to_vst_value(value));
+//            printf("process_event: set param. idx: %i, name: '%s', offs=%d, zzubval %d, vst val %f\n", idx, vst_param->zzub_param->name, vst_param->data_offset, value, vst_param->zzub_to_vst_value(value));
             ((AEffectSetParameterProc) plugin->setParameter)(plugin, idx, vst_param->zzub_to_vst_value(value));
         }
     }
@@ -404,7 +415,44 @@ const char *VstAdapter::get_preset_file_extensions() {
 
 bool VstAdapter::save_preset_file(const char* filename) {
     printf("Save preset: %s\n", filename);
+    std::filesystem::path path{filename};
+    struct fxProgram program{};
 
+    void *chunk_data;
+    // ask for the chunk data for a vst Program
+    int chunk_size = dispatch(plugin, effGetChunk, 1, 0, &chunk_data, 0);
+
+    //see if effGetChunk worked.
+    bool save_chunk = true;
+    if(chunk_size == 0) {
+        save_chunk = false;
+        if(chunk_data) {
+            free(chunk_data);
+        }
+    } else if(!chunk_data) {
+        save_chunk = false;
+    }
+
+    // if it didn't work then store the params
+    if(!save_chunk) {
+        chunk_data = malloc(info->get_param_count() * sizeof(float));
+        if(!chunk_data)
+            goto save_preset_end_false;
+
+        float *curr_param = (float*) chunk_data;
+        for(int idx = 0; idx < info->get_param_count(); idx++)
+            *curr_param++ = info->get_vst_param(idx)->zzub_to_vst_value(globalvals[idx]);
+    }
+
+
+save_preset_end_true:
+    if(chunk_data)
+        free(chunk_data);
+
+    return true;
+
+
+save_preset_end_false:
     return false;
 }
 
@@ -475,7 +523,7 @@ bool VstAdapter::load_preset_file(const char* filename) {
         break;
     }
 
-load_preset_end_true:
+//load_preset_end_true:
     update_zzub_params = true;
     free(data);
     return true;

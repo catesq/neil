@@ -5,15 +5,15 @@
 
 
 struct VstParameter {
-    VstParameter(VstParameterProperties*, const zzub::parameter* zzub_param, uint16_t offset);
+    VstParameter(VstParameterProperties*, zzub::parameter* zzub_param, uint16_t offset);
 
     virtual float zzub_to_vst_value(uint16_t zzub) = 0;
     virtual uint16_t vst_to_zzub_value(float vst)  = 0;
 
-    static VstParameter* build(VstParameterProperties* vst_props, const zzub::parameter* zzub_param, uint16_t offset);
+    static VstParameter* build(VstParameterProperties* vst_props, zzub::parameter* zzub_param, uint16_t offset);
 
     VstParameterProperties* vst_props;
-    const zzub::parameter* zzub_param;
+    zzub::parameter* zzub_param;
 
     // Byte size of this data in global_values, either 2 or 1 as zzub currently only handle data either 8 or 16 bit int
     uint16_t data_size;
@@ -25,20 +25,27 @@ struct VstParameter {
 struct VstSwitchParameter : VstParameter {
     using VstParameter::VstParameter;
 
-    virtual float zzub_to_vst_value(uint16_t);
-    virtual uint16_t vst_to_zzub_value(float vst);
+    virtual float zzub_to_vst_value(uint16_t) override;
+    virtual uint16_t vst_to_zzub_value(float vst) override;
 };
 
 struct VstIntParameter : VstParameter {
-    using VstParameter::VstParameter;
+    VstIntParameter(VstParameterProperties*, zzub::parameter* zzub_param, uint16_t offset);
 
-    virtual float zzub_to_vst_value(uint16_t );
-    virtual uint16_t vst_to_zzub_value(float vst);
+    virtual float zzub_to_vst_value(uint16_t ) override;
+    virtual uint16_t vst_to_zzub_value(float vst) override;
+
+    int min, max, vst_range;
 };
 
 struct VstFloatParameter : VstParameter {
-    using VstParameter::VstParameter;
+    VstFloatParameter(VstParameterProperties*, zzub::parameter* zzub_param, uint16_t offset);
 
-    virtual float zzub_to_vst_value(uint16_t value);
-    virtual uint16_t vst_to_zzub_value(float vst);
+    virtual float zzub_to_vst_value(uint16_t value) override;
+    virtual uint16_t vst_to_zzub_value(float vst) override;
+
+    bool useStep;
+    int min, max;
+    float smallStep, largeStep;
+    int range;
 };

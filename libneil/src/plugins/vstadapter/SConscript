@@ -1,8 +1,8 @@
 Import('pluginenv', 'build_plugin')
 
 vst_pluginenv = pluginenv.Clone()
-vst_pluginenv.Append(LIBS=['boost_system', 'boost_filesystem'])
+vst_pluginenv.Append(LIBS=['boost_system', 'boost_filesystem', 'zzub'])
 
-vst_pluginenv.Append(CCFLAGS='-pthread `pkg-config gtk+-3.0 --cflags` -Ilibneil/src/libzzub -Ilibneil/src/plugins/vstadapter -Ilibneil/src/plugins/vstadapter/VST_SDK_2.4/pluginterfaces/vst2.x -Ilibneil/src/plugins/vstadapter/VST_SDK_2.4/public.sdk/source/vst2.x ')
+vst_pluginenv.Append(CCFLAGS='-pthread `pkg-config gtk+-3.0 --cflags` -Ilibneil/src/libzzub -Ilibneil/src/plugins/vstadapter -Ilibneil/src/plugins/vstadapter/VST_SDK_2.4/pluginterfaces/vst2.x -Ilibneil/src/plugins/vstadapter/VST_SDK_2.4/public.sdk/source/vst2.x')
 
 vst_build = build_plugin(vst_pluginenv, 'vstadapter', [ 'VstAdapter.cpp', 'VstPlugins.cpp', 'VstDefines.cpp', 'VstParameter.cpp', 'VstPluginInfo.cpp'])

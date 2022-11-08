@@ -12,9 +12,6 @@
 
 
 
-
-
-
 extern "C" {
     void on_window_destroy(GtkWidget* widget, gpointer data);
 }
@@ -43,7 +40,9 @@ struct VstAdapter : zzub::plugin, zzub::event_handler {
 
     uint64_t sample_pos = 0;
 
-    void update_zzub_globals_from_plugin();
+    // if dispatch_control_change == true then call zzub::player::control_change()
+    // control_change() segfaults when called from zzub::plugin::init()
+    void update_zzub_globals_from_plugin(bool dispatch_control_change = true);
 
 private:
     void process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg);
@@ -70,4 +69,5 @@ private:
     std::vector<VstMidiEvent*> midi_events;
     VstEvents* vst_events;
     VstTimeInfo vst_time_info{};
+    zzub_plugin_t* metaplugin = nullptr;
 };
