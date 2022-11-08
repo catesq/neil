@@ -379,9 +379,9 @@ struct SharedCache {
     // const LV2_Feature** getLv2Features();
 
 private:
-    std::mutex suil_mtx;
-    bool suil_is_init;
-    bool are_threads_init;
+    static std::mutex suil_mtx;
+    static bool suil_is_init;
+    static bool are_threads_init;
 
 
     SharedCache();

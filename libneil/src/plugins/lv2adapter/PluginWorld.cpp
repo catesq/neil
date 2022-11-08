@@ -1,5 +1,4 @@
 #include "PluginWorld.h"
-//#include "lv2_utils.h"
 #include "lilv/lilv.h"
 #include <X11/Xlib.h>
 
@@ -162,12 +161,15 @@ SharedCache::~SharedCache() {
 //   preset_preset      (new_uri(LV2_PRESETS__Preset)),
 //   patch_message      (new_uri(LV2_PATCH__Message)),
 
+
+std::mutex SharedCache::suil_mtx{};
+bool SharedCache::suil_is_init(false);
+bool SharedCache::are_threads_init(false);
+
 SharedCache::SharedCache()
     : lilvWorld(lilv_world_new()),
       nodes(lilvWorld),
-      symap(symap_new()),
-      suil_is_init(false),
-      are_threads_init(false) {
+      symap(symap_new()) {
 
     lilv_world_load_all(lilvWorld);
     
