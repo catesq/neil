@@ -37,94 +37,94 @@ using namespace std;
 */
 
 pluginlib::pluginlib(const std::string& _fileName, zzub::player &p, zzub::plugincollection *_collection) : player(p) {
-	fileName = _fileName;
-	hMachine = 0;
-	if (_collection) { // internal
-		collection = _collection;
-		this->collection->initialize(this);
-	} else { // external
-		collection = 0;
-		init_dll();
-	}	
+    fileName = _fileName;
+    hMachine = 0;
+    if (_collection) { // internal
+        collection = _collection;
+        this->collection->initialize(this);
+    } else { // external
+        collection = 0;
+        init_dll();
+    }
 }
 
 pluginlib::~pluginlib() {
-	unload();
+    unload();
 }
 
 void pluginlib::unload() {
-	printf("unloading plugin library\n");
-	if (collection) {
-		collection->destroy();
-		collection = 0;
-	}
+    printf("unloading plugin library\n");
+    if (collection) {
+        collection->destroy();
+        collection = 0;
+    }
 
-	loaders.clear();
+    loaders.clear();
 
-	if (hMachine) {
-		xp_dlclose(hMachine);
-		hMachine = 0;
-	}
+    if (hMachine) {
+        xp_dlclose(hMachine);
+        hMachine = 0;
+    }
 }
 
 void pluginlib::init_dll() {
-	printf("loading machine '%s'\n", fileName.c_str());
+    printf("loading machine '%s'\n", fileName.c_str());
 
-	bool is_so = false;
-	bool is_win32 = false;
-	
-	int dpos = (int)fileName.find_last_of('.');
-	string fileExtension = fileName.substr(dpos);
-	is_so = (fileExtension == ".so");
-	is_win32 = (fileExtension == ".dll");
-	
-	if (is_so || is_win32) {
-		hMachine = xp_dlopen(fileName.c_str());
-		if (hMachine == 0) {
-			std::cerr << "error loading plugin library " << fileName << ": " << xp_dlerror() << std::endl;
-			return ;
-		}
-	}
-		
-	zzub_get_signature_function _sig_func = (zzub_get_signature_function)xp_dlsym(hMachine, "zzub_get_signature");
-	zzub_get_plugincollection_function _func=(zzub_get_plugincollection_function)xp_dlsym(hMachine, "zzub_get_plugincollection");
-	// do we have a signature function?
-	if (_sig_func) {
-		// is it in synch with ours?
-		const char *signature = _sig_func();
-		if (!signature || strcmp(signature,ZZUB_SIGNATURE)) {
-			// let the user know
-			printf("%s: bad signature '%s' (expected '%s'), won't load.\n", fileName.c_str(), signature, ZZUB_SIGNATURE);
-		} 
-		//else {
-			// is there an entry function?
-			if (_func) {
-				this->collection = _func(); // get our collection instance
-				if (this->collection) {
-					this->collection->initialize(this);
-					return ;
-				} else {
-					printf("%s: collection pointer is zero.\n", fileName.c_str());
-				}
-			} else {
-				// let the user know
-				printf("%s: entry function missing.\n", fileName.c_str());
-			}
-		//}
-	} else {
-		// let the user know
-		printf("%s: signature function missing.\n", fileName.c_str());
-	}
+    bool is_so = false;
+    bool is_win32 = false;
 
-	// there was an error, close the handle
-	xp_dlclose(hMachine);
-	hMachine = 0;
+    int dpos = (int)fileName.find_last_of('.');
+    string fileExtension = fileName.substr(dpos);
+    is_so = (fileExtension == ".so");
+    is_win32 = (fileExtension == ".dll");
+
+    if (is_so || is_win32) {
+        hMachine = xp_dlopen(fileName.c_str());
+        if (hMachine == 0) {
+            std::cerr << "error loading plugin library " << fileName << ": " << xp_dlerror() << std::endl;
+            return ;
+        }
+    }
+
+    zzub_get_signature_function _sig_func = (zzub_get_signature_function)xp_dlsym(hMachine, "zzub_get_signature");
+    zzub_get_plugincollection_function _func=(zzub_get_plugincollection_function)xp_dlsym(hMachine, "zzub_get_plugincollection");
+    // do we have a signature function?
+    if (_sig_func) {
+        // is it in synch with ours?
+        const char *signature = _sig_func();
+        if (!signature || strcmp(signature,ZZUB_SIGNATURE)) {
+            // let the user know
+            printf("%s: bad signature '%s' (expected '%s'), won't load.\n", fileName.c_str(), signature, ZZUB_SIGNATURE);
+        }
+        //else {
+        // is there an entry function?
+        if (_func) {
+            this->collection = _func(); // get our collection instance
+            if (this->collection) {
+                this->collection->initialize(this);
+                return ;
+            } else {
+                printf("%s: collection pointer is zero.\n", fileName.c_str());
+            }
+        } else {
+            // let the user know
+            printf("%s: entry function missing.\n", fileName.c_str());
+        }
+        //}
+    } else {
+        // let the user know
+        printf("%s: signature function missing.\n", fileName.c_str());
+    }
+
+    // there was an error, close the handle
+    xp_dlclose(hMachine);
+    hMachine = 0;
 }
 
 void pluginlib::register_info(const zzub::info *_info) {
-	// add a pluginloader for this info struct
-	loaders.push_back(_info);
-	player.plugin_infos.push_back(_info);
+    // add a pluginloader for this info struct
+    loaders.push_back(_info);
+    player.plugin_infos.push_back(_info);
 }
 
 };

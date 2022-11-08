@@ -20,7 +20,7 @@
 
 namespace zzub {
 
-  struct dummy_plugin : public plugin {
+struct dummy_plugin : public plugin {
     char* globalVals;
     char* trackVals;
     vector<char> data;
@@ -34,7 +34,7 @@ namespace zzub {
     virtual bool process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) { return false; }
     virtual void process_midi_events(midi_message* pin, int nummessages) {}
     virtual void get_midi_output_names(outstream *pout) {}
-	
+
     // ::zzub::plugin methods
     virtual void destroy();
     virtual void init(zzub::archive* arc);
@@ -66,12 +66,12 @@ namespace zzub {
     virtual const char* get_stream_source() { return 0; }
     virtual void play_pattern(int index) {}
     virtual void configure(const char *key, const char *value) {}
-  };
+};
 
-  struct dummy_info : zzub::info {
+struct dummy_info : zzub::info {
     dummy_info();
     virtual zzub::plugin* create_plugin() const;
     virtual bool store_info(zzub::archive *arc) const;
-  };
+};
 
 };

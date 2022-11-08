@@ -28,102 +28,102 @@ using namespace std;
 namespace zzub {
 
 /*! \struct input_plugin
-	\brief Built-in recording plugin
+    \brief Built-in recording plugin
 */
 /*! \struct input_plugin_info
-	\brief Description of a built-in recording plugin
+    \brief Description of a built-in recording plugin
 */
 /*! \struct input_plugincollection
-	\brief Built-in recording plugin loader
+    \brief Built-in recording plugin loader
 */
 
 struct input_plugin : plugin {
-	int attributeValues[1];
-	
-	input_plugin() {
-		attributes = attributeValues;
-		attributeValues[0] = 0;
-	}
-	
-	virtual void destroy() { delete this; }
-	virtual void init(zzub::archive *arc) {}
-	virtual void process_events() {
-		attributes_changed();
-	}
-	virtual bool process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) { return false; }
-	virtual bool process_stereo(float **pin, float **pout, int numsamples, int mode) {
-		if( (mode&zzub::process_mode_write)==0 )
-			return false;
-		_host->audio_driver_read(attributeValues[0] * 2 + 0, pout[0], numsamples);
-		_host->audio_driver_read(attributeValues[0] * 2 + 1, pout[1], numsamples);
-		return true;
-	}
-	virtual void process_controller_events() {}
-	virtual void stop() {}
-	virtual void load(zzub::archive *arc) {}
-	virtual void save(zzub::archive *arc) {}
-	virtual void attributes_changed() {
-		if (attributeValues[0]<0 || attributeValues[0] >= _host->audio_driver_get_channel_count(true) / 2) {
-			attributeValues[0] = 0;
-		}
-	}
-	virtual void command(int index) {
-		if (index>=0x100 && index < 0x200) {
-			cout << "input command " << index << endl;
-			int channel = index - 0x100;
-			attributeValues[0] = channel;
-			attributes_changed();
-		}
-	}
-	virtual void process_midi_events(midi_message* pin, int nummessages) {}
-	virtual void get_midi_output_names(outstream *pout) {}
-	virtual void set_track_count(int count) {}
-	virtual void mute_track(int index) {}
-	virtual bool is_track_muted(int index) const { return false; }
-	virtual void midi_note(int channel, int value, int velocity)  {}
-	virtual void event(unsigned int data)  {}
-	virtual const char * describe_value(int param, int value) { return 0; }
-	virtual const zzub::envelope_info ** get_envelope_infos() { return 0; }
-	virtual bool play_wave(int wave, int note, float volume) { return false; }
-	virtual void stop_wave() {}
-	virtual int get_wave_envelope_play_position(int env) { return -1; }
-	virtual const char* describe_param(int param) { return 0; }
-	virtual bool set_instrument(const char *name) { return false; }
-	virtual void get_sub_menu(int index, zzub::outstream *os) { 
-		cout << "get_sub_menu index " << index << endl;
-		if (index != 0) return ;
-		for (int i = 0; i<_host->audio_driver_get_channel_count(true) / 2; i++) {
-			std::stringstream strm;
-			strm << (i==attributeValues[0]?"*":"") << "Stereo Channel " << (i*2) << " / " << i*2+1;
-			os->write((const char*)strm.str().c_str());
-		}
-		os->write("\0");
-	}
-	virtual void add_input(const char *name, zzub::connection_type type) {}
-	virtual void delete_input(const char *name, zzub::connection_type type) {}
-	virtual void rename_input(const char *oldname, const char *newname) {}
-	virtual void input(float **samples, int size, float amp) {}
-	virtual void midi_control_change(int ctrl, int channel, int value) {}
-	virtual bool handle_input(int index, int amp, int pan) { return false; }
-	virtual void set_stream_source(const char* resource) {}
-	virtual const char* get_stream_source() { return 0; }
-	virtual void play_pattern(int index) {}
-	virtual void configure(const char *key, const char *value) {}
-	
+    int attributeValues[1];
+
+    input_plugin() {
+        attributes = attributeValues;
+        attributeValues[0] = 0;
+    }
+
+    virtual void destroy() { delete this; }
+    virtual void init(zzub::archive *arc) {}
+    virtual void process_events() {
+        attributes_changed();
+    }
+    virtual bool process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) { return false; }
+    virtual bool process_stereo(float **pin, float **pout, int numsamples, int mode) {
+        if( (mode&zzub::process_mode_write)==0 )
+            return false;
+        _host->audio_driver_read(attributeValues[0] * 2 + 0, pout[0], numsamples);
+        _host->audio_driver_read(attributeValues[0] * 2 + 1, pout[1], numsamples);
+        return true;
+    }
+    virtual void process_controller_events() {}
+    virtual void stop() {}
+    virtual void load(zzub::archive *arc) {}
+    virtual void save(zzub::archive *arc) {}
+    virtual void attributes_changed() {
+        if (attributeValues[0]<0 || attributeValues[0] >= _host->audio_driver_get_channel_count(true) / 2) {
+            attributeValues[0] = 0;
+        }
+    }
+    virtual void command(int index) {
+        if (index>=0x100 && index < 0x200) {
+            cout << "input command " << index << endl;
+            int channel = index - 0x100;
+            attributeValues[0] = channel;
+            attributes_changed();
+        }
+    }
+    virtual void process_midi_events(midi_message* pin, int nummessages) {}
+    virtual void get_midi_output_names(outstream *pout) {}
+    virtual void set_track_count(int count) {}
+    virtual void mute_track(int index) {}
+    virtual bool is_track_muted(int index) const { return false; }
+    virtual void midi_note(int channel, int value, int velocity)  {}
+    virtual void event(unsigned int data)  {}
+    virtual const char * describe_value(int param, int value) { return 0; }
+    virtual const zzub::envelope_info ** get_envelope_infos() { return 0; }
+    virtual bool play_wave(int wave, int note, float volume) { return false; }
+    virtual void stop_wave() {}
+    virtual int get_wave_envelope_play_position(int env) { return -1; }
+    virtual const char* describe_param(int param) { return 0; }
+    virtual bool set_instrument(const char *name) { return false; }
+    virtual void get_sub_menu(int index, zzub::outstream *os) {
+        cout << "get_sub_menu index " << index << endl;
+        if (index != 0) return ;
+        for (int i = 0; i<_host->audio_driver_get_channel_count(true) / 2; i++) {
+            std::stringstream strm;
+            strm << (i==attributeValues[0]?"*":"") << "Stereo Channel " << (i*2) << " / " << i*2+1;
+            os->write((const char*)strm.str().c_str());
+        }
+        os->write("\0");
+    }
+    virtual void add_input(const char *name, zzub::connection_type type) {}
+    virtual void delete_input(const char *name, zzub::connection_type type) {}
+    virtual void rename_input(const char *oldname, const char *newname) {}
+    virtual void input(float **samples, int size, float amp) {}
+    virtual void midi_control_change(int ctrl, int channel, int value) {}
+    virtual bool handle_input(int index, int amp, int pan) { return false; }
+    virtual void set_stream_source(const char* resource) {}
+    virtual const char* get_stream_source() { return 0; }
+    virtual void play_pattern(int index) {}
+    virtual void configure(const char *key, const char *value) {}
+
 };
 
 zzub::plugin* input_plugin_info::create_plugin() const { 
-	return new input_plugin();
+    return new input_plugin();
 }
 
 void input_plugincollection::initialize(zzub::pluginfactory *factory) {
-	factory->register_info(&_info);
+    factory->register_info(&_info);
 }
 
 input_plugincollection the_input_plugincollection;
 
 plugincollection *get_input_plugincollection(audiodriver *ad) {
-	return &the_input_plugincollection;
+    return &the_input_plugincollection;
 }
 
 } // namespace zzub

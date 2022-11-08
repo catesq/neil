@@ -66,24 +66,24 @@
 struct zzub_flatapi_player;
 
 namespace zzub {
-  struct metaplugin_proxy;
-  struct info;
-  struct pattern;
-  struct event_connection_binding;
-  struct wave_proxy;
-  struct wavelevel_proxy;
-  struct sequence_proxy;
-  struct parameter;
-  struct attribute;
-  struct envelope_entry;
-  struct midimapping;
-  struct recorder;
-  struct pluginlib;
-  struct mem_archive;
-  struct audiodriver;
-  struct mididriver;
-  struct instream;
-  struct outstream;
+struct metaplugin_proxy;
+struct info;
+struct pattern;
+struct event_connection_binding;
+struct wave_proxy;
+struct wavelevel_proxy;
+struct sequence_proxy;
+struct parameter;
+struct attribute;
+struct envelope_entry;
+struct midimapping;
+struct recorder;
+struct pluginlib;
+struct mem_archive;
+struct audiodriver;
+struct mididriver;
+struct instream;
+struct outstream;
 }
 
 // internal types

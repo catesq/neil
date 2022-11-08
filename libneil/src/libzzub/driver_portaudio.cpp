@@ -11,14 +11,14 @@ using namespace std;
 
 namespace zzub {
 
-  class PortAudioException: public exception {
-  public:
+class PortAudioException: public exception {
+public:
     string message;
     PortAudioException(PaError err) throw()
     {
-      char int_str[20];
-      sprintf(int_str, "%d", err);
-      message = "PortAudio ERROR: " + string(Pa_GetErrorText(err));
+        char int_str[20];
+        sprintf(int_str, "%d", err);
+        message = "PortAudio ERROR: " + string(Pa_GetErrorText(err));
     }
     ~PortAudioException() throw()
     {
@@ -26,17 +26,17 @@ namespace zzub {
     }
     virtual const char* what() const throw()
     {
-      return message.c_str();
+        return message.c_str();
     }
-  };
+};
 
-  static int portaudio_callback(const void *inputBuffer,
-                                void *outputBuffer,
-                                unsigned long nBufferFrames,
-                                const PaStreamCallbackTimeInfo* timeInfo,
-                                PaStreamCallbackFlags statusFlags,
-                                void *data)
-  {
+static int portaudio_callback(const void *inputBuffer,
+                              void *outputBuffer,
+                              unsigned long nBufferFrames,
+                              const PaStreamCallbackTimeInfo* timeInfo,
+                              PaStreamCallbackFlags statusFlags,
+                              void *data)
+{
     audiodriver_portaudio *self = (audiodriver_portaudio *)data;
     double start_time = self->timer.frame();
     float **fout = (float **)outputBuffer;
@@ -44,25 +44,25 @@ namespace zzub {
     int out_ch = self->worker->work_out_channel_count;
     int in_ch = self->worker->work_in_channel_count;
     for (int i = 0; i < in_ch; i++) {
-      self->worker->work_in_buffer[i] = fin[i];
+        self->worker->work_in_buffer[i] = fin[i];
     }
     for (int i = 0; i < out_ch; i++) {
-      self->worker->work_out_buffer[i] = fout[i];
+        self->worker->work_out_buffer[i] = fout[i];
     }
     self->worker->work_stereo(nBufferFrames);
     // clip
     float f;
     for (unsigned int i = 0; i < nBufferFrames; i++) {
-      for (int j = 0; j < out_ch; j++) {
-        f = self->worker->work_out_buffer[j][i];
-        if (f > 1.0) {
-          f = 1.0f;
+        for (int j = 0; j < out_ch; j++) {
+            f = self->worker->work_out_buffer[j][i];
+            if (f > 1.0) {
+                f = 1.0f;
+            }
+            if (f < -1.0) {
+                f = -1.0f;
+            }
+            self->worker->work_out_buffer[j][i] = f;
         }
-        if (f < -1.0) {
-          f = -1.0f;
-        }
-        self->worker->work_out_buffer[j][i] = f;
-      }
     }
     // update stats
     self->last_work_time = self->timer.frame() - start_time;
@@ -70,89 +70,89 @@ namespace zzub {
     // slowly approach to new value
     self->cpu_load += 0.1 * (load - self->cpu_load);
     return 0;
-  }
+}
 
-  audiodriver_portaudio::audiodriver_portaudio() {
+audiodriver_portaudio::audiodriver_portaudio() {
     PaError err;
     err = Pa_Initialize ();
-    if (err != paNoError) { 
-      throw PortAudioException(err);
+    if (err != paNoError) {
+        throw PortAudioException(err);
     }
     defaultDevice = -1;
     timer.start();
     cpu_load = 0;
     last_work_time = 0;
     stream = 0;
-  }
+}
 
-  audiodriver_portaudio::~audiodriver_portaudio() {
+audiodriver_portaudio::~audiodriver_portaudio() {
     PaError err;
     err = Pa_Terminate();
     if (err != paNoError) {
-      throw PortAudioException(err);
+        throw PortAudioException(err);
     }
-  }
+}
 
-  void audiodriver_portaudio::initialize(audioworker *worker) {
+void audiodriver_portaudio::initialize(audioworker *worker) {
     this->worker = worker;
     int numDevices;
     unsigned int rates[] = {96000, 4800, 44100, 22050};
     std::vector<unsigned int> vrates;
     for (int i = 0; i < 4; i++) {
-      vrates.push_back(rates[i]);
+        vrates.push_back(rates[i]);
     }
     numDevices = Pa_GetDeviceCount();
     const PaDeviceInfo *deviceInfo;
     for (int i = 0; i < numDevices; i++) {
-      audiodevice ad;
-      deviceInfo = Pa_GetDeviceInfo(i);
-      ad.name = string(deviceInfo->name);
-      ad.api_id = deviceInfo->hostApi;
-      ad.device_id = i;
-      ad.out_channels = deviceInfo->maxOutputChannels;
-      ad.in_channels = deviceInfo->maxInputChannels;
-      ad.rates = vrates;
-      if (ad.out_channels >= 2) {
-        devices.push_back(ad);
-      }
+        audiodevice ad;
+        deviceInfo = Pa_GetDeviceInfo(i);
+        ad.name = string(deviceInfo->name);
+        ad.api_id = deviceInfo->hostApi;
+        ad.device_id = i;
+        ad.out_channels = deviceInfo->maxOutputChannels;
+        ad.in_channels = deviceInfo->maxInputChannels;
+        ad.rates = vrates;
+        if (ad.out_channels >= 2) {
+            devices.push_back(ad);
+        }
     }
-  }
+}
 
-  bool audiodriver_portaudio::enable(bool e) {
+bool audiodriver_portaudio::enable(bool e) {
     if (!stream)
-      return false;
+        return false;
     if (e) {
-      if (!worker->work_started) {
-        Pa_StartStream(stream);
-      }
-      worker->work_started = true;
-      worker->audio_enabled();
-      return true;
+        if (!worker->work_started) {
+            Pa_StartStream(stream);
+        }
+        worker->work_started = true;
+        worker->audio_enabled();
+        return true;
     }
     else {
-      if (worker->work_started) {
-        Pa_StopStream(stream);
-      }
-      worker->work_started = false;
-      worker->audio_disabled();
-      return true;
+        if (worker->work_started) {
+            Pa_StopStream(stream);
+        }
+        worker->work_started = false;
+        worker->audio_disabled();
+        return true;
     }
-  }
+}
 
-  int audiodriver_portaudio::getDeviceCount() {
+int audiodriver_portaudio::getDeviceCount() {
     return devices.size();
-  }
+}
 
-  int audiodriver_portaudio::getDeviceByName(const char* name) {
+int audiodriver_portaudio::getDeviceByName(const char* name) {
     for (size_t i = 0; i < devices.size(); i++) {
-      if (devices[i].name == name) { 
-        return (int)i;
-      }
+        if (devices[i].name == name) {
+            return (int)i;
+        }
     }
     return -1;
-  }
+}
 
-  bool audiodriver_portaudio::createDevice(int index, int inIndex) {
+bool audiodriver_portaudio::createDevice(int index, int inIndex) {
     PaError err;
     PaStreamParameters inputParameters, outputParameters;
     int in_id, out_id;
@@ -170,18 +170,18 @@ namespace zzub {
     outputParameters.hostApiSpecificStreamInfo = NULL;
     err = Pa_IsFormatSupported(&inputParameters, &outputParameters, samplerate);
     if (err != paNoError) {
-      return false;
+        return false;
     }
-    err = Pa_OpenStream(&stream, 
-                        &inputParameters, 
-                        &outputParameters, 
-                        samplerate, 
-                        buffersize, 
+    err = Pa_OpenStream(&stream,
+                        &inputParameters,
+                        &outputParameters,
+                        samplerate,
+                        buffersize,
                         paNoFlag,
                         &portaudio_callback,
                         (void *)this);
     if (err != paNoError) {
-      throw PortAudioException(err);
+        throw PortAudioException(err);
     }
     worker->work_out_device = &devices[index];
     worker->work_in_device = inIndex != -1 ? &devices[inIndex] : 0;
@@ -195,30 +195,30 @@ namespace zzub {
     worker->work_in_channel_count = inIndex != -1 ? 2 : 0;
     worker->samplerate_changed();
     return true;
-  }
+}
 
-  void audiodriver_portaudio::destroyDevice() {
+void audiodriver_portaudio::destroyDevice() {
     if (stream == 0) {
-      return;
+        return;
     }
     enable(false);
     Pa_CloseStream(stream);
     stream = 0;
     worker->work_out_device = 0;
     worker->work_in_device = 0;
-  }
+}
 
 
-  double audiodriver_portaudio::getCpuLoad() {
+double audiodriver_portaudio::getCpuLoad() {
     return cpu_load;
-  }
+}
 
-  audiodevice* audiodriver_portaudio::getDeviceInfo(int index) {
+audiodevice* audiodriver_portaudio::getDeviceInfo(int index) {
     if (index < 0 || index >= (int)devices.size()) {
-      return 0;
+        return 0;
     } else {
-      return &devices[index];
+        return &devices[index];
     }
-  }
+}
 
 } // namespace zzub

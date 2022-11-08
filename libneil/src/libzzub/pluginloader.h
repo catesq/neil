@@ -41,24 +41,24 @@ typedef zzub::plugin *(__attribute__((cdecl)) *CREATE_MACHINE)();
 
 namespace zzub {
 
-  struct info;
-  struct mixer;
-  struct pluginloader;
+struct info;
+struct mixer;
+struct pluginloader;
 
-  // a pluginlib maintains the generic dll handle
-  struct pluginlib : pluginfactory {
+// a pluginlib maintains the generic dll handle
+struct pluginlib : pluginfactory {
     xp_modulehandle hMachine;
     std::string fileName;
     zzub::plugincollection* collection;
     std::list<const zzub::info*> loaders;
     zzub::player &player;
-	
+
     pluginlib(const std::string& fileName, zzub::player &p, zzub::plugincollection *_collection = 0);
     ~pluginlib();
     void init_dll();
     void unload();
     virtual void register_info(const zzub::info *_info);
-  };
+};
 
 
 }

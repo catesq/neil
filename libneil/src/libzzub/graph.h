@@ -10,12 +10,12 @@ struct connection;
 
 // plugin vertex properties
 struct vertex_props {
-	int id;
+    int id;
 };
 
 // connection properties
 struct edge_props {
-	connection* conn;
+    connection* conn;
 };
 
 // the graph type

@@ -24,7 +24,7 @@ using std::vector;
 using std::stack;
 
 namespace zzub {
-  struct player : undo_manager, audioworker, midiworker {
+struct player : undo_manager, audioworker, midiworker {
     int work_buffer_position; // sample position in current buffer
     input_plugincollection inputPluginCollection;
     output_plugincollection outputPluginCollection;
@@ -48,7 +48,7 @@ namespace zzub {
     virtual void audio_enabled();
     virtual void audio_disabled();
     virtual void samplerate_changed();
-	
+
     // midiworker
     void midiEvent(unsigned short status, unsigned char data1, unsigned char data2);
 
@@ -125,7 +125,7 @@ namespace zzub {
 
     int wave_load_sample(int wave, int level, int offset, bool clear, std::string name, zzub::instream* datastream);
     void wave_set_envelopes(int wave, const vector<zzub::envelope_entry>& _envelopes);
-  };
+};
 
 
 };

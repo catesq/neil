@@ -27,52 +27,52 @@ typedef void PmQueue;
 namespace zzub {
 
 struct midi_io {
-	virtual ~midi_io() { }
-	virtual bool poll() = 0;
-	virtual void schedule_send(size_t index, int time, unsigned int data) = 0;
-	virtual bool send(size_t index, unsigned int data) = 0;
-	virtual size_t getDevices() = 0;
-	virtual bool isInput(size_t index) = 0;
-	virtual bool isOutput(size_t index) = 0;
-	virtual bool isOpen(size_t index) = 0;
-	virtual const char* getDeviceName(size_t index) = 0;
+    virtual ~midi_io() { }
+    virtual bool poll() = 0;
+    virtual void schedule_send(size_t index, int time, unsigned int data) = 0;
+    virtual bool send(size_t index, unsigned int data) = 0;
+    virtual size_t getDevices() = 0;
+    virtual bool isInput(size_t index) = 0;
+    virtual bool isOutput(size_t index) = 0;
+    virtual bool isOpen(size_t index) = 0;
+    virtual const char* getDeviceName(size_t index) = 0;
 };
 
 struct midiworker {
-	midi_io* midiDriver;
-	midiworker() {
-		midiDriver = 0;
-	}
-	virtual void midiEvent(unsigned short status, unsigned char data1, unsigned char data2)=0;
+    midi_io* midiDriver;
+    midiworker() {
+        midiDriver = 0;
+    }
+    virtual void midiEvent(unsigned short status, unsigned char data1, unsigned char data2)=0;
 };
 
 struct mididriver : midi_io {
-	std::list<midi_message> outMessages;
-	zzub::timer timer;
-	double lastTime;
-	PmQueue* sendQueue;
-	PmQueue* readQueue;
+    std::list<midi_message> outMessages;
+    zzub::timer timer;
+    double lastTime;
+    PmQueue* sendQueue;
+    PmQueue* readQueue;
 
-	~mididriver();
+    ~mididriver();
 
-	midiworker* worker;
-	std::vector<PortMidiStream*> devices;
+    midiworker* worker;
+    std::vector<PortMidiStream*> devices;
 
-	bool initialize(midiworker*);
+    bool initialize(midiworker*);
 
-	bool openDevice(size_t index);
-	bool closeAllDevices();
-	void close();
+    bool openDevice(size_t index);
+    bool closeAllDevices();
+    void close();
 
-	size_t getDevices();
-	bool isInput(size_t index);
-	bool isOutput(size_t index);
-	bool isOpen(size_t index);
-	const char* getDeviceName(size_t index);
+    size_t getDevices();
+    bool isInput(size_t index);
+    bool isOutput(size_t index);
+    bool isOpen(size_t index);
+    const char* getDeviceName(size_t index);
 
-	virtual bool poll();
-	virtual bool send(size_t index, unsigned int data);
-	virtual void schedule_send(size_t index, int time, unsigned int data);
+    virtual bool poll();
+    virtual bool send(size_t index, unsigned int data);
+    virtual void schedule_send(size_t index, int time, unsigned int data);
 };
 
 } // namespace zzub

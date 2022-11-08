@@ -24,66 +24,66 @@
 #include "pugixml.hpp"
 
 class ArchiveWriter : public zzub::outstream {
-  zipFile f;
-  std::string currentFileInArchive;
+    zipFile f;
+    std::string currentFileInArchive;
 public:
-  virtual bool open(std::string fileName);
-  virtual bool create(std::string fileName);
-  virtual void close();
+    virtual bool open(std::string fileName);
+    virtual bool create(std::string fileName);
+    virtual void close();
 
-  void writeLine(std::string line);
-  virtual int write(void* v, int size);
+    void writeLine(std::string line);
+    virtual int write(void* v, int size);
 
-  long position() { assert(false); return 0; }
-  void seek(long, int) { assert(false); }
+    long position() { assert(false); return 0; }
+    void seek(long, int) { assert(false); }
 
-  bool createFileInArchive(std::string fileName);
-  void closeFileInArchive();
+    bool createFileInArchive(std::string fileName);
+    void closeFileInArchive();
 };
 
 
 struct compressed_file_info {
-  std::string name;
-  unsigned long compressed_size;
-  unsigned long uncompressed_size;
+    std::string name;
+    unsigned long compressed_size;
+    unsigned long uncompressed_size;
 };
 
 class ArchiveReader : public zzub::instream  {
-  unzFile f;
-  char lastPeekByte;
-  bool hasPeeked;
+    unzFile f;
+    char lastPeekByte;
+    bool hasPeeked;
 
-  size_t lastReadOfs;
-  //std::string currentFileInArchive;
-  compressed_file_info currentFileInfo;
-  void populateInfo(compressed_file_info* cfi, std::string fileName, unz_file_info* uzfi);
+    size_t lastReadOfs;
+    //std::string currentFileInArchive;
+    compressed_file_info currentFileInfo;
+    void populateInfo(compressed_file_info* cfi, std::string fileName, unz_file_info* uzfi);
 
-  void resetFileInArchive();
+    void resetFileInArchive();
 public:
-  virtual bool open(std::string fileName);
-  void close();
+    virtual bool open(std::string fileName);
+    void close();
 
-  bool findFirst(compressed_file_info* info);
-  bool findNext(compressed_file_info* info);
+    bool findFirst(compressed_file_info* info);
+    bool findNext(compressed_file_info* info);
 
-  bool openFileInArchive(std::string fileName, compressed_file_info* info=0);
-  void closeFileInArchve();
+    bool openFileInArchive(std::string fileName, compressed_file_info* info=0);
+    void closeFileInArchve();
 
-  bool eof();
-  char peek();
-  virtual void seek(long pos, int mode=SEEK_SET) { assert(false); }
-  virtual long position() { return (long)lastReadOfs; }
+    bool eof();
+    char peek();
+    virtual void seek(long pos, int mode=SEEK_SET) { assert(false); }
+    virtual long position() { return (long)lastReadOfs; }
 
-  virtual int read(void* buffer, int size);
-  virtual long size() { return currentFileInfo.uncompressed_size; }
+    virtual int read(void* buffer, int size);
+    virtual long size() { return currentFileInfo.uncompressed_size; }
 };
 
 namespace zzub {
-  using namespace pugi;
-	
-  struct mem_archive;
+using namespace pugi;
 
-  class CcmWriter {
+struct mem_archive;
+
+class CcmWriter {
     ArchiveWriter arch;
 
     xml_node saveParameter(xml_node &parent, const zzub::parameter &p);
@@ -110,17 +110,17 @@ namespace zzub {
     xml_node saveWaves(xml_node &parent, zzub::song &player);
     xml_node saveEnvelope(xml_node &parent, zzub::envelope_entry& env);
     xml_node saveEnvelopes(xml_node &parent, zzub::wave_info_ex &info);
-  public:
+public:
     bool save(std::string fileName, zzub::player* player);
     bool saveSelected(std::string filename, zzub::player* player, const int* plugins, unsigned int size);
-  };
+};
 
-  class CcmReader : xml_tree_walker {
+class CcmReader : xml_tree_walker {
     ArchiveReader arch;
-	
+
     typedef std::map<std::string, xml_node> idnodemap;
     idnodemap nodes;
-	
+
     void registerNodeById(xml_node &item);
     xml_node getNodeById(const std::string &id);
     virtual bool for_each(xml_node&);
@@ -129,8 +129,8 @@ namespace zzub {
     bool loadPlugins(xml_node plugins, zzub::player &player);
     bool loadInstruments(xml_node &instruments, zzub::player &player);
     bool loadSequencer(xml_node &seq, zzub::player &player);
-  public:
+public:
     bool open(std::string fileName, zzub::player* player);
-  };
+};
 
 }

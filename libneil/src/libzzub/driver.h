@@ -21,25 +21,25 @@
 
 namespace zzub {
 
-  void i2s(float **s, float *i, int channels, int numsamples);
+void i2s(float **s, float *i, int channels, int numsamples);
 
-  struct audioworker;
+struct audioworker;
 
-  struct audiodevice {
+struct audiodevice {
     int api_id;
     int device_id;
     std::string name;
     int in_channels;
     int out_channels;
     std::vector<unsigned int> rates;
-  };
+};
 
-  struct audiodriver
-  {
+struct audiodriver
+{
     enum {
-      // increase this if you get problems
-      MAX_FRAMESIZE = 16384,
-      MAX_CHANNELS = 64
+        // increase this if you get problems
+        MAX_FRAMESIZE = 16384,
+        MAX_CHANNELS = 64
     };
 
     audioworker *worker;
@@ -54,9 +54,9 @@ namespace zzub {
     int getApiDevices(int apiId);
 
     audiodriver() {
-      samplerate = 48000;
-      buffersize = 512;
-      master_channel = 0;
+        samplerate = 48000;
+        buffersize = 512;
+        master_channel = 0;
     }
     virtual ~audiodriver() {}
     virtual void initialize(audioworker *worker) = 0;
@@ -68,11 +68,11 @@ namespace zzub {
     virtual int getDeviceByName(const char* name) = 0;
     virtual audiodevice* getDeviceInfo(int index) = 0;
     virtual double getCpuLoad() = 0;
-  };
+};
 
 
 
-  struct audioworker {
+struct audioworker {
     int work_master_channel;		// 0..maxChannels/2
     int work_rate;
     int work_buffersize;
@@ -89,23 +89,23 @@ namespace zzub {
     int work_in_channel_count;
     float* work_in_buffer[audiodriver::MAX_CHANNELS];
 
-    audioworker() { 
-      work_master_channel = 0; 
-      work_rate = 48000;
-      work_buffersize = 512;
-      work_in_device = 0;
-      work_in_first_channel = 0;
-      work_in_channel_count = 2;
-      work_out_device = 0;
-      work_out_first_channel = 0;
-      work_out_channel_count = 2;
-      work_started = false;
-      for (int i = 0; i < audiodriver::MAX_CHANNELS; i++) {
-	work_out_buffer[i] = 0;
-	work_in_buffer[i] = 0;
-	//memset(work_out_buffer[i], 0, audiodriver::MAX_FRAMESIZE * sizeof(float));
-	//memset(work_in_buffer[i], 0, audiodriver::MAX_FRAMESIZE * sizeof(float));
-      }
+    audioworker() {
+        work_master_channel = 0;
+        work_rate = 48000;
+        work_buffersize = 512;
+        work_in_device = 0;
+        work_in_first_channel = 0;
+        work_in_channel_count = 2;
+        work_out_device = 0;
+        work_out_first_channel = 0;
+        work_out_channel_count = 2;
+        work_started = false;
+        for (int i = 0; i < audiodriver::MAX_CHANNELS; i++) {
+            work_out_buffer[i] = 0;
+            work_in_buffer[i] = 0;
+            //memset(work_out_buffer[i], 0, audiodriver::MAX_FRAMESIZE * sizeof(float));
+            //memset(work_in_buffer[i], 0, audiodriver::MAX_FRAMESIZE * sizeof(float));
+        }
     }
     virtual ~audioworker() {}
     virtual void work_stereo(int num) {}
@@ -113,5 +113,5 @@ namespace zzub {
     virtual void audio_disabled() {}
     virtual void samplerate_changed() {}
 
-  };
+};
 }

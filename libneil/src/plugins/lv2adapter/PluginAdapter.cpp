@@ -97,10 +97,10 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
         case PortType::Event:
             eventPorts.push_back(new EventBufPort(*static_cast<EventBufPort*>(port)));
             eventPorts.back()->eventBuf = lv2_evbuf_new(
-                is_distrho_event_out_port(port) ? cache->hostParams.paddedBufSize : cache->hostParams.bufSize,
-                cache->urids.atom_Chunk,
-                cache->urids.atom_Sequence
-            );
+                        is_distrho_event_out_port(port) ? cache->hostParams.paddedBufSize : cache->hostParams.bufSize,
+                        cache->urids.atom_Chunk,
+                        cache->urids.atom_Sequence
+                        );
             ports.push_back(eventPorts.back());
             break;
 
@@ -145,56 +145,56 @@ PluginAdapter::~PluginAdapter() {
 
 void
 PluginAdapter::init(zzub::archive *arc) {
-//    bool use_show_ui = false;
+    //    bool use_show_ui = false;
     sample_rate      = _master_info->samples_per_second;
     ui_scale         = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
     printf("Current ui scale: %f\n", ui_scale);
 
     LV2_Options_Option options[] = {
         {
-             LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.param_sampleRate,
-             sizeof(float), cache->urids.atom_Float,
-             &sample_rate
+            LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.param_sampleRate,
+            sizeof(float), cache->urids.atom_Float,
+            &sample_rate
         },
         {
-             LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.minBlockLength,
-             sizeof(int32_t), cache->urids.atom_Int,
-             &cache->hostParams.minBlockLength
+            LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.minBlockLength,
+            sizeof(int32_t), cache->urids.atom_Int,
+            &cache->hostParams.minBlockLength
         },
         {
-             LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.maxBlockLength,
-             sizeof(int32_t), cache->urids.atom_Int,
-             &cache->hostParams.blockLength
+            LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.maxBlockLength,
+            sizeof(int32_t), cache->urids.atom_Int,
+            &cache->hostParams.blockLength
         },
         {
-             LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.bufSeqSize,
-             sizeof(int32_t), cache->urids.atom_Int,
-             &cache->hostParams.bufSize
+            LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.bufSeqSize,
+            sizeof(int32_t), cache->urids.atom_Int,
+            &cache->hostParams.bufSize
         },
         {
-             LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.ui_updateRate,
-             sizeof (float), cache->urids.atom_Float,
-             &update_rate
+            LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.ui_updateRate,
+            sizeof (float), cache->urids.atom_Float,
+            &update_rate
         },
         {
-             LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.ui_scaleFactor,
-             sizeof (float), cache->urids.atom_Float,
-             &ui_scale
+            LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.ui_scaleFactor,
+            sizeof (float), cache->urids.atom_Float,
+            &ui_scale
         },
         {
-             LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.ui_transientWindowId,
-             sizeof (long), cache->urids.atom_Long,
-             &transient_wid
+            LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.ui_transientWindowId,
+            sizeof (long), cache->urids.atom_Long,
+            &transient_wid
         },
         {
-             LV2_OPTIONS_INSTANCE, 0, 0, 0, 0, NULL
+            LV2_OPTIONS_INSTANCE, 0, 0, 0, 0, NULL
         }
     };
 
@@ -278,9 +278,9 @@ PluginAdapter::init(zzub::archive *arc) {
 
 
 extern "C" {
-    bool on_window_destroy(GtkWidget* widget, gpointer data) {
-       return static_cast<PluginAdapter*>(data)->ui_destroy();
-    }
+bool on_window_destroy(GtkWidget* widget, gpointer data) {
+    return static_cast<PluginAdapter*>(data)->ui_destroy();
+}
 }
 
 bool PluginAdapter::invoke(zzub_event_data_t& data) {
@@ -291,11 +291,11 @@ bool PluginAdapter::invoke(zzub_event_data_t& data) {
         return ui_open();
     } else {
         gtk_widget_show_all(gtk_ui_window);
-//        gtk_widget_show_all(suil_widget);
-//        gtk_widget_show_all(gtk_ui_root_box);
-//        gtk_widget_show_all(gtk_ui_parent_box);
-//        gtk_widget_show_now(gtk_ui_window);
-//        gtk_window_present(GTK_WINDOW(gtk_ui_window));
+        //        gtk_widget_show_all(suil_widget);
+        //        gtk_widget_show_all(gtk_ui_root_box);
+        //        gtk_widget_show_all(gtk_ui_parent_box);
+        //        gtk_widget_show_now(gtk_ui_window);
+        //        gtk_window_present(GTK_WINDOW(gtk_ui_window));
         printf("redisplay window\n");
         return true;
     }
@@ -325,14 +325,14 @@ void PluginAdapter::connect(LilvInstance* pluginInstance) {
     uint8_t* tmp_globals_p = (uint8_t*) global_values;
     for(auto& paramPort: paramPorts) {
         switch(paramPort->zzubParam.type) {
-            case zzub::parameter_type_note:
-            case zzub::parameter_type_byte:
-            case zzub::parameter_type_switch:
-                *tmp_globals_p = (uint8_t) paramPort->zzubParam.value_default;
-                break;
-            case zzub::parameter_type_word:
-                *((uint16_t*)tmp_globals_p) = (uint16_t) paramPort->zzubParam.value_default;
-                break;
+        case zzub::parameter_type_note:
+        case zzub::parameter_type_byte:
+        case zzub::parameter_type_switch:
+            *tmp_globals_p = (uint8_t) paramPort->zzubParam.value_default;
+            break;
+        case zzub::parameter_type_word:
+            *((uint16_t*)tmp_globals_p) = (uint16_t) paramPort->zzubParam.value_default;
+            break;
         }
         
         tmp_globals_p += paramPort->zzubValSize;
@@ -400,11 +400,11 @@ void PluginAdapter::stop() {}
 
 
 void PluginAdapter::update_port(ParamPort* port, float float_val) {
-//    printf("Update port: index=%d, name='%s', value=%f\n", port->index, port->name.c_str(), float_val);
-//    int zzub_val = port->lilv_to_zzub_value(float_val);
-//    values[port->paramIndex] = float_val;
-//    port->putData((uint8_t*) global_values, zzub_val);
-//    _host->control_change(metaPlugin, 1, 0, port->paramIndex, zzub_val, false, true);
+    //    printf("Update port: index=%d, name='%s', value=%f\n", port->index, port->name.c_str(), float_val);
+    //    int zzub_val = port->lilv_to_zzub_value(float_val);
+    //    values[port->paramIndex] = float_val;
+    //    port->putData((uint8_t*) global_values, zzub_val);
+    //    _host->control_change(metaPlugin, 1, 0, port->paramIndex, zzub_val, false, true);
 }
 
 
@@ -412,19 +412,19 @@ void PluginAdapter::process_events() {
     if(halting)
         return;
 
-//    if(show_interface != nullptr && suil_ui_handle != nullptr) {
-//        if(!showing_interface) {
-//            printf("Show feature for %s\n", info->name.c_str());
-//            (show_interface->show)(suil_ui_handle);
-//            showing_interface = true;
-//        }
+    //    if(show_interface != nullptr && suil_ui_handle != nullptr) {
+    //        if(!showing_interface) {
+    //            printf("Show feature for %s\n", info->name.c_str());
+    //            (show_interface->show)(suil_ui_handle);
+    //            showing_interface = true;
+    //        }
 
-//        if(showing_interface && idle_interface != nullptr) {
-////            printf("Run idle feature for %s\n", info->name.c_str());
-//            (idle_interface->idle)(suil_ui_handle);
-//        }
+    //        if(showing_interface && idle_interface != nullptr) {
+    ////            printf("Run idle feature for %s\n", info->name.c_str());
+    //            (idle_interface->idle)(suil_ui_handle);
+    //        }
 
-//    }
+    //    }
 
     uint8_t* globals = (u_int8_t*) global_values;
     int value = 0;
@@ -626,7 +626,7 @@ bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, in
 
 struct lv2plugincollection : zzub::plugincollection {
     SharedCache *world = SharedCache::getInstance();
-   
+
     virtual void initialize(zzub::pluginfactory *factory) {
         const LilvPlugins* const collection = world->get_all_plugins();
         LILV_FOREACH(plugins, iter, collection) {

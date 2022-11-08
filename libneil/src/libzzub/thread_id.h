@@ -4,5 +4,5 @@
 typedef pthread_t thread_id_t;
 
 struct thread_id {
-  static thread_id_t get();
+    static thread_id_t get();
 };

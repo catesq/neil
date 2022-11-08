@@ -30,44 +30,44 @@ using std::vector;
 
 namespace zzub {
 
-  struct connection;
-  struct info;
-  struct pluginlib;
-  struct operation;
+struct connection;
+struct info;
+struct pluginlib;
+struct operation;
 
-  struct _midiouts : zzub::outstream {
+struct _midiouts : zzub::outstream {
     std::vector<std::string> names;
 
     void clear() {
-      names.clear();
+        names.clear();
     }
     virtual int write(void *buffer, int size) {
-      char* pcbuf = (char*)buffer;
-      names.push_back(std::string(pcbuf, pcbuf+size-1));
-      return size;
+        char* pcbuf = (char*)buffer;
+        names.push_back(std::string(pcbuf, pcbuf+size-1));
+        return size;
     }
     virtual long position() { return 0; }
     virtual void seek(long, int) { }
-  };
+};
 
-  // internal player states
-  enum player_state {
+// internal player states
+enum player_state {
     player_state_playing,
     player_state_stopped,
     player_state_muted,
     player_state_released
-  };
+};
 
-  // sequencer action values
-  enum sequencer_event_type {
+// sequencer action values
+enum sequencer_event_type {
     sequencer_event_type_none = -1,
     sequencer_event_type_mute = 0,
     sequencer_event_type_break = 1,
     sequencer_event_type_thru = 2,
     sequencer_event_type_pattern = 0x10,
-  };
+};
 
-  struct pattern {
+struct pattern {
     typedef vector<int> column;
     typedef vector<column> track;
     typedef vector<track> group;
@@ -77,17 +77,17 @@ namespace zzub {
     int rows;
 
     pattern() {
-      rows = 0;
+        rows = 0;
     }
-  };
+};
 
-  struct metaplugin_proxy {
+struct metaplugin_proxy {
     metaplugin_proxy(player* _playr, int _id):_player(_playr),id(_id){}
     player* _player;
     unsigned int id;
-  };
+};
 
-  struct metaplugin {
+struct metaplugin {
     zzub::plugin* plugin;
     plugin_descriptor descriptor;
     const zzub::info* info;
@@ -127,16 +127,16 @@ namespace zzub {
     int wave_column;
 
     metaplugin_proxy* proxy;
-  };
+};
 
-  struct event_connection_binding {
+struct event_connection_binding {
     int source_param_index;
     int target_group_index;
     int target_track_index;
     int target_param_index;
-  };
+};
 
-  struct connection {
+struct connection {
     connection_type type;
     void* connection_values;
     vector<const parameter*> connection_parameters;
@@ -145,52 +145,52 @@ namespace zzub {
     virtual void process_events(zzub::song& player, const connection_descriptor& conn) = 0;
     virtual bool work(zzub::song& player, const connection_descriptor& conn, int sample_count) = 0;
 
-  protected:
+protected:
     // don't instantiate this class directly,
     // use either audio_connection or events_connection or midi_connection or cv_connection
     connection();
-  };
+};
 
-  struct keyjazz_note {
+struct keyjazz_note {
     int plugin_id;
     int timestamp;	// tick when note was played
     int group, track;
     int note;
     bool delay_off;		// set to true if a noteoff was sent on the same timestamp (tick)
-  };
+};
 
-  struct midimapping {
+struct midimapping {
     int plugin_id;
     int group, track, column;
     int channel, controller;
 
     bool operator == (const midimapping& mm) {
-      return this == &mm;
+        return this == &mm;
     }
-  };
+};
 
-  struct event_message {
+struct event_message {
     int plugin_id;
     event_handler* event;
     zzub_event_data data;
-  };
+};
 
-  struct sequence_proxy {
+struct sequence_proxy {
     player* _player;
     int track;
     sequence_proxy(player* _playr, int _track):_player(_playr),track(_track){}
-  };
+};
 
-  struct sequencer_track {
+struct sequencer_track {
     int plugin_id;
     sequence_type type;
     int automation_group, automation_track, automation_column;
     int automation_mode;	// constant? linear? spline?
     vector<sequence_event> events;
     sequence_proxy* proxy;
-  };
+};
 
-  struct song {
+struct song {
     plugin_map graph;
     player_state state;
     vector<metaplugin*> plugins;
@@ -262,11 +262,11 @@ namespace zzub {
     string plugin_describe_value(plugin_descriptor plugindesc, int group, int column, int value);
 
     virtual bool plugin_update_keyjazz(int plugin_id, int note, int prev_note, int velocity, int& note_group, int& note_track, int& note_column, int& velocity_column) {
-      assert(false);	// only use the derived mixer::plugin_update_keyjazz()
-      return false;
+        assert(false);	// only use the derived mixer::plugin_update_keyjazz()
+        return false;
     }
     virtual void set_play_position(int position) {
-      assert(false);	// only use the derived mixer::set_play_position()
+        assert(false);	// only use the derived mixer::set_play_position()
     }
     int sequencer_get_event_at(int track, unsigned long timestamp);
 
@@ -275,10 +275,10 @@ namespace zzub {
     void plugin_add_input(int to_id, int from_id, connection_type type);
     void plugin_delete_input(int to_id, int from_id, connection_type type);
 
-  };
+};
 
 
-  struct mixer : song {
+struct mixer : song {
     bool is_recording_parameters;
     bool is_syncing_midi_transport;
     int song_position;								// current song position
@@ -324,7 +324,7 @@ namespace zzub {
     virtual void set_state(player_state newstate);
     virtual void set_play_position(int position);
 
-  };
+};
 
 };
 #endif //LIBNEIL_SONG_H

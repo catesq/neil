@@ -22,17 +22,17 @@
 #include "driver.h"
 
 namespace zzub {
-  void i2s(float **s, float *i, int channels, int numsamples) {
+void i2s(float **s, float *i, int channels, int numsamples) {
     if (!numsamples)
-      return;
+        return;
     float* p[audiodriver::MAX_CHANNELS];// = new float*[channels];
     for (int j = 0; j<channels; j++) {
-      p[j] = s[j];
+        p[j] = s[j];
     }
     while (numsamples--) {
-      for (int j = 0; j<channels; j++) {
-	*p[j]++ = *i++;
-      }
+        for (int j = 0; j<channels; j++) {
+            *p[j]++ = *i++;
+        }
     }
-  }
+}
 }
