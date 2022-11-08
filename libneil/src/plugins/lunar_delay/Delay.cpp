@@ -163,6 +163,7 @@ void LunarDelay::init(zzub::archive *pi) {
   cutoff_note       = para_cutoff_note->value_default;
   cutoff_cents      = para_cutoff_cents->value_default;
   note_to_freq_base = pow(2.0, 1.0/1200.0);
+  meta_plugin       = _host->get_metaplugin();
 #endif
 }
 
@@ -209,8 +210,10 @@ void LunarDelay::process_events() {
 
   if(update_cutoff_from_note) {
     cutoff = (float) note_params_to_freq(cutoff_note, cutoff_cents);
-    _host->set_parameter(meta_plugin, 1, 0, PARAM_CUTOFF_FREQ, (int) cutoff);
+
+    // the _host is null when process_events() is first called
     if(!first_event_process) {
+        _host->set_parameter(meta_plugin, 1, 0, PARAM_CUTOFF_FREQ, (int) cutoff);
         zzub_event_data event_data = { zzub_event_type_parameter_changed };
         event_data.change_parameter.plugin = meta_plugin;
         event_data.change_parameter.group = 1;
