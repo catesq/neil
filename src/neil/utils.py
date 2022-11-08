@@ -24,16 +24,20 @@ which have no specific module or class they belong to.
 import sys, math, os, zzub, imp
 from string import ascii_letters, digits
 import struct
+
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from gi.repository import GObject
+
 import weakref
 import neil.com as com
 import ctypes
-from datetime import datetime, timedelta
+#from datetime import datetime, timedelta
+from preset import Preset
 
 from enum import Enum
+
 
 class PluginType(Enum):
     Root = 1
@@ -54,18 +58,22 @@ def rename_plugin(player, plugin):
 
     return name
 
+
 def clone_plugin(player, src_plugin):
     new_plugin = player.create_plugin(src_plugin.get_pluginloader())
     new_plugin.set_name(rename_plugin(player, src_plugin));
     return new_plugin
 
-def clone_plugin_and_patterns(src_plugin, new_plugin):
-    new_plugin = clone_plugin(player, plugin)
-    clone_plugin_patterns(plugin, new_plugin)
 
-def clone_preset(src_plugin, new_plugin):
+def clone_plugin_and_patterns(player, src_plugin, new_plugin):
+    new_plugin = clone_plugin(player, src_plugin)
+    clone_plugin_patterns(player, src_plugin, new_plugin)
+
+
+def clone_preset(player, src_plugin, new_plugin):
+    pluginloader = src_plugin.get_pluginloader()
     preset = Preset()
-    preset.pickup(plugin.get_pluginloader())
+    preset.pickup(pluginloader)
     preset.apply(new_plugin)
     player.history_commit("Clone plugin %s" % pluginloader.get_short_name())
 
@@ -84,6 +92,7 @@ def clone_plugin_patterns(plugin, new_plugin):
 
         new_plugin.add_pattern(new_pattern)
 
+
 #https://stackoverflow.com/questions/23021327/how-i-can-get-drawingarea-window-handle-in-gtk3/27236258#27236258
 #http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=examples/gtkvlc.py;hb=HEAD
 def get_window_pointer(window):
@@ -94,13 +103,16 @@ def get_window_pointer(window):
     ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
     return ctypes.pythonapi.PyCapsule_GetPointer(window.__gpointer__, None)
 
+
 def is_debug():
     if os.environ.get('NEIL_DEBUG'):
         return True
     return False
 
+
 def is_win32():
     return sys.platform == 'win32'
+
 
 def is_frozen():
     """
@@ -114,6 +126,7 @@ def is_frozen():
     return (hasattr(sys, "frozen") or # new py2exe
             hasattr(sys, "importers") # old py2exe
             or imp.is_frozen("__main__")) # tools/freeze
+
 
 def get_root_folder_path():
     """
@@ -129,7 +142,9 @@ def get_root_folder_path():
         return os.path.dirname(sys.executable)
     return os.path.abspath(os.path.normpath(os.path.join(os.path.dirname(__file__))))
 
+
 basedir = get_root_folder_path()
+
 
 def etcpath(path):
     """
@@ -144,6 +159,7 @@ def etcpath(path):
     from .pathconfig import path_cfg
     return path_cfg.get_path('etc', path)
 
+
 def iconpath(path):
     """
     Translates a path relative to the neil icon directory into an absolute
@@ -156,6 +172,7 @@ def iconpath(path):
     """
     from .pathconfig import path_cfg
     return path_cfg.get_path('icons_neil', path)
+
 
 def hicoloriconpath(path):
     """
@@ -184,6 +201,7 @@ def imagepath(path):
     from .pathconfig import path_cfg
     return path_cfg.get_path('pixmaps', path)
 
+
 def sharedpath(path):
     """
     Translates a path relative to the shared directory into an absolute
@@ -197,6 +215,7 @@ def sharedpath(path):
     from .pathconfig import path_cfg
     return path_cfg.get_path('share', path)
 
+
 def docpath(path):
     """
     Translates a path relative to the doc directory in to an absolute
@@ -204,6 +223,7 @@ def docpath(path):
     """
     from .pathconfig import path_cfg
     return path_cfg.get_path('doc', path)
+
 
 def filepath(path):
     """
