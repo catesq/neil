@@ -171,6 +171,9 @@ class WaveEditView(Gtk.DrawingArea):
             self.level.get_samples_digest(channel, self.range[0], self.range[1],  w)
 
     def fix_range(self):
+        if self.range == None:
+            return
+
         begin,end = self.range
         if self.level == None:
             return
