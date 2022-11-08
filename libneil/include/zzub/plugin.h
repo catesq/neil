@@ -810,7 +810,9 @@ namespace zzub {
   // serialization services for plugin info, to allow
   // loading of plugins from song data.
   struct plugincollection {
-	
+
+    virtual ~plugincollection() {}
+
     // Called by the host initially. The collection registers
     // plugins through the pluginfactory::register_info method.
     // The factory pointer remains valid and can be stored
@@ -836,6 +838,8 @@ namespace zzub {
     // Called by the host upon destruction. You should
     // delete the instance in this function
     virtual void destroy() { delete this; }
+
+
   };
 
   struct scopelock {
