@@ -16,15 +16,18 @@ def on_popup_mute(widget, plugin):
 
 def on_popup_unmute_all(widget, plugin):
     player = com.get('neil.core.player')
+    common = com.get('neil.core.common')
+
     for plugin in reversed(list(player.get_plugin_list())):
         info = common.get_plugin_infos().get(plugin)
         info.muted = False
-        metaplugin.set_mute(info.muted)
+        plugin.set_mute(info.muted)
         info.reset_plugingfx()
 
 
 def on_popup_solo(widget, plugin):
     player = com.get('neil.core.player')
+
     if player.solo_plugin != plugin:
         player.solo(plugin)
     else:
@@ -40,7 +43,7 @@ def on_popup_show_params(widget, plugin):
 
 
 def on_popup_show_attribs(widget, plugin):
-    dlg = com.get('neil.core.attributesdialog', plugin, self)
+    dlg = com.get('neil.core.attributesdialog', plugin)
     dlg.run()
     dlg.destroy()
 
@@ -246,7 +249,7 @@ def on_load_preset(widget, plugin):
     response = dialog.run()
 
     while response == Gtk.ResponseType.OK:
-        print("load/save response")
+        print("load response")
         plugin.load_preset_file(dialog.get_filename())
         response = dialog.run()
     else:
@@ -260,7 +263,7 @@ def on_save_preset(widget, plugin):
     response = dialog.run()
 
     while response == Gtk.ResponseType.OK:
-        print("load/save response")
+        print("save response")
         filename = dialog.get_filename()
         plugin.save_preset(dialog.get_filename())
         dialog.destroy()
