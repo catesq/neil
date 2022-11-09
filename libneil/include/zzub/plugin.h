@@ -581,6 +581,8 @@ namespace zzub {
       } while (c != 0);
       return i;
     }
+
+    virtual ~instream() {}
   };
 
   struct outstream {
@@ -598,6 +600,7 @@ namespace zzub {
 
     virtual long position() = 0;
     virtual void seek(long, int) = 0;
+    virtual ~outstream() {}
   };
 
   struct archive {
