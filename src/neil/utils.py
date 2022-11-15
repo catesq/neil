@@ -34,7 +34,6 @@ import weakref
 import neil.com as com
 import ctypes
 #from datetime import datetime, timedelta
-from preset import Preset
 
 from enum import Enum
 
@@ -71,6 +70,8 @@ def clone_plugin_and_patterns(player, src_plugin, new_plugin):
 
 
 def clone_preset(player, src_plugin, new_plugin):
+    from neil.preset import Preset
+     
     pluginloader = src_plugin.get_pluginloader()
     preset = Preset()
     preset.pickup(pluginloader)
