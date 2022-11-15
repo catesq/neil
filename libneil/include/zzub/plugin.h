@@ -549,7 +549,7 @@ namespace zzub {
     zzub_plugin_t* _plugin;
 
     host(zzub::player*, zzub_plugin_t*);
-    ~host();
+    virtual ~host();
     std::vector<std::vector<float> > aux_buffer;
     std::vector<std::vector<float> > feedback_buffer;
   };
@@ -606,6 +606,7 @@ namespace zzub {
   struct archive {
     virtual outstream *get_outstream(const char *path) = 0;
     virtual instream *get_instream(const char *path) = 0;
+      virtual ~archive() {}
   };
 
   struct info	{
