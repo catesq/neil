@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
