@@ -49,3 +49,5 @@ libneil/src/plugins/vstadapter/VST_SDK_2.4
 src/neil/lib/
 .qtc_clangd/
 neil.*
+libneil/src/minizip-ng
+libneil/src/minizip
