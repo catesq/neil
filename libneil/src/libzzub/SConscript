@@ -1,6 +1,6 @@
 #encoding: latin-1
 
-# libzzub, Buzé, Aldrin
+# libzzub, Buzï¿½, Aldrin
 # Modular Sequencer
 # Copyright (C) 2006 The Aldrin Development Team
 #
@@ -56,12 +56,12 @@ files = [
 ]
 
 # minizip and zlib dependencies
-files += [
-'${MINIZIP_SRC_PATH}/ioapi.c',
-'${MINIZIP_SRC_PATH}/mztools.c',
-'${MINIZIP_SRC_PATH}/unzip.c',
-'${MINIZIP_SRC_PATH}/zip.c',
-]
+# files += [
+# '${MINIZIP_SRC_PATH}/ioapi.c',
+# '${MINIZIP_SRC_PATH}/mztools.c',
+# '${MINIZIP_SRC_PATH}/unzip.c',
+# '${MINIZIP_SRC_PATH}/zip.c',
+# ]
 
 localenv.Append(LIBS=[
 'FLAC',
@@ -73,13 +73,17 @@ localenv.Append(LIBS=[
 localenv.Append(CCFLAGS=['-D_LIB','-D_LIBZZUB'])
 
 # neccessities
-localenv.Append(CCFLAGS=[
-'-Wno-deprecated',
-])
+# localenv.Append(CCFLAGS=[
+# '-Wno-deprecated',
+# ])
+
+localenv.Append(LIBPATH='${MINIZIP_SRC_PATH}/release')
 localenv.Append(LIBS=[
 'pthread',
 localenv['LIB_DL'],
 localenv['LIB_COMPAT'],
+'minizip',
+'ssl',
 ])
 
 if localenv['USE_SIGNATURE'] == True:
