@@ -138,7 +138,7 @@ BOOL DecompressSwitch(WAVEUNPACK * unpackinfo,COMPRESSIONVALUES * lpcv,
 {
 	DWORD dwSwitchValue,dwBits,dwSize,dwZeroCount;
 	DWORD wValue;	// calvin changed the type of wValue from WORD to DWORD, which made 32-bit samples work!
-	LPWORD lpwaddress;
+//	LPWORD lpwaddress;
 	if(dwBlockSize == 0)
 	{
 		return FALSE;
@@ -151,7 +151,7 @@ BOOL DecompressSwitch(WAVEUNPACK * unpackinfo,COMPRESSIONVALUES * lpcv,
 	dwBits = UnpackBits(unpackinfo,4);
 
 	dwSize = dwBlockSize;
-	lpwaddress = lpwOutputBuffer;
+//	lpwaddress = lpwOutputBuffer;
 	while(dwSize > 0)
 	{
 		//read compressed value
@@ -204,8 +204,11 @@ BOOL DecompressSwitch(WAVEUNPACK * unpackinfo,COMPRESSIONVALUES * lpcv,
 		}
 
 		//store value into output buffer
-		*lpwOutputBuffer = lpcv->wResult;
-		
+        if(lpwOutputBuffer)
+        {
+            *lpwOutputBuffer = lpcv->wResult;
+        }
+
 		//prepare for next loop...
 		lpwOutputBuffer++;
 		dwSize--;

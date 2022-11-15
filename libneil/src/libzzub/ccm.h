@@ -18,8 +18,7 @@
 
 #pragma once
 
-#include "../minizip/unzip.h"
-#include "../minizip/zip.h"
+#include "../minizip-ng/mz_compat.h"
 
 #include "pugixml.hpp"
 

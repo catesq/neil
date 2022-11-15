@@ -209,7 +209,7 @@ void import_mpg123::read_wave_level_samples(int i, int level, void* buffer) {
     int err  = MPG123_OK;
     do
     {
-        int more_samples;
+//        int more_samples;
         unsigned char buf[buffer_size];
         err = mpg123_read( mh, buf, buffer_size, &done );
         CopySamples(&buf, buffer, done / sizeof(short), iwi.format, iwi.format, 1, 1, 0, samples);

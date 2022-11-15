@@ -18,6 +18,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
 
+#include "archive.h"
+
 namespace zzub {
 
 struct master_metaplugin;
@@ -60,7 +62,7 @@ struct master_plugin : plugin {
     virtual void event(unsigned int) {}
     virtual const char* describe_value(int, int) { return 0; }
     virtual const zzub::envelope_info** get_envelope_infos() { return 0; }
-    virtual bool play_wave(int, int, float) { return false; }
+    virtual bool play_wave(int, int, float, int, int) { return false; }
     virtual void stop_wave() {}
     virtual int get_wave_envelope_play_position(int) { return -1; }
     virtual const char* describe_param(int) { return 0; }

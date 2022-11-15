@@ -21,8 +21,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include "../minizip/unzip.h"
-#include "../minizip/zip.h"
+#include "../minizip-ng/mz_compat.h"
 #include <FLAC/all.h>
 
 #include "ccm.h"
@@ -175,7 +174,7 @@ bool ArchiveWriter::createFileInArchive(std::string fileName) {
         closeFileInArchive();
     }
 
-    if (ZIP_OK!=zipOpenNewFileInZip(f, fileName.c_str(), 0, 0, 0, 0, 0, 0, Z_DEFLATED, Z_DEFAULT_COMPRESSION))
+    if (MZ_OK!=zipOpenNewFileInZip(f, fileName.c_str(), 0, 0, 0, 0, 0, 0, MZ_COMPRESS_METHOD_DEFLATE, MZ_ZIP_FLAG_DEFLATE_NORMAL))
         return false;
 
     currentFileInArchive=fileName;

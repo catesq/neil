@@ -18,9 +18,13 @@
 */
 
 #pragma once
+#include <iostream>
+#include <cstring>
 #include <cstdio>
 #include <vector>
 #include <list>
+#include <map>
+#include "zzub/plugin.h"
 
 namespace zzub {
 
