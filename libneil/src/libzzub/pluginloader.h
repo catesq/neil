@@ -20,6 +20,7 @@
 #pragma once
 
 #include "tools.h"
+#include <list>
 
 #ifndef STATIC_BUILD
 
@@ -54,7 +55,7 @@ struct pluginlib : pluginfactory {
     zzub::player &player;
 
     pluginlib(const std::string& fileName, zzub::player &p, zzub::plugincollection *_collection = 0);
-    ~pluginlib();
+    virtual ~pluginlib();
     void init_dll();
     void unload();
     virtual void register_info(const zzub::info *_info);
