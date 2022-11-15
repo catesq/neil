@@ -284,7 +284,7 @@ def install_plugin_help(name, files):
 
 env['PORTMIDI_SRC_PATH'] = '${ROOTPATH}/src/portmidi'
 env['LIBZZUB_SRC_PATH'] = '${ROOTPATH}/src/libzzub'
-env['MINIZIP_SRC_PATH'] = '${ROOTPATH}/src/minizip'
+env['MINIZIP_SRC_PATH'] = '${ROOTPATH}/src/minizip-ng'
 env['PLUGINS_SRC_PATH'] = '${ROOTPATH}/src/plugins'
 env['PYZZUB_SRC_PATH'] = '${ROOTPATH}/src/pyzzub'
 env['LANTERNFISH_SRC_PATH'] = '${ROOTPATH}/src/lanternfish'
