@@ -1,7 +1,5 @@
 """
-This module contains the context menu component for different zzub objects
-such as plugins, patterns, and so on. based on the context object currently
-selected, items can choose to append themselves or not.
+the context menu in the fx router for plugins, patterns
 """
 
 from .single_plugin_menu import SinglePluginMenu
