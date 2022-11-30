@@ -12,21 +12,19 @@
 
 /*****************************************************************************/
 
-void * loadDSSIPluginLibrary(const char * pcPluginFilename);
+void* loadDSSIPluginLibrary(const char* pcPluginFilename);
 
-void unloadDSSIPluginLibrary(void * pvDSSIPluginLibrary);
+void unloadDSSIPluginLibrary(void* pvDSSIPluginLibrary);
 
-const DSSI_Descriptor *
-findDSSIPluginDescriptor(void * pvDSSIPluginLibrary,
-			   const char * pcPluginLibraryFilename,
-			   const char * pcPluginLabel);
+const DSSI_Descriptor* findDSSIPluginDescriptor(void* pvDSSIPluginLibrary,
+                                                const char* pcPluginLibraryFilename,
+                                                const char* pcPluginLabel);
 
 /*****************************************************************************/
 
-typedef void DSSIPluginSearchCallbackFunction
-(const char * pcFullFilename, 
- void * pvPluginHandle,
- DSSI_Descriptor_Function fDescriptorFunction);
+typedef void DSSIPluginSearchCallbackFunction(const char* pcFullFilename,
+                                              void* pvPluginHandle,
+                                              DSSI_Descriptor_Function fDescriptorFunction);
 
 void DSSIPluginSearch(DSSIPluginSearchCallbackFunction fCallbackFunction);
 
@@ -36,9 +34,9 @@ void DSSIPluginSearch(DSSIPluginSearchCallbackFunction fCallbackFunction);
 
 /* Find the default value for a port. Return 0 if a default is found
    and -1 if not. */
-int getLADSPADefault(const LADSPA_PortRangeHint * psPortRangeHint,
-		     const unsigned long          lSampleRate,
-		     LADSPA_Data                * pfResult);
+int getLADSPADefault(const LADSPA_PortRangeHint* psPortRangeHint,
+                     const unsigned long lSampleRate,
+                     LADSPA_Data* pfResult);
 
 /*****************************************************************************/
 

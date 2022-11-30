@@ -22,108 +22,99 @@
 
 /* Search just the one directory. */
 static void
-DSSIDirectoryPluginSearch
-(const char * pcDirectory, 
- DSSIPluginSearchCallbackFunction fCallbackFunction) {
+DSSIDirectoryPluginSearch(const char* pcDirectory,
+                          DSSIPluginSearchCallbackFunction fCallbackFunction) {
+    char* pcFilename;
+    DIR* psDirectory;
+    DSSI_Descriptor_Function fDescriptorFunction;
+    long lDirLength;
+    long iNeedSlash;
+    struct dirent* psDirectoryEntry;
+    void* pvPluginHandle;
 
-  char * pcFilename;
-  DIR * psDirectory;
-  DSSI_Descriptor_Function fDescriptorFunction;
-  long lDirLength;
-  long iNeedSlash;
-  struct dirent * psDirectoryEntry;
-  void * pvPluginHandle;
+    lDirLength = strlen(pcDirectory);
+    if (!lDirLength)
+        return;
+    if (pcDirectory[lDirLength - 1] == '/')
+        iNeedSlash = 0;
+    else
+        iNeedSlash = 1;
 
-  lDirLength = strlen(pcDirectory);
-  if (!lDirLength)
-    return;
-  if (pcDirectory[lDirLength - 1] == '/')
-    iNeedSlash = 0;
-  else
-    iNeedSlash = 1;
+    psDirectory = opendir(pcDirectory);
+    if (!psDirectory)
+        return;
 
-  psDirectory = opendir(pcDirectory);
-  if (!psDirectory)
-    return;
+    while (1) {
+        psDirectoryEntry = readdir(psDirectory);
+        if (!psDirectoryEntry) {
+            closedir(psDirectory);
+            return;
+        }
 
-  while (1) {
+        pcFilename = malloc(lDirLength + strlen(psDirectoryEntry->d_name) + 1 + iNeedSlash);
+        strcpy(pcFilename, pcDirectory);
+        if (iNeedSlash)
+            strcat(pcFilename, "/");
+        strcat(pcFilename, psDirectoryEntry->d_name);
 
-    psDirectoryEntry = readdir(psDirectory);
-    if (!psDirectoryEntry) {
-      closedir(psDirectory);
-      return;
+        pvPluginHandle = dlopen(pcFilename, RTLD_LAZY);
+        if (pvPluginHandle) {
+            /* This is a file and the file is a shared library! */
+
+            dlerror();
+            fDescriptorFunction = (DSSI_Descriptor_Function)dlsym(pvPluginHandle,
+                                                                  "dssi_descriptor");
+            if (dlerror() == NULL && fDescriptorFunction) {
+                /* We've successfully found a dssi_descriptor function. Pass
+                   it to the callback function. */
+                fCallbackFunction(pcFilename,
+                                  pvPluginHandle,
+                                  fDescriptorFunction);
+                free(pcFilename);
+            } else {
+                /* It was a library, but not a DSSI one. Unload it. */
+                dlclose(pcFilename);
+                free(pcFilename);
+            }
+        }
     }
-
-    pcFilename = malloc(lDirLength
-			+ strlen(psDirectoryEntry->d_name)
-			+ 1 + iNeedSlash);
-    strcpy(pcFilename, pcDirectory);
-    if (iNeedSlash)
-      strcat(pcFilename, "/");
-    strcat(pcFilename, psDirectoryEntry->d_name);
-    
-    pvPluginHandle = dlopen(pcFilename, RTLD_LAZY);
-    if (pvPluginHandle) {
-      /* This is a file and the file is a shared library! */
-
-      dlerror();
-      fDescriptorFunction
-	= (DSSI_Descriptor_Function)dlsym(pvPluginHandle,
-					    "dssi_descriptor");
-      if (dlerror() == NULL && fDescriptorFunction) {
-	/* We've successfully found a dssi_descriptor function. Pass
-           it to the callback function. */
-	fCallbackFunction(pcFilename,
-			  pvPluginHandle,
-			  fDescriptorFunction);
-	free(pcFilename);
-      }
-      else {
-	/* It was a library, but not a DSSI one. Unload it. */
-	dlclose(pcFilename);
-	free(pcFilename);
-      }
-    }
-  }
 }
 
 /*****************************************************************************/
 
-void 
-DSSIPluginSearch(DSSIPluginSearchCallbackFunction fCallbackFunction) {
+void DSSIPluginSearch(DSSIPluginSearchCallbackFunction fCallbackFunction) {
+    char* pcBuffer;
+    const char* pcEnd;
+    const char* pcDSSIPath;
+    const char* pcStart;
 
-  char * pcBuffer;
-  const char * pcEnd;
-  const char * pcDSSIPath;
-  const char * pcStart;
+    pcDSSIPath = getenv("DSSI_PATH");
+    if (!pcDSSIPath) {
+        fprintf(stderr,
+                "Warning: You do not have a DSSI_PATH "
+                "environment variable set.\n");
+        pcDSSIPath = "/usr/local/lib/dssi:/usr/lib/dssi";
+        fprintf(stderr, "assuming '%s'\n", pcDSSIPath);
+    }
 
-  pcDSSIPath = getenv("DSSI_PATH");
-  if (!pcDSSIPath) {
-    fprintf(stderr,
-	    "Warning: You do not have a DSSI_PATH "
-	    "environment variable set.\n");
-	pcDSSIPath = "/usr/local/lib/dssi:/usr/lib/dssi";
-	fprintf(stderr,"assuming '%s'\n",pcDSSIPath);	
-  }
-  
-  pcStart = pcDSSIPath;
-  while (*pcStart != '\0') {
-    pcEnd = pcStart;
-    while (*pcEnd != ':' && *pcEnd != '\0')
-      pcEnd++;
-    
-    pcBuffer = malloc(1 + pcEnd - pcStart);
-    if (pcEnd > pcStart)
-      strncpy(pcBuffer, pcStart, pcEnd - pcStart);
-    pcBuffer[pcEnd - pcStart] = '\0';
-    
-    DSSIDirectoryPluginSearch(pcBuffer, fCallbackFunction);
-    free(pcBuffer);
+    pcStart = pcDSSIPath;
+    while (*pcStart != '\0') {
+        pcEnd = pcStart;
+        while (*pcEnd != ':' && *pcEnd != '\0')
+            pcEnd++;
 
-    pcStart = pcEnd;
-    if (*pcStart == ':')
-      pcStart++;
-  }
+        pcBuffer = malloc(1 + pcEnd - pcStart);
+        if (pcEnd > pcStart)
+            strncpy(pcBuffer, pcStart, pcEnd - pcStart);
+        pcBuffer[pcEnd - pcStart] = '\0';
+
+        DSSIDirectoryPluginSearch(pcBuffer, fCallbackFunction);
+        free(pcBuffer);
+
+        pcStart = pcEnd;
+        if (*pcStart == ':')
+            pcStart++;
+    }
 }
 
 /*****************************************************************************/
