@@ -43,6 +43,7 @@ union BodgeEndian {
 
 struct Port {
     Port(PortType type, PortFlow flow, uint32_t index);
+//    Port(const Port& port);
     virtual ~Port() {}
 
     std::string name;
@@ -58,6 +59,7 @@ struct Port {
     virtual void* data_pointer() { return nullptr; }
 };
 
+
 struct AudioBufPort: Port {
     using Port::Port;
 
@@ -69,6 +71,7 @@ struct AudioBufPort: Port {
     float* buf = nullptr;
     virtual void* data_pointer() override { return buf; }
 };
+
 
 struct EventBufPort : Port {
     using Port::Port;
@@ -82,8 +85,10 @@ struct EventBufPort : Port {
     virtual void* data_pointer() override { return lv2_evbuf_get_buffer(eventBuf); }
 };
 
+
 struct ValuePort: Port {
     using Port::Port;
+    ValuePort(const ValuePort& vPort);
 
     float value = 0.f;
     float minimumValue;
@@ -98,10 +103,14 @@ struct ControlPort : ValuePort {
     uint32_t controlIndex;
 
     ControlPort(PortFlow flow, uint32_t index, uint32_t controlIndex);
+    ControlPort(const ControlPort& controlPort);
 };
+
 
 struct ParamPort : ValuePort {
     ParamPort(PortFlow flow, uint32_t index, uint32_t paramIndex);
+    ParamPort(const ParamPort& paramPort);
+    ParamPort(ParamPort&& paramPort);
 
     int         lilv_to_zzub_value(float lilv_val);
     float       zzub_to_lilv_value(int zzub_val);

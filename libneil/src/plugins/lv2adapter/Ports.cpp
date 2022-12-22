@@ -16,6 +16,44 @@ Port::Port(PortType type,
 }
 
 
+
+
+ValuePort::ValuePort(const ValuePort& valuePort)
+    : Port(valuePort),
+      value(valuePort.value),
+      minimumValue(valuePort.minimumValue),
+      maximumValue(valuePort.maximumValue),
+      defaultValue(valuePort.defaultValue)
+{
+}
+
+
+ControlPort::ControlPort(const ControlPort& controlPort)
+    : ValuePort(controlPort),
+      controlIndex(controlPort.controlIndex) {
+}
+
+ParamPort::ParamPort(ParamPort&& paramPort)     : ValuePort(paramPort),
+    paramIndex(paramPort.paramIndex),
+    zzubValOffset(paramPort.zzubValOffset),
+    zzubValSize(paramPort.zzubValSize) {
+}
+
+
+ParamPort::ParamPort(const ParamPort& paramPort)
+    : ValuePort(paramPort),
+      paramIndex(paramPort.paramIndex),
+      zzubValOffset(paramPort.zzubValOffset),
+      zzubValSize(paramPort.zzubValSize)
+{
+
+    memcpy(&zzubParam, &paramPort.zzubParam, sizeof(zzub::parameter));
+
+    for(auto& scalePoint: paramPort.scalePoints)
+        scalePoints.push_back(scalePoint);
+}
+
+
 ControlPort::ControlPort(PortFlow portFlow,
                          uint32_t index,
                          uint32_t controlIndex)
