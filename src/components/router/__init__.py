@@ -932,7 +932,7 @@ class RouteView(Gtk.DrawingArea):
             data = zzub.zzub_event_data_t()
 
             event_result = mp.invoke_event(data, 1)
-            # assume plugins with custom guis are opened by the double click event
+            # plugins with custom guis are opened by the double click event
             if not mp.get_flags() & zzub.zzub_plugin_flag_has_custom_gui:
                 com.get('neil.core.parameterdialog.manager').show(mp, self)
 
