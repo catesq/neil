@@ -15,19 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-import array
-import cairo
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GObject, GLib
+import cairo
 
-from statistics import stdev, pstdev
+from statistics import pstdev
 from collections import deque
-# import numpy as np
-import neil.utils as utils
-import neil.com as com
-from neil.common import MARGIN
-from math import sqrt, fabs
+from math import fabs
+import array
+
+from neil import utils, com, common
 
 # pylint: disable=no-member
 pattern = cairo.SurfacePattern(
@@ -200,7 +198,7 @@ class MasterPanel(Gtk.VBox):
         self.ampr.connect('clip', self.on_clipped)
 
         hbox = Gtk.HBox()
-        hbox.set_border_width(MARGIN)
+        hbox.set_border_width(common.MARGIN)
         hbox.pack_start(self.ampl, expand=True, fill=True, padding=0)
         hbox.pack_start(self.masterslider, expand=True, fill=True, padding=0)
         hbox.pack_start(self.ampr, expand=True, fill=True, padding=0)
