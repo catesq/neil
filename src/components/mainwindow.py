@@ -18,37 +18,35 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version('PangoCairo', '1.0')
+from gi.repository import Gtk, Gdk, GLib
 
-from gi.repository import Gtk, Gdk, GdkPixbuf, GLib
-from neil.utils import format_time, ticks_to_time, prepstr, linear2db, db2linear, filepath, \
-        is_debug, question, error, add_scrollbars, file_filter, new_stock_image_toggle_button, \
-        new_stock_image_button, message, refresh_gui, show_manual
-import zzub
-import config
-import neil.errordlg as errordlg
-from neil import com
-import neil.common as common
-from functools import cmp_to_key
-import ctypes
+import os
 import re
+import ctypes
+from functools import cmp_to_key
 
-MARGIN = common.MARGIN
-MARGIN2 = common.MARGIN2
-MARGIN3 = common.MARGIN3
-MARGIN0 = common.MARGIN0
+#    is_debug, \
+from neil.utils import \
+    make_submenu_item, make_stock_menu_item, \
+    make_menu_item, new_theme_image,  \
+    hicoloriconpath, Menu, CancelException, \
+    prepstr, filepath, \
+    question, error, \
+    file_filter,  message, \
+    refresh_gui, show_manual
 
-from neil.utils import make_submenu_item, make_stock_menu_item, make_stock_tool_item, make_stock_toggle_item, \
-        make_stock_radio_item, make_menu_item, make_check_item, make_radio_item, new_theme_image,  \
-        hicoloriconpath, Menu
+from neil import com, errordlg, common
 
-import preferences
-show_preferences = preferences.show_preferences
+import config
+import zzub
+from preferences import show_preferences
 
-from neil.utils import CancelException
+
+
+
 
 def cmp_view(a, b):
     a_order = (hasattr(a, '__view__') and a.__view__.get('order',0)) or 0
@@ -93,19 +91,26 @@ class FramePanel(Gtk.Notebook):
             header.pack_start(labelwidget, True, True, 0)
             header.pack_start(theme_img, True, True, 0)
             header.show_all()
+
             if key:
                 header.set_tooltip_text("%s (%s)" % (label, key))
             else:
                 header.set_tooltip_text(label)
+
             self.append_page(panel, header)
 
         if defaultpanel:
             self.select_viewpanel(defaultpanel)
+
         self.show_all()
 
     def select_viewpanel(self, panel):
         if hasattr(panel, '_index'):
             self.set_current_page(panel._index)
+
+            if hasattr(panel, 'can_hide'):
+                panel.hide()
+
             if hasattr(panel, 'handle_focus'):
                 panel.handle_focus()
 
@@ -609,7 +614,6 @@ class NeilFrame(Gtk.Window):
         @param event: menu event.
         @type event: MenuEvent
         """
-        import os
         show_manual()
 
     def on_irc(self, *args):

@@ -27,74 +27,74 @@ please note:
 import sys, weakref
 
 EVENTS = [
-        # these might become obsolete
-        'ping', # (int, ... ). all connected objects should print out a random message.
-        'finalize', # (hub, ... ). all module are loaded and available, finalize any cross-dependencies.
-        'shutdown-request', # ( ... ). asks for quit. it is possible that quitting might not happen.
-        'shutdown', # ( ... ). receiver should deinitialize and prepare for application exit.
-        'song-opened', # ( ... ). called when the entire song changes in such a way that all connected objects should update.
-        'show-plugin', # (plugin, ...) called when a plugin should be visualized overall.
+    # these might become obsolete
+    'ping', # (int, ... ). all connected objects should print out a random message.
+    'finalize', # (hub, ... ). all module are loaded and available, finalize any cross-dependencies.
+    'shutdown-request', # ( ... ). asks for quit. it is possible that quitting might not happen.
+    'shutdown', # ( ... ). receiver should deinitialize and prepare for application exit.
+    'song-opened', # ( ... ). called when the entire song changes in such a way that all connected objects should update.
+    'show-plugin', # (plugin, ...) called when a plugin should be visualized overall.
 
-        # most events serve for notification purposes, these are requests,
-        # to be sent by a view to switch the workspace appearance.
-        'edit_pattern_request', # (plugin, index, ...) called from e.g. the sequencer when editing a pattern is requested.
-        'edit_sequence_request', # (plugin, index, time) called from e.g. the pattern editor, when editing a sequence is requested.
+    # most events serve for notification purposes, these are requests,
+    # to be sent by a view to switch the workspace appearance.
+    'edit_pattern_request', # (plugin, index, ...) called from e.g. the sequencer when editing a pattern is requested.
+    'edit_sequence_request', # (plugin, index, time) called from e.g. the pattern editor, when editing a sequence is requested.
 
-        # document ui events, translation is done in player.py
-        # these events shall never be called directly from the application,
-        # they are sent as notifications by neil.core.player.
-        'octave_changed', # (octave, ...) called when player.octave changes.
-        'active_plugins_changed', # ([plugin, ...], ...) called when player.active_plugins changes.
-        'active_patterns_changed', # ([(plugin, index), ...], ...) called when player.active_patterns changes.
-        'active_waves_changed', # ([wave, ...], ...) called when player.active_waves changes.
-        'autoconnect_target_changed', # (plugin, ...) called when player.autoconnect_target changes.
-        'sequence_step_changed', # (stepsize, ...) called when player.sequence_step changes.
-        'plugin_origin_changed', # ((x,y), ...) called when player.plugin_origin changes.
-        'solo_plugin_changed', # (plugin, ...) called when player.solo_plugin changes.
-        'document_path_changed', # (path, ...) called when player.document_path changes.
-        'document_loaded', # (...) called when load_* is called.
+    # document ui events, translation is done in player.py
+    # these events shall never be called directly from the application,
+    # they are sent as notifications by neil.core.player.
+    'octave_changed', # (octave, ...) called when player.octave changes.
+    'active_plugins_changed', # ([plugin, ...], ...) called when player.active_plugins changes.
+    'active_patterns_changed', # ([(plugin, index), ...], ...) called when player.active_patterns changes.
+    'active_waves_changed', # ([wave, ...], ...) called when player.active_waves changes.
+    'autoconnect_target_changed', # (plugin, ...) called when player.autoconnect_target changes.
+    'sequence_step_changed', # (stepsize, ...) called when player.sequence_step changes.
+    'plugin_origin_changed', # ((x,y), ...) called when player.plugin_origin changes.
+    'solo_plugin_changed', # (plugin, ...) called when player.solo_plugin changes.
+    'document_path_changed', # (path, ...) called when player.document_path changes.
+    'document_loaded', # (...) called when load_* is called.
 
-        # libzzub events, translation is done in player.py
-        # note that these events shall never be called from the application
-        # directly, instead they will only be triggered by neil.core.player.
-        'zzub_all', # ( data,... )
-        'zzub_connect', # ( from_plugin,to_plugin,type,... )
-        'zzub_custom', # ( id,data,... )
-        'zzub_delete_pattern', # ( plugin,index,... )
-        'zzub_delete_plugin', # ( plugin,... )
-        'zzub_delete_wave', # ( wave,... )
-        'zzub_disconnect', # ( from_plugin,to_plugin,type,... )
-        'zzub_double_click', # ( ... )
-        'zzub_edit_pattern', # ( plugin,index,group,track,column,row,value,... )
-        'zzub_envelope_changed', # ( ... )
-        'zzub_load_progress', # ( ... )
-        'zzub_midi_control', # ( status,data1,data2,... )
-        'zzub_new_pattern', # ( plugin,index,... )
-        'zzub_new_plugin', # ( plugin,... )
-        'zzub_osc_message', # ( path,types,argv,argc,msg,... )
-        'zzub_parameter_changed', # ( plugin,group,track,param,value,... )
-        'zzub_pattern_changed', # ( plugin,index,... )
-        'zzub_pattern_insert_rows', # ( plugin,index,row,rows,column_indices,indices,... )
-        'zzub_pattern_remove_rows', # ( plugin,index,row,rows,column_indices,indices,... )
-        'zzub_player_state_changed', # ( player_state,... )
-        'zzub_plugin_changed', # ( plugin,... )
-        'zzub_post_connect', # ( from_plugin,to_plugin,type,... )
-        'zzub_post_set_tracks', # ( plugin,... )
-        'zzub_pre_connect', # ( from_plugin,to_plugin,type,... )
-        'zzub_pre_delete_pattern', # ( plugin,index,... )
-        'zzub_pre_delete_plugin', # ( plugin,... )
-        'zzub_pre_disconnect', # ( from_plugin,to_plugin,type,... )
-        'zzub_pre_set_tracks', # ( plugin,... )
-        'zzub_sequencer_add_track', # ( plugin,... )
-        'zzub_sequencer_changed', # ( plugin,track,time,... )
-        'zzub_sequencer_remove_track', # ( plugin,... ) ## FIXME has been renamed in zzub as sequence.destroy
-        'zzub_set_sequence_event', # ( plugin,track,time,... )
-        'zzub_set_sequence_tracks', # ( plugin,... )
-        'zzub_set_tracks', # ( plugin,... )
-        'zzub_slices_changed', # ( ... )
-        'zzub_vu', # ( size,left_amp,right_amp,time,... )
-        'zzub_wave_allocated', # ( wavelevel,... )
-        'zzub_wave_changed', # ( wave,... )
+    # libzzub events, translation is done in player.py
+    # note that these events shall never be called from the application
+    # directly, instead they will only be triggered by neil.core.player.
+    'zzub_all', # ( data,... )
+    'zzub_connect', # ( from_plugin,to_plugin,type,... )
+    'zzub_custom', # ( id,data,... )
+    'zzub_delete_pattern', # ( plugin,index,... )
+    'zzub_delete_plugin', # ( plugin,... )
+    'zzub_delete_wave', # ( wave,... )
+    'zzub_disconnect', # ( from_plugin,to_plugin,type,... )
+    'zzub_double_click', # ( ... )
+    'zzub_edit_pattern', # ( plugin,index,group,track,column,row,value,... )
+    'zzub_envelope_changed', # ( ... )
+    'zzub_load_progress', # ( ... )
+    'zzub_midi_control', # ( status,data1,data2,... )
+    'zzub_new_pattern', # ( plugin,index,... )
+    'zzub_new_plugin', # ( plugin,... )
+    'zzub_osc_message', # ( path,types,argv,argc,msg,... )
+    'zzub_parameter_changed', # ( plugin,group,track,param,value,... )
+    'zzub_pattern_changed', # ( plugin,index,... )
+    'zzub_pattern_insert_rows', # ( plugin,index,row,rows,column_indices,indices,... )
+    'zzub_pattern_remove_rows', # ( plugin,index,row,rows,column_indices,indices,... )
+    'zzub_player_state_changed', # ( player_state,... )
+    'zzub_plugin_changed', # ( plugin,... )
+    'zzub_post_connect', # ( from_plugin,to_plugin,type,... )
+    'zzub_post_set_tracks', # ( plugin,... )
+    'zzub_pre_connect', # ( from_plugin,to_plugin,type,... )
+    'zzub_pre_delete_pattern', # ( plugin,index,... )
+    'zzub_pre_delete_plugin', # ( plugin,... )
+    'zzub_pre_disconnect', # ( from_plugin,to_plugin,type,... )
+    'zzub_pre_set_tracks', # ( plugin,... )
+    'zzub_sequencer_add_track', # ( plugin,... )
+    'zzub_sequencer_changed', # ( plugin,track,time,... )
+    'zzub_sequencer_remove_track', # ( plugin,... ) ## FIXME has been renamed in zzub as sequence.destroy
+    'zzub_set_sequence_event', # ( plugin,track,time,... )
+    'zzub_set_sequence_tracks', # ( plugin,... )
+    'zzub_set_tracks', # ( plugin,... )
+    'zzub_slices_changed', # ( ... )
+    'zzub_vu', # ( size,left_amp,right_amp,time,... )
+    'zzub_wave_allocated', # ( wavelevel,... )
+    'zzub_wave_changed', # ( wave,... )
 ]
 
 class EventHandlerList:
@@ -155,7 +155,7 @@ class EventHandlerList:
 
     def print_mapping(self):
         self.filter_dead_references()
-        print(("event [%s]" % self.name))
+        print(("event [%s]" % self.name), end='\r')
         for ref,funcname,args in self.handlers:
             if funcname:
                 func = getattr(ref(), funcname)
@@ -164,7 +164,7 @@ class EventHandlerList:
             funcname = func.__name__
             if hasattr(func, '__self__'):
                 funcname = func.__self__.__class__.__name__ + '.' + funcname
-            print((" => %s(%s)" % (funcname,','.join([repr(x) for x in args]))))
+            print((" => %s(%s)" % (funcname,','.join([repr(x) for x in args]))), end='\r')
 
 class EventBus:
     __readonly__ = False
@@ -187,6 +187,7 @@ class EventBus:
         self.__dict__[name] = value
 
     def print_mapping(self):
+        print("Eventbus")
         for idstr in sorted(self.handlers):
             handlerlist = getattr(self, idstr)
             handlerlist.print_mapping()

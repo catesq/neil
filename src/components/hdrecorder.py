@@ -24,14 +24,15 @@ Provides dialog class for hd recorder control.
 
 import os, stat
 import gi
-import zzub
 gi.require_version("Gtk", "3.0")
+
 from gi.repository import Gtk
 from gi.repository import GLib
 
 from neil.utils import filepath, new_stock_image_toggle_button, ObjectHandlerGroup
-from neil.common import MARGIN
-import neil.com as com
+from neil import common, com
+
+import zzub
 
 
 class HDRecorderDialog(Gtk.Dialog):
@@ -52,6 +53,7 @@ class HDRecorderDialog(Gtk.Dialog):
     __view__ = dict(
         label = "Hard Disk Recorder",
         order = 0,
+        shortcut='<Shift>F7',
         toggle = True,
     )
 
@@ -61,10 +63,11 @@ class HDRecorderDialog(Gtk.Dialog):
         """
 
         Gtk.Dialog.__init__(self, title="Hard Disk Recorder", flags=0)
-        self.connect('delete-event', lambda widget, evt: self.hide_on_delete())
+        self.connect('delete-event', self.hide_popup_dialog)
         #self.add_button(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE)
-        #self.set_size_request(250,-1)
-        self.set_resizable(False)
+        self.set_size_request(500,-1)
+
+        self.set_resizable(True)
         btnsaveas = Gtk.Button.new_with_mnemonic("_Save As")
         btnsaveas.connect("clicked", self.on_saveas)
         textposition = Gtk.Label(label="")
@@ -73,23 +76,26 @@ class HDRecorderDialog(Gtk.Dialog):
         self.hgroup.connect(self.btnrecord, 'clicked', self.on_toggle_record)
         chkauto = Gtk.CheckButton.new_with_mnemonic("_Auto start/stop")
         chkauto.connect("toggled", self.on_autostartstop)
+#        chkauto.connect("toggled", self.on_autostartstop)
+
+
         self.btnsaveas = btnsaveas
         self.textposition = textposition
         self.chkauto = chkauto
         # 0.3: DEAD
         #self.chkauto.set_active(self.master.get_auto_write())
-        sizer = Gtk.VBox(homogeneous=False, spacing=MARGIN)
+        sizer = Gtk.VBox(homogeneous=False, spacing=common.MARGIN)
         sizer.pack_start(btnsaveas, False, True, 0)
         sizer.pack_start(textposition, False, True, 0)
-        sizer2 = Gtk.HBox(homogeneous=False, spacing=MARGIN)
+        sizer2 = Gtk.HBox(homogeneous=False, spacing=common.MARGIN)
         sizer3 = Gtk.HButtonBox()
-        sizer3.set_spacing(MARGIN)
+        sizer3.set_spacing(common.MARGIN)
         sizer3.set_layout(Gtk.ButtonBoxStyle.START)
         sizer3.pack_start(self.btnrecord, False, True, 0)
         sizer2.pack_start(sizer3, False, True, 0)
         sizer2.pack_start(chkauto, False, True, 0)
         sizer.pack_start(sizer2, True, True, 0)
-        sizer.set_border_width(MARGIN)
+        sizer.set_border_width(common.MARGIN)
         self.get_content_area().add(sizer)
         self.filename = ''
         GLib.timeout_add(100, self.on_timer)
@@ -97,6 +103,9 @@ class HDRecorderDialog(Gtk.Dialog):
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         self.update_label()
         self.update_rec_button()
+
+    def handle_focus(self):
+        self.show_all()
 
     def on_zzub_parameter_changed(self,plugin,group,track,param,value):
         player = com.get('neil.core.player')
@@ -108,7 +117,7 @@ class HDRecorderDialog(Gtk.Dialog):
                 self.update_rec_button(value)
 
     def update_rec_button(self, value=None):
-        block = self.hgroup.autoblock()
+#        block = self.hgroup.autoblock()
         player = com.get('neil.core.player')
         recorder = player.get_stream_recorder()
         if value is None:
@@ -134,6 +143,10 @@ class HDRecorderDialog(Gtk.Dialog):
         recorder = player.get_stream_recorder()
         recorder.set_attribute_value(0, not widget.get_active())
         player.history_flush()
+
+    def hide_popup_dialog(self, widget, evt):
+        print("hide popup dialog hd recorder", evt)
+#        pass
 
     def on_timer(self):
         """

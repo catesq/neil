@@ -34,9 +34,7 @@ import neil.com
 import neil.preset as preset
 import neil.pathconfig as pathconfig
 
-from neil.utils import (camelcase_to_unixstyle, etcpath, filenameify, filepath,
-                        iconpath, sharedpath)
-
+from neil.utils import (camelcase_to_unixstyle, etcpath, filenameify, filepath, iconpath, sharedpath)
 
 
 CONFIG_OPTIONS = dict(
@@ -78,56 +76,139 @@ CONFIG_OPTIONS = dict(
         # and so you can access config.get_sample_preview_volume([default]), config.set_sample_preview_volume(value),
         # and config.sample_preview_volume as a property.
         SamplePreviewVolume=dict(
-            default=-12.0, doc="the volume with which samples shall be previewed."),
-        Theme=dict(func='active_theme', default=None, vtype=str,
-                   onget=lambda v: v or None, doc="the name of the currently active theme."),
-        KeymapLanguage=dict(default='en', onset=lambda s: s.lower(
-        ), onget=lambda s: s.lower(), doc="the current keymap language."),
-        IncrementalSaving=dict(default=True, doc="the incremental saving option."),
-        PatternFontName=dict(func='pattern_font', default='Monospace 9',
-                             doc="the font used in the pattern editor."),
-        LedDraw=dict(default=True, doc="the led draw option."),
-        PatNoteOff=dict(func='pattern_noteoff', default=False,
-                        doc="pattern noteoff option."),
+            default=-12.0,
+            doc="the volume with which samples shall be previewed."
+        ),
+        Theme=dict(
+            func='active_theme',
+            default=None,
+            vtype=str,
+            onget=lambda v: v or None,
+            doc="the name of the currently active theme."
+        ),
+        KeymapLanguage=dict(
+            default='en',
+            onset=lambda s: s.lower(),
+            onget=lambda s: s.lower(),
+            doc="the current keymap language."
+        ),
+        IncrementalSaving=dict(
+            default=True,
+            doc="the incremental saving option."
+        ),
+        PatternFontName=dict(
+            func='pattern_font',
+            default='Monospace 9',
+            doc="the font used in the pattern editor."
+        ),
+        LedDraw=dict(
+            default=True,
+            doc="the led draw option."
+        ),
+        PatNoteOff=dict(
+            func='pattern_noteoff',
+            default=False,
+            doc="pattern noteoff option."
+        ),
         CurveArrows=dict(
-            default=False, doc="the draw connection curves option."),
+            default=False,
+            doc="the draw connection curves option."
+        ),
     ),
     PluginListBrowser=dict(
-        SearchTerm=dict(func='pluginlistbrowser_search_term', default='',
-                        vtype=str, doc="the current plugin search mask."),
-        ShowGenerators=dict(func='pluginlistbrowser_show_generators',
-                            default='true', vtype=bool, doc="Show generators."),
-        ShowEffects=dict(func='pluginlistbrowser_show_effects',
-                         default='true', vtype=bool, doc="Show effects."),
-        ShowControllers=dict(func='pluginlistbrowser_show_controllers',
-                             default='true', vtype=bool, doc="Show controllers."),
+        SearchTerm=dict(
+            func='pluginlistbrowser_search_term',
+            default='',
+            vtype=str,
+            doc="the current plugin search mask."
+        ),
+        ShowGenerators=dict(
+            func='pluginlistbrowser_show_generators',
+            default='true',
+            vtype=bool,
+            doc="Show generators."
+        ),
+        ShowEffects=dict(
+            func='pluginlistbrowser_show_effects',
+            default='true',
+            vtype=bool,
+            doc="Show effects."
+        ),
+        ShowControllers=dict(
+            func='pluginlistbrowser_show_controllers',
+            default='true',
+            vtype=bool,
+            doc="Show controllers."
+        ),
+        ShowOthers=dict(
+            func='pluginlistbrowser_show_others',
+            default='true',
+            vtype=bool,
+            doc="Show others."
+        ),
                             #  ShowNonNative
-        ShowAsWellOrOnly=dict(func='pluginlistbrowser_show_aswell_or_only', default='false', vtype=bool, 
-            doc="When false include lv2 and ladspa plugins when true show only lv2 or ladspa plugins - depending on the state of the ladspa and lv2 checkboxes"),
-        ShowLadspa=dict(func='pluginlistbrowser_show_ladspa',
-                            default='false', vtype=bool, doc="Show ladspa plugins"),
-        ShowLv2=dict(func='pluginlistbrowser_show_lv2',
-                           default='false', vtype=bool, doc="Show lv2 plugins."),
-        ShowDssi=dict(func='pluginlistbrowser_show_dssi',
-                            default='false', vtype=bool, doc="Show dssi plugins"),
-        ShowVst2=dict(func='pluginlistbrowser_show_vst2',
-                           default='false', vtype=bool, doc="Show vst2 plugins."),
+        ShowZzub=dict(
+            func='pluginlistbrowser_show_zzub',
+            default='false',
+            vtype=bool,
+            doc="Show zzub machines"
+        ),
+        ShowLadspa=dict(
+            func='pluginlistbrowser_show_ladspa',
+            default='false',
+            vtype=bool,
+            doc="Show ladspa plugins"
+        ),
+        ShowLv2=dict(
+            func='pluginlistbrowser_show_lv2',
+            default='false',
+            vtype=bool,
+            doc="Show LV2 plugins."
+        ),
+        ShowDssi=dict(
+            func='pluginlistbrowser_show_dssi',
+            default='false',
+            vtype=bool,
+            doc="Show dssi plugins"
+        ),
+        ShowVst2=dict(
+            func='pluginlistbrowser_show_vst2',
+            default='false',
+            vtype=bool,
+            doc="Show VST 2 plugins."
+        ),
     ),
     WavetablePaths=dict(
-        Path=dict(list=True, func='wavetable_paths', vtype=str,
-                  doc="the list of wavetable paths."),
+        Path=dict(
+            list=True,
+            func='wavetable_paths',
+            vtype=str,
+            doc="the list of wavetable paths."
+        ),
     ),
     Extensions=dict(
-        URI=dict(list=True, func='enabled_extensions', vtype=str,
-                 doc="the current list of enabled extension uris."),
+        URI=dict(
+            list=True,
+            func='enabled_extensions',
+            vtype=str,
+            doc="the current list of enabled extension uris."
+        ),
     ),
     Packages=dict(
-        package=dict(list=True, func='packages', vtype=str,
-                     doc="the list of python packages to be loaded."),
+        package=dict(
+            list=True,
+            func='packages',
+            vtype=str,
+            doc="the list of python packages to be loaded."
+        ),
     ),
     Debug=dict(
-        Commands=dict(list=True, func='debug_commands', vtype=str,
-                      doc="the current list of debug commands for the python console."),
+        Commands=dict(
+            list=True,
+            func='debug_commands',
+            vtype=str,
+            doc="the current list of debug commands for the python console."
+        ),
     ),
 )
 
@@ -145,6 +226,8 @@ KEYMAPS = {
     'fr': 'WSXDCVGBHNJ,;|AéZ"ER(T-YèUIçOàP',
     'neo': 'üIöAäPOZSBNM,|X2V3LC5W6K7HG9F0Q',
 }
+
+
 
 DEFAULT_THEME = {
     'MV Amp BG': 0xffffff,
@@ -174,6 +257,12 @@ DEFAULT_THEME = {
     'MV Master Mute': 0x990804,
     'MV Master LED Off': 0x990804,
     'MV Master LED On': 0x00ff00,
+
+    'MV Other': 0xe59c25,
+    'MV Other Mute': 0x996824,
+    'MV Other LED Off': 0x546612,
+    'MV Other LED On': 0x00ff00,
+
     'MV Border': 0x000000,
     'MV Text': 0x000000,
     'MV Indicator Border': 0x000000,

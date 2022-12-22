@@ -24,11 +24,10 @@ Contains panels and dialogs related to application preferences.
 
 import os
 from gi.repository import Gtk
-import webbrowser
 
-from neil.utils import prepstr, buffersize_to_latency, filepath, error, add_scrollbars, new_listview, sharedpath
+from neil.utils import prepstr, buffersize_to_latency, error, add_scrollbars, new_listview, sharedpath
 import config
-from neil.common import MARGIN, MARGIN2, MARGIN3
+from neil.common import MARGIN
 
 from neil.controller import learn_controller
 import neil.com as com
@@ -44,10 +43,10 @@ class CancelException(Exception):
     modal UI dialogs.
     """
     __neil__ = dict(
-            id = 'neil.exception.cancel',
-            exception = True,
-            categories = [
-            ]
+        id = 'neil.exception.cancel',
+        exception = True,
+        categories = [
+        ]
     )
 
 class GeneralPanel(Gtk.VBox):
@@ -56,14 +55,14 @@ class GeneralPanel(Gtk.VBox):
     """
 
     __neil__ = dict(
-            id = 'neil.core.pref.general',
-            categories = [
-                    'neil.prefpanel',
-            ]
+        id = 'neil.core.pref.general',
+        categories = [
+                'neil.prefpanel',
+        ]
     )
 
     __prefpanel__ = dict(
-            label = "General",
+        label = "General",
     )
 
     def __init__(self):
@@ -99,7 +98,8 @@ class GeneralPanel(Gtk.VBox):
 
         self.theme = Gtk.ComboBoxText()
         themes = os.listdir(sharedpath('themes'))
-        self.theme.append_text('Default');
+        self.theme.append_text('Default')
+
         for i, theme in enumerate(themes):
             name = os.path.splitext(theme)[0]
             self.theme.append_text(name);
@@ -108,6 +108,7 @@ class GeneralPanel(Gtk.VBox):
 
         sg1 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
         sg2 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
+
         def add_row(c1, c2):
             row = Gtk.HBox(False, MARGIN)
             c1.set_alignment(1, 0.5)
@@ -116,6 +117,7 @@ class GeneralPanel(Gtk.VBox):
             row.pack_start(c1, False, True, 0)
             row.pack_end(c2, True, True, 0)
             fssizer.pack_start(row, False, True, 0)
+
         add_row(Gtk.Label(label="Incremental Saves"), self.incsave)
         add_row(Gtk.Label(label="Draw Amp LEDs in Router"), self.leddraw)
         add_row(Gtk.Label(label="Auto Note-Off in Pattern Editor"), self.patnoteoff)
@@ -129,7 +131,9 @@ class GeneralPanel(Gtk.VBox):
         """
         Writes general config settings to file.
         """
-        config.get_config().set_pattern_font(self.patternfont.get_font_name())
+        if self.patternfont.get_font_name():
+            config.get_config().set_pattern_font(self.patternfont.get_font_name())
+
         config.get_config().set_incremental_saving(self.incsave.get_active())
         config.get_config().set_led_draw(self.leddraw.get_active())
         config.get_config().set_pattern_noteoff(self.patnoteoff.get_active())
@@ -152,14 +156,14 @@ class DriverPanel(Gtk.VBox):
     """
 
     __neil__ = dict(
-            id = 'neil.core.pref.driver',
-            categories = [
-                    'neil.prefpanel',
-            ]
+        id = 'neil.core.pref.driver',
+        categories = [
+                'neil.prefpanel',
+        ]
     )
 
     __prefpanel__ = dict(
-            label = "Audio",
+        label = "Audio",
     )
 
     def __init__(self):
@@ -249,14 +253,14 @@ class ControllerPanel(Gtk.VBox):
     """
 
     __neil__ = dict(
-            id = 'neil.core.pref.controller',
-            categories = [
-                    'neil.prefpanel',
-            ]
+        id = 'neil.core.pref.controller',
+        categories = [
+                'neil.prefpanel',
+        ]
     )
 
     __prefpanel__ = dict(
-            label = "Controllers",
+        label = "Controllers",
     )
 
     def __init__(self):
@@ -333,10 +337,10 @@ class MidiPanel(Gtk.VBox):
     """
 
     __neil__ = dict(
-            id = 'neil.core.pref.midi',
-            categories = [
-                    'neil.prefpanel',
-            ]
+        id = 'neil.core.pref.midi',
+        categories = [
+                'neil.prefpanel',
+        ]
     )
 
     __prefpanel__ = dict(
@@ -406,21 +410,21 @@ class KeyboardPanel(Gtk.VBox):
     """
 
     __neil__ = dict(
-            id = 'neil.core.pref.keyboard',
-            categories = [
-                    'neil.prefpanel',
-            ]
+        id = 'neil.core.pref.keyboard',
+        categories = [
+                'neil.prefpanel',
+        ]
     )
 
     __prefpanel__ = dict(
-            label = "Keyboard",
+        label = "Keyboard",
     )
 
     KEYMAPS = [
-            ('en', 'English (QWERTY)'),
-            ('de', 'Deutsch (QWERTZ)'),
-            ('dv', 'Dvorak (\',.PYF)'),
-            ('fr', 'French (AZERTY)'),
+        ('en', 'English (QWERTY)'),
+        ('de', 'Deutsch (QWERTZ)'),
+        ('dv', 'Dvorak (\',.PYF)'),
+        ('fr', 'French (AZERTY)'),
         ('neo','Neo (XVLCWK)')
     ]
 
@@ -460,21 +464,27 @@ class PreferencesDialog(Gtk.Dialog):
     """
 
     __neil__ = dict(
-            id = 'neil.core.prefdialog',
-            categories = [
-            ]
+        id = 'neil.core.prefdialog',
+        categories = [
+        ]
     )
 
     def __init__(self, parent=None, visible_panel=None):
-        Gtk.Dialog.__init__(self,
-                "Preferences",
-                parent,
-                Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT)
+        Gtk.Dialog.__init__(
+            self,
+            "Preferences",
+            parent,
+            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT
+        )
+
+        self.set_default_size(800, 600)
+        self.set_size_request(800, 600)
         self.nb = Gtk.Notebook()
         self.nb.set_show_tabs(False)
         self.nb.set_border_width(MARGIN)
         self.nb.set_show_border(False)
         self.panels = sorted(com.get_from_category('neil.prefpanel'), key=key_prefpanel)
+
         starting_tab_index = 0
         for i, panel in enumerate(self.panels):
             if not hasattr(panel, '__prefpanel__'):
@@ -486,13 +496,17 @@ class PreferencesDialog(Gtk.Dialog):
             if visible_panel == panel.__neil__['id']:
                 starting_tab_index = i
             self.nb.append_page(panel, Gtk.Label(label=label))
+
         self.tab_list, self.tab_list_store, columns = new_listview([('Name', str),])
         self.tab_list.set_headers_visible(False)
-        self.tab_list.set_size_request(120, 100)
+        self.tab_list.set_size_request(200, 600)
+
+
         # iterate through all tabs and add to tab list
         for i in range(self.nb.get_n_pages()):
             tab_label = self.nb.get_tab_label(self.nb.get_nth_page(i)).get_label()
             self.tab_list_store.append([tab_label])
+
         self.tab_list.connect('cursor-changed', self.on_tab_list_change)
         self.splitter = Gtk.HPaned()
         self.splitter.pack1(add_scrollbars(self.tab_list))
@@ -506,7 +520,7 @@ class PreferencesDialog(Gtk.Dialog):
 
         self.connect('response', self.on_response)
         self.show_all()
-        print(starting_tab_index)
+#        print(starting_tab_index)
         # select starting tab and adjust the list index
         self.nb.set_current_page(starting_tab_index)
 
@@ -548,6 +562,7 @@ class PreferencesDialog(Gtk.Dialog):
         except com.exception('neil.exception.cancel'):
             pass
 
+
 def show_preferences(parent, *args):
     """
     Shows the {PreferencesDialog}.
@@ -557,10 +572,11 @@ def show_preferences(parent, *args):
     @param parent: Parent window.
     @type parent: wx.Window
     """
-    PreferencesDialog(parent, *args)
+    return PreferencesDialog(parent, *args)
+
 
 __neil__ = dict(
-        classes = [
+    classes = [
         CancelException,
         GeneralPanel,
         DriverPanel,
@@ -568,18 +584,18 @@ __neil__ = dict(
         MidiPanel,
         KeyboardPanel,
         PreferencesDialog,
-        ],
+    ],
 )
 
+
 __all__ = [
-'CancelException',
-'DriverPanel',
-'MidiInPanel',
-'MidiOutPanel',
-'KeyboardPanel',
-'ExtensionsPanel',
-'PreferencesDialog',
-'show_preferences',
+    'CancelException',
+    'DriverPanel',
+    'MidiPanel',
+    'KeyboardPanel',
+    #'ExtensionsPanel',
+    'PreferencesDialog',
+    'show_preferences',
 ]
 
 if __name__ == '__main__':
