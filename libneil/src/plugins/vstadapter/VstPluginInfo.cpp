@@ -26,10 +26,10 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
 
     uri = "@zzub.org/vstadapter/" + name + "/" + std::to_string(version);
 
-    uint16_t offset = 0;
     for(int idx=0; idx < plugin->numParams; idx++) {
         auto param_properties = get_param_props(plugin, idx);
         param_names.push_back(get_plugin_string(plugin, effGetParamName, idx));
+
 
         int name_str_len = param_names[idx].size();
         char *strcp = (char*) malloc(sizeof(char) * (name_str_len + 1));
@@ -41,10 +41,12 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
                                                              .set_description(strcp)
                                                              .set_state_flag();
 
-        auto vst_param = VstParameter::build(param_properties, zzub_param, offset);
+        auto vst_param = VstParameter::build(param_properties, zzub_param, idx);
         vst_params.push_back(vst_param);
-        offset += vst_param->data_size;
         flags  |= zzub_plugin_flag_has_event_input;
+
+        float vst_val = plugin->getParameter(plugin, idx);
+        zzub_param->value_default = vst_param->vst_to_zzub_value(vst_val);
     }
 
     switch(category) {
@@ -130,7 +132,7 @@ std::string VstPluginInfo::get_filename() const {
 }
 
 int VstPluginInfo::get_param_count() const {
-    return param_names.size();
+    return global_parameters.size();
 }
 
 
@@ -138,7 +140,9 @@ const std::vector<std::string>& VstPluginInfo::get_param_names() const {
     return param_names;
 }
 
-
+const std::vector<VstParameter*>& VstPluginInfo::get_vst_params() const {
+    return vst_params;
+}
 
 VstParameter* VstPluginInfo::get_vst_param(int index) const {
     return vst_params[index];

@@ -19,6 +19,7 @@ struct VstPluginInfo : zzub::info {
     bool get_is_synth() const;
     const std::vector<std::string>& get_param_names() const;
     VstParameter* get_vst_param(int index) const;
+    const std::vector<VstParameter*>& get_vst_params() const;
 
 private:
     int32_t vst_id;
