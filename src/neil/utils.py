@@ -884,7 +884,7 @@ def add_scrollbars(view):
     adds scrollbars around a view
     """
     scrollwin = Gtk.ScrolledWindow()
-    scrollwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+    scrollwin.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
     if isinstance(view, Gtk.TreeView):
         scrollwin.set_shadow_type(Gtk.ShadowType.IN)
         scrollwin.add(view)
@@ -1033,7 +1033,6 @@ def get_plugin_type(plugin):
 #        return PluginType.Controller
 
     return PluginType.Other
-
 
 AUDIO_IO_FLAGS = zzub.zzub_plugin_flag_has_audio_input | zzub.zzub_plugin_flag_has_audio_output
 EVENT_IO_FLAGS = zzub.zzub_plugin_flag_has_event_output | zzub.zzub_plugin_flag_has_cv_output
