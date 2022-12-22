@@ -4,10 +4,9 @@
 #include <cctype>
 #include <ctime>
 #include <iostream>
-#include "timer.h"
-#include "dummy.h"
 #include "archive.h"
 #include "tools.h"
+
 
 using std::cerr;
 using std::endl;
@@ -301,6 +300,7 @@ bool op_plugin_create::operate(zzub::song& song) {
     metaplugin& plugin = *song.plugins[id];
     plugin.callbacks->plugin_player = &song;
     plugin.initialized = true;
+    plugin.plugin->created();
     return true;
 }
 
@@ -1899,7 +1899,7 @@ bool op_wavetable_wave_replace::prepare(zzub::song& song) {
     w.volume = data.volume;
     w.flags = data.flags;
     w.envelopes = data.envelopes;
-    //w.levels = data.levels;	// ikke så lurt tror jeg
+    //w.levels = data.levels;	// ikke sï¿½ lurt tror jeg
     // flags er bidir, stereo, og evt annet sinnsykt
 
     event_data.type = event_type_wave_changed;

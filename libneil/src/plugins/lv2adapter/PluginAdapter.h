@@ -30,12 +30,9 @@
 #include "zix/ring.h"
 #include "zix/sem.h"
 
-#include "ext/lv2_programs.h"
-
 #include "features/worker.h"
 
-
-
+#include "song.h"
 
 void program_changed(
         LV2_Programs_Handle handle,
@@ -89,6 +86,7 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     trackvals       trak_states[16]{};
     attrvals        attr_values{0,0};
 
+    bool            initialized       = false;
     PluginInfo*     info              = nullptr;
     SharedCache*    cache             = nullptr;
     LilvInstance*   lilvInstance      = nullptr;
@@ -151,13 +149,13 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     virtual bool        invoke(zzub_event_data_t& data);
     virtual void        destroy();
     virtual void        init(zzub::archive *arc);
+    virtual void        created();
     virtual void        process_events();
     virtual const char* describe_value(int param, int value);
     virtual void        set_track_count(int ntracks);
     virtual void        stop();
     virtual bool        process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate);
     virtual bool        process_stereo(float **pin, float **pout, int numsamples, int const mode);
-    virtual void        load(zzub::archive *arc);
     virtual void        save(zzub::archive *arc);
 
     ParamPort*          get_param_port(std::string symbol);
@@ -169,6 +167,13 @@ private:
     void       process_all_midi_tracks();
     void       process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg);
     void       update_port(ParamPort* port, float float_val);
+
+    void       read_archive_params(zzub::instream* instream);
+    void       read_archive_state(zzub::instream* instream, uint32_t length);
+    void       save_archive_params(zzub::outstream *oustream);
+    void       save_archive_state(zzub::outstream *oustream);
+
+    bool       prefer_state_save() { return false; }
 
     //
     void       ui_event_import();

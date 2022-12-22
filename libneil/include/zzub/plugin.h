@@ -21,8 +21,9 @@
 #include <vector>
 #include <string>
 #include <cassert>
-#include "zzub.h"
 
+#include "zzub.h"
+#include "types.h"
 
 namespace zzub {
   enum {
@@ -732,6 +733,7 @@ namespace zzub {
     virtual ~plugin() { }
     virtual void destroy() { delete this; }
     virtual void init(zzub::archive *arc) {}
+    virtual void created() {}
     virtual void process_events() {}
     virtual void process_midi_events(midi_message* pin, int nummessages) {}
     virtual void process_controller_events() {}

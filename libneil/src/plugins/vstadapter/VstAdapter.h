@@ -21,6 +21,8 @@ struct VstAdapter : zzub::plugin, zzub::event_handler {
     VstAdapter(const VstPluginInfo* info);
     virtual ~VstAdapter();
     virtual void init(zzub::archive* pi) override;
+    virtual void created() override;
+    virtual void save(zzub::archive *) override;
     virtual bool process_stereo(float **pin, float **pout, int n, int mode) override;
     virtual const char *describe_value(int param, int value) override;
     virtual bool invoke(zzub_event_data_t& data) override;
@@ -28,7 +30,7 @@ struct VstAdapter : zzub::plugin, zzub::event_handler {
     virtual void set_track_count(int track_count) override;
     virtual const char* get_preset_file_extensions() override;
     virtual bool load_preset_file(const char*) override;
-    virtual bool save_preset_file(const char*) override;  // return pointer to data to be writter to a preset file - the memory will be freed after the preset file is saved
+    virtual bool save_preset_file(const char*) override;
 
     void clear_vst_events();
 
@@ -40,17 +42,23 @@ struct VstAdapter : zzub::plugin, zzub::event_handler {
 
     uint64_t sample_pos = 0;
 
+    // call plugin->getParameter - convert the floating point value returned from the vst plugin into a byte or word len integer used by the globalvalues of the zzub plugin adapter
     // if dispatch_control_change == true then call zzub::player::control_change()
     // control_change() segfaults when called from zzub::plugin::init()
-    void update_zzub_globals_from_plugin(bool dispatch_control_change = true);
+//    void update_zzub_globals_from_plugin(bool dispatch_control_change = true);
+
+    // if a valid archive is given to the init function then get the read the vst parameter values from the save file 
+    void init_from_archive(zzub::archive*);
 
 private:
+    bool initialized = false;
+
     void process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg);
     void process_midi_tracks();
-
-    int active_index = -1;   // keep track of which parameter index is being adjusted (see audioMasterBeginEdit audioMasterEndEdit). -1 indicates no parameter being changed
-                             // the octasine plugin - or the vst-rs module - sends a burst spurious EndEdit messages, with inaccurate indexes, *after* the EndEdit with the correct index has been sent
-                             // use the active_index to filter these out...
+    int active_index = -1;   // keep track of which parameter index is being adjusted (see audioMasterBeginEdit audioMasterEndEdit)
+                             // the octasine plugin - or the vst-rs module - sends a burst of spurious EndEdit messages - 
+                             // with inaccurate indexes - *after* the EndEdit with the correct index has been sent
+                             // active_index is used to filter these out. -1 indicates no parameter being changed
     float** audioIn;
     float** audioOut;
     unsigned num_tracks = 0;
@@ -63,7 +71,6 @@ private:
     GtkWidget* window = nullptr;
     AEffect* plugin = nullptr;
     float ui_scale = 1.0f;
-    bool update_zzub_params = false;
 
     const VstPluginInfo* info;
     std::vector<VstMidiEvent*> midi_events;

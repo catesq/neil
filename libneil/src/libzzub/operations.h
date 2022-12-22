@@ -17,6 +17,10 @@
 */
 #pragma once
 
+#include "zzub/zzub.h"
+#include "undo.h"
+#include "connections.h"
+
 namespace zzub {
 
 struct player;
