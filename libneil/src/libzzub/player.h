@@ -18,6 +18,20 @@
 
 #pragma once
 
+
+#include <utility>
+#include <string>
+#include <vector>
+#include <stack>
+
+#include "undo.h"
+#include "midi.h"
+#include "input.h"
+#include "output.h"
+#include "recorder.h"
+#include "thread_id.h"
+
+
 using std::pair;
 using std::string;
 using std::vector;

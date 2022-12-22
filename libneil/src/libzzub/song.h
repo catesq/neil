@@ -23,6 +23,10 @@
 
 #include "zzub/plugin.h"
 #include "graph.h"
+#include "wavetable.h"
+#include "master.h"
+#include "driver.h"
+#include "timer.h"
 
 using std::pair;
 using std::string;
@@ -129,27 +133,21 @@ struct metaplugin {
     metaplugin_proxy* proxy;
 };
 
-struct event_connection_binding {
-    int source_param_index;
-    int target_group_index;
-    int target_track_index;
-    int target_param_index;
-};
 
-struct connection {
-    connection_type type;
-    void* connection_values;
-    vector<const parameter*> connection_parameters;
+//struct connection {
+//    connection_type type;
+//    void* connection_values;
+//    vector<const parameter*> connection_parameters;
 
-    virtual ~connection() {};
-    virtual void process_events(zzub::song& player, const connection_descriptor& conn) = 0;
-    virtual bool work(zzub::song& player, const connection_descriptor& conn, int sample_count) = 0;
+//    virtual ~connection() {};
+//    virtual void process_events(zzub::song& player, const connection_descriptor& conn) = 0;
+//    virtual bool work(zzub::song& player, const connection_descriptor& conn, int sample_count) = 0;
 
-protected:
-    // don't instantiate this class directly,
-    // use either audio_connection or events_connection or midi_connection or cv_connection
-    connection();
-};
+//protected:
+//    // don't instantiate this class directly,
+//    // use either audio_connection or events_connection or midi_connection or cv_connection
+//    connection();
+//};
 
 struct keyjazz_note {
     int plugin_id;

@@ -22,8 +22,6 @@
 #include <cctype>
 #include <ctime>
 #include <sstream>
-#include "dummy.h"
-#include "archive.h"
 #include "tools.h"
 
 #include <sndfile.h>
@@ -35,7 +33,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include "sseoptimization.h"
 
 using namespace std;
 

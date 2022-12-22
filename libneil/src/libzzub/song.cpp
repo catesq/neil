@@ -25,8 +25,6 @@
 #include <sstream>
 #include "timer.h"
 #include "dummy.h"
-#include "archive.h"
-#include "tools.h"
 
 #include <dirent.h>
 #include <sys/stat.h>
