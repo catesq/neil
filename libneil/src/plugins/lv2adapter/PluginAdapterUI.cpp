@@ -45,10 +45,7 @@ PluginAdapter::ui_open() {
     if(!lilv_ui_type)
         return false;
 
-//    if(!use_show_interface_method) {
-        gtk_ui_window = ui_open_window(&gtk_ui_root_box, &gtk_ui_parent_box);
-
-//    }
+    gtk_ui_window = ui_open_window(&gtk_ui_root_box, &gtk_ui_parent_box);
 
     const char* bundle_uri  = lilv_node_as_uri(lilv_ui_get_bundle_uri(lilv_ui_type));
     const char* binary_uri  = lilv_node_as_uri(lilv_ui_get_binary_uri(lilv_ui_type));
@@ -68,7 +65,7 @@ PluginAdapter::ui_open() {
         &features.options_feature,
         NULL
     };
-//use_show_ui ? NULL : GTK3_URI,##
+
     if(!suil_ui_instance) {
         suil_ui_instance = suil_instance_new(suil_ui_host,
                                              this,
@@ -94,7 +91,6 @@ PluginAdapter::ui_open() {
     if(!suil_ui_instance)
         return false;
 
-    printf("get ui instance\n");
 //    if(!use_show_interface_method) {
     if(!suil_widget) {
         suil_widget = (GtkWidget*)suil_instance_get_widget(suil_ui_instance);
@@ -131,7 +127,6 @@ PluginAdapter::ui_open() {
         printf("Idle feature for %s in invoke\n", info->name.c_str());
     }
 
-    printf("ui all done\n");
     ui_is_open = true;
     g_object_ref(gtk_ui_window);
 //    g_object_ref(suil_widget);
