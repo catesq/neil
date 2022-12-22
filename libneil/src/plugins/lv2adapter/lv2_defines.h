@@ -28,6 +28,13 @@ static int verbose = 0;
 
 // -----------------------------------------------------------------------
 
+// if an zzub::archive passed to init() starts with these bytes then:
+//    read the number of parameters, then read that number of float numbers from the archive
+// else:
+//    read the archive using lilv state save
+#define ARCHIVE_USES_PARAMS 0xff8ade74
+
+
 typedef struct {
     uint32_t index;
     uint32_t protocol;
