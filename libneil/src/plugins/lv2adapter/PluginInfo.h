@@ -38,7 +38,7 @@ struct PluginInfo : zzub::info {
 
 private:
     uint32_t     mixin_plugin_flag(Port* port);
-    Port*        build_port(uint32_t index, uint32_t* paramPortCount, uint32_t* controlPortCount);
+    Port*        build_port(uint32_t index, uint32_t& paramPortCount, uint32_t& controlPortCount);
 
     Port*        setup_base_port(Port* port, const LilvPort* lilvPort);
     Port*        setup_control_val_port(ValuePort* port,const LilvPort* lilvPort);
