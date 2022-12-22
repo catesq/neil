@@ -34,9 +34,10 @@ import fnmatch
 import ctypes
 import time
 import queue
+
 import neil.common as common
 import neil.preset as preset_module
-from neil.common import MARGIN, MARGIN2, MARGIN3, MARGIN0
+from neil.common import MARGIN
 import pickle
 import config
 import neil.com as com
@@ -173,6 +174,7 @@ class ParameterView(Gtk.VBox):
         snamegroup = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
         sslidergroup = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
         svaluegroup = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
+
         def add_controller(g, t, i):
             p = plugin.get_parameter(g, t, i)
             name = "CC-%s" % prepstr(p.get_name())
@@ -217,7 +219,9 @@ class ParameterView(Gtk.VBox):
             namelabel.set_alignment(0, 0.5)
             valuelabel = Gtk.Label(label="")
             valuelabel.set_alignment(0, 0)
-            valuelabel.set_size_request(80, -1)
+#            valuelabel.set_size_request(100, -1)
+            valuelabel.set_width_chars(8)
+            valuelabel.set_width_chars(8)
             slidergroup = Gtk.HBox(False, MARGIN)
             slidergroup.pack_start(namelabel, False, True, 0)
             slidergroup.add(button)
@@ -266,8 +270,8 @@ class ParameterView(Gtk.VBox):
             slider.connect('drag-drop', self.on_drag_drop, (g, t, i))
             valuelabel = Gtk.Label(label="")
             valuelabel.set_alignment(0, 0)
-            valuelabel.set_size_request(80, -1)
-
+            valuelabel.set_width_chars(8)
+            valuelabel.set_width_chars(8)
             snamegroup.add_widget(namelabel)
             namelabel.set_alignment(0, 0)
             sslidergroup.add_widget(slider)
@@ -313,13 +317,14 @@ class ParameterView(Gtk.VBox):
 
     def get_best_size(self):
         rc = self.get_allocation()
-        cdx,cdy,cdw,cdh = rc.x, rc.y, rc.width, rc.height
+        cdx, cdy, cdw, cdh = rc.x, rc.y, rc.width, rc.height
         rc = self.rowgroup.get_allocation()
-        svx, svy = rc.width, rc.height
+        rgx, rgy = rc.width, rc.height
         rc = self.scrollwindow.get_allocation()
         swx,swy = rc.width, rc.height
         ofsy = cdh - swy # size without scrollwindow
-        return max(swx,400), min((svy+20+ofsy),(3*Gdk.Screen.height())/4)
+        print("get best x size", cdx, rgx, swx)
+        return max(rgx, 500), min((rgy+20+ofsy), (3*Gdk.Screen.height())/4)
 
     def get_title(self):
         return self._title
