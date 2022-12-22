@@ -321,7 +321,7 @@ void ringmod::command(const int i)
   char txt[10000];
   strcpy(txt,
 	 "BTDSys RingMod v1.0\n"
-	 "©2002 Ed Powley (BTDSys)\n\n"
+     "2002 Ed Powley (BTDSys)\n\n"
 	 "Comments/suggestions/bug reports to e@btd2001.freeserve.co.uk\n\n");
   sprintf(txt,"%s%zi inputs", txt, Inputs.size());
   for (unsigned int j=0; j<Inputs.size(); j++)
