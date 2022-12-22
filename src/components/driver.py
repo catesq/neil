@@ -147,7 +147,7 @@ class AudioDriver:
             else:
                 io += ' '
             drivername = self.driver.get_name(i)
-            print(("#%i: %s [%s]" % (i,drivername, io)))
+            print(("#%i: %s [%s]" % (i,drivername, io)), end='\r')
             if drivername == inputname:
                 input_id = i
             if drivername == outputname:
