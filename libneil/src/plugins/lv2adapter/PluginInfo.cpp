@@ -21,8 +21,9 @@ zzub::plugin *PluginInfo::create_plugin() const {
 PluginInfo::PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin)
     : zzub::info(),
       lilvWorld(cache->lilvWorld),
-      cache(cache),
-      lilvPlugin(lilvPlugin) {
+      lilvPlugin(lilvPlugin),
+      cache(cache)
+{
 
     // gui's are created in invoke() after a double click
     //it's possible that the custom gui is not supported on gtk3
@@ -60,12 +61,8 @@ PluginInfo::PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin)
 
     printf("Registered plugin: name='%s', uri='%s', path='%s'\n", name.c_str(), uri.c_str(), bundlePath.c_str());
 
-    // one of these is incremented each time a paramport or controlport is constructed in build_port
-    uint32_t paramIndex = 0;
-    uint32_t controlIndex = 0;
-
-    for(uint32_t i = 0; i < lilv_plugin_get_num_ports(lilvPlugin); i++) {
-        auto port = build_port(i, &paramIndex, &controlIndex);
+    for(uint32_t portIndex = 0, paramPortIndex=0, controlPortIndex=0; portIndex < lilv_plugin_get_num_ports(lilvPlugin); portIndex++) {
+        auto port = build_port(portIndex, paramPortIndex, controlPortIndex);
         ports.push_back(port);
         flags |= mixin_plugin_flag(port);
     }
@@ -126,7 +123,7 @@ uint32_t PluginInfo::mixin_plugin_flag(Port* port) {
 }
 
 
-Port* PluginInfo::build_port(uint32_t index, uint32_t* paramIndex, uint32_t* controlIndex) {
+Port* PluginInfo::build_port(uint32_t index, uint32_t& paramPortIndex, uint32_t& controlPortIndexCount) {
     const LilvPort *lilvPort = lilv_plugin_get_port_by_index(lilvPlugin, index);
 
     PortFlow flow = get_port_flow(lilvPort);
@@ -134,10 +131,10 @@ Port* PluginInfo::build_port(uint32_t index, uint32_t* paramIndex, uint32_t* con
 
     switch(type) {
     case PortType::Control:
-        return setup_control_val_port(new ControlPort(flow, index, *controlIndex++), lilvPort);
+        return setup_control_val_port(new ControlPort(flow, index, controlPortIndexCount++), lilvPort);
 
     case PortType::Param:
-        return setup_param_port(new ParamPort(flow, index, *paramIndex++), lilvPort);
+        return setup_param_port(new ParamPort(flow, index, paramPortIndex++), lilvPort);
 
     case PortType::Audio:
     case PortType::CV:
@@ -147,7 +144,7 @@ Port* PluginInfo::build_port(uint32_t index, uint32_t* paramIndex, uint32_t* con
     case PortType::Midi:
         return setup_base_port(new EventBufPort(type, flow, index), lilvPort);
 
-    // unknown port type, use a placeholder value and a warning message
+    // unknown port type, use a dumb placeholder
     case PortType::BadPort:
         return setup_base_port(new Port(type, flow, index), lilvPort);
     }
