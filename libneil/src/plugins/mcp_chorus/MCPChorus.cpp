@@ -135,10 +135,10 @@ bool MCPChorus::process_stereo(float **pin, float **pout, int n, int mode) {
 	i = (int)(floorf (x));
 	x -= i;
 	if(j==0) {
-	  y += (1 - x) * _line_l [i] + x * _line_l [i + 1];
+                    y += (1 - x) * _line_l [i] + x * _line_l [(i + 1) % _size];
 	}
 	if(j==2) {
-	  y_r += (1 - x) * _line_r [i] + x * _line_r [i + 1];
+                    y_r += (1 - x) * _line_r [i] + x * _line_r [(i + 1) % _size];
 	}
       }
       // wossiss?
