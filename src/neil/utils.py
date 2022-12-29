@@ -994,9 +994,12 @@ def padded_partition(iterable, part_len, pad_val=None):
 
 adapters = {"lv2adapter": "lv2", "ladspadapter": "ladspa", "dssidapter": "dssi", "vstadapter": "vst2"}
 def get_adapter_name(pluginloader):
+    # plugins using adapter plugins have a name made of:
+    #   the 10 char prefix "@zzub.org/"
+    #   the adapter plugin name
+    #   then "/" then the external plugin name
     name = pluginloader.get_loader_name()
-
-    typename = name[10:name.find("/", 10)] # all the adapter plugin have a 10 char prefix "@zzub.org/" then the adapter name then "/" then the plugin name
+    typename = name[10:name.find("/", 10)]
     if typename in adapters.keys():
         return adapters[typename]
 
