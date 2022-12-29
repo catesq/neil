@@ -102,9 +102,6 @@ public:
     virtual const zzub::envelope_info** get_envelope_infos() {
         return 0;
     }
-    virtual bool play_wave(int, int, float) {
-        return false;
-    }
     virtual void stop_wave() {}
     virtual int get_wave_envelope_play_position(int) {
         return -1;

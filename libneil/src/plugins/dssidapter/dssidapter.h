@@ -163,7 +163,6 @@ struct dssidapter : plugin, event_handler {
     virtual bool is_track_muted(int) const;
     virtual void event(unsigned int);
     virtual const zzub::envelope_info **get_envelope_infos();
-    virtual bool play_wave(int, int, float);
     virtual void stop_wave();
     virtual int get_wave_envelope_play_position(int);
     virtual const char *describe_param(int);

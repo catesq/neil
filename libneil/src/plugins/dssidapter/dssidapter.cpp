@@ -785,7 +785,6 @@ void dssidapter::mute_track(int) {}
 bool dssidapter::is_track_muted(int) const { return false; }
 void dssidapter::event(unsigned int) {}
 const zzub::envelope_info **dssidapter::get_envelope_infos() { return 0; }
-bool dssidapter::play_wave(int, int, float) { return false; }
 void dssidapter::stop_wave() {}
 int dssidapter::get_wave_envelope_play_position(int) { return -1; }
 const char *dssidapter::describe_param(int) { return 0; }
