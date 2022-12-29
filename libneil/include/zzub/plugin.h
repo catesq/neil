@@ -139,6 +139,10 @@ namespace zzub {
     note_value_c4 = zzub_note_value_c4
   };
 
+  enum volume_value {
+    volume_none = zzub_volume_value_none,
+  };
+
   enum switch_value {
     // predefined values for switches
     switch_value_none = zzub_switch_value_none,
@@ -721,6 +725,38 @@ namespace zzub {
     }
 
   };
+
+
+  #pragma pack(1)
+  struct note_track {
+      uint8_t note;
+      uint8_t volume;
+
+      int note_change_from(note_track& prev) {
+          if(is_volume_on()) {
+              prev.volume = volume;
+          }
+
+          if(note == zzub::note_value_none) {
+              if(is_volume_on()) {
+                  return zzub_note_change_volume;
+              } else {
+                  return zzub_note_change_none;
+              }
+          }
+
+          if(note == zzub::note_value_off) {
+              return zzub_note_change_noteoff;
+          } else {
+              return zzub_note_change_noteon;
+          }
+      }
+
+      bool is_volume_on() { return volume != zzub_volume_value_none; }
+      bool is_note_on() { return note != zzub_note_value_none && note != zzub_note_value_off; };
+  };
+  #pragma pack()
+
 
   struct midi_message {
     int device;

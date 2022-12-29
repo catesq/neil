@@ -243,6 +243,9 @@ namespace zzub:
 		set max	= 156 # ((16 * 9) + 12)
 		set c4 = 65 # ((16 * 4) + 1)
 
+	enum VolumeValue:
+		set none = 255
+
 	enum SwitchValue:
 		# predefined values for switches
 		set none	= 255
@@ -339,6 +342,15 @@ namespace zzub:
 		set pattern = 0
 		set wave = 1
 		set automation = 2
+
+	enum NoteChange:
+		set None = 0
+		set Volume = 1
+		set NoteOn = 2
+		set NoteOff = 3
+
+	class NoteTrack:
+		def get_change(NoteTrack prev_notetrack): int
 
 	"Audio Driver Methods"
 	"Configure and create an audio driver instance."

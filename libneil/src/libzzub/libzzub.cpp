@@ -27,11 +27,16 @@
 
 #include "common.h"
 #include "ccm.h"
+#include "zzub/plugin.h"
 #include "zzub/zzub.h"
 
 #include "driver_portaudio.h"
 
 #include "driver_silent.h"
+
+namespace zzub {
+
+}
 
 struct zzub_flatapi_player : zzub::player {
     //zzub::audiodriver_rtaudio driver;
@@ -189,6 +194,8 @@ void zzub_player_destroy(zzub_player_t *player) {
     handlers.clear();
     delete player;
 }
+
+
 
 
 void zzub_player_undo(zzub_player_t *player) {
@@ -2880,6 +2887,10 @@ int zzub_output_position(zzub_output_t* f) {
 
 void zzub_output_seek(zzub_output_t* f, int a, int b) {
     f->seek(a, b);
+}
+
+int zzub_note_track_get_change(zzub_note_track_t *notetrack, zzub_note_track_t *prev_notetrack) {
+    return notetrack->note_change_from(*prev_notetrack);
 }
 
 } // extern "C"

@@ -45,6 +45,8 @@
 #include <boost/graph/depth_first_search.hpp>
 
 #define NO_ZZUB_AUDIODRIVER_TYPE
+#define NO_ZZUB_NOTE_TRACK_TYPE
+
 #define NO_ZZUB_MIDIDRIVER_TYPE
 #define NO_ZZUB_PLUGINCOLLECTION_TYPE
 #define NO_ZZUB_INPUT_TYPE
@@ -84,6 +86,7 @@ struct audiodriver;
 struct mididriver;
 struct instream;
 struct outstream;
+struct note_track;
 }
 
 // internal types
@@ -106,6 +109,7 @@ typedef zzub::recorder zzub_recorder_t;
 typedef zzub::mem_archive zzub_archive_t;
 typedef zzub::instream zzub_input_t;
 typedef zzub::outstream zzub_output_t;
+typedef zzub::note_track zzub_note_track_t;
 
 
 #include "synchronization.h"
