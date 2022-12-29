@@ -1,5 +1,8 @@
 #pragma once
 
+#include "zzub/plugin.h"
+#include <vector>
+
 namespace miditracker {
 
 #pragma pack(1)										// Place to retrieve parameters	
@@ -86,7 +89,6 @@ struct miditracker : public zzub::plugin {
 	virtual void midi_note(int channel, int note, int velocity);
 	virtual void event(unsigned int) {}
 	virtual const zzub::envelope_info** get_envelope_infos() { return 0; }
-	virtual bool play_wave(int, int, float) { return false; }
 	virtual void stop_wave() {}
 	virtual int get_wave_envelope_play_position(int) { return -1; }
 	virtual const char* describe_param(int) { return 0; }

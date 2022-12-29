@@ -64,12 +64,16 @@ union midi_msg {
 
 std::ostream& operator<<(std::ostream& stream, const midi_msg& msg);
 
+
+
+
 struct trackvals {
     uint8_t note   = zzub::note_value_none;
     uint8_t volume = 0x40;
     midi_msg msg_1;
     midi_msg msg_2;
 };
+
 
 struct attrvals {
     int channel;
@@ -113,8 +117,9 @@ struct MidiEvent {
 
     std::string str() {
         std::string msg = "0x";
+
         for(int i=0; i<size; i++)
-            msg += as_hex(data[i]) + "";
+            msg += as_hex(data[i]);
 
         return std::to_string(size) + ": " + msg + " " + describe_midi(data, size);
     }

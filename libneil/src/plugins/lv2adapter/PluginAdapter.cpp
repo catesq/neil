@@ -289,7 +289,7 @@ PluginAdapter::init(zzub::archive *arc) {
 
 void PluginAdapter::created() {
     initialized = true;
-
+    printf("Initialised lv2 adapter\n");
     for(ParamPort* port: paramPorts)
         _host->set_parameter(metaPlugin, 1, 0, port->paramIndex, port->lilv_to_zzub_value(port->value));
 }
@@ -324,6 +324,7 @@ void PluginAdapter::destroy() {
 
 
 void PluginAdapter::read_archive_params(zzub::instream* instream) {
+    printf("PluginAdapter::read_archive_params\n");
     uint32_t param_count = 0;
     instream->read(param_count);
     if(param_count != paramPorts.size())
@@ -346,13 +347,17 @@ void PluginAdapter::save_archive_params(zzub::outstream *outstream) {
 }
 
 
-
 void PluginAdapter::read_archive_state(zzub::instream* instream, uint32_t length) {
+    printf("PluginAdapter::read_archive_state\n");
     char* state_str = (char*) malloc(length + 1);
     instream->read(state_str, length);
 
     state_str[length] = 0;
-    LilvState* lilvState = lilv_state_new_from_string(cache->lilvWorld, &cache->map, state_str);
+    LilvState* lilvState = lilv_state_new_from_string(
+        cache->lilvWorld,
+        &cache->map,
+        state_str
+    );
 
     lilv_state_restore(lilvState, lilvInstance, &set_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
 }
@@ -360,16 +365,24 @@ void PluginAdapter::read_archive_state(zzub::instream* instream, uint32_t length
 
 void PluginAdapter::save_archive_state(zzub::outstream *outstream) {
     const char *dir = cache->hostParams.tempDir.c_str();
+
     LilvState* const state = lilv_state_new_from_instance(
-                info->lilvPlugin, lilvInstance, &cache->map,
-                dir, dir, dir, dir,
-                &get_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
+        info->lilvPlugin,
+        lilvInstance,
+        &cache->map,
+        dir, dir, dir, dir,
+        &get_port_value,
+        this,
+        LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE,
+        nullptr
+    );
 
     char *state_str = lilv_state_to_string(cache->lilvWorld, &cache->map, &cache->unmap, state, "http://uri", nullptr);
 
     outstream->write((uint32_t) strlen(state_str));
     outstream->write(state_str, strlen(state_str));
 }
+
 
 void PluginAdapter::save(zzub::archive *arc) {
     if (verbose) printf("PluginAdapter: in save()!\n");
@@ -391,6 +404,7 @@ const char *PluginAdapter::describe_value(int param, int value) {
     return 0;
 }
 
+
 void PluginAdapter::set_track_count(int ntracks) {
     if (ntracks < trackCount) {
         for (int t = ntracks; t < trackCount; t++) {
@@ -403,6 +417,7 @@ void PluginAdapter::set_track_count(int ntracks) {
     trackCount = ntracks;
 }
 
+
 ParamPort* PluginAdapter::get_param_port(std::string symbol) {
     for(auto& port: paramPorts)
         if(symbol == port->symbol)
@@ -411,8 +426,8 @@ ParamPort* PluginAdapter::get_param_port(std::string symbol) {
     return nullptr;
 }
 
-void PluginAdapter::stop() {}
 
+void PluginAdapter::stop() {}
 
 
 void PluginAdapter::update_port(ParamPort* port, float float_val) {
@@ -467,35 +482,67 @@ void PluginAdapter::process_events() {
         }
     }
 
-
     if(info->flags & zzub_plugin_flag_is_instrument)
         process_all_midi_tracks();
 }
 
+
 void PluginAdapter::process_all_midi_tracks() {
     for (int t = 0; t < trackCount; t++) {
-        if (trak_values[t].volume != TRACKVAL_VOLUME_UNDEFINED)
-            trak_states[t].volume = trak_values[t].volume;
+        auto prev = (zzub::note_track*) &trak_states[t];
+        auto curr = (zzub::note_track*) &trak_values[t];
 
-        if (trak_values[t].note == zzub::note_value_none) {
+        switch(curr->note_change_from(*prev)) {
+        case zzub_note_change_none:
+            break;
 
-            if(trak_values[t].volume != TRACKVAL_VOLUME_UNDEFINED && trak_states[t].note != zzub::note_value_none) {
-                midiEvents.aftertouch(attr_values.channel, trak_states[t].note, trak_states[t].volume);
+        case zzub_note_change_noteoff:
+            printf("track %d: note off\n", t);
+            if(prev->is_note_on()) {
+                prev->note = curr->note;
+                midiEvents.noteOff(attr_values.channel, trak_states[t].note);
+            }
+            break;
+
+        case zzub_note_change_noteon:
+            if(prev->is_note_on()) {
+                midiEvents.noteOff(attr_values.channel, trak_states[t].note);
             }
 
-        } else if(trak_values[t].note != zzub::note_value_off) {
+            prev->note = curr->note;
+            printf("track %d: note on = %d \n", trak_values[t].note, t);
             midiEvents.noteOn(attr_values.channel, trak_values[t].note, trak_states[t].volume);
-            trak_states[t].note = trak_values[t].note;
+            break;
 
-        } else if(trak_states[t].note != zzub::note_value_none) {
-
-            midiEvents.noteOff(attr_values.channel, trak_states[t].note);
-            // this is wrong but some synths glitch when an aftertouch is sent after a note off
-            // it relies on state.note being a valid note.
-            // if a note off with volume 0 is set then clear state.note to prevent aftertouch
-            if(trak_values[t].volume == 0)
-                trak_states[t].note = zzub::note_value_none;
+        case zzub_note_change_volume:
+            printf("track %d: volume %d\n", curr->volume, t);
+            if(prev->is_note_on()) {
+                midiEvents.aftertouch(attr_values.channel, trak_states[t].note, trak_states[t].volume);
+            }
+            break;
         }
+
+
+//        if (trak_values[t].volume != TRACKVAL_VOLUME_UNDEFINED)
+//            trak_states[t].volume = trak_values[t].volume;
+//
+//        if (trak_values[t].note == zzub::note_value_none) {
+//            if(trak_values[t].volume != TRACKVAL_VOLUME_UNDEFINED && trak_states[t].note != zzub::note_value_none) {
+//                midiEvents.aftertouch(attr_values.channel, trak_states[t].note, trak_states[t].volume);
+//            }
+//        } else if(trak_values[t].note == zzub::note_value_off) {
+//            if(trak_states[t].note != zzub::note_value_none) {
+//                midiEvents.noteOff(attr_values.channel, trak_states[t].note);
+//                // this is wrong but some synths glitch when an aftertouch is sent after a note off
+//                // it relies on state.note being a valid note.
+//                // if a note off with volume 0 is set then clear state.note to prevent aftertouch
+////                if(trak_values[t].volume == 0)
+//                trak_states[t].note = zzub::note_value_none;
+//            }
+//        } else {
+//            midiEvents.noteOn(attr_values.channel, trak_values[t].note, trak_states[t].volume);
+//            trak_states[t].note = trak_values[t].note;
+//        }
 
         process_one_midi_track(trak_values[t].msg_1, trak_states[t].msg_1);
         process_one_midi_track(trak_values[t].msg_2, trak_states[t].msg_2);

@@ -615,7 +615,6 @@ public:
 		virtual bool is_track_muted(int index) const { return false; }
 		virtual void event(unsigned int data)  {}
 		virtual const zzub::envelope_info ** get_envelope_infos() { return 0; }
-		virtual bool play_wave(int wave, int note, float volume) { return false; }
 		virtual void stop_wave() {}
 		virtual int get_wave_envelope_play_position(int env) { return -1; }
 

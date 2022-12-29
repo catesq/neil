@@ -1,5 +1,7 @@
 #pragma once
 
+#include "zzub/plugin.h"
+
 namespace miditime {
 
 #pragma pack(1)										// Place to retrieve parameters	
@@ -46,7 +48,6 @@ struct miditimemachine : public zzub::plugin {
 	virtual void midi_note(int channel, int note, int velocity);
 	virtual void event(unsigned int) {}
 	virtual const zzub::envelope_info** get_envelope_infos() { return 0; }
-	virtual bool play_wave(int, int, float) { return false; }
 	virtual void stop_wave() {}
 	virtual int get_wave_envelope_play_position(int) { return -1; }
 	virtual const char* describe_param(int) { return 0; }
@@ -63,7 +64,6 @@ struct miditimemachine : public zzub::plugin {
 	virtual const char* get_stream_source() { return 0; }
 	virtual void play_pattern(int index) {}
 	virtual void configure(const char *key, const char *value) {}
-
 };
 
 struct miditime_info : zzub::info {
