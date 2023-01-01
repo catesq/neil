@@ -118,7 +118,7 @@ env.Append(CCFLAGS=[
         '-DPOSIX',
         ])
 env.Append(LINKFLAGS=[
-        '-Wl,-rpath=%s' % str(env.Dir('${PREFIX}${LIBDIR}')),
+        '-Wl,-rpath=%s' % str(env.Dir('${DESTDIR}${PREFIX}${LIBDIR}')),
         ])
 if os.uname()[0] == 'FreeBSD':
     env.Append(CCFLAGS=[ '-I/usr/local/include' ])
@@ -193,12 +193,14 @@ if gcc:
 import platform
 
 if x86_64:
-    picLibBuilder = Builder(action = Action('$ARCOM'),
-                            emitter = '$LIBEMITTER',
-                            prefix = '$LIBPREFIX',
-                            suffix = '$LIBSUFFIX',
-                            src_suffix = '$OBJSUFFIX',
-                            src_builder = 'SharedObject')
+    picLibBuilder = Builder(
+        action = Action('$ARCOM'),
+        emitter = '$LIBEMITTER',
+        prefix = '$LIBPREFIX',
+        suffix = '$LIBSUFFIX',
+        src_suffix = '$OBJSUFFIX',
+        src_builder = 'SharedObject'
+    )
     env['BUILDERS']['StaticLibrary'] = picLibBuilder
     env['BUILDERS']['Library'] = picLibBuilder
     env.Append(CCFLAGS=[
