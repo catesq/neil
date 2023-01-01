@@ -17,17 +17,12 @@
 //     Copyright (C) 2006 Leonard Ritter (contact@leonard-ritter.com)
 //     Copyright (C) 2008 James McDermott (jamesmichaelmcdermott@gmail.com)
 
-
-
 #include "lv2_defines.h"
 #include "lv2_utils.h"
-
 
 #include "lv2/options/options.h"
 #include "lv2/instance-access/instance-access.h"
 #include "lv2/buf-size/buf-size.h"
-
-
 
 #include "PluginAdapter.h"
 #include "PluginInfo.h"
@@ -46,7 +41,6 @@
 
 #include <thread>
 #include <cstdlib>
-
 #include <iostream>
 
 
@@ -497,7 +491,6 @@ void PluginAdapter::process_all_midi_tracks() {
             break;
 
         case zzub_note_change_noteoff:
-            printf("track %d: note off\n", t);
             if(prev->is_note_on()) {
                 prev->note = curr->note;
                 midiEvents.noteOff(attr_values.channel, trak_states[t].note);
@@ -510,43 +503,17 @@ void PluginAdapter::process_all_midi_tracks() {
             }
 
             prev->note = curr->note;
-            printf("track %d: note on = %d \n", trak_values[t].note, t);
             midiEvents.noteOn(attr_values.channel, trak_values[t].note, trak_states[t].volume);
             break;
 
         case zzub_note_change_volume:
-            printf("track %d: volume %d\n", curr->volume, t);
             if(prev->is_note_on()) {
                 midiEvents.aftertouch(attr_values.channel, trak_states[t].note, trak_states[t].volume);
             }
             break;
         }
-
-
-//        if (trak_values[t].volume != TRACKVAL_VOLUME_UNDEFINED)
-//            trak_states[t].volume = trak_values[t].volume;
-//
-//        if (trak_values[t].note == zzub::note_value_none) {
-//            if(trak_values[t].volume != TRACKVAL_VOLUME_UNDEFINED && trak_states[t].note != zzub::note_value_none) {
-//                midiEvents.aftertouch(attr_values.channel, trak_states[t].note, trak_states[t].volume);
-//            }
-//        } else if(trak_values[t].note == zzub::note_value_off) {
-//            if(trak_states[t].note != zzub::note_value_none) {
-//                midiEvents.noteOff(attr_values.channel, trak_states[t].note);
-//                // this is wrong but some synths glitch when an aftertouch is sent after a note off
-//                // it relies on state.note being a valid note.
-//                // if a note off with volume 0 is set then clear state.note to prevent aftertouch
-////                if(trak_values[t].volume == 0)
-//                trak_states[t].note = zzub::note_value_none;
-//            }
-//        } else {
-//            midiEvents.noteOn(attr_values.channel, trak_values[t].note, trak_states[t].volume);
-//            trak_states[t].note = trak_values[t].note;
-//        }
-
-        process_one_midi_track(trak_values[t].msg_1, trak_states[t].msg_1);
-        process_one_midi_track(trak_values[t].msg_2, trak_states[t].msg_2);
     }
+
 
     for(EventBufPort* midiPort: midiPorts) {
         if(midiPort->flow != PortFlow::Input || midiEvents.count() == 0)
