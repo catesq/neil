@@ -1,18 +1,11 @@
 from gi.repository import Gtk
 
-import zzub
 from neil.com import com
-from neil.utils import (Menu, is_generator, is_root, is_effect, iconpath, prepstr)
-from neil.preset import Preset
-from .actions import on_popup_bypass, on_store_selection, on_restore_selection
+from neil.utils import (Menu, iconpath, prepstr)
+from .actions import on_store_selection, on_restore_selection
 import os.path
 import json
 from neil.pathconfig import get_settings_dir
-
-#class Connection:
-#    def __init__(self, metaplugin, connection_id):
-#        self.metaplugin = metaplugin
-#        self.id = connection_id
 
 #used by on_store_selection in actions.py
 def store_selection_submenu(metaplugins):
@@ -24,6 +17,7 @@ def store_selection_submenu(metaplugins):
 
     return store_submenu
 
+
 #used by on_restore_selection in actions.py
 def restore_selection_submenu():
     router = com.get('neil.core.router.view')
@@ -33,6 +27,7 @@ def restore_selection_submenu():
         restore_submenu.add_check_item(f"_{index}", router.has_selection(index), on_restore_selection, index)
 
     return restore_submenu
+
 
 #used by machine_tree_submenu below
 def load_plugin_list(filename):
@@ -82,18 +77,18 @@ def machine_tree_submenu(connection=False):
                     icon.set_from_file(get_icon_name(value))
                 item = Gtk.ImageMenuItem(prepstr(key, fix_underscore=True))
                 item.set_image(icon)
-                item.connect('activate', create_plugin, value)
+                item.connect('activate', create_plugin, value, menu)
                 menu.add(item)
             else:
                 item, submenu = menu.add_submenu(key)
                 populate_from_tree(submenu, value)
 
-    def create_plugin(item, loader):
+    def create_plugin(item, loader, menu):
         player = com.get('neil.core.player')
         if connection:
             player.create_plugin(loader, connection=connection)
         else:
-            player.plugin_origin = menu.context
+#            player.plugin_origin = menu.context
             player.create_plugin(loader)
 
     player = com.get('neil.core.player')
