@@ -216,7 +216,6 @@ class SearchPluginsDialog(Gtk.Window):
     #
     def filter_item(self, model, it, data):
         pluginloader = model.get(it, 2)[0]
-
         if not self.match_machine_type(pluginloader) or not self.is_active_adapter(pluginloader):
             return False
 
@@ -271,7 +270,7 @@ class SearchPluginsDialog(Gtk.Window):
             c = cmp(get_rating(a),get_rating(b))
             if c != 0:
                 return c
-            return cmp(a.get_name().lower(),b.get_name().lower())
+            return cmp(a.get_name().lower(), b.get_name().lower())
 
         def get_type_text(pl):
             if is_generator(pl):
