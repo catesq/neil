@@ -21,7 +21,7 @@ Provides utility functions needed all over the place,
 which have no specific module or class they belong to.
 """
 
-import sys, math, os, zzub, imp
+import sys, math, os, zzub, imp, time
 from string import ascii_letters, digits
 import struct
 
