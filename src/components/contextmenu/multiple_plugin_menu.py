@@ -1,10 +1,6 @@
 
-import os.path
-
-import zzub
-from neil import common
 from neil.com import com
-from neil.utils import Menu, is_generator, make_submenu_item
+from neil.utils import Menu
 
 
 from .submenus import store_selection_submenu, restore_selection_submenu
@@ -12,9 +8,9 @@ from .submenus import store_selection_submenu, restore_selection_submenu
 
 from .actions import (
     on_popup_mute_selected,
-    on_popup_solo,
-    on_popup_bypass,
-    on_popup_clone_chain,
+#    on_popup_solo,
+#    on_popup_bypass,`
+#    on_popup_clone_chain,
     on_popup_clone_chains,
     on_popup_save_chain,
     on_popup_delete_group
