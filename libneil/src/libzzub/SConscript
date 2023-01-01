@@ -30,44 +30,37 @@ import glob
 localenv = env.Clone()
 
 files = [
-'compress.cpp',
-'decompress.cpp',
-'dummy.cpp',
-'host.cpp',
-'libzzub.cpp',
-'driver.cpp',
-'master.cpp',
-'player.cpp',
-'pluginloader.cpp',
-'tools.cpp',
-'wavetable.cpp',
-'midi.cpp',
-'recorder.cpp',
-'ccm.cpp',
-'connections.cpp',
-'input.cpp',
-'operations.cpp',
-'output.cpp',
-'song.cpp',
-'synchronization.cpp',
-'undo.cpp',
-'pugixml.cpp',
-'thread_id.cpp',
+    'compress.cpp',
+    'decompress.cpp',
+    'dummy.cpp',
+    'host.cpp',
+    'libzzub.cpp',
+    'driver.cpp',
+    'master.cpp',
+    'player.cpp',
+    'pluginloader.cpp',
+    'tools.cpp',
+    'wavetable.cpp',
+    'midi.cpp',
+    'recorder.cpp',
+    'ccm.cpp',
+    'connections.cpp',
+    'input.cpp',
+    'operations.cpp',
+    'output.cpp',
+    'song.cpp',
+    'synchronization.cpp',
+    'undo.cpp',
+    'pugixml.cpp',
+    'thread_id.cpp',
 ]
 
-# minizip and zlib dependencies
-# files += [
-# '${MINIZIP_SRC_PATH}/ioapi.c',
-# '${MINIZIP_SRC_PATH}/mztools.c',
-# '${MINIZIP_SRC_PATH}/unzip.c',
-# '${MINIZIP_SRC_PATH}/zip.c',
-# ]
 
 localenv.Append(LIBS=[
-'FLAC',
-'z',
-'mad',
-'mpg123'
+    'FLAC',
+    'z',
+    'mad',
+    'mpg123'
 ])
 
 localenv.Append(CCFLAGS=['-D_LIB','-D_LIBZZUB'])
@@ -79,11 +72,11 @@ localenv.Append(CCFLAGS=['-D_LIB','-D_LIBZZUB'])
 
 localenv.Append(LIBPATH='${MINIZIP_SRC_PATH}/release')
 localenv.Append(LIBS=[
-'pthread',
-localenv['LIB_DL'],
-localenv['LIB_COMPAT'],
-'minizip',
-'ssl',
+    'pthread',
+    localenv['LIB_DL'],
+    localenv['LIB_COMPAT'],
+    'minizip',
+    'ssl',
 ])
 
 if localenv['USE_SIGNATURE'] == True:
@@ -94,29 +87,29 @@ if localenv['USE_SIGNATURE'] == True:
 
     if localenv['SNDFILE']:
         localenv.Append(LIBS=[
-        'sndfile',
+            'sndfile',
         ])
         localenv.Append(CCFLAGS=[
-        '-DUSE_SNDFILE',
+            '-DUSE_SNDFILE',
         ])
 
         # portmidi support
         localenv.Append(CPPPATH=[
-        '${PORTMIDI_SRC_PATH}/pm_common',
-        '${PORTMIDI_SRC_PATH}/porttime'
+            '${PORTMIDI_SRC_PATH}/pm_common',
+            '${PORTMIDI_SRC_PATH}/porttime'
         ])
 
         # porttime and portmidi
         files += [
-        '${PORTMIDI_SRC_PATH}/porttime/porttime.c',
-        '${PORTMIDI_SRC_PATH}/pm_common/pmutil.c',
-        '${PORTMIDI_SRC_PATH}/pm_common/portmidi.c',
-        '${PORTMIDI_SRC_PATH}/porttime/ptlinux.c',
-        '${PORTMIDI_SRC_PATH}/pm_linux/pmlinux.c',
+            '${PORTMIDI_SRC_PATH}/porttime/porttime.c',
+            '${PORTMIDI_SRC_PATH}/pm_common/pmutil.c',
+            '${PORTMIDI_SRC_PATH}/pm_common/portmidi.c',
+            '${PORTMIDI_SRC_PATH}/porttime/ptlinux.c',
+            '${PORTMIDI_SRC_PATH}/pm_linux/pmlinux.c',
         ]
         localenv.Append(CCFLAGS=[
-        '-DPM_CHECK_ERRORS',
-        '-DNEWBUFFER'
+            '-DPM_CHECK_ERRORS',
+            '-DNEWBUFFER'
         ])
 
         #######################################
@@ -124,13 +117,13 @@ if localenv['USE_SIGNATURE'] == True:
         #######################################
 
         files += [
-        'driver_portaudio.cpp',
+            'driver_portaudio.cpp',
         ]
 
         localenv.Append(LIBS=[
-        'pthread',
-        'm',
-        'portaudio',
+            'pthread',
+            'm',
+            'portaudio',
         ])
 
         #######################################
@@ -146,6 +139,7 @@ if localenv['USE_SIGNATURE'] == True:
             v = '.'.join(vcomps[:i])
             if v:
                 v = '.'+v
-                symlinkcmd = 'cd $TARGET.dir && rm -f $TARGET.name && ln -s $SOURCE.name $TARGET.name'
-                localenv.Command('${LIB_BUILD_PATH}/libzzub'+shlibsuffix+v, libzzub, symlinkcmd)
-                localenv.Command('${DESTDIR}${PREFIX}${LIBDIR}/libzzub'+shlibsuffix+v, installed_libzzub, symlinkcmd)
+            symlinkcmd = 'cd $TARGET.dir && rm -f $TARGET.name && ln -s $SOURCE.name $TARGET.name'
+            localenv.Command('${LIB_BUILD_PATH}/libzzub'+shlibsuffix+v, libzzub, symlinkcmd)
+            localenv.Command('${DESTDIR}${PREFIX}${LIBDIR}/libzzub'+shlibsuffix+v, installed_libzzub, symlinkcmd)
+
