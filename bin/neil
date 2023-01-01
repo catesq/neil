@@ -25,7 +25,7 @@ paths = {
 updated_env = False
 
 
-# manjaro had /usr/lib/64 symlinked to /usr/lib - this polluted logs with many warnings about duplicate lv2 plugins
+# manjaro had /usr/lib/64 symlinked to /usr/lib. this polluted stdout with many warnings about duplicate lv2 plugins
 def remove_symlinks(pathstr, separator=':'):
     paths = [str(Path(path).resolve()) for path in pathstr.split(separator)]
     remove = []
