@@ -27,7 +27,6 @@ import glob
 import os
 import re
 
-import gi
 from gi.repository import Gtk
 
 import neil.com
@@ -647,7 +646,7 @@ class NeilConfig(configparser.ConfigParser):
         @rtype: (str, str, int, int)
         """
         self.set_section('AudioDevice')
-        return self.read_value('InputName', ''), self.read_value('OutputName', '') or self.read_value('Name', ''), self.read_int_value('SampleRate', 44100), self.read_int_value('BufferSize', 2048)
+        return self.read_value('InputName', ''), self.read_value('OutputName', ''), self.read_int_value('SampleRate', 44100), self.read_int_value('BufferSize', 2048)
 
     def set_audiodriver_config(self, inputname, outputname, samplerate, buffersize):
         """
@@ -702,7 +701,7 @@ class NeilConfig(configparser.ConfigParser):
         @param presets: A preset collection
         @type presets: preset.PresetCollection
         """
-        uri = filenameify(pluginloader.get_uri())
+#        uri = filenameify(pluginloader.get_uri())
         name = filenameify(pluginloader.get_name())
         presetpath = os.path.join(self.get_settings_folder(), 'presets')
         if not os.path.isdir(presetpath):
