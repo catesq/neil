@@ -52,6 +52,7 @@ int buzz_to_midi_note(int value) {
 
 namespace zzub {
 
+
 bool is_note_playing(int plugin_id, const std::vector<zzub::keyjazz_note>& keyjazz, int note) {
     for (size_t i = 0; i < keyjazz.size(); i++)
         if (keyjazz[i].plugin_id == plugin_id && keyjazz[i].note == note) return true;
