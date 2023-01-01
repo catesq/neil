@@ -29,7 +29,6 @@ if __name__ == '__main__':
     os.system('../../bin/neil-combrowser neil.core.routerpanel')
     raise SystemExit
 
-from typing import Generator
 import gi
 gi.require_version("Gtk", "3.0")
 import neil.com as com
@@ -38,15 +37,13 @@ from gi.repository import GObject
 from gi.repository import Pango, PangoCairo
 # from cairo import Context
 import cairo
-import ctypes
 
 
 from neil.utils import PluginType
 from neil.utils import get_plugin_type
 from neil.utils import is_effect, is_generator, is_controller, is_root
 from neil.utils import prepstr, db2linear, linear2db, error, new_listview, add_scrollbars
-from neil.utils import blend, blend_float, box_contains
-from neil.utils import get_window_pointer
+from neil.utils import blend_float, box_contains
 import config
 import zzub
 import neil.common as common
