@@ -53,7 +53,6 @@ class MidiDriver:
     def destroy(self):
         if not self.enabled:
             return
-        print("uninitializing midi driver...")
         player = com.get('neil.core.player')
         zzub.Mididriver.close_all(player)
         self.enabled = False
