@@ -1,9 +1,7 @@
 from gi.repository import Gtk
 from neil.com import com
-from neil.preset import Preset
-from neil.utils import gettext, prepstr, filenameify, show_machine_manual, is_root, clone_plugin, clone_plugin_patterns
-from zzub import Player
-import functools
+from functools import reduce
+from neil.utils import gettext, prepstr, filenameify, show_machine_manual, is_root, clone_plugin, clone_plugin_patterns, clone_preset
 
 
 def on_popup_mute_selected(widget, plugins):
@@ -43,13 +41,13 @@ def on_popup_show_params(widget, plugin):
 
 
 def on_popup_show_attribs(widget, plugin):
-    dlg = com.get('neil.core.attributesdialog', plugin)
+    dlg = com.get('neil.core.attributesdialog', plugin, widget.get_top_level())
     dlg.run()
     dlg.destroy()
 
 
 def on_popup_show_presets(widget, plugin):
-    com.get('neil.core.presetdialog.manager').show(plugin, widget)
+    com.get('neil.core.presetdialog.manager').show(plugin, widget.get_top_level())
 
 
 def on_popup_rename(widget, plugin):
@@ -70,7 +68,6 @@ def on_popup_delete_group(widget, plugins):
         player.delete_plugin(plugin)
 
 
-
 def on_popup_set_target(widget, plugin):
     player = com.get('neil.core.player')
     if player.autoconnect_target == plugin:
@@ -86,10 +83,9 @@ def on_popup_command(widget, plugin, subindex, index):
 def on_machine_help(widget, plugin):
     name = filenameify(plugin.get_pluginloader().get_name())
     if not show_machine_manual(name):
-        info = Gtk.MessageDialog(self.get_toplevel(), flags=0, type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, message_format="Sorry, there's no help for this plugin yet")
+        info = Gtk.MessageDialog(widget.get_toplevel(), flags=0, type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, message_format="Sorry, there's no help for this plugin yet")
         info.run()
         info.destroy()
-
 
 
 def on_popup_disconnect(widget, plugin, index):
@@ -102,7 +98,10 @@ def on_popup_disconnect(widget, plugin, index):
 
 # all the hard work for this is done in ccmwriter in ccm.cpp and is basically a c++ copy of clone_chain() hooked into the file save
 def on_popup_save_chain(widget, plugins):
-    get_plugin_chain(output_plugin, chain, player)
+    chained_plugins_list = get_plugin_chain(plugins)
+
+    for pl in chained_plugins_list:
+        pass
 
 
 # get the output connections for this plugin then call get_plugin_chains recursively with each of plugin in the output connections
@@ -110,9 +109,10 @@ def get_plugin_chain(plugin, chain = {}, player = None):
     if not player:
         player = com.get('neil.core.player')
 
+    # if plugin is really a list of plugins then call get_plugin_chain on each plugin and merge the result
     if type(plugin) == list:
-        for item in plugins:
-            add_plugin_chain(item, chain, player)
+        for item in plugin:
+            get_plugin_chain(item, chain, player)
 
         return chain.keys()
 
@@ -134,10 +134,10 @@ def get_plugin_chain(plugin, chain = {}, player = None):
 
 
 
-def clone_chain(src_plugin_list, offset = (0,0)):
+def clone_chain(src_plugins, offset = (0,0)):
     player = com.get('neil.core.player')
 
-    plugins = {(plugin_id, None) for plugin_id in get_plugin_chain(src_plugin)}
+    plugins = {(plugin_id, None) for plugin_id in get_plugin_chain(src_plugins)}
 
     for src_id in plugins.keys():
         src_plugin = player.get_plugin_by_id(src_id)
@@ -163,7 +163,7 @@ def clone_chain(src_plugin_list, offset = (0,0)):
         new_plugin = player.get_plugin_by_id(new_id)
 
         clone_plugin_patterns(src_plugin, new_plugin)
-        clone_preset(src_plugin, new_plugin)
+        clone_preset(player, src_plugin, new_plugin)
 
         x, y = src_plugin.get_position() + offset
         new_plugin.set_position(x, y)
@@ -172,18 +172,21 @@ def clone_chain(src_plugin_list, offset = (0,0)):
 
 
 def on_popup_clone_chain(widget, src_plugin):
-    clone_chain([plugin], (0.1, 0.1))
+    clone_chain(src_plugin, (0.1, 0.1))
     com.get('neil.core.player').history_commit("Cloned plugin chain")
 
 
 def on_popup_clone_chains(widget, plugins, point = None):
     def average_position(plugin_list):
         add_positions = lambda posA, posB: (posA[0] + posB[0], posA[1] + posB[1])
-        plugin_positioms = [plugin.get_position() for plugin in plugin_list]
-        return reduce(add_positions, plugin_positions) / len(plugins)
+        plugin_positions = [plugin.get_position() for plugin in plugin_list]
+
+        pos_sum = reduce(add_positions, plugin_positions)
+
+        return pos_sum / len(plugins)
 
     if point is None:
-        offset = average_position(plugin_list) - point
+        offset = average_position(plugins) - point
     else:
         offset = (0.1, 0.1)
 
@@ -254,8 +257,6 @@ def on_load_preset(widget, plugin):
         response = dialog.run()
     else:
         dialog.destroy()
-
-
 
 
 def on_save_preset(widget, plugin):
