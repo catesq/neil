@@ -13,9 +13,9 @@
 
 
 struct DrumPluginInfo : zzub::info {
-    DrumSets* drumSets;
+    DrumKits* drumSets;
 
-    DrumPluginInfo(DrumSets* drumSets);
+    DrumPluginInfo(DrumKits* drumSets);
 
     virtual zzub::plugin* create_plugin() const;
     virtual bool store_info(zzub::archive *data) const { return false; }
@@ -43,7 +43,7 @@ private:
     std::vector<DrumVoice*> track_voices {};
     std::vector<DrumVoice*> active_voices {};
     std::vector<DrumVoice*> inactive_voices {};
-    const DrumSets *drumSets {nullptr};
+    const DrumKits *drumSets {nullptr};
     DrumTvals tval[MAX_TRACK] {};
     DrumTvals tstate[MAX_TRACK] {};
 
@@ -57,7 +57,7 @@ private:
 
 public:
     // DrumPlugin();
-    DrumPlugin(const DrumSets* drumSets);
+    DrumPlugin(const DrumKits* drumSets);
 
     virtual ~DrumPlugin();
 
@@ -81,10 +81,10 @@ public:
 
 
 struct DrumPluginCollection : zzub::plugincollection {
-    DrumSets* drumSets;
+    DrumKits* drumSets;
 
     virtual void initialize(zzub::pluginfactory *factory) {
-		drumSets = new DrumSets (MDA_DRUMS_PATH, 256);
+		drumSets = new DrumKits (MDA_DRUMS_PATH, 256);
         factory->register_info(new DrumPluginInfo(drumSets));
     }
 

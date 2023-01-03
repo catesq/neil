@@ -3,7 +3,6 @@
 #include "DrumPlugin.h"
 #include "DrumVoice.h"
 #include "DrumPresets.h"
-#include "DrumParameter.h"
 
 #include <string>
 #include <stdio.h>
@@ -26,7 +25,7 @@ float DrumTvals::timestretch() {
 }
 
 
-DrumPlugin::DrumPlugin(const DrumSets* drumSets) : drumSets(drumSets) {
+DrumPlugin::DrumPlugin(const DrumKits* drumSets) : drumSets(drumSets) {
     track_values = tval;
 }
 
@@ -250,7 +249,7 @@ const char * DrumPlugin::describe_value(int param, int value) {
 zzub::plugin* DrumPluginInfo::create_plugin() const { return new DrumPlugin(drumSets); }
 
 
-DrumPluginInfo::DrumPluginInfo(DrumSets* drumSets) : drumSets(drumSets) {
+DrumPluginInfo::DrumPluginInfo(DrumKits* drumSets) : drumSets(drumSets) {
     this->flags = zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
     this->min_tracks = 1;
     this->max_tracks = 8;

@@ -2,7 +2,6 @@
 
 #include <vector>
 #include "DrumDefines.h"
-#include "utils/tinydir.h"
 #include "DrumVoice.h"
 #include <string>
 
@@ -17,11 +16,11 @@ struct DrumPreset {
 };
 
 
-struct DrumSet {
+struct DrumKit {
     std::string name;
 
-    DrumSet(std::string name);
-    DrumSet(DrumPreset *preset);
+    DrumKit(std::string name);
+    DrumKit(DrumPreset *preset);
 
     void add(DrumPreset *);
     size_t size() const { return drums.size(); }
@@ -32,23 +31,23 @@ private:
 };
 
 
-struct DrumSets {
+struct DrumKits {
 public:
-    DrumSets(std::string dir, uint16_t block_size);
+    DrumKits(std::string dir, uint16_t block_size);
 
     void add(DrumPreset* preset);
     DrumVoice* getDrumVoice(uint8_t drumset_pos, uint8_t drum_pos) const;
     DrumVoice* getDrumVoice(uint16_t drum_id) const;
     DrumPreset* getDrumPreset(uint16_t drum_id) const;
     DrumPreset* getDrumPreset(uint8_t drumset_pos, uint8_t drum_pos) const;
-    DrumSet* getDrumSet(std::string name);
+    DrumKit* getDrumKit(std::string name);
 
     size_t size() const;
     void loadPresetsIn(std::string base_path);
 
 private:
     uint16_t block_size;
-    std::vector<DrumSet*> sets{};
+    std::vector<DrumKit*> sets{};
     DrumPreset *importPreset(std::string full_path, std::string drumset_name, std::string drum_path);
     void importDir(std::string curr_path, std::string base_path);
     // envelopes are defined by comma separated on a single line. 

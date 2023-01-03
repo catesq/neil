@@ -1,7 +1,7 @@
 #include "DrumPresets.h"
 #include "DrumVoice.h"
 
-#include "zzub/plugin.h"
+#include "utils/tinydir.h"
 #include "utils/iniparser.h"
 #include <string>
 #include <typeinfo>
@@ -9,18 +9,18 @@
 #include <boost/algorithm/string/case_conv.hpp>
 
 
-DrumSet::DrumSet(std::string name) : name(name) {}
-DrumSet::DrumSet(DrumPreset *preset) : name(preset->drumsetName) {
+DrumKit::DrumKit(std::string name) : name(name) {}
+DrumKit::DrumKit(DrumPreset *preset) : name(preset->drumsetName) {
     add(preset);
 }
 
 
-void DrumSet::add(DrumPreset *preset) {
+void DrumKit::add(DrumPreset *preset) {
     drums.push_back(preset);
 }
 
 
-DrumPreset* DrumSet::getDrumPreset(uint8_t pos) {
+DrumPreset* DrumKit::getDrumPreset(uint8_t pos) {
     if(pos < drums.size())
         return drums[pos];
     else
@@ -28,11 +28,11 @@ DrumPreset* DrumSet::getDrumPreset(uint8_t pos) {
 }
 
 
-DrumSets::DrumSets(std::string dir, uint16_t block_size): block_size(block_size) {
+DrumKits::DrumKits(std::string dir, uint16_t block_size): block_size(block_size) {
     loadPresetsIn(dir);
 }
 
-DrumSet* DrumSets::getDrumSet(std::string name) {
+DrumKit* DrumKits::getDrumKit(std::string name) {
     for(auto set: sets)
         if(set->name == name)
             return set;
@@ -40,31 +40,31 @@ DrumSet* DrumSets::getDrumSet(std::string name) {
     return nullptr;
 }
 
-void DrumSets::add(DrumPreset* preset) {
-    auto set = getDrumSet(preset->drumsetName);
+void DrumKits::add(DrumPreset* preset) {
+    auto set = getDrumKit(preset->drumsetName);
 
     if(set != nullptr)
         set->add(preset);
     else 
-        sets.emplace_back(new DrumSet(preset));
+        sets.emplace_back(new DrumKit(preset));
 }
 
-DrumPreset* DrumSets::getDrumPreset(uint8_t drumset_pos, uint8_t drum_pos) const {
+DrumPreset* DrumKits::getDrumPreset(uint8_t drumset_pos, uint8_t drum_pos) const {
     if(drumset_pos >= sets.size())
         return nullptr;
 
     return sets[drumset_pos]->getDrumPreset(drum_pos);
 }
 
-DrumPreset* DrumSets::getDrumPreset(uint16_t drum_id) const {
+DrumPreset* DrumKits::getDrumPreset(uint16_t drum_id) const {
     return getDrumPreset(drum_id >> 8, drum_id & 0xFF);
 }
 
-DrumVoice* DrumSets::getDrumVoice(uint16_t drum_id) const {
+DrumVoice* DrumKits::getDrumVoice(uint16_t drum_id) const {
     return getDrumVoice(drum_id >> 8, drum_id & 0xFF);    
 }
 
-DrumVoice* DrumSets::getDrumVoice(uint8_t drumset_id, uint8_t drum_id) const { 
+DrumVoice* DrumKits::getDrumVoice(uint8_t drumset_id, uint8_t drum_id) const {
     DrumPreset* preset;
 
     if((preset=getDrumPreset(drumset_id, drum_id)) != nullptr)
@@ -74,22 +74,22 @@ DrumVoice* DrumSets::getDrumVoice(uint8_t drumset_id, uint8_t drum_id) const {
 }
 
 
-size_t DrumSets::size() const {
+size_t DrumKits::size() const {
     return sets.size();
 }
 
 
-void DrumSets::loadPresetsIn(std::string base_path) { 
+void DrumKits::loadPresetsIn(std::string base_path) {
     importDir(base_path, std::string("/")); 
 
-    std::sort(sets.begin(), sets.end(), [] (DrumSet* setA, DrumSet *setB) { 
+    std::sort(sets.begin(), sets.end(), [] (DrumKit* setA, DrumKit *setB) {
         return boost::to_lower_copy(std::string(setA->name)) < 
                boost::to_lower_copy(std::string(setB->name));
     });
 }
 
 
-void DrumSets::importDir(std::string path, std::string base_path) {
+void DrumKits::importDir(std::string path, std::string base_path) {
     tinydir_dir dir;
     tinydir_open(&dir, path.c_str());
 
@@ -121,7 +121,7 @@ void DrumSets::importDir(std::string path, std::string base_path) {
 }
 
 
-void DrumSets::readEnvelope(DrumPreset *ps, const int parameterOffset, std::string envelope) {
+void DrumKits::readEnvelope(DrumPreset *ps, const int parameterOffset, std::string envelope) {
     int currentPos = 0, currentEnvelopePoint = 0, currentParameter = parameterOffset;
     int point = 0;
 
@@ -168,7 +168,7 @@ void DrumSets::readEnvelope(DrumPreset *ps, const int parameterOffset, std::stri
 }
 
 
-DrumPreset* DrumSets::importPreset(std::string full_path, std::string drumset_name, std::string drum_name) {
+DrumPreset* DrumKits::importPreset(std::string full_path, std::string drumset_name, std::string drum_name) {
     dictionary* ini;
 //    printf("%s %s %s\n", drumset_name.c_str(), drum_name.c_str(), full_path.c_str());
 
