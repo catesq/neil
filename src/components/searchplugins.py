@@ -83,12 +83,10 @@ class SearchPluginsDialog(Gtk.Window):
         self.machine_types = ["Generators", "Effects", "Controllers", "Others"]
         self.machine_type_check = dict(zip(self.machine_types, [is_generator, is_effect, is_controller, is_other]))
 
-        labels = ['LV2', 'ladspa', 'dssi', 'zzub', 'VST 2']
-        urls = ['@zzub.org/dssidapter/', '@zzub.org/ladspadapter/', '@zzub.org/lv2adapter/', '@zzub.org/vstadapter/', '@zzub.org']
+        labels = ['Zzub', 'LV2', 'VST 2', 'Ladspa', 'Dssi']
 
-        self.adapter_names = ['lv2', 'vst2', 'zzub', 'ladspa', 'dssi']
+        self.adapter_names = ['zzub', 'lv2', 'vst2', 'ladspa', 'dssi']
         self.adapter_labels = dict(zip(self.adapter_names, labels))
-        self.adapter_urls = dict(zip(self.adapter_names, urls))
 
         # prepare the plugin list
         self.treeview = Gtk.TreeView() # the treeview has the list of matching plugins
@@ -158,20 +156,28 @@ class SearchPluginsDialog(Gtk.Window):
         self.hide()
         return True
 
-    def get_icon_name(self, pluginloader):
-        uri = pluginloader.get_uri()
-        for (adapter_name, url_prefix) in self.adapter_urls.items():
-            if uri.startswith(url_prefix):
-                return adapter_name
 
+    def plugin_to_icon_name(self, pluginloader):
         filename = pluginloader.get_name()
         filename = filename.strip().lower()
+
         for c in '():[]/,.!"\'$%&\\=?*#~+-<>`@ ':
             filename = filename.replace(c, '_')
+
         while '__' in filename:
             filename = filename.replace('__','_')
-        filename = filename.strip('_')
-        return filename
+
+        return filename.strip('_')
+
+
+    def get_icon_name(self, pluginloader, icontheme):
+        plugin_icon_name = self.plugin_to_icon_name(pluginloader)
+
+        if icontheme.has_icon(plugin_icon_name):
+            return plugin_icon_name
+
+        return get_adapter_name(pluginloader)
+
 
     def on_treeview_drag_data_get(self, widget, context, selection_data, info, time):
         target = context.list_targets()[0]
@@ -180,6 +186,7 @@ class SearchPluginsDialog(Gtk.Window):
             child = store.get(it, 2)[0]
             uri = child.get_uri()
             selection_data.set(target, 8, bytes(uri.encode("utf-8")))
+
 
     def on_entry_changed(self, widget):
         cfg = com.get('neil.core.config')
@@ -191,13 +198,15 @@ class SearchPluginsDialog(Gtk.Window):
         self.searchterms = terms
         self.filter.refilter()
 
+
     def on_checkbox_changed(self, checkbox):
         cfg = com.get('neil.core.config')
         label = checkbox.get_label().replace(' ', '').lower()
         setattr(cfg, 'pluginlistbrowser_show_' + label, checkbox.get_active())
         self.filter.refilter()
 
-    def match_machine_type(self, pluginloader):
+
+    def matches_machine_type(self, pluginloader):
         for machine_type in self.machine_types:
             # check_type_func is one of:  is_generator  is_controller  is_effect  is_other
             check_type_func = self.machine_type_check[machine_type]
@@ -206,6 +215,7 @@ class SearchPluginsDialog(Gtk.Window):
                 return True
         return False
 
+
     def is_active_adapter(self, pluginloader):
         # adapter name one of:  lv2  vst2  zzub  ladspa  dssi
         adapter_name = get_adapter_name(pluginloader)
@@ -213,10 +223,10 @@ class SearchPluginsDialog(Gtk.Window):
             return self.checkboxes[adapter_name].get_active()
         return False
 
-    #
+
     def filter_item(self, model, it, data):
         pluginloader = model.get(it, 2)[0]
-        if not self.match_machine_type(pluginloader) or not self.is_active_adapter(pluginloader):
+        if not self.matches_machine_type(pluginloader) or not self.is_active_adapter(pluginloader):
             return False
 
         name = pluginloader.get_name().lower()
@@ -230,29 +240,22 @@ class SearchPluginsDialog(Gtk.Window):
 
         return True
 
+
     def populate(self, liststore):
         cfg = com.get('neil.core.config')
         theme = Gtk.IconTheme.get_default()
 
-        def get_type_rating(n):
-            uri = n.get_uri()
-            for (adapter_name, url_prefix) in self.adapter_urls.items():
-                if uri.startswith(url_prefix):
-                    return list(self.adapter_urls.values()).index(url_prefix) + 1
-            return 0
+        def get_type_rating(pluginloader):
+            adapter_name = get_adapter_name(pluginloader)
+            index = self.adapter_names.index(adapter_name)
+            return index
 
-        def get_icon_rating(n):
-            icon = self.get_icon_name(n)
-            if icon and theme.has_icon(icon):
+        def get_rating(pluginloader):
+            if is_generator(pluginloader):
                 return 0
-            return 1
-
-        def get_rating(n):
-            if is_generator(n):
-                return 0
-            elif is_controller(n):
+            elif is_controller(pluginloader):
                 return 1
-            elif is_effect(n):
+            elif is_effect(pluginloader):
                 return 2
             else:
                 return 3
@@ -264,20 +267,17 @@ class SearchPluginsDialog(Gtk.Window):
             c = cmp(get_type_rating(a), get_type_rating(b))
             if c != 0:
                 return c
-            c = cmp(get_icon_rating(a),get_icon_rating(b))
-            if c != 0:
-                return c
             c = cmp(get_rating(a),get_rating(b))
             if c != 0:
                 return c
             return cmp(a.get_name().lower(), b.get_name().lower())
 
-        def get_type_text(pl):
-            if is_generator(pl):
+        def get_type_text(pluginloader):
+            if is_generator(pluginloader):
                 return '<span color="' + cfg.get_color('MV Generator') + '">Generator</span>'
-            elif is_effect(pl):
+            elif is_effect(pluginloader):
                 return '<span color="' + cfg.get_color('MV Effect') + '">Effect</span>'
-            elif is_controller(pl):
+            elif is_controller(pluginloader):
                 return '<span color="' + cfg.get_color('MV Controller') + '">Controller</span>'
             else:
                 return '<span color="' + cfg.get_color('MV Other') + '">Other</span>'
@@ -291,7 +291,7 @@ class SearchPluginsDialog(Gtk.Window):
             name = prepstr(pl.get_name())
             text = '<b>' + name + '</b>\n<small>' + get_type_text(pl) + '</small>'
             pixbuf = None
-            icon = self.get_icon_name(pl)
+            icon = self.get_icon_name(pl, theme)
             tooltip = '<b>' + name + '</b> <i>(' + get_type_text(pl) + ')</i>\n'
             tooltip += '<small>' + prepstr(pl.get_uri()) + '</small>\n\n'
             gpcount = pl.get_parameter_count(zzub.zzub_parameter_group_global)
