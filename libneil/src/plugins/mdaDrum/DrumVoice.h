@@ -3,22 +3,16 @@
 #include "DrumDefines.h"
 #include "math.h"
 
+/*
+ * The oringal mda drum generated samples from a drum preset. Each note/variation of the drum was sampled separately.
+ *
+ * This version pre generates some data then generates the sound when played
+ *
+ * The drumvoice is the pre generated data and can be reused to play any note of the drum.
+ *
+ * It has a messy internal state and I have not yet tried to enable realtime parameter editing.
+ */
 
-
-inline uint32_t hash_data(float* fdata, unsigned count) {
-    auto hasher = std::hash<unsigned char>{};
-    uint8_t *data = (uint8_t*)fdata;
-    uint32_t crc = POLY;
-
-    for(int i = 0; i<count*sizeof(float); i++) {
-        uint32_t c = *data++;
-        if(c !=0 ) {
-            crc ^= (unsigned int) (hasher(c) + (crc<<6) + (crc>>2));
-        }
-    }
-
-    return crc;
-}
 
 class DrumVoice {
 public:
@@ -37,10 +31,6 @@ public:
 
     bool operator==(const DrumVoice& cmp_voice) {
         return drum_id == cmp_voice.drum_id;
-    }
-
-    uint32_t hash() {
-        return hash_data(pluginParams, COUNT_PRESET_PARAMS);
     }
 
     uint16_t id() { return drum_id; }
