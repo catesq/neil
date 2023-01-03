@@ -5,6 +5,7 @@
 #include "DrumPresets.h"
 
 #include <string>
+#include <cstring>
 #include <stdio.h>
 
 
@@ -29,11 +30,13 @@ DrumPlugin::DrumPlugin(const DrumKits* drumSets) : drumSets(drumSets) {
     track_values = tval;
 }
 
+
 DrumPlugin::~DrumPlugin() {
     delete_voices(track_voices);
     delete_voices(active_voices);
     delete_voices(inactive_voices);
 }
+
 
 void DrumPlugin::delete_voices(std::vector<DrumVoice*>& voices) {
     for(DrumVoice*& voice: voices) {
@@ -45,14 +48,17 @@ void DrumPlugin::delete_voices(std::vector<DrumVoice*>& voices) {
     voices.clear();    
 }
 
+
 void DrumPlugin::event(unsigned int data) {
     printf("event data %d\n", data);
 }
+
 
 void DrumPlugin::init(zzub::archive *arc) {
     if(arc)
         load(arc);
 }
+
 
 void DrumPlugin::save(zzub::archive *arc) {
     zzub::outstream *po = arc->get_outstream("");
@@ -61,6 +67,7 @@ void DrumPlugin::save(zzub::archive *arc) {
         po->write(&tstate[i].drumId, sizeof(uint16_t));
     }
 }
+
 
 void DrumPlugin::load(zzub::archive *arc) {
     zzub::instream *pi = arc->get_instream("");
@@ -84,6 +91,7 @@ void DrumPlugin::load(zzub::archive *arc) {
     }
 }
 
+
 void DrumPlugin::set_voice(int index, uint16_t drum_id) {
     // can only insert at the back or replace a current vector element
     // fail if trying to insert two ot three places past the end
@@ -106,6 +114,7 @@ void DrumPlugin::set_voice(int index, uint16_t drum_id) {
     }
 }
 
+
 void DrumPlugin::set_voice(int index, DrumVoice* voice) {
     if(index == track_voices.size()) {       // inserting a new voice at the end
         return track_voices.push_back(voice);     //  no need to move a voice to active/inactive voices 
@@ -122,6 +131,7 @@ void DrumPlugin::set_voice(int index, DrumVoice* voice) {
     track_voices[index] = voice;
 }
 
+
 std::vector<DrumVoice*>::iterator DrumPlugin::find_inactive_voice(uint16_t drum_id) {
     for (auto it = inactive_voices.begin(); it != inactive_voices.end(); it++)
         if((*it)->matches(drum_id))
@@ -130,6 +140,7 @@ std::vector<DrumVoice*>::iterator DrumPlugin::find_inactive_voice(uint16_t drum_
     return inactive_voices.end();
 }
 
+
 std::vector<DrumVoice*>::iterator DrumPlugin::find_inactive_voice(DrumVoice* match_voice) {
     for (auto it = inactive_voices.begin(); it != inactive_voices.end(); it++)
         if((*it) == match_voice)
@@ -137,6 +148,7 @@ std::vector<DrumVoice*>::iterator DrumPlugin::find_inactive_voice(DrumVoice* mat
 
     return inactive_voices.end();
 }
+
 
 void DrumPlugin::set_track_count(int new_track_count) {
     if(static_cast<uint16_t>(new_track_count) >= track_voices.size()) {
@@ -244,6 +256,8 @@ const char * DrumPlugin::describe_value(int param, int value) {
         snprintf(desc, 32, "%.3f%%", value / 2.560);
         return desc;
     }
+
+    return "";
 }
 
 zzub::plugin* DrumPluginInfo::create_plugin() const { return new DrumPlugin(drumSets); }
