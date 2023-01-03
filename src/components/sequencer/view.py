@@ -4,12 +4,11 @@ gi.require_version('PangoCairo', '1.0')
 
 from gi.repository import Gtk, Gdk
 from gi.repository import Pango, PangoCairo
-from gi.repository import GObject
 import cairo
 import sys
 
 from neil.utils import (
-    prepstr, get_item_count, add_scrollbars, get_new_pattern_name,
+    prepstr, get_item_count, get_new_pattern_name,
     is_effect, is_generator, is_controller, is_root,
     get_clipboard_text, set_clipboard_text,
     wave_names_generator,

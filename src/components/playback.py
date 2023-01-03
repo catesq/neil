@@ -26,13 +26,10 @@ from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import Pango
 
-from neil.utils import prepstr, add_scrollbars
-import neil.utils as utils, os, stat
 import neil.common as common
 from neil.common import MARGIN, MARGIN2, MARGIN3
 import neil.com as com
 import time
-from neil.utils import new_stock_image_toggle_button, new_stock_image_button
 from neil.utils import format_time, ticks_to_time, new_theme_image_toggle_button
 from neil.utils import new_image_button, new_image_toggle_button, imagepath
 
