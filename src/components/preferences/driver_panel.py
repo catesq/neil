@@ -83,7 +83,6 @@ class DriverPanel(Gtk.VBox):
         settings. If the reinitialization fails, the user is being
         informed and asked to change the settings.
         """
-        traceback.print_stack(limit=5)
         sr = self.cbsamplerate.get_active()
         if sr == -1:
             error(self, "You did not pick a valid sample rate.")
@@ -110,7 +109,6 @@ class DriverPanel(Gtk.VBox):
                 audiodriver.init()
 
             except audiodriver.AudioInitException:
-#                import traceback
                 traceback.print_exc()
                 error(self, "<b><big>There was an error initializing the audio driver.</big></b>\n\nThis can happen when the specified sampling rate or latency is not supported by a particular audio device. Change settings and try again.")
                 raise com.exception('neil.exception.cancel')
