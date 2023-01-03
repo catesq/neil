@@ -37,7 +37,7 @@ class GeneralPanel(Gtk.VBox):
         leddraw = get_config().get_led_draw()
         curvearrows = get_config().get_curve_arrows()
         patnoteoff = get_config().get_pattern_noteoff()
-        self.patternfont = Gtk.FontButton(config.get_config().get_pattern_font())
+        self.patternfont = Gtk.FontButton.new_with_font(config.get_config().get_pattern_font())
         self.patternfont.set_use_font(True)
         self.patternfont.set_use_size(True)
         self.patternfont.set_show_style(True)
