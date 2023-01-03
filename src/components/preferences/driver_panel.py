@@ -1,9 +1,3 @@
-# This Python file uses the following encoding: utf-8
-
-# if __name__ == "__main__":
-#     pass
-
-
 from gi.repository import Gtk
 from neil.common import MARGIN
 from config import get_config
