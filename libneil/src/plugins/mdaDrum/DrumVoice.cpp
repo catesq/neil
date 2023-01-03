@@ -231,7 +231,7 @@ void DrumVoice::startNote (const int midiNoteNumber, const float velocity, int s
     }
 
     // prepare envelopes
-    randmax = 1.f / RAND_MAX;
+    randmax = 1.f / static_cast<float>(RAND_MAX);
     randmax2 = 2.f * randmax;
 
     for (int i = 1; i < 8; i++) {
