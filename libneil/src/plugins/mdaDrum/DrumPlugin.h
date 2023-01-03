@@ -11,7 +11,7 @@
 #include "DrumVoice.h"
 #include "DrumPresets.h"
 
-
+// boilerplate zzub plugin loader
 struct DrumPluginInfo : zzub::info {
     DrumKits* drumSets;
 
@@ -21,8 +21,8 @@ struct DrumPluginInfo : zzub::info {
     virtual bool store_info(zzub::archive *data) const { return false; }
 };
 
-#pragma pack(1)
 
+#pragma pack(1)
 struct DrumTvals {
     uint8_t note = 0;
     uint8_t volume = 255;
@@ -37,12 +37,16 @@ struct DrumTvals {
 #pragma pack()
 
 
-
+// the zzub plugin
 class DrumPlugin : public zzub::plugin {
 private:
+
+    /*
+   */
     std::vector<DrumVoice*> track_voices {};
     std::vector<DrumVoice*> active_voices {};
     std::vector<DrumVoice*> inactive_voices {};
+
     const DrumKits *drumSets {nullptr};
     DrumTvals tval[MAX_TRACK] {};
     DrumTvals tstate[MAX_TRACK] {};
@@ -74,8 +78,6 @@ public:
     virtual void set_track_count(int);
     void save(zzub::archive *arc);
     void load(zzub::archive *arc);
-
-
 };
 
 
@@ -83,8 +85,11 @@ public:
 struct DrumPluginCollection : zzub::plugincollection {
     DrumKits* drumSets;
 
+    DrumPluginCollection() {
+        drumSets = new DrumKits (MDA_DRUMS_PATH, 256);
+    }
+
     virtual void initialize(zzub::pluginfactory *factory) {
-		drumSets = new DrumKits (MDA_DRUMS_PATH, 256);
         factory->register_info(new DrumPluginInfo(drumSets));
     }
 

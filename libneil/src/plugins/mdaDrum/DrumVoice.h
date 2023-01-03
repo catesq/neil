@@ -117,7 +117,7 @@ private:
 
     //==============================================================================
     inline int longestEnv () {
-        long eon, p;
+        long eon;
         float l = 0.f;
 
         for (int e = 1; e < 7; e++)  { // 3

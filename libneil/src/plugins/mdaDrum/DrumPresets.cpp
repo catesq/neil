@@ -123,7 +123,6 @@ void DrumKits::importDir(std::string path, std::string base_path) {
 
 void DrumKits::readEnvelope(DrumPreset *ps, const int parameterOffset, std::string envelope) {
     int currentPos = 0, currentEnvelopePoint = 0, currentParameter = parameterOffset;
-    int point = 0;
 
     while(currentPos < envelope.length()) {
         int nextPos = envelope.find(",", currentPos);
