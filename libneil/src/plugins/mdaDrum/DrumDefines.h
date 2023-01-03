@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <functional>
 
+// this should be a path in the neil settings folder, default .mdaDrumPath. use current dir if unset.
+#ifndef MDA_DRUMS_PATH
+    #define MDA_DRUMS_PATH ""
+#endif
 
 enum {
     START_DRUM_NOTES_OFFSET = 36,
