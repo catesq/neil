@@ -1,6 +1,6 @@
 import config
 import os
-from gi.repository import Gtk
+from gi.repository import Gtk, Pango
 from neil.common import MARGIN
 from config import get_config
 from neil.utils import sharedpath
@@ -22,6 +22,9 @@ class GeneralPanel(Gtk.VBox):
         label = "General",
     )
 
+    def filter_monospace_only(self, family, face):
+        return family.is_monospace() and face.describe().get_style() == Pango.Style.NORMAL
+
     def __init__(self):
         """
         Initializing.
@@ -42,6 +45,8 @@ class GeneralPanel(Gtk.VBox):
         self.patternfont.set_use_size(True)
         self.patternfont.set_show_style(True)
         self.patternfont.set_show_size(True)
+        self.patternfont.set_filter_func(self.filter_monospace_only)
+
         self.incsave = Gtk.CheckButton()
         self.leddraw = Gtk.CheckButton()
         self.curvearrows = Gtk.CheckButton()
