@@ -146,15 +146,15 @@ private:
   float dry;
   float fb;
   int mode, filter_mode, l_incr, r_incr, l_count, r_count;
+  bool is_created = false;
 
 #ifdef USE_CUTOFF_NOTE
-  bool first_event_process = true;
   zzub_plugin_t* meta_plugin;
   uint8_t cutoff_note, cutoff_cents;
   float note_to_freq_base;
-
   unsigned note_params_to_freq(int note_index, int note_cents);
 #endif
+
   float cutoff, resonance;
   Svf filters[2];
   inline float dbtoamp(float db, float limit) {
@@ -173,6 +173,7 @@ public:
   LunarDelay();
   virtual ~LunarDelay() {}
   virtual void init(zzub::archive* pi);
+  virtual void created() { is_created = true; }
   virtual void process_events();
   virtual bool process_stereo(float **pin, float **pout, 
 			      int numsamples, int mode);

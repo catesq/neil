@@ -212,7 +212,7 @@ void LunarDelay::process_events() {
         cutoff = (float) note_params_to_freq(cutoff_note, cutoff_cents);
 
         // the _host is null when process_events() is first called
-        if(!first_event_process) {
+        if(is_created) {
             _host->set_parameter(meta_plugin, 1, 0, PARAM_CUTOFF_FREQ, (int) cutoff);
             zzub_event_data event_data = { zzub_event_type_parameter_changed };
             event_data.change_parameter.plugin = meta_plugin;
@@ -225,7 +225,6 @@ void LunarDelay::process_events() {
 
         gval.cutoff = (int) cutoff;
         update = 1;
-        first_event_process = false;
     }
 #endif
 
