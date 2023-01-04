@@ -20,8 +20,14 @@ PluginAdapter::isExternalUI(const LilvUI * ui) {
 }
 
 
+void
+PluginAdapter::ui_reopen() {
+    gtk_window_present(GTK_WINDOW(gtk_ui_window));
+    ui_is_open = true;
+}
 
-bool
+
+void
 PluginAdapter::ui_open() {
     cache->init_suil();
     cache->init_x_threads();
@@ -43,7 +49,7 @@ PluginAdapter::ui_open() {
     }
 
     if(!lilv_ui_type)
-        return false;
+        return;
 
     gtk_ui_window = ui_open_window(&gtk_ui_root_box, &gtk_ui_parent_box);
 
@@ -89,7 +95,7 @@ PluginAdapter::ui_open() {
     lilv_free(bundle_path);
 
     if(!suil_ui_instance)
-        return false;
+        return;
 
 //    if(!use_show_interface_method) {
     if(!suil_widget) {
@@ -132,16 +138,19 @@ PluginAdapter::ui_open() {
 //    g_object_ref(suil_widget);
 //    g_object_ref(gtk_ui_root_box);
 //    g_object_ref(gtk_ui_parent_box);
-    return true;
+
+    return;
 }
 
 
 
 GtkWidget*
 PluginAdapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_container) {
+
+
     GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 //    g_signal_connect(window, "delete-event", G_CALLBACK(on_window_destroy), this);
-    g_signal_connect(window, "delete-event", G_CALLBACK(gtk_widget_hide_on_delete), this);
+    g_signal_connect(window, "delete-event", G_CALLBACK(ui_close), this);
 
     gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(_host->get_host_info()->host_ptr));
     gtk_window_set_title(GTK_WINDOW(window), info->name.c_str());
@@ -167,28 +176,31 @@ PluginAdapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_con
 
     return window;
 }
-
-
-
-bool
-PluginAdapter::ui_destroy() {
-    printf("kill suil host\n");
-
-    gtk_widget_hide(gtk_ui_window);
-//    gtk_container_remove(GTK_CONTAINER(gtk_ui_parent_box), suil_widget);
-//    gtk_widget_destroy(gtk_ui_parent_box);
-//    gtk_widget_destroy(gtk_ui_root_box);
-//    gtk_widget_destroy(gtk_ui_window);
-//    suil_instance_free(suil_ui_instance);
-//    suil_host_free(suil_ui_host);
-//    gtk_ui_window    = nullptr;
-//    ui_is_open       = false;
-//    suil_ui_host     = nullptr;
-//    suil_ui_instance = nullptr;
-    return true;
+extern "C" {
+void
+ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data) {
+    gtk_widget_hide(widget);
+    static_cast<PluginAdapter*>(data)->ui_is_open = false;
+}
 }
 
+void
+PluginAdapter::ui_destroy() {
+//    printf("kill suil host\n");
 
+    gtk_widget_hide(gtk_ui_window);
+    gtk_container_remove(GTK_CONTAINER(gtk_ui_parent_box), suil_widget);
+    gtk_widget_destroy(gtk_ui_parent_box);
+    gtk_widget_destroy(gtk_ui_root_box);
+    gtk_widget_destroy(gtk_ui_window);
+    suil_instance_free(suil_ui_instance);
+    suil_host_free(suil_ui_host);
+    gtk_ui_window    = nullptr;
+    ui_is_open       = false;
+    suil_ui_host     = nullptr;
+    suil_ui_instance = nullptr;
+//    return true;
+}
 
 
 bool

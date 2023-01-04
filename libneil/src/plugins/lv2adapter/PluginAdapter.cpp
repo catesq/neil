@@ -44,13 +44,6 @@
 #include <iostream>
 
 
-extern "C" {
-    bool on_window_destroy(GtkWidget* widget, gpointer data)
-    {
-        return static_cast<PluginAdapter*>(data)->ui_destroy();
-    }
-}
-
 
 
 PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) {
@@ -73,10 +66,12 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
             ports.push_back(controlPorts.back());
             break;
 
+
         case PortType::Param:
             paramPorts.emplace_back(new ParamPort(*static_cast<ParamPort*>(port)));
             ports.push_back(paramPorts.back());
             break;
+
 
         case PortType::Audio:
             if(port->flow == PortFlow::Input) {
@@ -97,6 +92,7 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
             ports.push_back(cvPorts.back());
             break;
 
+
         case PortType::Event:
             eventPorts.push_back(new EventBufPort(*static_cast<EventBufPort*>(port)));
             eventPorts.back()->eventBuf = lv2_evbuf_new(
@@ -113,6 +109,7 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
             midiPorts.back()->eventBuf = lv2_evbuf_new(cache->hostParams.bufSize, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
             ports.push_back(midiPorts.back());
             break;
+
 
         default:
             ports.push_back(new Port(*port));
@@ -293,9 +290,13 @@ void PluginAdapter::created() {
 bool PluginAdapter::invoke(zzub_event_data_t& data) {
     if (data.type != zzub::event_type_double_click || ui_is_open || !(info->flags & zzub_plugin_flag_has_custom_gui)) {
         return false;
+    } else if(ui_is_open) {
+        ui_reopen();
+    } else {
+        ui_open();
     }
 
-    return ui_open();
+    return true;
 }
 
 

@@ -32,7 +32,6 @@
 
 #include "features/worker.h"
 
-#include "song.h"
 
 void program_changed(
         LV2_Programs_Handle handle,
@@ -76,8 +75,11 @@ struct ParamPort;
 struct SharedCache;
 
 extern "C" {
-bool on_window_destroy(GtkWidget* widget, gpointer data);
-void finalise_plugin_ui(GtkWidget* widget, gpointer data);
+//    bool on_window_destroy(GtkWidget* widget, gpointer data);
+
+    // event handle for close window button.
+    void       ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data);
+
 }
 
 struct PluginAdapter : zzub::plugin, zzub::event_handler {
@@ -143,7 +145,6 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
 
 
     void                connect(LilvInstance* pluginInstance);
-    bool                ui_destroy();
     void                update_all_from_ui();
     
     virtual bool        invoke(zzub_event_data_t& data);
@@ -161,7 +162,10 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     ParamPort*          get_param_port(std::string symbol);
 
 private:
-    bool       ui_open();
+
+    void       ui_open();
+    void       ui_reopen();
+    void       ui_destroy();
     bool       is_ui_resizable();
     bool       isExternalUI(const LilvUI* ui);
     void       process_all_midi_tracks();
