@@ -4,16 +4,20 @@ from gi.repository import Gtk, Gdk, GLib
 from gi.repository import Pango, PangoCairo
 import cairo
 
-
-
-from .toolbar import PatternToolBar
-
 import neil.com as com
 import neil.common as common
 
-from neil.utils import AcceleratorMap, Menu, get_new_pattern_name, error, get_clipboard_text, set_clipboard_text, prepstr, roundint
+from neil.utils import \
+            AcceleratorMap, Menu, \
+            get_new_pattern_name, error, \
+            get_clipboard_text, set_clipboard_text, \
+            fixbn, bn2mn, mn2bn, \
+            prepstr, roundint
 
-from .utils import key_to_note, get_str_from_param, get_length_from_param, get_subindexcount_from_param, get_subindexoffsets_from_param
+from .utils import \
+            key_to_note, \
+            get_str_from_param, get_length_from_param, \
+            get_subindexcount_from_param, get_subindexoffsets_from_param
 
 import config
 import zzub
@@ -333,7 +337,13 @@ def show_pattern_dialog(parent, name, length, dlgmode, letswitch=True):
 
 
 
+from enum import IntEnum
 
+class SelectionMode(IntEnum):
+    Column = 0,
+    Track = 1,
+    Group = 2,
+    All = 3
 
 # selection modes: column, track, tracks, all
 SEL_COLUMN = 0
@@ -361,6 +371,7 @@ class PatternView(Gtk.DrawingArea):
         track = 0
         index = 0
         mode = SEL_COLUMN
+        selection_mode = SelectionMode.Column
 
     def __init__(self, panel, hscroll, vscroll):
         """
@@ -1044,10 +1055,12 @@ class PatternView(Gtk.DrawingArea):
             self.selection.group = 0
         else:
             self.selection.group = self.group
+
         if self.selection.mode > SEL_TRACK:
             self.selection.track = 0
         else:
             self.selection.track = self.track
+
         if self.selection.mode > SEL_COLUMN:
             self.selection.index = 0
         else:
@@ -1236,11 +1249,13 @@ class PatternView(Gtk.DrawingArea):
         data = self.CLIPBOARD_MAGIC
         data += "%01x" % self.selection.mode
         for r, g, t, i in self.selection_range():
+            print("mode=%d, r=%d, g=%d, t=%d, i=%d" % (self.selection.mode, r, g, t, i))
             if r > self.plugin.get_pattern_length(self.pattern) - 1:
                 break
             if r < 0:
                 continue
             data += "%04x%01x%02x%02x%04x" % (r - self.selection.begin, g, t, i, self.plugin.get_pattern_value(self.pattern, g, t, i, r))
+            print("begin=%04x g=%01x t=%02x index=%02x\n\tpattern=%04x" % (r - self.selection.begin, g, t, i, self.plugin.get_pattern_value(self.pattern, g, t, i, r)))
         set_clipboard_text(data)
 
     def delete(self):

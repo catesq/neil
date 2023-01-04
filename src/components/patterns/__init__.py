@@ -24,13 +24,11 @@ editor and its associated dialogs.
 import gi
 gi.require_version("Gtk", "3.0")
 
-
 from .toolbar import PatternToolBar
 from .panel import PatternPanel
-from .views import PatternView, PatternDialog, show_pattern_dialog
+from .views import PatternView, PatternDialog
 
-
-from .utils import get_str_from_param, get_subindexcount_from_param, get_subindexoffsets_from_param
+from .utils import key_to_note #, get_str_from_param, get_subindexcount_from_param, get_subindexoffsets_from_param
 
 
 __all__ = [
@@ -38,11 +36,12 @@ __all__ = [
     'PatternToolBar',
     'PatternPanel',
     'PatternView',
-    'show_pattern_dialog',
-    'get_str_from_param',
-    'get_length_from_param',
-    'get_subindexcount_from_param',
-    'get_subindexoffsets_from_param',
+    'key_to_note'
+#    'show_pattern_dialog',
+#    'get_str_from_param',
+#    'get_length_from_param',
+#    'get_subindexcount_from_param',
+#    'get_subindexoffsets_from_param',
 ]
 
 __neil__ = dict(

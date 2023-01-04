@@ -1,46 +1,59 @@
-from neil.utils import fixbn, bn2mn, mn2bn, note2str, switch2str, byte2str, word2str
+from neil.utils import note2str, switch2str, byte2str, word2str
+
 import config
+
+# builds content to display each cell in the pattern
+# t2c seems to be shorthand for type_to_characters
 t2c = [
-        note2str,
-        switch2str,
-        byte2str,
-        word2str,
+    note2str,
+    switch2str,
+    byte2str,
+    word2str,
 ]
+
+# this is the char width of the text built by the functions in t2c. shorthand for type_to_width
+# used by get_length_from_param
 t2w = [3, 1, 2, 4]
+
+# si is subindex. shorthand for type_to_subindex
+# used by get_subindexcount_from_param
 t2si = [2, 1, 2, 4]
+
+# subindex offset.  shorthand for type_to_subindex.
+# used by get_subindexcount_from_param
 t2siofs = [[0, 2], [0], [0, 1], [0, 1, 2, 3]]
 
 sc2note = {
-        90: (0, 0),
-        83: (0, 1),
-        88: (0, 2),
-        68: (0, 3),
-        67: (0, 4),
-        86: (0, 5),
-        71: (0, 6),
-        66: (0, 7),
-        72: (0, 8),
-        78: (0, 9),
-        74: (0, 10),
-        77: (0, 11),
-        44: (1, 0),
-        81: (1, 0),
-        50: (1, 1),
-        87: (1, 2),
-        51: (1, 3),
-        69: (1, 4),
-        82: (1, 5),
-        53: (1, 6),
-        84: (1, 7),
-        54: (1, 8),
-        89: (1, 9),
-        55: (1, 10),
-        85: (1, 11),
-        73: (2, 0),
-        57: (2, 1),
-        79: (2, 2),
-        48: (2, 3),
-        80: (2, 4),
+    90: (0, 0),
+    83: (0, 1),
+    88: (0, 2),
+    68: (0, 3),
+    67: (0, 4),
+    86: (0, 5),
+    71: (0, 6),
+    66: (0, 7),
+    72: (0, 8),
+    78: (0, 9),
+    74: (0, 10),
+    77: (0, 11),
+    44: (1, 0),
+    81: (1, 0),
+    50: (1, 1),
+    87: (1, 2),
+    51: (1, 3),
+    69: (1, 4),
+    82: (1, 5),
+    53: (1, 6),
+    84: (1, 7),
+    54: (1, 8),
+    89: (1, 9),
+    55: (1, 10),
+    85: (1, 11),
+    73: (2, 0),
+    57: (2, 1),
+    79: (2, 2),
+    48: (2, 3),
+    80: (2, 4),
 }
 
 
