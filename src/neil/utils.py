@@ -59,6 +59,7 @@ def rename_plugin(player, plugin):
     return name
 
 
+#
 def clone_plugin(player, src_plugin):
     new_plugin = player.create_plugin(src_plugin.get_pluginloader())
     new_plugin.set_name(rename_plugin(player, src_plugin));
@@ -71,16 +72,18 @@ def clone_plugin_and_patterns(player, src_plugin, new_plugin):
 
 
 def clone_preset(player, src_plugin, new_plugin):
+    # this import has to be here to avoid circular import
     from neil.preset import Preset
      
-    pluginloader = src_plugin.get_pluginloader()
     preset = Preset()
-    preset.pickup(pluginloader)
+    preset.pickup(src_plugin)
     preset.apply(new_plugin)
-    player.history_commit("Clone plugin %s" % pluginloader.get_short_name())
+    player.history_commit("Clone plugin %s" % src_plugin.get_pluginloader().get_short_name())
 
 
 def clone_plugin_patterns(plugin, new_plugin):
+    new_plugin.set_track_count(plugin.get_track_count())
+
     for index, pattern in [(index, plugin.get_pattern(index)) for index in range(plugin.get_pattern_count())]:
         new_pattern = new_plugin.create_pattern(pattern.get_row_count())
         new_pattern.set_name(pattern.get_name())
@@ -95,8 +98,9 @@ def clone_plugin_patterns(plugin, new_plugin):
         new_plugin.add_pattern(new_pattern)
 
 
-#https://stackoverflow.com/questions/23021327/how-i-can-get-drawingarea-window-handle-in-gtk3/27236258#27236258
-#http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=examples/gtkvlc.py;hb=HEAD
+# the raw window pointer is used by the gui of the lv2 adapter
+# https://stackoverflow.com/questions/23021327/how-i-can-get-drawingarea-window-handle-in-gtk3/27236258#27236258
+# http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=examples/gtkvlc.py;hb=HEAD
 def get_window_pointer(window):
     """ Use the window.__gpointer__ PyCapsule to get the C void* pointer to the window
     """

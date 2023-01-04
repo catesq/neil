@@ -135,10 +135,10 @@ def get_plugin_chain(plugin, chain = {}, player = None):
 
 
 def clone_chain(src_plugins, offset = (0,0)):
+
     player = com.get('neil.core.player')
 
-    plugins = {(plugin_id, None) for plugin_id in get_plugin_chain(src_plugins)}
-
+    plugins = {plugin_id: None for plugin_id in get_plugin_chain(src_plugins)}
     for src_id in plugins.keys():
         src_plugin = player.get_plugin_by_id(src_id)
         if not is_root(src_plugin):
@@ -157,6 +157,7 @@ def clone_chain(src_plugins, offset = (0,0)):
             conn_type = src_plugin.get_output_connection_type(index)
             out_plugin.add_input(new_plugin, conn_type)
 
+    sum_items = lambda x, y: x+y
     # patterns are copied after the making connections as the number of tracks in group 0 of the plugin patterns are the audio and event connections.
     for src_id, new_id in plugins.items():
         src_plugin = player.get_plugin_by_id(src_id)
@@ -165,7 +166,7 @@ def clone_chain(src_plugins, offset = (0,0)):
         clone_plugin_patterns(src_plugin, new_plugin)
         clone_preset(player, src_plugin, new_plugin)
 
-        x, y = src_plugin.get_position() + offset
+        x, y = map(sum_items, src_plugin.get_position(), offset)
         new_plugin.set_position(x, y)
 
     return plugins
@@ -198,7 +199,7 @@ def on_popup_clone_chains(widget, plugins, point = None):
 def on_popup_clone_plugin(widget, plugin):
     player = com.get('neil.core.player')
     new_plugin = clone_plugin(player, plugin)
-    clone_preset(plugin, new_plugin)
+    clone_preset(player, plugin, new_plugin)
     player.history_commit("Clone plugin %s" % new_plugin.get_pluginloader().get_short_name())
 
 
