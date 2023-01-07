@@ -10,7 +10,7 @@
 
 
 struct PluginInfo : zzub::info {
-    PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin);
+    PluginInfo(SharedCache* cache, const LilvPlugin *lilvPlugin);
 
     const LilvWorld*    lilvWorld;
 
@@ -37,12 +37,12 @@ struct PluginInfo : zzub::info {
     void         add_generator_params();
 
 private:
-    uint32_t     mixin_plugin_flag(Port* port);
-    Port*        build_port(uint32_t index, uint32_t& paramPortCount, uint32_t& controlPortCount);
 
-    Port*        setup_base_port(Port* port, const LilvPort* lilvPort);
-    Port*        setup_control_val_port(ValuePort* port,const LilvPort* lilvPort);
-    Port*        setup_param_port(ParamPort* port,const LilvPort* lilvPort);
+    Port*        build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter);
+
+//    Port*        setup_base_port(Port* port, const LilvPort* lilvPort);
+//    Port*        setup_control_val_port(ValuePort* port,const LilvPort* lilvPort);
+//    Port*        setup_param_port(ParamPort* port,const LilvPort* lilvPort);
 
     PortType     get_port_type(const LilvPort* lilvPort, PortFlow flow);
     PortFlow     get_port_flow(const LilvPort* lilvPort);

@@ -374,9 +374,6 @@ struct SharedCache {
         return &instance;
     }
 
-    // bool featureIsSupported(const char* uri);
-
-    // const LV2_Feature** getLv2Features();
 
 private:
     static std::mutex suil_mtx;

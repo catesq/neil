@@ -11,11 +11,19 @@
 
 struct PluginAdapter;
 
+// when the ports are being built the builder function in PluginInfo needs to track the number of control ports, parameter ports and total number of ports
+// the data counter is only used by ParamPorts and is the offset in bytes into the zzub::plugin::global_values
+struct PortCounter {
+    uint32_t total = 0;
+    uint32_t control = 0;
+    uint32_t param = 0;
+    uint32_t data = 0;
+};
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-u_int32_t get_port_properties(const SharedCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
-u_int32_t get_port_designation(const SharedCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
+u_int32_t get_port_properties(const SharedCache* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
+u_int32_t get_port_designation(const SharedCache* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -34,6 +42,8 @@ struct ScalePoint {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+// the midi track is two bytes in a 16 bit field and the order of the bytes matters.
+// this is needed for little endian systems
 union BodgeEndian {
     uint16_t i;
     uint8_t c[2];
@@ -42,8 +52,15 @@ union BodgeEndian {
 
 
 struct Port {
-    Port(PortType type, PortFlow flow, uint32_t index);
-//    Port(const Port& port);
+    // the lilvLilvPort, LilvPlugin and SharedCache are needed to assign the properties, designation and other class members and are not stored
+    Port(const LilvPort *lilvPort,
+         const LilvPlugin* lilvPlugin,
+         SharedCache* cache,
+         PortType type,
+         PortFlow flow,
+         PortCounter& counter
+    );
+
     virtual ~Port() {}
 
     std::string name;
@@ -87,7 +104,14 @@ struct EventBufPort : Port {
 
 
 struct ValuePort: Port {
-    using Port::Port;
+    ValuePort(const LilvPort *lilvPort,
+              const LilvPlugin* lilvPlugin,
+              SharedCache* cache,
+              PortType type,
+              PortFlow flow,
+              PortCounter& counter
+    );
+
     ValuePort(const ValuePort& vPort);
 
     float value = 0.f;
@@ -102,13 +126,25 @@ struct ValuePort: Port {
 struct ControlPort : ValuePort {
     uint32_t controlIndex;
 
-    ControlPort(PortFlow flow, uint32_t index, uint32_t controlIndex);
+    ControlPort(const LilvPort *lilvPort,
+                const LilvPlugin* lilvPlugin,
+                SharedCache* cache,
+                PortType type,
+                PortFlow flow,
+                PortCounter& counter
+    );
     ControlPort(const ControlPort& controlPort);
 };
 
 
 struct ParamPort : ValuePort {
-    ParamPort(PortFlow flow, uint32_t index, uint32_t paramIndex);
+    ParamPort(const LilvPort *lilvPort,
+              const LilvPlugin* lilvPlugin,
+              SharedCache* cache,
+              PortType type,
+              PortFlow flow,
+              PortCounter& counter
+    );
     ParamPort(const ParamPort& paramPort);
     ParamPort(ParamPort&& paramPort);
 

@@ -6,18 +6,59 @@
 #include "lv2/port-groups/port-groups.h"
 #include "lv2_utils.h"
 
-
-Port::Port(PortType type,
+Port::Port(const LilvPort *lilvPort,
+           const LilvPlugin* lilvPlugin,
+           SharedCache* cache,
+           PortType type,
            PortFlow flow,
-           uint32_t index
-    ) : flow(flow),
-        type(type),
-        index(index) {
+           PortCounter& counter )
+    : flow(flow),
+      type(type),
+      index(counter.total)
+{
+    properties = get_port_properties(cache, lilvPlugin, lilvPort);
+    designation = get_port_designation(cache, lilvPlugin, lilvPort);
+
+    name = as_string(lilv_port_get_name(lilvPlugin, lilvPort), true);
+    symbol = as_string(lilv_port_get_symbol(lilvPlugin, lilvPort));
 }
 
 
 
+// some data used by Control and Parameter ports initialised here
+ValuePort::ValuePort(const LilvPort *lilvPort,
+           const LilvPlugin* lilvPlugin,
+           SharedCache* cache,
+           PortType type,
+           PortFlow flow,
+           PortCounter& counter)
+    : Port(lilvPort, lilvPlugin, cache, type, flow, counter)
+{
+    LilvNode *default_val_node,
+             *min_val_node,
+             *max_val_node;
 
+    lilv_port_get_range(lilvPlugin,
+                        lilvPort,
+                        &default_val_node,
+                        &min_val_node,
+                        &max_val_node);
+
+    defaultValue = default_val_node != NULL ? as_float(default_val_node) : 0.f;
+    minimumValue = min_val_node != NULL     ? as_float(min_val_node)     : 0.f;
+    maximumValue = max_val_node != NULL     ? as_float(max_val_node)     : 1.f;
+
+    if(maximumValue < minimumValue) {
+        maximumValue = minimumValue + 1.0f;
+    }
+
+    if(defaultValue < minimumValue || defaultValue > maximumValue) {
+        defaultValue = (maximumValue - minimumValue) / 2.0f;
+    }
+}
+
+
+// basic copy/move constructors
 ValuePort::ValuePort(const ValuePort& valuePort)
     : Port(valuePort),
       value(valuePort.value),
@@ -30,13 +71,16 @@ ValuePort::ValuePort(const ValuePort& valuePort)
 
 ControlPort::ControlPort(const ControlPort& controlPort)
     : ValuePort(controlPort),
-      controlIndex(controlPort.controlIndex) {
+      controlIndex(controlPort.controlIndex)
+{
 }
 
-ParamPort::ParamPort(ParamPort&& paramPort)     : ValuePort(paramPort),
-    paramIndex(paramPort.paramIndex),
-    zzubValOffset(paramPort.zzubValOffset),
-    zzubValSize(paramPort.zzubValSize) {
+ParamPort::ParamPort(ParamPort&& paramPort)
+    : ValuePort(paramPort),
+      paramIndex(paramPort.paramIndex),
+      zzubValOffset(paramPort.zzubValOffset),
+      zzubValSize(paramPort.zzubValSize)
+{
 }
 
 
@@ -46,7 +90,12 @@ ParamPort::ParamPort(const ParamPort& paramPort)
       zzubValOffset(paramPort.zzubValOffset),
       zzubValSize(paramPort.zzubValSize)
 {
-
+    // each copy of the ParamPort needs it own copy of the zzub param
+    // the zzub::info kinda holds a reference copy of the ParamPort/zzub::param
+    // and each instance of the zzub::plugin has it's own copy of both
+    // other plugins can use a central reference copy and not use local copies
+    // but zzub::plugin::load(from save file) has to overwrite the param::value_default field
+    // so each parameter is re-initiliased correctly.
     memcpy(&zzubParam, &paramPort.zzubParam, sizeof(zzub::parameter));
 
     for(auto& scalePoint: paramPort.scalePoints)
@@ -54,19 +103,73 @@ ParamPort::ParamPort(const ParamPort& paramPort)
 }
 
 
-ControlPort::ControlPort(PortFlow portFlow,
-                         uint32_t index,
-                         uint32_t controlIndex)
-    : ValuePort(PortType::Control, portFlow, index),
-      controlIndex(controlIndex){
+ControlPort::ControlPort(const LilvPort *lilvPort,
+                         const LilvPlugin* lilvPlugin,
+                         SharedCache* cache,
+                         PortType type,
+                         PortFlow flow,
+                         PortCounter& counter )
+    : ValuePort(lilvPort, lilvPlugin, cache, type, flow, counter),
+      controlIndex(counter.control)
+{
+    counter.control++;
 }
 
 
-ParamPort::ParamPort(PortFlow portFlow,
-                     uint32_t index,
-                     uint32_t paramIndex ) :
-        ValuePort(PortType::Param, portFlow, index),
-        paramIndex(paramIndex) {
+ParamPort::ParamPort(const LilvPort *lilvPort,
+                     const LilvPlugin* lilvPlugin,
+                     SharedCache* cache,
+                     PortType type,
+                     PortFlow flow,
+                     PortCounter& counter )
+    : ValuePort(lilvPort, lilvPlugin, cache, type, flow, counter),
+      paramIndex(counter.param)
+{
+    zzubParam.flags = zzub::parameter_flag_state;
+
+
+    LilvScalePoints *lilv_scale_points = lilv_port_get_scale_points(lilvPlugin, lilvPort);
+    unsigned scale_points_size = scale_size(lilv_scale_points);
+
+    if (LV2_IS_PORT_TOGGLED(properties) || LV2_IS_PORT_TRIGGER(properties)) {
+        zzubParam.set_switch();
+        zzubParam.value_default = zzub::switch_value_off;
+    } else if(LV2_IS_PORT_ENUMERATION(properties)) {
+        (scale_points_size <= 128) ?  zzubParam.set_byte() : zzubParam.set_word();
+        zzubParam.value_default = (int) defaultValue;
+        zzubParam.value_max = scale_points_size;
+    } else if (LV2_IS_PORT_INTEGER(properties)) {
+        (maximumValue - minimumValue <= 128) ? zzubParam.set_byte() : zzubParam.set_word();
+        zzubParam.value_default = (int) defaultValue;
+        zzubParam.value_min = 0;
+        zzubParam.value_max = std::min((int)(maximumValue - minimumValue), 32768);
+    } else {
+        zzubParam.set_word();
+        zzubParam.value_min = 0;
+        zzubParam.value_max = 32768;
+        zzubParam.value_default = lilv_to_zzub_value(defaultValue);
+    }
+
+    zzubParam.name        = name.c_str();
+    zzubParam.description = zzubParam.name;
+    zzubValSize           = zzubParam.get_bytesize();
+    zzubValOffset         = counter.data;
+    counter.data         += zzubValSize;
+
+    if(lilv_scale_points != NULL ) {
+        LILV_FOREACH(scale_points, spIter,lilv_scale_points) {
+            const LilvScalePoint *lilvScalePoint = lilv_scale_points_get(lilv_scale_points, spIter);
+            scalePoints.push_back(ScalePoint(lilvScalePoint));
+            if(verbose) {
+                auto last_item = scalePoints.size()-1;
+                printf("\nScale point %f, %s", scalePoints[last_item].value, scalePoints[last_item].label.c_str());
+            }
+        }
+
+        lilv_scale_points_free(lilv_scale_points);
+    }
+
+    counter.param++;
 }
 
 //void ControlPort::build_control_port() {
@@ -138,7 +241,7 @@ ParamPort::ParamPort(PortFlow portFlow,
 //-----------------------------------------------------------------------------------
 
 
-uint32_t get_port_properties(const SharedCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
+uint32_t get_port_properties(const SharedCache* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
     uint32_t properties = 0;
     
     if (lilv_port_has_property(lilvPlugin, lilvPort, cache->nodes.pprop_optional))
@@ -193,7 +296,7 @@ uint32_t get_port_properties(const SharedCache *cache, const LilvPlugin *lilvPlu
 //-----------------------------------------------------------------------------------
 
 
-uint32_t get_port_designation(const SharedCache *cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
+uint32_t get_port_designation(const SharedCache* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
     uint32_t designation = 0;
 
     if (lilv_port_has_property(lilvPlugin, lilvPort, cache->nodes.reportsLatency))

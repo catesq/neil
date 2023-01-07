@@ -135,9 +135,6 @@ PluginAdapter::ui_open() {
 
     ui_is_open = true;
     g_object_ref(gtk_ui_window);
-//    g_object_ref(suil_widget);
-//    g_object_ref(gtk_ui_root_box);
-//    g_object_ref(gtk_ui_parent_box);
 
     return;
 }
@@ -187,19 +184,31 @@ ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data) {
 void
 PluginAdapter::ui_destroy() {
 //    printf("kill suil host\n");
+    if(ui_is_open) {
+        ui_is_open = false;
+        gtk_widget_hide(gtk_ui_window);
+    }
 
-    gtk_widget_hide(gtk_ui_window);
     gtk_container_remove(GTK_CONTAINER(gtk_ui_parent_box), suil_widget);
-    gtk_widget_destroy(gtk_ui_parent_box);
-    gtk_widget_destroy(gtk_ui_root_box);
     gtk_widget_destroy(gtk_ui_window);
-    suil_instance_free(suil_ui_instance);
+    g_object_unref(gtk_ui_window);
+    gtk_ui_window = nullptr;
+
+    gtk_widget_destroy(suil_widget);
+    suil_widget = nullptr;
+
+
+    gtk_widget_destroy(gtk_ui_parent_box);
+    gtk_ui_parent_box = nullptr;
+
+    gtk_widget_destroy(gtk_ui_root_box);
+    gtk_ui_root_box = nullptr;
+
     suil_host_free(suil_ui_host);
-    gtk_ui_window    = nullptr;
-    ui_is_open       = false;
-    suil_ui_host     = nullptr;
+    suil_ui_host = nullptr;
+
+    suil_instance_free(suil_ui_instance);
     suil_ui_instance = nullptr;
-//    return true;
 }
 
 
@@ -350,7 +359,7 @@ write_events_from_ui(void* const adapter_handle,
     PluginAdapter* const adapter = (PluginAdapter *) adapter_handle;
 
     if (protocol != 0 && protocol != adapter->cache->urids.atom_eventTransfer) {
-        fprintf(stderr, "UI write with unsupported protocol %u (%s)\n", protocol, unmap_uri(adapter->cache, protocol));
+        fprintf(stderr, "UI write with unsupported protocol %u (%s)\n", protocol, unmap_uri(&adapter->cache, protocol));
         return;
     }
 

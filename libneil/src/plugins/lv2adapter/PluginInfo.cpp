@@ -18,7 +18,8 @@ zzub::plugin *PluginInfo::create_plugin() const {
     return new PluginAdapter((PluginInfo*) &(*this));
 }
 
-PluginInfo::PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin)
+
+PluginInfo::PluginInfo(SharedCache* cache, const LilvPlugin *lilvPlugin)
     : zzub::info(),
       lilvWorld(cache->lilvWorld),
       lilvPlugin(lilvPlugin),
@@ -61,11 +62,17 @@ PluginInfo::PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin)
 
     printf("Registered plugin: name='%s', uri='%s', path='%s'\n", name.c_str(), uri.c_str(), bundlePath.c_str());
 
-    for(uint32_t portIndex = 0, paramPortIndex=0, controlPortIndex=0; portIndex < lilv_plugin_get_num_ports(lilvPlugin); portIndex++) {
-        auto port = build_port(portIndex, paramPortIndex, controlPortIndex);
-        ports.push_back(port);
-        flags |= mixin_plugin_flag(port);
+    PortCounter counter{};
+    for(; counter.total < lilv_plugin_get_num_ports(lilvPlugin); counter.total++) {
+        const LilvPort *lilvPort = lilv_plugin_get_port_by_index(lilvPlugin, counter.total);
+
+        PortFlow flow = get_port_flow(lilvPort);
+        PortType type = get_port_type(lilvPort, flow);
+
+        ports.push_back(build_port(lilvPort, flow, type, counter));
     }
+
+    zzubTotalDataSize = counter.data;
 
     if(lv2ClassUri == LV2_CORE__InstrumentPlugin) {
         add_generator_params();
@@ -76,6 +83,8 @@ PluginInfo::PluginInfo(SharedCache *cache, const LilvPlugin *lilvPlugin)
         flags |= zzub::plugin_flag_control_plugin;
     }
 }
+
+
 
 PortFlow PluginInfo::get_port_flow(const LilvPort* port) {
    if(lilv_port_is_a(lilvPlugin, port, cache->nodes.port_input)) {
@@ -110,128 +119,49 @@ PortType PluginInfo::get_port_type(const LilvPort* lilvPort, PortFlow flow) {
     }
 }
 
-uint32_t PluginInfo::mixin_plugin_flag(Port* port) {
-    switch(port->type) {
-    case PortType::BadPort: return 0;
-    case PortType::Audio:   return port->flow == PortFlow::Input ? zzub_plugin_flag_has_audio_input : zzub_plugin_flag_has_audio_output;
-    case PortType::CV:      return port->flow == PortFlow::Input ? zzub_plugin_flag_has_cv_input : zzub_plugin_flag_has_cv_output;
-    case PortType::Event:   return port->flow == PortFlow::Input ? zzub_plugin_flag_has_event_input : zzub_plugin_flag_has_event_output;
-    case PortType::Midi:    return port->flow == PortFlow::Input ? zzub_plugin_flag_has_midi_input : zzub_plugin_flag_has_midi_output;
-    case PortType::Control: return zzub_plugin_flag_has_event_output;
-    case PortType::Param:   return zzub_plugin_flag_has_event_input;
-    }
-}
 
 
-Port* PluginInfo::build_port(uint32_t index, uint32_t& paramPortIndex, uint32_t& controlPortIndexCount) {
-    const LilvPort *lilvPort = lilv_plugin_get_port_by_index(lilvPlugin, index);
-
-    PortFlow flow = get_port_flow(lilvPort);
-    PortType type = get_port_type(lilvPort, flow);
-
+Port* PluginInfo::build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter) {
     switch(type) {
-    case PortType::Control:
-        return setup_control_val_port(new ControlPort(flow, index, controlPortIndexCount++), lilvPort);
-
-    case PortType::Param:
-        return setup_param_port(new ParamPort(flow, index, paramPortIndex++), lilvPort);
-
-    case PortType::Audio:
-    case PortType::CV:
-        return setup_base_port(new AudioBufPort(type, flow, index), lilvPort);
-
-    case PortType::Event:
-    case PortType::Midi:
-        return setup_base_port(new EventBufPort(type, flow, index), lilvPort);
-
-    // unknown port type, use a dumb placeholder
-    case PortType::BadPort:
-        return setup_base_port(new Port(type, flow, index), lilvPort);
-    }
-}
-
-Port* PluginInfo::setup_base_port(Port* port, const LilvPort* lilvPort) {
-    port->properties = get_port_properties(cache, lilvPlugin, lilvPort);
-    port->designation = get_port_designation(cache, lilvPlugin, lilvPort);
-
-    port->name = as_string(lilv_port_get_name(lilvPlugin, lilvPort), true);
-    port->symbol = as_string(lilv_port_get_symbol(lilvPlugin, lilvPort));
-
-    return port;
-}
-
-Port* PluginInfo::setup_control_val_port(ValuePort* port, const LilvPort* lilvPort) {
-    setup_base_port(port, lilvPort);
-
-    LilvNode *default_val_node, *min_val_node, *max_val_node;
-    lilv_port_get_range(lilvPlugin, lilvPort, &default_val_node, &min_val_node, &max_val_node);
-
-    port->defaultValue = default_val_node != NULL ? as_float(default_val_node) : 0.f;
-    port->minimumValue = min_val_node != NULL     ? as_float(min_val_node) : 0.f;
-    port->maximumValue = min_val_node != NULL     ? as_float(max_val_node) : 0.f;
-
-    if(port->defaultValue < port->minimumValue || port->defaultValue > port->maximumValue) {
-        port->defaultValue = (port->maximumValue - port->minimumValue) / 2.0f;
-    }
-
-    return port;
-}
-
-Port* PluginInfo::setup_param_port(ParamPort* port, const LilvPort* lilvPort) {
-    setup_control_val_port(port, lilvPort);
-
-    port->zzubParam.flags = zzub::parameter_flag_state;
-
-
-    LilvScalePoints *lilv_scale_points = lilv_port_get_scale_points(lilvPlugin, lilvPort);
-    unsigned scale_points_size = scale_size(lilv_scale_points);
-
-    if (LV2_IS_PORT_TOGGLED(port->properties) || LV2_IS_PORT_TRIGGER(port->properties)) {
-        port->zzubParam.set_switch();
-        port->zzubParam.value_default = zzub::switch_value_off;
-    } else if(LV2_IS_PORT_ENUMERATION(port->properties)) {
-        (scale_points_size <= 128) ?  port->zzubParam.set_byte() : port->zzubParam.set_word();
-        port->zzubParam.value_default = (int) port->defaultValue;
-        port->zzubParam.value_max = scale_points_size;
-    } else if (LV2_IS_PORT_INTEGER(port->properties)) {
-        (port->maximumValue - port->minimumValue <= 128) ? port->zzubParam.set_byte() : port->zzubParam.set_word();
-        port->zzubParam.value_default = (int) port->defaultValue;
-        port->zzubParam.value_min = 0;
-        port->zzubParam.value_max = std::min((int)(port->maximumValue - port->minimumValue), 32768);
-    } else {
-        port->zzubParam.set_word();
-        port->zzubParam.value_min = 0;
-        port->zzubParam.value_max = 32768;
-        port->zzubParam.value_default = port->lilv_to_zzub_value(port->defaultValue);
-    }
-
-    port->zzubParam.name        = port->name.c_str();
-    port->zzubParam.description = port->zzubParam.name;
-    port->zzubValSize           = port->zzubParam.get_bytesize();
-    port->zzubValOffset         = zzubTotalDataSize;
-    zzubTotalDataSize           += port->zzubValSize;
-
-    if(lilv_scale_points != NULL ) {
-        LILV_FOREACH(scale_points, spIter,lilv_scale_points) {
-            const LilvScalePoint *lilvScalePoint = lilv_scale_points_get(lilv_scale_points, spIter);
-            port->scalePoints.push_back(ScalePoint(lilvScalePoint));
-            if(verbose) {
-                auto last_item = port->scalePoints.size()-1;
-                printf("\nScale point %f, %s", port->scalePoints[last_item].value, port->scalePoints[last_item].label.c_str());
-            }
+        case PortType::Control: {
+            flags |= zzub_plugin_flag_has_event_output;
+            return new ControlPort(lilvPort, lilvPlugin, cache, type, flow, counter);
         }
 
-        lilv_scale_points_free(lilv_scale_points);
+        case PortType::Param: {
+            flags |= zzub_plugin_flag_has_event_input;
+
+            auto port = new ParamPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+            global_parameters.push_back(&port->zzubParam);
+            return port;
+        }
+
+        case PortType::Audio:
+            flags |= flow == PortFlow::Input ? zzub_plugin_flag_has_audio_input : zzub_plugin_flag_has_audio_output;
+            return new AudioBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+
+        case PortType::CV:
+            flags |= flow == PortFlow::Input ? zzub_plugin_flag_has_cv_input : zzub_plugin_flag_has_cv_output;
+            return new AudioBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+
+        case PortType::Event:
+            flags |= PortFlow::Input ? zzub_plugin_flag_has_event_input : zzub_plugin_flag_has_event_output;
+            return new EventBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+
+        case PortType::Midi:
+            flags |= PortFlow::Input ? zzub_plugin_flag_has_midi_input : zzub_plugin_flag_has_midi_output;
+            return new EventBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+
+        // unknown port type, use a dumb placeholder
+        case PortType::BadPort:
+            return new Port(lilvPort, lilvPlugin, cache, type, flow, counter);
     }
-
-    global_parameters.push_back(&port->zzubParam);
-
-    return port;
 }
 
 
-void PluginInfo::add_generator_params() {
 
+void PluginInfo::add_generator_params()
+{
     add_track_parameter().set_note();
 
     add_track_parameter().set_byte()
@@ -274,13 +204,3 @@ void PluginInfo::add_generator_params() {
                          .set_value_none(0xffff)
                          .set_value_default(0);
 }
-
-//Port* PluginInfo::port_by_symbol(std::string symbol) {
-//    auto iter = portSymbol.find(symbol);
-
-//    if(iter != portSymbol.end()) {
-//        return iter->second;
-//    }
-
-//    return nullptr;
-//}
