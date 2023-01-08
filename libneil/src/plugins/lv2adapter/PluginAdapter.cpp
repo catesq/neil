@@ -17,33 +17,29 @@
 //     Copyright (C) 2006 Leonard Ritter (contact@leonard-ritter.com)
 //     Copyright (C) 2008 James McDermott (jamesmichaelmcdermott@gmail.com)
 
-#include "lv2_defines.h"
-#include "lv2_utils.h"
+#include "zzub/plugin.h"
 
+#include "lv2/state/state.h"
 #include "lv2/options/options.h"
 #include "lv2/instance-access/instance-access.h"
 #include "lv2/buf-size/buf-size.h"
 
+#include "lv2_defines.h"
+#include "lv2_utils.h"
 #include "PluginAdapter.h"
 #include "PluginInfo.h"
-#include <ostream>
-#include <string>
 
 #include <gdk/gdk.h>
-
 #include <glib-object.h>
-
 #include <glib.h>
 #include <gobject/gclosure.h>
 #include <gtk/gtk.h>
-#include "zzub/plugin.h"
-#include "lv2/state/state.h"
 
+#include <ostream>
+#include <string>
 #include <thread>
 #include <cstdlib>
 #include <iostream>
-
-
 
 
 PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) {
