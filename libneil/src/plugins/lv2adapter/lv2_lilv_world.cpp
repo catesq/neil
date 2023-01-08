@@ -1,5 +1,5 @@
 #include "lilv/lilv.h"
-
+#include "suil/suil.h"
 
 #include "lv2/event/event.h"
 #include "lv2/port-props/port-props.h"
@@ -8,39 +8,11 @@
 #include "lv2/parameters/parameters.h"
 #include "lv2/midi/midi.h"
 
-#include "suil/suil.h"
-
 #include "lv2_utils.h"
 #include "lv2_lilv_world.h"
 
 #include <X11/Xlib.h>
-//-----------------------------------------------------------------------------------
 
-extern "C" {
-
-    LV2_URID map_uri(LV2_URID_Map_Handle handle, const char *uri) {
-        lv2_lilv_world* cache = (lv2_lilv_world*)handle;
-        const LV2_URID id = symap_map(cache->symap, uri);
-//        printf("mapped %u from %s\n", id, uri);
-        return id;
-    }
-
-    const char* unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid) {
-        lv2_lilv_world* cache = (lv2_lilv_world*)handle;
-        const char* uri = symap_unmap(cache->symap, urid);
-//        printf("unmapped %u to %s\n", urid, uri);
-        return uri;
-    }
-
-    char* lv2_make_path(LV2_State_Make_Path_Handle handle, const char *path) {
-        lv2_lilv_world *cache = (lv2_lilv_world*)handle;
-        std::string fname = cache->hostParams.tempDir + FILE_SEPARATOR + std::string(path);
-        return strdup(fname.c_str());
-    }
-
-}
-
-//-----------------------------------------------------------------------------------
 
 lv2_lilv_nodes::lv2_lilv_nodes(LilvWorld* world)
     : port                (lilv_new_uri(world, LV2_CORE__port)),
@@ -116,47 +88,6 @@ lv2_lilv_nodes::~lv2_lilv_nodes() {
 
     } while(*++node != this->rdf_type);
 }
-
-//   class_bandpass    (new_uri(LV2_CORE__BandpassPlugin)),
-//   class_chorus      (new_uri(LV2_CORE__ChorusPlugin)),
-//   class_comb        (new_uri(LV2_CORE__CombPlugin)),
-//   class_compressor  (new_uri(LV2_CORE__CompressorPlugin)),
-//   class_constant    (new_uri(LV2_CORE__ConstantPlugin)),
-//   class_converter   (new_uri(LV2_CORE__ConverterPlugin)),
-//   class_delay       (new_uri(LV2_CORE__DelayPlugin)),
-//   class_distortion  (new_uri(LV2_CORE__DistortionPlugin)),
-//   class_dynamics    (new_uri(LV2_CORE__DynamicsPlugin)),
-//   class_eq          (new_uri(LV2_CORE__EQPlugin)),
-//   class_envelope    (new_uri(LV2_CORE__EnvelopePlugin)),
-//   class_expander    (new_uri(LV2_CORE__ExpanderPlugin)),
-//   class_filter      (new_uri(LV2_CORE__FilterPlugin)),
-//   class_flanger     (new_uri(LV2_CORE__FlangerPlugin)),
-//   class_function    (new_uri(LV2_CORE__FunctionPlugin)),
-//   class_gate        (new_uri(LV2_CORE__GatePlugin)),
-//   class_generator   (new_uri(LV2_CORE__GeneratorPlugin)),
-//   class_highpass    (new_uri(LV2_CORE__HighpassPlugin)),
-//   class_instrument  (new_uri(LV2_CORE__InstrumentPlugin)),
-//   class_limiter     (new_uri(LV2_CORE__LimiterPlugin)),
-//   class_lowpass     (new_uri(LV2_CORE__LowpassPlugin)),
-//   class_mixer       (new_uri(LV2_CORE__MixerPlugin)),
-//   class_modulator   (new_uri(LV2_CORE__ModulatorPlugin)),
-//   class_multiEQ     (new_uri(LV2_CORE__MultiEQPlugin)),
-//   class_oscillator  (new_uri(LV2_CORE__OscillatorPlugin)),
-//   class_paraEQ      (new_uri(LV2_CORE__ParaEQPlugin)),
-//   class_phaser      (new_uri(LV2_CORE__PhaserPlugin)),
-//   class_pitch       (new_uri(LV2_CORE__PitchPlugin)),
-//   class_reverb      (new_uri(LV2_CORE__ReverbPlugin)),
-//   class_simulator   (new_uri(LV2_CORE__SimulatorPlugin)),
-//   class_spatial     (new_uri(LV2_CORE__SpatialPlugin)),
-//   class_spectral    (new_uri(LV2_CORE__SpectralPlugin)),
-//   class_utility     (new_uri(LV2_CORE__UtilityPlugin)),
-//   class_waveshaper  (new_uri(LV2_CORE__WaveshaperPlugin)),
-//   unit_name          (new_uri(LV2_UNITS__name)),
-//   unit_render        (new_uri(LV2_UNITS__render)),
-//   unit_symbol        (new_uri(LV2_UNITS__symbol)),
-//   unit_unit          (new_uri(LV2_UNITS__unit)),
-//   preset_preset      (new_uri(LV2_PRESETS__Preset)),
-//   patch_message      (new_uri(LV2_PATCH__Message)),
 
 
 lv2_lilv_world::~lv2_lilv_world() { }
@@ -267,6 +198,48 @@ lv2_lilv_world::init_x_threads()
 
     suil_mtx.unlock();
 }
+
+
+//   class_bandpass    (new_uri(LV2_CORE__BandpassPlugin)),
+//   class_chorus      (new_uri(LV2_CORE__ChorusPlugin)),
+//   class_comb        (new_uri(LV2_CORE__CombPlugin)),
+//   class_compressor  (new_uri(LV2_CORE__CompressorPlugin)),
+//   class_constant    (new_uri(LV2_CORE__ConstantPlugin)),
+//   class_converter   (new_uri(LV2_CORE__ConverterPlugin)),
+//   class_delay       (new_uri(LV2_CORE__DelayPlugin)),
+//   class_distortion  (new_uri(LV2_CORE__DistortionPlugin)),
+//   class_dynamics    (new_uri(LV2_CORE__DynamicsPlugin)),
+//   class_eq          (new_uri(LV2_CORE__EQPlugin)),
+//   class_envelope    (new_uri(LV2_CORE__EnvelopePlugin)),
+//   class_expander    (new_uri(LV2_CORE__ExpanderPlugin)),
+//   class_filter      (new_uri(LV2_CORE__FilterPlugin)),
+//   class_flanger     (new_uri(LV2_CORE__FlangerPlugin)),
+//   class_function    (new_uri(LV2_CORE__FunctionPlugin)),
+//   class_gate        (new_uri(LV2_CORE__GatePlugin)),
+//   class_generator   (new_uri(LV2_CORE__GeneratorPlugin)),
+//   class_highpass    (new_uri(LV2_CORE__HighpassPlugin)),
+//   class_instrument  (new_uri(LV2_CORE__InstrumentPlugin)),
+//   class_limiter     (new_uri(LV2_CORE__LimiterPlugin)),
+//   class_lowpass     (new_uri(LV2_CORE__LowpassPlugin)),
+//   class_mixer       (new_uri(LV2_CORE__MixerPlugin)),
+//   class_modulator   (new_uri(LV2_CORE__ModulatorPlugin)),
+//   class_multiEQ     (new_uri(LV2_CORE__MultiEQPlugin)),
+//   class_oscillator  (new_uri(LV2_CORE__OscillatorPlugin)),
+//   class_paraEQ      (new_uri(LV2_CORE__ParaEQPlugin)),
+//   class_phaser      (new_uri(LV2_CORE__PhaserPlugin)),
+//   class_pitch       (new_uri(LV2_CORE__PitchPlugin)),
+//   class_reverb      (new_uri(LV2_CORE__ReverbPlugin)),
+//   class_simulator   (new_uri(LV2_CORE__SimulatorPlugin)),
+//   class_spatial     (new_uri(LV2_CORE__SpatialPlugin)),
+//   class_spectral    (new_uri(LV2_CORE__SpectralPlugin)),
+//   class_utility     (new_uri(LV2_CORE__UtilityPlugin)),
+//   class_waveshaper  (new_uri(LV2_CORE__WaveshaperPlugin)),
+//   unit_name          (new_uri(LV2_UNITS__name)),
+//   unit_render        (new_uri(LV2_UNITS__render)),
+//   unit_symbol        (new_uri(LV2_UNITS__symbol)),
+//   unit_unit          (new_uri(LV2_UNITS__unit)),
+//   preset_preset      (new_uri(LV2_PRESETS__Preset)),
+//   patch_message      (new_uri(LV2_PATCH__Message)),
 
 
 // const LV2_Feature** PluginWorld::getLv2Features() {

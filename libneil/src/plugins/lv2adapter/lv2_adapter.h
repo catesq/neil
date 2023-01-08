@@ -74,6 +74,7 @@ struct lv2_zzub_info;
 struct ParamPort;
 struct SharedCache;
 
+
 extern "C" 
 {
 //    bool on_window_destroy(GtkWidget* widget, gpointer data);
@@ -82,6 +83,7 @@ extern "C"
     void       ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data);
 
 }
+
 
 struct lv2_adapter : zzub::plugin, zzub::event_handler 
 {

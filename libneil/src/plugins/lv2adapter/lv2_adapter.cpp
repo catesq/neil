@@ -341,6 +341,7 @@ lv2_adapter::read_archive_params(zzub::instream* instream)
 }
 
 
+
 void 
 lv2_adapter::save_archive_params(zzub::outstream *outstream) 
 {
@@ -351,6 +352,7 @@ lv2_adapter::save_archive_params(zzub::outstream *outstream)
         outstream->write(param_port->value);
     }
 }
+
 
 
 void lv2_adapter::read_archive_state(zzub::instream* instream, uint32_t length) 
@@ -368,6 +370,7 @@ void lv2_adapter::read_archive_state(zzub::instream* instream, uint32_t length)
 
     lilv_state_restore(lilvState, lilvInstance, &set_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
 }
+
 
 
 void 
@@ -391,6 +394,7 @@ lv2_adapter::save_archive_state(zzub::outstream *outstream)
     outstream->write((uint32_t) strlen(state_str));
     outstream->write(state_str, strlen(state_str));
 }
+
 
 
 void 

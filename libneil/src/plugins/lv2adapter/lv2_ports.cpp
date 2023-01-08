@@ -19,6 +19,7 @@ lv2_port::lv2_port(const lv2_port& other)
 
 }
 
+
 lv2_port::lv2_port(const LilvPort *lilvPort,
                    const LilvPlugin* lilvPlugin,
                    lv2_lilv_world* cache,
@@ -72,6 +73,7 @@ value_port::value_port(const LilvPort *lilvPort,
 }
 
 
+
 // basic copy/move constructors
 value_port::value_port(const value_port& other)
     : lv2_port(other),
@@ -82,10 +84,12 @@ value_port::value_port(const value_port& other)
 }
 
 
+
 control_port::control_port(const control_port& other)
     : value_port(other),
       controlIndex(other.controlIndex) {
 }
+
 
 
 control_port::control_port(const LilvPort *lilvPort,
@@ -99,12 +103,14 @@ control_port::control_port(const LilvPort *lilvPort,
 }
 
 
+
 param_port::param_port(param_port&& other)
     : value_port(other),
       paramIndex(other.paramIndex),
       zzubValOffset(other.zzubValOffset),
       zzubValSize(other.zzubValSize) {
 }
+
 
 
 param_port::param_port(const param_port& other)
@@ -124,6 +130,7 @@ param_port::param_port(const param_port& other)
     for(auto& scalePoint: other.scalePoints)
         scalePoints.push_back(scalePoint);
 }
+
 
 
 param_port::param_port(const LilvPort *lilvPort,
@@ -251,7 +258,9 @@ param_port::param_port(const LilvPort *lilvPort,
 //-----------------------------------------------------------------------------------
 
 
-uint32_t get_port_properties(const lv2_lilv_world* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
+uint32_t 
+get_port_properties(const lv2_lilv_world* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) 
+{
     uint32_t properties = 0;
     
     if (lilv_port_has_property(lilvPlugin, lilvPort, cache->nodes.pprop_optional))
@@ -306,7 +315,9 @@ uint32_t get_port_properties(const lv2_lilv_world* cache, const LilvPlugin *lilv
 //-----------------------------------------------------------------------------------
 
 
-uint32_t get_port_designation(const lv2_lilv_world* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
+uint32_t 
+get_port_designation(const lv2_lilv_world* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) 
+{
     uint32_t designation = 0;
 
     if (lilv_port_has_property(lilvPlugin, lilvPort, cache->nodes.reportsLatency))
@@ -467,7 +478,11 @@ uint32_t get_port_designation(const lv2_lilv_world* cache, const LilvPlugin *lil
 //     return type;
 // }
 
-int param_port::lilv_to_zzub_value(float lilv_val) {
+
+
+int 
+param_port::lilv_to_zzub_value(float lilv_val) 
+{
 //        if(strcmp(zzubParam.name, "pan_one") == 0 || strcmp(zzubParam.name, "kit_num") == 0 || strcmp(zzubParam.name, "base_note") == 0) {
 //            printf("%s zzubmax %i min %f max %f from curr %f to zzub %i",
 //                   zzubParam.name, zzubParam.value_max, minimumValue, maximumValue, lilv_val, (int)(((lilv_val - minimumValue) / (maximumValue - minimumValue)) * zzubParam.value_max));
@@ -489,7 +504,11 @@ int param_port::lilv_to_zzub_value(float lilv_val) {
     }
 }
 
-float param_port::zzub_to_lilv_value(int zzub_val) {
+
+
+float 
+param_port::zzub_to_lilv_value(int zzub_val) 
+{
     switch(zzubParam.type) {
     case zzub::parameter_type_word:
     case zzub::parameter_type_byte:
@@ -504,7 +523,11 @@ float param_port::zzub_to_lilv_value(int zzub_val) {
     }
 }
 
-int param_port::getData(uint8_t *globals){
+
+
+int 
+param_port::getData(uint8_t *globals)
+{
     switch(zzubParam.type) {
     case zzub::parameter_type_word:
         return *((unsigned short*)(globals + zzubValOffset));
@@ -516,7 +539,11 @@ int param_port::getData(uint8_t *globals){
     }
 }
 
-void param_port::putData(uint8_t *globals, int value) {
+
+
+void 
+param_port::putData(uint8_t *globals, int value) 
+{
     uint8_t* dest = &globals[zzubValOffset];
     switch(zzubParam.type) {
 
@@ -541,7 +568,11 @@ void param_port::putData(uint8_t *globals, int value) {
     }
 }
 
-const char* param_port::describeValue(const int value, char *text) {
+
+
+const char* 
+param_port::describeValue(const int value, char *text) 
+{
     printf("param_port::describeValue(%s)\n", name.c_str());
 
     if(zzubParam.type == zzub::parameter_type_note) {

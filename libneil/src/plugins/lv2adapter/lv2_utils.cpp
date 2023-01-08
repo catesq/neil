@@ -27,13 +27,17 @@ struct LilvZzubParamPort;
 
 // char* owned_lilv_str  a char* pointer which is owned & released by the lilv library
 //     copy string/release a pointer to string -
-std::string free_string(char* owned_lilv_str) {
+std::string 
+free_string(char* owned_lilv_str) 
+{
     std::string dup_str(owned_lilv_str);
     lilv_free(owned_lilv_str);
     return dup_str;
 }
 
-std::string as_string(LilvNode *node, bool freeNode) {
+std::string 
+as_string(LilvNode *node, bool freeNode) 
+{
     std::string val("");
 
     if(node == nullptr) {
@@ -53,32 +57,65 @@ std::string as_string(LilvNode *node, bool freeNode) {
     return val;
 }
 
-std::string as_string(const LilvNode *node) {
+std::string 
+as_string(const LilvNode *node) 
+{
     return as_string((LilvNode*) node, false);
 }
 
-float as_float(const LilvNode *node, bool canFreeNode) {
+float 
+as_float(const LilvNode *node, bool canFreeNode) 
+{
     return as_numeric<float>((LilvNode*)node, canFreeNode);
 }
 
-int as_int(const LilvNode *node, bool canFreeNode) {
+int 
+as_int(const LilvNode *node, bool canFreeNode) 
+{
     return as_numeric<int>((LilvNode*)node, canFreeNode);
 }
 
-unsigned scale_size(const LilvScalePoints *scale_points) {
+unsigned 
+scale_size(const LilvScalePoints *scale_points) 
+{
     return (scale_points != nullptr) ? lilv_scale_points_size(scale_points) : 0;
 }
 
-unsigned nodes_size(const LilvNodes *nodes) {
+unsigned 
+nodes_size(const LilvNodes *nodes) 
+{
     return (nodes != nullptr) ? lilv_nodes_size(nodes) : 0;
 }
 
 //uint64_t get_plugin_type(const PluginWorld *world, const LilvPlugin *lilvPlugin);
 
-extern "C" {
-    const char* unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid);
-    LV2_URID map_uri(LV2_URID_Map_Handle handle, const char *uri);
-    char* lv2_make_path(LV2_State_Make_Path_Handle handle, const char *path);
+extern "C" 
+{
+    LV2_URID 
+    map_uri(LV2_URID_Map_Handle handle, const char *uri) 
+    {
+        lv2_lilv_world* cache = (lv2_lilv_world*)handle;
+        const LV2_URID id = symap_map(cache->symap, uri);
+//        printf("mapped %u from %s\n", id, uri);
+        return id;
+    }
+
+    const char* 
+    unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid) 
+    {
+        lv2_lilv_world* cache = (lv2_lilv_world*)handle;
+        const char* uri = symap_unmap(cache->symap, urid);
+//        printf("unmapped %u to %s\n", urid, uri);
+        return uri;
+    }
+
+    char* 
+    lv2_make_path(LV2_State_Make_Path_Handle handle, const char *path) 
+    {
+        lv2_lilv_world *cache = (lv2_lilv_world*)handle;
+        std::string fname = cache->hostParams.tempDir + FILE_SEPARATOR + std::string(path);
+        return strdup(fname.c_str());
+    }
 }
 
 

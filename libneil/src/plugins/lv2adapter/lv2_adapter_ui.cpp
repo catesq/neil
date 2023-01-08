@@ -3,6 +3,17 @@
 
 // these are the ui related function for the PLuginAdapter - the PluginAdapter file was getting unwieldy
 
+extern "C" 
+{
+
+    void
+    ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data)
+    {
+        gtk_widget_hide(widget);
+        static_cast<lv2_adapter*>(data)->ui_is_open = false;
+    }
+
+}
 
 bool
 lv2_adapter::is_ui_external(const LilvUI * ui) {
@@ -172,16 +183,12 @@ lv2_adapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_conta
 
     return window;
 }
-extern "C" {
-void
-ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data) {
-    gtk_widget_hide(widget);
-    static_cast<lv2_adapter*>(data)->ui_is_open = false;
-}
-}
+
+
 
 void
-lv2_adapter::ui_destroy() {
+lv2_adapter::ui_destroy() 
+{
 //    printf("kill suil host\n");
     if(!ui_is_open) {
         return;
@@ -209,8 +216,10 @@ lv2_adapter::ui_destroy() {
 }
 
 
+
 bool
-lv2_adapter::is_ui_resizable() {
+lv2_adapter::is_ui_resizable() 
+{
     if(!lilv_ui_type)
         return false;
 
@@ -234,7 +243,8 @@ lv2_adapter::is_ui_resizable() {
 
 
 void
-lv2_adapter::ui_event_import() {
+lv2_adapter::ui_event_import() 
+{
     ControlChange ev;
     const size_t  space = zix_ring_read_space(ui_events);
     for (size_t i = 0; i < space; i += sizeof(ev) + ev.size) {
@@ -263,14 +273,18 @@ lv2_adapter::ui_event_import() {
 }
 
 
-void
-lv2_adapter::ui_event_dispatch() {
 
+void
+lv2_adapter::ui_event_dispatch() 
+{
     zix_ring_reset(plugin_events);
 }
 
+
+
 void
-lv2_adapter::update_all_from_ui() {
+lv2_adapter::update_all_from_ui() 
+{
     printf("PluginAdapter::update_all_from_ui\n");
 
     // const char *dir = world->hostParams.tempDir;
@@ -289,7 +303,8 @@ lv2_adapter::update_all_from_ui() {
 const bool
 lv2_adapter::ui_select(const char *native_ui_type,
                          const LilvUI** ui_type_ui,
-                         const LilvNode** ui_type_node) {
+                         const LilvNode** ui_type_node) 
+{
     // native_ui_type is
     //   nullptr if LV2_UI__showInterface was a required feature for this plugin
     //   GTK3    if LV2_UI__showInterface is an optional feature or not supported
@@ -351,7 +366,8 @@ write_events_from_ui(void* const adapter_handle,
                      uint32_t    port_index,
                      uint32_t    buffer_size,
                      uint32_t    protocol,
-                     const void* buffer) {
+                     const void* buffer) 
+{
 
     lv2_adapter* const adapter = (lv2_adapter *) adapter_handle;
 
@@ -375,9 +391,11 @@ write_events_from_ui(void* const adapter_handle,
 }
 
 
+
 uint32_t
 lv2_port_index(void* const adapter_handle,
-               const char* symbol) {
+               const char* symbol) 
+{
     lv2_adapter* const adapter = (lv2_adapter *) adapter_handle;
 
     for(auto& port: adapter->info->ports)
@@ -388,11 +406,13 @@ lv2_port_index(void* const adapter_handle,
 }
 
 
+
 const void*
 get_port_value(const char* port_symbol,
                void*       user_data,
                uint32_t*   size,
-               uint32_t*   type) {
+               uint32_t*   type) 
+{
 //    printf("PluginAdapter::get_port_value\n");
 
     lv2_adapter* adapter = (lv2_adapter*) user_data;
@@ -407,6 +427,7 @@ get_port_value(const char* port_symbol,
     *size = *type = 0;
     return NULL;
 }
+
 
 
 void
