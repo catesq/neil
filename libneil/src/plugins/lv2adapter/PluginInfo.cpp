@@ -15,7 +15,7 @@ inline void printport(const char *prefix, const LilvPlugin* lilvPlugin, const Li
 
 
 zzub::plugin *PluginInfo::create_plugin() const {
-    return new PluginAdapter((PluginInfo*) &(*this));
+    return new lv2_adapter((PluginInfo*) &(*this));
 }
 
 
@@ -63,16 +63,18 @@ PluginInfo::PluginInfo(SharedCache* cache, const LilvPlugin *lilvPlugin)
     printf("Registered plugin: name='%s', uri='%s', path='%s'\n", name.c_str(), uri.c_str(), bundlePath.c_str());
 
     PortCounter counter{};
-    for(; counter.total < lilv_plugin_get_num_ports(lilvPlugin); counter.total++) {
-        const LilvPort *lilvPort = lilv_plugin_get_port_by_index(lilvPlugin, counter.total);
+    for(; counter.portIndex < lilv_plugin_get_num_ports(lilvPlugin); counter.portIndex++) {
+        const LilvPort *lilvPort = lilv_plugin_get_port_by_index(lilvPlugin, counter.portIndex);
 
         PortFlow flow = get_port_flow(lilvPort);
         PortType type = get_port_type(lilvPort, flow);
 
         ports.push_back(build_port(lilvPort, flow, type, counter));
+
+        flags |= ports.back()->get_zzub_flags();
     }
 
-    zzubTotalDataSize = counter.data;
+    zzubTotalDataSize = counter.dataOffset;
 
     if(lv2ClassUri == LV2_CORE__InstrumentPlugin) {
         add_generator_params();
@@ -124,35 +126,36 @@ PortType PluginInfo::get_port_type(const LilvPort* lilvPort, PortFlow flow) {
 Port* PluginInfo::build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter) {
     switch(type) {
         case PortType::Control: {
-            flags |= zzub_plugin_flag_has_event_output;
-            return new ControlPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+            auto port = new ControlPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+
+            counter.control++;
+
+            return port;
         }
 
         case PortType::Param: {
-            flags |= zzub_plugin_flag_has_event_input;
-
             auto port = new ParamPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+
+            counter.dataOffset += port->zzubValSize;
+            counter.param++;
+
             global_parameters.push_back(&port->zzubParam);
+
             return port;
         }
 
         case PortType::Audio:
-            flags |= flow == PortFlow::Input ? zzub_plugin_flag_has_audio_input : zzub_plugin_flag_has_audio_output;
             return new AudioBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
 
         case PortType::CV:
-            flags |= flow == PortFlow::Input ? zzub_plugin_flag_has_cv_input : zzub_plugin_flag_has_cv_output;
             return new AudioBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
 
         case PortType::Event:
-            flags |= PortFlow::Input ? zzub_plugin_flag_has_event_input : zzub_plugin_flag_has_event_output;
             return new EventBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
 
         case PortType::Midi:
-            flags |= PortFlow::Input ? zzub_plugin_flag_has_midi_input : zzub_plugin_flag_has_midi_output;
             return new EventBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
 
-        // unknown port type, use a dumb placeholder
         case PortType::BadPort:
             return new Port(lilvPort, lilvPlugin, cache, type, flow, counter);
     }

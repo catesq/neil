@@ -42,7 +42,7 @@
 #include <iostream>
 
 
-PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) {
+lv2_adapter::lv2_adapter(PluginInfo *info) : info(info), cache(info->cache) {
     if(info->zzubTotalDataSize)  {
         global_values = malloc(info->zzubTotalDataSize);
         memset(global_values, 0, info->zzubTotalDataSize);
@@ -118,7 +118,7 @@ PluginAdapter::PluginAdapter(PluginInfo *info) : info(info), cache(info->cache) 
 
 
 
-PluginAdapter::~PluginAdapter() {
+lv2_adapter::~lv2_adapter() {
     halting = true;
     lv2_worker_finish(&this->worker);
 
@@ -142,7 +142,7 @@ PluginAdapter::~PluginAdapter() {
 
 
 void
-PluginAdapter::init(zzub::archive *arc) {
+lv2_adapter::init(zzub::archive *arc) {
     sample_rate      = _master_info->samples_per_second;
     ui_scale         = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
 
@@ -274,7 +274,7 @@ PluginAdapter::init(zzub::archive *arc) {
 
 
 
-void PluginAdapter::created() {
+void lv2_adapter::created() {
     initialized = true;
     printf("Initialised lv2 adapter\n");
     for(ParamPort* port: paramPorts)
@@ -283,7 +283,7 @@ void PluginAdapter::created() {
 
 
 
-bool PluginAdapter::invoke(zzub_event_data_t& data) {
+bool lv2_adapter::invoke(zzub_event_data_t& data) {
     if (data.type != zzub::event_type_double_click || ui_is_open || !(info->flags & zzub_plugin_flag_has_custom_gui)) {
         return false;
     } else if(ui_is_open) {
@@ -301,20 +301,20 @@ void program_changed(LV2_Programs_Handle handle, int32_t index) {
     // printf("program changed\n");
     printf("PluginAdapter::program_changed\n");
 
-    PluginAdapter* adapter = (PluginAdapter*) handle;
+    lv2_adapter* adapter = (lv2_adapter*) handle;
     adapter->update_all_from_ui();
     adapter->program_change_update = true;
 }
 
 
 
-void PluginAdapter::destroy() {
+void lv2_adapter::destroy() {
     delete this;
 }
 
 
 
-void PluginAdapter::read_archive_params(zzub::instream* instream) {
+void lv2_adapter::read_archive_params(zzub::instream* instream) {
     printf("PluginAdapter::read_archive_params\n");
     uint32_t param_count = 0;
     instream->read(param_count);
@@ -328,7 +328,7 @@ void PluginAdapter::read_archive_params(zzub::instream* instream) {
 }
 
 
-void PluginAdapter::save_archive_params(zzub::outstream *outstream) {
+void lv2_adapter::save_archive_params(zzub::outstream *outstream) {
     outstream->write((uint32_t) ARCHIVE_USES_PARAMS);
     outstream->write((uint32_t) paramPorts.size());
 //    printf("save %lu params\n", paramPorts.size());
@@ -338,7 +338,7 @@ void PluginAdapter::save_archive_params(zzub::outstream *outstream) {
 }
 
 
-void PluginAdapter::read_archive_state(zzub::instream* instream, uint32_t length) {
+void lv2_adapter::read_archive_state(zzub::instream* instream, uint32_t length) {
     printf("PluginAdapter::read_archive_state\n");
     char* state_str = (char*) malloc(length + 1);
     instream->read(state_str, length);
@@ -354,7 +354,7 @@ void PluginAdapter::read_archive_state(zzub::instream* instream, uint32_t length
 }
 
 
-void PluginAdapter::save_archive_state(zzub::outstream *outstream) {
+void lv2_adapter::save_archive_state(zzub::outstream *outstream) {
     const char *dir = cache->hostParams.tempDir.c_str();
 
     LilvState* const state = lilv_state_new_from_instance(
@@ -375,7 +375,7 @@ void PluginAdapter::save_archive_state(zzub::outstream *outstream) {
 }
 
 
-void PluginAdapter::save(zzub::archive *arc) {
+void lv2_adapter::save(zzub::archive *arc) {
     if (verbose) printf("PluginAdapter: in save()!\n");
     zzub::outstream *outstream = arc->get_outstream("");
 
@@ -387,7 +387,7 @@ void PluginAdapter::save(zzub::archive *arc) {
 }
 
 
-const char *PluginAdapter::describe_value(int param, int value) {
+const char *lv2_adapter::describe_value(int param, int value) {
     static char text[256];
     if(param < paramPorts.size()) {
         return paramPorts[param]->describeValue(value, text);
@@ -396,7 +396,7 @@ const char *PluginAdapter::describe_value(int param, int value) {
 }
 
 
-void PluginAdapter::set_track_count(int ntracks) {
+void lv2_adapter::set_track_count(int ntracks) {
     if (ntracks < trackCount) {
         for (int t = ntracks; t < trackCount; t++) {
             if (trak_states[t].note != zzub::note_value_none) {
@@ -409,7 +409,7 @@ void PluginAdapter::set_track_count(int ntracks) {
 }
 
 
-ParamPort* PluginAdapter::get_param_port(std::string symbol) {
+ParamPort* lv2_adapter::get_param_port(std::string symbol) {
     for(auto& port: paramPorts)
         if(symbol == port->symbol)
             return port;
@@ -418,10 +418,10 @@ ParamPort* PluginAdapter::get_param_port(std::string symbol) {
 }
 
 
-void PluginAdapter::stop() {}
+void lv2_adapter::stop() {}
 
 
-void PluginAdapter::update_port(ParamPort* port, float float_val) {
+void lv2_adapter::update_port(ParamPort* port, float float_val) {
     printf("Update port: index=%d, name='%s', value=%f\r", port->index, port->name.c_str(), float_val);
     port->value = float_val;
     //    int zzub_val = port->lilv_to_zzub_value(float_val);
@@ -431,7 +431,7 @@ void PluginAdapter::update_port(ParamPort* port, float float_val) {
 }
 
 
-void PluginAdapter::process_events() {
+void lv2_adapter::process_events() {
     if(halting || !initialized)
         return;
 
@@ -467,7 +467,7 @@ void PluginAdapter::process_events() {
         globals += paramPort->zzubValSize;
         
         if (value != paramPort->zzubParam.value_none) {
-            if(paramPort->index == 8)
+            if(verbose && paramPort->index == 8)
                 printf("Save port: index=%d, name='%s', value=%f param index=%d\n", paramPort->index, paramPort->name.c_str(), paramPort->value, paramPort->paramIndex);
             paramPort->value = paramPort->zzub_to_lilv_value(value);
         }
@@ -478,7 +478,7 @@ void PluginAdapter::process_events() {
 }
 
 
-void PluginAdapter::process_all_midi_tracks() {
+void lv2_adapter::process_all_midi_tracks() {
     for (int t = 0; t < trackCount; t++) {
         auto prev = (zzub::note_track*) &trak_states[t];
         auto curr = (zzub::note_track*) &trak_values[t];
@@ -531,7 +531,7 @@ void PluginAdapter::process_all_midi_tracks() {
 
 
 
-void PluginAdapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg) {
+void lv2_adapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg) {
     if(vals_msg.midi.cmd != TRACKVAL_NO_MIDI_CMD) {
         state_msg.midi.cmd = vals_msg.midi.cmd;
 
@@ -580,10 +580,10 @@ void PluginAdapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_m
 
 
 
-bool PluginAdapter::process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) { return false; }
+bool lv2_adapter::process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) { return false; }
 
 
-bool PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, int const mode) {
+bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int const mode) {
     if (halting || mode == zzub::process_mode_no_io)
         return false;
 

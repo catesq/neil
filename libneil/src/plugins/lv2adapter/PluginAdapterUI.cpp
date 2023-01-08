@@ -5,7 +5,7 @@
 
 
 bool
-PluginAdapter::isExternalUI(const LilvUI * ui) {
+lv2_adapter::isExternalUI(const LilvUI * ui) {
     const LilvNodes* ui_classes = lilv_ui_get_classes(ui);
     std::string name = as_string(lilv_ui_get_uri(ui));
 
@@ -21,20 +21,19 @@ PluginAdapter::isExternalUI(const LilvUI * ui) {
 
 
 void
-PluginAdapter::ui_reopen() {
+lv2_adapter::ui_reopen() {
     gtk_window_present(GTK_WINDOW(gtk_ui_window));
     ui_is_open = true;
 }
 
 
 void
-PluginAdapter::ui_open() {
+lv2_adapter::ui_open() {
     cache->init_suil();
     cache->init_x_threads();
+
     if (!suil_ui_host)
         suil_ui_host = suil_host_new(write_events_from_ui, lv2_port_index, nullptr, nullptr); //&update_port, &remove_port);
-
-//    ui_select(use_show_interface_method ? NULL : GTK3_URI, &lilv_ui_type, &lilv_ui_type_node);
 
     ui_select(GTK3_URI, &lilv_ui_type, &lilv_ui_type_node);
 
@@ -142,7 +141,7 @@ PluginAdapter::ui_open() {
 
 
 GtkWidget*
-PluginAdapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_container) {
+lv2_adapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_container) {
 
 
     GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -177,16 +176,15 @@ extern "C" {
 void
 ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data) {
     gtk_widget_hide(widget);
-    static_cast<PluginAdapter*>(data)->ui_is_open = false;
+    static_cast<lv2_adapter*>(data)->ui_is_open = false;
 }
 }
 
 void
-PluginAdapter::ui_destroy() {
+lv2_adapter::ui_destroy() {
 //    printf("kill suil host\n");
-    if(ui_is_open) {
-        ui_is_open = false;
-        gtk_widget_hide(gtk_ui_window);
+    if(!ui_is_open) {
+        return;
     }
 
     gtk_container_remove(GTK_CONTAINER(gtk_ui_parent_box), suil_widget);
@@ -196,7 +194,6 @@ PluginAdapter::ui_destroy() {
 
     gtk_widget_destroy(suil_widget);
     suil_widget = nullptr;
-
 
     gtk_widget_destroy(gtk_ui_parent_box);
     gtk_ui_parent_box = nullptr;
@@ -213,7 +210,7 @@ PluginAdapter::ui_destroy() {
 
 
 bool
-PluginAdapter::is_ui_resizable() {
+lv2_adapter::is_ui_resizable() {
     if(!lilv_ui_type)
         return false;
 
@@ -237,7 +234,7 @@ PluginAdapter::is_ui_resizable() {
 
 
 void
-PluginAdapter::ui_event_import() {
+lv2_adapter::ui_event_import() {
     ControlChange ev;
     const size_t  space = zix_ring_read_space(ui_events);
     for (size_t i = 0; i < space; i += sizeof(ev) + ev.size) {
@@ -267,13 +264,13 @@ PluginAdapter::ui_event_import() {
 
 
 void
-PluginAdapter::ui_event_dispatch() {
+lv2_adapter::ui_event_dispatch() {
 
     zix_ring_reset(plugin_events);
 }
 
 void
-PluginAdapter::update_all_from_ui() {
+lv2_adapter::update_all_from_ui() {
     printf("PluginAdapter::update_all_from_ui\n");
 
     // const char *dir = world->hostParams.tempDir;
@@ -290,7 +287,7 @@ PluginAdapter::update_all_from_ui() {
 
 
 const bool
-PluginAdapter::ui_select(const char *native_ui_type,
+lv2_adapter::ui_select(const char *native_ui_type,
                          const LilvUI** ui_type_ui,
                          const LilvNode** ui_type_node) {
     // native_ui_type is
@@ -356,7 +353,7 @@ write_events_from_ui(void* const adapter_handle,
                      uint32_t    protocol,
                      const void* buffer) {
 
-    PluginAdapter* const adapter = (PluginAdapter *) adapter_handle;
+    lv2_adapter* const adapter = (lv2_adapter *) adapter_handle;
 
     if (protocol != 0 && protocol != adapter->cache->urids.atom_eventTransfer) {
         fprintf(stderr, "UI write with unsupported protocol %u (%s)\n", protocol, unmap_uri(&adapter->cache, protocol));
@@ -381,7 +378,7 @@ write_events_from_ui(void* const adapter_handle,
 uint32_t
 lv2_port_index(void* const adapter_handle,
                const char* symbol) {
-    PluginAdapter* const adapter = (PluginAdapter *) adapter_handle;
+    lv2_adapter* const adapter = (lv2_adapter *) adapter_handle;
 
     for(auto& port: adapter->info->ports)
         if(strncmp(port->symbol.c_str(), symbol, port->symbol.size()) == 0)
@@ -398,7 +395,7 @@ get_port_value(const char* port_symbol,
                uint32_t*   type) {
 //    printf("PluginAdapter::get_port_value\n");
 
-    PluginAdapter* adapter = (PluginAdapter*) user_data;
+    lv2_adapter* adapter = (lv2_adapter*) user_data;
     ParamPort* port = adapter->get_param_port(port_symbol);
 
     if (port != nullptr) {
@@ -421,7 +418,7 @@ set_port_value(const char* port_symbol,
 {
     // if(verbose)
 //    printf("SET PORT VALUE %s\n", port_symbol);
-    PluginAdapter* adapter = (PluginAdapter*) user_data;
+    lv2_adapter* adapter = (lv2_adapter*) user_data;
     //			                                                   port->lilv_port);
     ParamPort* port = adapter->get_param_port(port_symbol);
 

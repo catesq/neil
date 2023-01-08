@@ -82,7 +82,7 @@ extern "C" {
 
 }
 
-struct PluginAdapter : zzub::plugin, zzub::event_handler {
+struct lv2_adapter : zzub::plugin, zzub::event_handler {
     // zzub engine boilerplate - trak_states are the previous plugin port values, trak_values are the new port values. attr_values are legacy.
     trackvals       trak_values[16]{};
     trackvals       trak_states[16]{};
@@ -140,8 +140,8 @@ struct PluginAdapter : zzub::plugin, zzub::event_handler {
     std::vector<ParamPort*>    paramPorts;
 
 
-    PluginAdapter(PluginInfo *info);
-    ~PluginAdapter();
+    lv2_adapter(PluginInfo *info);
+    ~lv2_adapter();
 
 
     void                connect(LilvInstance* pluginInstance);

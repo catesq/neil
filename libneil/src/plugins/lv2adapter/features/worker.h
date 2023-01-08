@@ -8,11 +8,11 @@
 #include "lilv/lilv.h"
 #include "lv2/worker/worker.h"
 
-struct PluginAdapter;
+struct lv2_adapter;
 
 
 struct LV2Worker {
-    PluginAdapter*              plugin;     // Pointer back to the plugin
+    lv2_adapter*              plugin;     // Pointer back to the plugin
     ZixRing*                    requests  = nullptr;   // Requests to the worker
     ZixRing*                    responses = nullptr;  // Responses from the worker
     void*                       response  = nullptr;   // Worker response buffer
@@ -27,7 +27,7 @@ struct LV2Worker {
 
 void
 lv2_worker_init (
-  PluginAdapter*              plugin,
+  lv2_adapter*              plugin,
   LV2Worker*                  worker,
   const LV2_Worker_Interface* iface,
   bool                        threaded);

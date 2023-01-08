@@ -25,7 +25,7 @@ void* worker_func (void* data)
 {
     g_message("worker func init");
     LV2Worker*     worker = (LV2Worker*)data;
-    PluginAdapter* plugin = worker->plugin;
+    lv2_adapter* plugin = worker->plugin;
     void*          buf    = NULL;
 
     while (true) {
@@ -63,7 +63,7 @@ g_message("worker func ring read 2");
 
 
 void lv2_worker_init (
-    PluginAdapter*               plugin,
+    lv2_adapter*               plugin,
     LV2Worker*                   worker,
     const LV2_Worker_Interface * iface,
     bool                         threaded)
@@ -113,7 +113,7 @@ LV2_Worker_Status lv2_worker_schedule(
     const void*                data )
 {
     LV2Worker* worker      = (LV2Worker*) handle;
-    PluginAdapter* plugin  = worker->plugin;
+    lv2_adapter* plugin  = worker->plugin;
 
     if (!worker->threaded) {
 

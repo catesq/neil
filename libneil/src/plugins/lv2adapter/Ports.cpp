@@ -6,6 +6,20 @@
 #include "lv2/port-groups/port-groups.h"
 #include "lv2_utils.h"
 
+
+Port::Port(const Port& other)
+    : flow(other.flow),
+      type(other.type),
+      index(other.index),
+      properties(other.properties),
+      designation(other.designation),
+      name(other.name),
+      symbol(other.symbol)
+
+{
+
+}
+
 Port::Port(const LilvPort *lilvPort,
            const LilvPlugin* lilvPlugin,
            SharedCache* cache,
@@ -14,13 +28,14 @@ Port::Port(const LilvPort *lilvPort,
            PortCounter& counter )
     : flow(flow),
       type(type),
-      index(counter.total)
+      index(counter.portIndex)
 {
     properties = get_port_properties(cache, lilvPlugin, lilvPort);
     designation = get_port_designation(cache, lilvPlugin, lilvPort);
 
     name = as_string(lilv_port_get_name(lilvPlugin, lilvPort), true);
     symbol = as_string(lilv_port_get_symbol(lilvPlugin, lilvPort));
+    printf("name %s properties %d designation %d", name.c_str(), properties, designation);
 }
 
 
@@ -75,6 +90,19 @@ ControlPort::ControlPort(const ControlPort& controlPort)
 {
 }
 
+
+ControlPort::ControlPort(const LilvPort *lilvPort,
+                         const LilvPlugin* lilvPlugin,
+                         SharedCache* cache,
+                         PortType type,
+                         PortFlow flow,
+                         PortCounter& counter )
+    : ValuePort(lilvPort, lilvPlugin, cache, type, flow, counter),
+      controlIndex(counter.control)
+{
+}
+
+
 ParamPort::ParamPort(ParamPort&& paramPort)
     : ValuePort(paramPort),
       paramIndex(paramPort.paramIndex),
@@ -103,19 +131,6 @@ ParamPort::ParamPort(const ParamPort& paramPort)
 }
 
 
-ControlPort::ControlPort(const LilvPort *lilvPort,
-                         const LilvPlugin* lilvPlugin,
-                         SharedCache* cache,
-                         PortType type,
-                         PortFlow flow,
-                         PortCounter& counter )
-    : ValuePort(lilvPort, lilvPlugin, cache, type, flow, counter),
-      controlIndex(counter.control)
-{
-    counter.control++;
-}
-
-
 ParamPort::ParamPort(const LilvPort *lilvPort,
                      const LilvPlugin* lilvPlugin,
                      SharedCache* cache,
@@ -126,7 +141,6 @@ ParamPort::ParamPort(const LilvPort *lilvPort,
       paramIndex(counter.param)
 {
     zzubParam.flags = zzub::parameter_flag_state;
-
 
     LilvScalePoints *lilv_scale_points = lilv_port_get_scale_points(lilvPlugin, lilvPort);
     unsigned scale_points_size = scale_size(lilv_scale_points);
@@ -150,11 +164,14 @@ ParamPort::ParamPort(const LilvPort *lilvPort,
         zzubParam.value_default = lilv_to_zzub_value(defaultValue);
     }
 
+    if(name == "VoiceCount") {
+        printf("voicecount properties: %d\n", properties);
+    }
+
     zzubParam.name        = name.c_str();
     zzubParam.description = zzubParam.name;
     zzubValSize           = zzubParam.get_bytesize();
-    zzubValOffset         = counter.data;
-    counter.data         += zzubValSize;
+    zzubValOffset         = counter.dataOffset;
 
     if(lilv_scale_points != NULL ) {
         LILV_FOREACH(scale_points, spIter,lilv_scale_points) {
@@ -168,8 +185,6 @@ ParamPort::ParamPort(const LilvPort *lilvPort,
 
         lilv_scale_points_free(lilv_scale_points);
     }
-
-    counter.param++;
 }
 
 //void ControlPort::build_control_port() {
@@ -532,8 +547,16 @@ void ParamPort::putData(uint8_t *globals, int value) {
 }
 
 const char* ParamPort::describeValue(const int value, char *text) {
-    switch(zzubParam.type) {
-    case zzub::parameter_type_switch:
+    printf("ParamPort::describeValue(%s)\n", name.c_str());
+
+    if(zzubParam.type == zzub::parameter_type_note) {
+        return note_param_to_str(value, text);
+    } else if(LV2_IS_PORT_INTEGER(properties)) {
+        sprintf(text, "%i", value);
+        printf("Is integer %s\n", name.c_str());
+        return text;
+    } else if(zzubParam.type == zzub::parameter_type_switch) {
+        printf("switch: is %s\n", value == zzub::switch_value_on ? "on" : "off");
         if(value == zzub::switch_value_on) {
             sprintf(text, "1");
         } else if(value == zzub::switch_value_off) {
@@ -542,17 +565,6 @@ const char* ParamPort::describeValue(const int value, char *text) {
             sprintf(text, "-");
         }
 
-        return text;
-
-    case zzub::parameter_type_note:
-        return note_param_to_str(value, text);
-
-    default:
-        break;
-    }
-
-    if(LV2_IS_PORT_INTEGER(properties)) {
-        sprintf(text, "%i", value);
         return text;
     }
 
@@ -566,6 +578,8 @@ const char* ParamPort::describeValue(const int value, char *text) {
             }
         }
     }
+
+    printf("properties: %0x\n", properties);
 
     sprintf(text, "%f", lv2Val);
     return text;
