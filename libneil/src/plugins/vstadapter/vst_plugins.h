@@ -1,15 +1,15 @@
 #pragma once
+
 #include "string.h"
-
-#include "zzub/plugin.h"
-#include "zzub/signature.h"
 #include <boost/filesystem.hpp>
-
 
 #include "aeffect.h"
 
-#include "VstPluginInfo.h"
-#include "VstDefines.h"
+#include "zzub/plugin.h"
+#include "zzub/signature.h"
+
+#include "vst_plugin_info.h"
+#include "vst_defines.h"
 
 #if defined(WINOS)
 #define strtok_r strtok_s

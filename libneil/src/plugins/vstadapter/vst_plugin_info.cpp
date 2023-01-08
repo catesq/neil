@@ -1,14 +1,13 @@
-#include "VstPluginInfo.h"
-#include "VstDefines.h"
+#include <string>
+#include <iostream>
+
 #include "aeffectx.h"
 #include "aeffect.h"
 
-
-#include "VstDefines.h"
-#include "VstAdapter.h"
-#include "VstParameter.h"
-#include <string>
-#include <iostream>
+#include "vst_plugin_info.h"
+#include "vst_defines.h"
+#include "vst_parameter.h"
+#include "vst_adapter.h"
 
 
 vst_zzub_info::vst_zzub_info(AEffect* plugin, 

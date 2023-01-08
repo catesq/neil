@@ -1,8 +1,11 @@
-#include "VstParameter.h"
 #include <algorithm>
 
+#include "vst_parameter.h"
 
-vst_parameter* vst_parameter::build(VstParameterProperties* properties, zzub::parameter* zzub_param, uint16_t index) {
+
+vst_parameter* 
+vst_parameter::build(VstParameterProperties* properties, zzub::parameter* zzub_param, uint16_t index) 
+{
     if(!properties)
         return new vst_float_parameter(properties, zzub_param, index);
     else if(properties->flags & kVstParameterIsSwitch)
@@ -43,9 +46,10 @@ vst_switch_parameter::vst_to_zzub_value(float vst)
 
 
 
-VstIntParameter::VstIntParameter(VstParameterProperties* vst_props,
-                                 zzub::parameter* zzub_param,
-                                 uint16_t index) : vst_parameter(vst_props, zzub_param, index)
+vst_int_parameter::vst_int_parameter(VstParameterProperties* vst_props,
+                                     zzub::parameter* zzub_param,
+                                     uint16_t index)
+    : vst_parameter(vst_props, zzub_param, index)
 {
     min = vst_props->minInteger;
     max = vst_props->maxInteger;
@@ -77,7 +81,7 @@ vst_int_parameter::vst_to_zzub_value(float vst_val)
 
 
 
-VstFloatParameter::VstFloatParameter(VstParameterProperties* vst_props,
+vst_float_parameter::vst_float_parameter(VstParameterProperties* vst_props,
                                      zzub::parameter* zzub_param,
                                      uint16_t index) 
     : vst_parameter(vst_props, zzub_param, index),
@@ -109,7 +113,7 @@ VstFloatParameter::VstFloatParameter(VstParameterProperties* vst_props,
 
 
 float 
-VstFloatParameter::zzub_to_vst_value(uint16_t zzub_val) 
+vst_float_parameter::zzub_to_vst_value(uint16_t zzub_val) 
 {
     float prop = ( zzub_val / (float) zzub_param->value_max);
 //    printf("float zzub to vst val: zzub_val %d, vst_val %.3f", zzub_val, std::clamp(prop * range - min, (float) min, (float) max));
@@ -119,7 +123,7 @@ VstFloatParameter::zzub_to_vst_value(uint16_t zzub_val)
 
 
 uint16_t 
-VstFloatParameter::vst_to_zzub_value(float vst_val) 
+vst_float_parameter::vst_to_zzub_value(float vst_val) 
 {
     float prop = (vst_val - min) / range;
     uint16_t val = std::clamp(prop, 0.0f, 1.0f) * zzub_param->value_max;

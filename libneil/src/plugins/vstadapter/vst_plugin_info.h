@@ -1,10 +1,11 @@
 #pragma once
 
-#include "VstParameter.h"
-#include "zzub/plugin.h"
 #include "aeffect.h"
 #include "aeffectx.h"
 
+#include "zzub/plugin.h"
+
+#include "vst_parameter.h"
 
 struct vst_zzub_info : zzub::info {
     vst_zzub_info(AEffect* plugin, std::string filename, VstPlugCategory category);

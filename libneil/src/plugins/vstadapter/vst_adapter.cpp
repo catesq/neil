@@ -1,16 +1,20 @@
-#include "VstAdapter.h"
-#include "VstPluginInfo.h"
-#include "VstDefines.h"
 #include <string>
 #include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
-#include "vstfxstore.h"
 #include <bit>
 #include <boost/endian/conversion.hpp>
 #include <boost/predef/other/endian.h>
 
+#include "vstfxstore.h"
+
+#include "vst_adapter.h"
+#include "vst_plugin_info.h"
+#include "vst_defines.h"
+
+
+// 
 
 //#if GDK_WINDOWING_WIN32
 
@@ -27,6 +31,10 @@
 //#else // GDK_WINDOWING_X11
 
 #include <gdk/gdkx.h>
+
+// 
+
+
 #define WIN_ID_TYPE gulong
 #define WIN_ID_FUNC(widget) gdk_x11_window_get_xid(gtk_widget_get_window(widget))
 
@@ -54,7 +62,7 @@ VSTCALLBACK hostCallback(AEffect *effect,
         return 0;
     }
 
-    vst_adapter *vst_adapter = (vst_adapter*) effect->resvd1;
+    vst_adapter *the_adapter = (vst_adapter*) effect->resvd1;
 
     switch(opcode) {
     case audioMasterBeginEdit:
@@ -68,7 +76,7 @@ VSTCALLBACK hostCallback(AEffect *effect,
     case audioMasterAutomate:
     case audioMasterUpdateDisplay:
         printf("\nupdating from ui: index %d, val %.2f\n", index, opt);
-        vst_adapter->update_parameter_from_gui(index, opt);
+        the_adapter->update_parameter_from_gui(index, opt);
         break;
 
     case audioMasterProcessEvents: {
@@ -82,7 +90,7 @@ VSTCALLBACK hostCallback(AEffect *effect,
         break;
 
     case audioMasterGetTime:
-        return (VstIntPtr) vst_adapter->get_vst_time_info();
+        return (VstIntPtr) the_adapter->get_vst_time_info();
 
     case audioMasterGetProductString:
         strncpy((char*) ptr, "Neil modular sequencer", kVstMaxProductStrLen);
@@ -253,7 +261,7 @@ vst_adapter::created()
     initialized = true;
     printf("initialized\n");
 
-    for(VstParameter* param: info->get_vst_params()) {
+    for(vst_parameter* param: info->get_vst_params()) {
         float vst_val = plugin->getParameter(plugin, param->index);
         _host->set_parameter(metaplugin, 1, 0, param->index, param->vst_to_zzub_value(vst_val));
     }

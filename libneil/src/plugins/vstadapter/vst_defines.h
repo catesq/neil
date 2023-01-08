@@ -1,9 +1,11 @@
 #pragma once
 
-#include "aeffect.h"
-#include "aeffectx.h"
 #include <string>
 #include <boost/dll.hpp>
+
+#include "aeffect.h"
+#include "aeffectx.h"
+
 #include "zzub/plugin.h"
 
 #define VOLUME_DEFAULT 0x40

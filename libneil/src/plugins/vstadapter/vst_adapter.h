@@ -1,16 +1,17 @@
 #pragma once
 
 #include <array>
+
 #include "zzub/plugin.h"
-#include "VstPluginInfo.h"
 #include <boost/dll.hpp>
 #include <gtk/gtk.h>
-#include "VstDefines.h"
+
+#include "vst_defines.h"
 
 #define MAX_TRACKS 16
 #define MAX_EVENTS 256
 
-
+struct vst_zzub_info;
 
 extern "C" {
     void on_window_destroy(GtkWidget* widget, gpointer data);
