@@ -7,6 +7,7 @@
 #include "lv2_utils.h"
 
 #include "PluginWorld.h"
+
 #include "ext/lv2_evbuf.h"
 
 
@@ -14,7 +15,7 @@
 struct lv2_adapter;
 
 // when the ports are being built the builder function in PluginInfo needs to track the number of control ports, parameter ports and total number of ports
-// the data counter is only used by ParamPorts and is the offset in bytes into the zzub::plugin::global_values
+// the data counter is only used by param_ports and is the offset in bytes into the zzub::plugin::global_values
 struct PortCounter {
     uint32_t portIndex = 0;
     uint32_t control = 0;
@@ -53,9 +54,9 @@ union BodgeEndian {
 
 
 
-struct Port {
+struct lv2_port {
     // the lilvLilvPort, LilvPlugin and SharedCache are needed to assign the properties, designation and other class members and are not stored
-    Port(const LilvPort *lilvPort,
+    lv2_port(const LilvPort *lilvPort,
          const LilvPlugin* lilvPlugin,
          SharedCache* cache,
          PortType type,
@@ -63,9 +64,9 @@ struct Port {
          PortCounter& counter
     );
 
-    Port(const Port& port);
+    lv2_port(const lv2_port& port);
 
-    virtual ~Port() {}
+    virtual ~lv2_port() {}
 
     std::string name;
     std::string symbol;
@@ -83,12 +84,12 @@ struct Port {
 };
 
 
-struct AudioBufPort: Port {
+struct audio_buf_port: lv2_port {
     float* buf = nullptr;
 
-    using Port::Port;
+    using lv2_port::lv2_port;
 
-    virtual ~AudioBufPort() override {
+    virtual ~audio_buf_port() override {
         if(buf != nullptr){
             free(buf);
         }
@@ -109,12 +110,12 @@ struct AudioBufPort: Port {
 };
 
 
-struct EventBufPort : Port {
+struct event_buf_port : lv2_port {
     LV2_Evbuf* eventBuf   = nullptr;
 
-    using Port::Port;
+    using lv2_port::lv2_port;
 
-    virtual ~EventBufPort() override {
+    virtual ~event_buf_port() override {
         if(eventBuf != nullptr) {
             lv2_evbuf_free(eventBuf);
         }
@@ -130,15 +131,15 @@ struct EventBufPort : Port {
 };
 
 
-struct ValuePort: Port {
+struct value_port: lv2_port {
     float value = 0.f;
     float minimumValue;
     float maximumValue;
     float defaultValue;
 
-    ValuePort(const ValuePort& vPort);
+    value_port(const value_port& vPort);
 
-    ValuePort(const LilvPort *lilvPort,
+    value_port(const LilvPort *lilvPort,
               const LilvPlugin* lilvPlugin,
               SharedCache* cache,
               PortType type,
@@ -155,17 +156,17 @@ struct ValuePort: Port {
 };
 
 
-struct ControlPort : ValuePort {
+struct control_port : value_port {
     uint32_t controlIndex;
 
-    ControlPort(const LilvPort *lilvPort,
+    control_port(const LilvPort *lilvPort,
                 const LilvPlugin* lilvPlugin,
                 SharedCache* cache,
                 PortType type,
                 PortFlow flow,
                 PortCounter& counter
     );
-    ControlPort(const ControlPort& controlPort);
+    control_port(const control_port& control_port);
 
     virtual unsigned get_zzub_flags() override {
         return zzub_plugin_flag_has_event_output;
@@ -173,16 +174,16 @@ struct ControlPort : ValuePort {
 };
 
 
-struct ParamPort : ValuePort {
-    ParamPort(const LilvPort *lilvPort,
+struct param_port : value_port {
+    param_port(const LilvPort *lilvPort,
               const LilvPlugin* lilvPlugin,
               SharedCache* cache,
               PortType type,
               PortFlow flow,
               PortCounter& counter
     );
-    ParamPort(const ParamPort& paramPort);
-    ParamPort(ParamPort&& paramPort);
+    param_port(const param_port& param_port);
+    param_port(param_port&& param_port);
 
     virtual unsigned get_zzub_flags() override {
         return zzub_plugin_flag_has_event_input;

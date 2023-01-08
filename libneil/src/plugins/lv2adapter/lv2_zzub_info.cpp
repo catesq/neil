@@ -123,10 +123,10 @@ PortType lv2_zzub_info::get_port_type(const LilvPort* lilvPort, PortFlow flow) {
 
 
 
-Port* lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter) {
+lv2_port* lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter) {
     switch(type) {
         case PortType::Control: {
-            auto port = new ControlPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+            auto port = new control_port(lilvPort, lilvPlugin, cache, type, flow, counter);
 
             counter.control++;
 
@@ -134,7 +134,7 @@ Port* lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, PortTyp
         }
 
         case PortType::Param: {
-            auto port = new ParamPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+            auto port = new param_port(lilvPort, lilvPlugin, cache, type, flow, counter);
 
             counter.dataOffset += port->zzubValSize;
             counter.param++;
@@ -145,19 +145,19 @@ Port* lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, PortTyp
         }
 
         case PortType::Audio:
-            return new AudioBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+            return new audio_buf_port(lilvPort, lilvPlugin, cache, type, flow, counter);
 
         case PortType::CV:
-            return new AudioBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+            return new audio_buf_port(lilvPort, lilvPlugin, cache, type, flow, counter);
 
         case PortType::Event:
-            return new EventBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+            return new event_buf_port(lilvPort, lilvPlugin, cache, type, flow, counter);
 
         case PortType::Midi:
-            return new EventBufPort(lilvPort, lilvPlugin, cache, type, flow, counter);
+            return new event_buf_port(lilvPort, lilvPlugin, cache, type, flow, counter);
 
         case PortType::BadPort:
-            return new Port(lilvPort, lilvPlugin, cache, type, flow, counter);
+            return new lv2_port(lilvPort, lilvPlugin, cache, type, flow, counter);
     }
 }
 

@@ -18,7 +18,7 @@ struct lv2_zzub_info : zzub::info {
 
     SharedCache*        cache;
 
-    std::vector<Port*>  ports;
+    std::vector<lv2_port*>  ports;
 
     std::string         zzubUri;
 
@@ -38,7 +38,7 @@ struct lv2_zzub_info : zzub::info {
 
 private:
 
-    Port*        build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter);
+    lv2_port*        build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter);
 
 //    Port*        setup_base_port(Port* port, const LilvPort* lilvPort);
 //    Port*        setup_control_val_port(ValuePort* port,const LilvPort* lilvPort);

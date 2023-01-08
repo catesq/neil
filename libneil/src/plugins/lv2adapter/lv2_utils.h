@@ -22,8 +22,6 @@ extern "C" {
 #define DESCRIBE_VOL(byte)  std::to_string(byte)
 #define DESCRIBE_NOTE_AND_VOL(data, size) ((size == 3) ? DESCRIBE_NOTE(data[1]) + "(" + DESCRIBE_VOL(data[2]) + ")" : DESCRIBE_NOTE(data[1]))
 
-struct Port;
-
 
 #ifdef _WIN32
 #    include <io.h>  /* for _mktemp */
@@ -44,7 +42,7 @@ using boost::algorithm::trim;
 //forward declaration for function declarations blah
 struct SharedCache;
 struct lv2_zzub_info;
-struct Port;
+struct lv2_port;
 
 //use to read midi messages from the midi track column of the tracker, used in PluginAdapter and PluginInfo
 #pragma pack(1)
@@ -148,7 +146,7 @@ std::string describe_midi(uint8_t* data, uint8_t size);
 
 uint8_t midi_msg_len(uint8_t cmd); 
 
-bool is_distrho_event_out_port(Port* port);
+bool is_distrho_event_out_port(lv2_port* port);
 
 
 

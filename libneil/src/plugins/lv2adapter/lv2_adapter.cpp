@@ -42,8 +42,9 @@
 #include <iostream>
 
 
-lv2_adapter::lv2_adapter(lv2_zzub_info *info) : info(info), cache(info->cache) {
-    if(info->zzubTotalDataSize)  {
+lv2_adapter::lv2_adapter(lv2_zzub_info *info) : info(info), cache(info->cache) 
+{
+    if(info->zzubTotalDataSize) {
         global_values = malloc(info->zzubTotalDataSize);
         memset(global_values, 0, info->zzubTotalDataSize);
     }
@@ -55,27 +56,27 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info) : info(info), cache(info->cache) {
     track_values = trak_values;
     attributes   = (int *) &attr_values;
 
-    for(Port* port: info->ports) {
+    for(lv2_port* port: info->ports) {
         switch(port->type) {
         case PortType::Control:
-            controlPorts.emplace_back(new ControlPort(*static_cast<ControlPort*>(port)));
+            controlPorts.emplace_back(new control_port(*static_cast<control_port*>(port)));
             ports.push_back(controlPorts.back());
             break;
 
 
         case PortType::Param:
-            paramPorts.emplace_back(new ParamPort(*static_cast<ParamPort*>(port)));
+            paramPorts.emplace_back(new param_port(*static_cast<param_port*>(port)));
             ports.push_back(paramPorts.back());
             break;
 
 
         case PortType::Audio:
             if(port->flow == PortFlow::Input) {
-                audioInPorts.push_back(new AudioBufPort(*static_cast<AudioBufPort*>(port)));
+                audioInPorts.push_back(new audio_buf_port(*static_cast<audio_buf_port*>(port)));
                 audioInPorts.back()->buf = (float*) malloc(sizeof(float) * ZZUB_BUFLEN);
                 ports.push_back(audioInPorts.back());
             } else if (port->flow == PortFlow::Output) {
-                audioOutPorts.push_back(new AudioBufPort(*static_cast<AudioBufPort*>(port)));
+                audioOutPorts.push_back(new audio_buf_port(*static_cast<audio_buf_port*>(port)));
                 audioOutPorts.back()->buf = (float*) malloc(sizeof(float) * ZZUB_BUFLEN);
                 ports.push_back(audioOutPorts.back());
             }
@@ -83,14 +84,14 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info) : info(info), cache(info->cache) {
 
 
         case PortType::CV:
-            cvPorts.push_back(new AudioBufPort(*static_cast<AudioBufPort*>(port)));
+            cvPorts.push_back(new audio_buf_port(*static_cast<audio_buf_port*>(port)));
             cvPorts.back()->buf = (float*) malloc(sizeof(float) * ZZUB_BUFLEN);
             ports.push_back(cvPorts.back());
             break;
 
 
         case PortType::Event:
-            eventPorts.push_back(new EventBufPort(*static_cast<EventBufPort*>(port)));
+            eventPorts.push_back(new event_buf_port(*static_cast<event_buf_port*>(port)));
             eventPorts.back()->eventBuf = lv2_evbuf_new(
                         is_distrho_event_out_port(port) ? cache->hostParams.paddedBufSize : cache->hostParams.bufSize,
                         cache->urids.atom_Chunk,
@@ -101,14 +102,14 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info) : info(info), cache(info->cache) {
 
 
         case PortType::Midi:
-            midiPorts.push_back(new EventBufPort(*static_cast<EventBufPort*>(port)));
+            midiPorts.push_back(new event_buf_port(*static_cast<event_buf_port*>(port)));
             midiPorts.back()->eventBuf = lv2_evbuf_new(cache->hostParams.bufSize, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
             ports.push_back(midiPorts.back());
             break;
 
 
         default:
-            ports.push_back(new Port(*port));
+            ports.push_back(new lv2_port(*port));
             break;
         }
     }
@@ -118,7 +119,8 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info) : info(info), cache(info->cache) {
 
 
 
-lv2_adapter::~lv2_adapter() {
+lv2_adapter::~lv2_adapter() 
+{
     halting = true;
     lv2_worker_finish(&this->worker);
 
@@ -142,7 +144,8 @@ lv2_adapter::~lv2_adapter() {
 
 
 void
-lv2_adapter::init(zzub::archive *arc) {
+lv2_adapter::init(zzub::archive *arc) 
+{
     sample_rate      = _master_info->samples_per_second;
     ui_scale         = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
 
@@ -274,16 +277,20 @@ lv2_adapter::init(zzub::archive *arc) {
 
 
 
-void lv2_adapter::created() {
+void 
+lv2_adapter::created() 
+{
     initialized = true;
     printf("Initialised lv2 adapter\n");
-    for(ParamPort* port: paramPorts)
+    for(param_port* port: paramPorts)
         _host->set_parameter(metaPlugin, 1, 0, port->paramIndex, port->lilv_to_zzub_value(port->value));
 }
 
 
 
-bool lv2_adapter::invoke(zzub_event_data_t& data) {
+bool 
+lv2_adapter::invoke(zzub_event_data_t& data) 
+{
     if (data.type != zzub::event_type_double_click || ui_is_open || !(info->flags & zzub_plugin_flag_has_custom_gui)) {
         return false;
     } else if(ui_is_open) {
@@ -297,7 +304,9 @@ bool lv2_adapter::invoke(zzub_event_data_t& data) {
 
 
 
-void program_changed(LV2_Programs_Handle handle, int32_t index) {
+void 
+program_changed(LV2_Programs_Handle handle, int32_t index) 
+{
     // printf("program changed\n");
     printf("PluginAdapter::program_changed\n");
 
@@ -308,13 +317,17 @@ void program_changed(LV2_Programs_Handle handle, int32_t index) {
 
 
 
-void lv2_adapter::destroy() {
+void 
+lv2_adapter::destroy() 
+{
     delete this;
 }
 
 
 
-void lv2_adapter::read_archive_params(zzub::instream* instream) {
+void 
+lv2_adapter::read_archive_params(zzub::instream* instream) 
+{
     printf("PluginAdapter::read_archive_params\n");
     uint32_t param_count = 0;
     instream->read(param_count);
@@ -328,7 +341,9 @@ void lv2_adapter::read_archive_params(zzub::instream* instream) {
 }
 
 
-void lv2_adapter::save_archive_params(zzub::outstream *outstream) {
+void 
+lv2_adapter::save_archive_params(zzub::outstream *outstream) 
+{
     outstream->write((uint32_t) ARCHIVE_USES_PARAMS);
     outstream->write((uint32_t) paramPorts.size());
 //    printf("save %lu params\n", paramPorts.size());
@@ -338,7 +353,8 @@ void lv2_adapter::save_archive_params(zzub::outstream *outstream) {
 }
 
 
-void lv2_adapter::read_archive_state(zzub::instream* instream, uint32_t length) {
+void lv2_adapter::read_archive_state(zzub::instream* instream, uint32_t length) 
+{
     printf("PluginAdapter::read_archive_state\n");
     char* state_str = (char*) malloc(length + 1);
     instream->read(state_str, length);
@@ -354,7 +370,9 @@ void lv2_adapter::read_archive_state(zzub::instream* instream, uint32_t length) 
 }
 
 
-void lv2_adapter::save_archive_state(zzub::outstream *outstream) {
+void 
+lv2_adapter::save_archive_state(zzub::outstream *outstream) 
+{
     const char *dir = cache->hostParams.tempDir.c_str();
 
     LilvState* const state = lilv_state_new_from_instance(
@@ -375,7 +393,9 @@ void lv2_adapter::save_archive_state(zzub::outstream *outstream) {
 }
 
 
-void lv2_adapter::save(zzub::archive *arc) {
+void 
+lv2_adapter::save(zzub::archive *arc) 
+{
     if (verbose) printf("PluginAdapter: in save()!\n");
     zzub::outstream *outstream = arc->get_outstream("");
 
@@ -387,7 +407,9 @@ void lv2_adapter::save(zzub::archive *arc) {
 }
 
 
-const char *lv2_adapter::describe_value(int param, int value) {
+const char *
+lv2_adapter::describe_value(int param, int value) 
+{
     static char text[256];
     if(param < paramPorts.size()) {
         return paramPorts[param]->describeValue(value, text);
@@ -396,7 +418,9 @@ const char *lv2_adapter::describe_value(int param, int value) {
 }
 
 
-void lv2_adapter::set_track_count(int ntracks) {
+void 
+lv2_adapter::set_track_count(int ntracks) 
+{
     if (ntracks < trackCount) {
         for (int t = ntracks; t < trackCount; t++) {
             if (trak_states[t].note != zzub::note_value_none) {
@@ -409,7 +433,9 @@ void lv2_adapter::set_track_count(int ntracks) {
 }
 
 
-ParamPort* lv2_adapter::get_param_port(std::string symbol) {
+param_port* 
+lv2_adapter::get_param_port(std::string symbol) 
+{
     for(auto& port: paramPorts)
         if(symbol == port->symbol)
             return port;
@@ -418,10 +444,14 @@ ParamPort* lv2_adapter::get_param_port(std::string symbol) {
 }
 
 
-void lv2_adapter::stop() {}
+void 
+lv2_adapter::stop() 
+{}
 
 
-void lv2_adapter::update_port(ParamPort* port, float float_val) {
+void 
+lv2_adapter::update_port(param_port* port, float float_val) 
+{
     printf("Update port: index=%d, name='%s', value=%f\r", port->index, port->name.c_str(), float_val);
     port->value = float_val;
     //    int zzub_val = port->lilv_to_zzub_value(float_val);
@@ -431,7 +461,9 @@ void lv2_adapter::update_port(ParamPort* port, float float_val) {
 }
 
 
-void lv2_adapter::process_events() {
+void 
+lv2_adapter::process_events() 
+{
     if(halting || !initialized)
         return;
 
@@ -478,7 +510,9 @@ void lv2_adapter::process_events() {
 }
 
 
-void lv2_adapter::process_all_midi_tracks() {
+void 
+lv2_adapter::process_all_midi_tracks() 
+{
     for (int t = 0; t < trackCount; t++) {
         auto prev = (zzub::note_track*) &trak_states[t];
         auto curr = (zzub::note_track*) &trak_values[t];
@@ -512,7 +546,7 @@ void lv2_adapter::process_all_midi_tracks() {
     }
 
 
-    for(EventBufPort* midiPort: midiPorts) {
+    for(event_buf_port* midiPort: midiPorts) {
         if(midiPort->flow != PortFlow::Input || midiEvents.count() == 0)
             continue;
 
@@ -531,7 +565,9 @@ void lv2_adapter::process_all_midi_tracks() {
 
 
 
-void lv2_adapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg) {
+void 
+lv2_adapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg) 
+{
     if(vals_msg.midi.cmd != TRACKVAL_NO_MIDI_CMD) {
         state_msg.midi.cmd = vals_msg.midi.cmd;
 
@@ -580,16 +616,22 @@ void lv2_adapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg
 
 
 
-bool lv2_adapter::process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) { return false; }
+bool 
+lv2_adapter::process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) 
+{ 
+    return false; 
+    }
 
 
-bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int const mode) {
+bool 
+lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int const mode) 
+{
     if (halting || mode == zzub::process_mode_no_io)
         return false;
 
     samp_count += numsamples;
 
-    for(EventBufPort* eventPort: eventPorts)
+    for(event_buf_port* eventPort: eventPorts)
         if(eventPort->flow == PortFlow::Output)
             lv2_evbuf_reset(eventPort->eventBuf, false);
 
@@ -631,7 +673,7 @@ bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int 
     }
 
 
-    for(EventBufPort* port: midiPorts)
+    for(event_buf_port* port: midiPorts)
         if(port->flow == PortFlow::Input)
             lv2_evbuf_reset(port->eventBuf, true);
 
@@ -678,11 +720,17 @@ struct lv2plugincollection : zzub::plugincollection {
 };
 
 
-zzub::plugincollection *zzub_get_plugincollection() {
+zzub::plugincollection*
+zzub_get_plugincollection() 
+{
     return new lv2plugincollection();
 }
 
 
 
-const char *zzub_get_signature() { return ZZUB_SIGNATURE; }
+const char*
+zzub_get_signature() 
+{ 
+    return ZZUB_SIGNATURE; 
+}
 

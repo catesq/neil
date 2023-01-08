@@ -166,7 +166,7 @@ describe_midi(uint8_t* data, uint8_t size) {
 }
 
 bool
-is_distrho_event_out_port(Port* port) {
+is_distrho_event_out_port(lv2_port* port) {
     return (port->type == PortType::Event && port->flow == PortFlow::Output && port->name == "Events Output" && port->symbol == "lv2_events_out");
 }
 

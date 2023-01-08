@@ -5,7 +5,7 @@
 
 
 bool
-lv2_adapter::isExternalUI(const LilvUI * ui) {
+lv2_adapter::is_ui_external(const LilvUI * ui) {
     const LilvNodes* ui_classes = lilv_ui_get_classes(ui);
     std::string name = as_string(lilv_ui_get_uri(ui));
 
@@ -39,7 +39,7 @@ lv2_adapter::ui_open() {
 
     if(lilv_ui_type != NULL) {
         std::string uiname = as_string(lilv_ui_type_node);
-        isExternalUI(lilv_ui_type);
+        is_ui_external(lilv_ui_type);
     }
 
     auto datatypes = lilv_plugin_get_extension_data(info->lilvPlugin);
@@ -246,12 +246,12 @@ lv2_adapter::ui_event_import() {
             break;
         }
         assert(ev.index < info->ports.size());
-        Port* port = ports[ev.index];
+        lv2_port* port = ports[ev.index];
 
         if (ev.protocol == 0 && port->type == PortType::Param) {
-            update_port(static_cast<ParamPort*>(port), *((float*) body));
+            update_port(static_cast<param_port*>(port), *((float*) body));
         } else if (ev.protocol == cache->urids.atom_eventTransfer && (port->type == PortType::Event || port->type == PortType::Midi)) {
-            EventBufPort* eventPort = static_cast<EventBufPort*>(port);
+            event_buf_port* eventPort = static_cast<event_buf_port*>(port);
             LV2_Evbuf_Iterator e = lv2_evbuf_end(eventPort->eventBuf);
             const LV2_Atom* const atom = (const LV2_Atom*)body;
             lv2_evbuf_write(&e, samp_count, 0, atom->type, atom->size, (const uint8_t*)LV2_ATOM_BODY_CONST(atom));
@@ -396,7 +396,7 @@ get_port_value(const char* port_symbol,
 //    printf("PluginAdapter::get_port_value\n");
 
     lv2_adapter* adapter = (lv2_adapter*) user_data;
-    ParamPort* port = adapter->get_param_port(port_symbol);
+    param_port* port = adapter->get_param_port(port_symbol);
 
     if (port != nullptr) {
         *size = sizeof(float);
@@ -420,7 +420,7 @@ set_port_value(const char* port_symbol,
 //    printf("SET PORT VALUE %s\n", port_symbol);
     lv2_adapter* adapter = (lv2_adapter*) user_data;
     //			                                                   port->lilv_port);
-    ParamPort* port = adapter->get_param_port(port_symbol);
+    param_port* port = adapter->get_param_port(port_symbol);
 
     if (port == nullptr) {
         fprintf(stderr, "error: Preset port `%s' is missing\n", port_symbol);
