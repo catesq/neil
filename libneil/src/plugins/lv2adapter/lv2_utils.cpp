@@ -1,7 +1,7 @@
 #include "lv2_utils.h"
 #include "zzub/plugin.h"
 #include "gtk/gtk.h"
-#include "Ports.h"
+#include "lv2_ports.h"
 
 
 

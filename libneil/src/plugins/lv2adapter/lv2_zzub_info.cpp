@@ -1,8 +1,10 @@
-#include "lv2_zzub_info.h"
-#include "lv2_adapter.h"
-#include "Ports.h"
 #include <string>
 #include <ostream>
+
+#include "lv2_zzub_info.h"
+#include "lv2_adapter.h"
+#include "lv2_ports.h"
+
 
 
 inline void printport(const char *prefix, const LilvPlugin* lilvPlugin, const LilvPort* lilvPort, PortFlow flow) {

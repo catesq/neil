@@ -36,7 +36,7 @@ lv2_pluginenv.Append(CCFLAGS='-pthread `pkg-config gtk+-3.0 suil-0 lilv-0 --cfla
 if lv2_pluginenv['LV2'] == True:
     lv2_files = [ 'lv2_adapter.cpp', 
         'lv2_adapter_ui.cpp', 
-        'Ports.cpp', 
+        'lv2_ports.cpp', 
         'lv2_zzub_info.cpp', 
         'PluginWorld.cpp', 
         'lv2_utils.cpp', 
