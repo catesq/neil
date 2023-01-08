@@ -2,11 +2,20 @@
 
 #include <string>
 #include <initializer_list>
+#include <boost/algorithm/string/trim.hpp>
+#include <mutex>
 
-#include "lv2_defines.h"
 #include "zzub/plugin.h"
 #include "lv2/midi/midi.h"
+#include "lv2/urid/urid.h"
+#include "lv2/atom/atom.h"
 
+#include "lv2_defines.h"
+#include <lv2/state/state.h>
+
+extern "C" {
+  #include "ext/symap.h"
+}
 
 #define DESCRIBE_CHAN(data) std::to_string(data[0] & 0x0f)
 #define DESCRIBE_NOTE(byte) std::to_string(byte)
@@ -15,44 +24,30 @@
 
 struct Port;
 
-std::string
-describe_port_type(PortType type);
+
+#ifdef _WIN32
+#    include <io.h>  /* for _mktemp */
+#define FILE_SEPARATOR std::string("\\")
+#else
+#    include <sys/stat.h>
+#    include <sys/types.h>
+#    include <unistd.h>
+#define FILE_SEPARATOR std::string("/")
+#endif
+
+using boost::algorithm::trim;
 
 
-float
-get_ui_scale_factor(zzub::host* host);
 
+// -----------------------------------------------------------------------
 
-std::string
-as_hex(u_int8_t byte);
-
-
-char *
-note_param_to_str(u_int8_t note_value, char *text);
-
-
-std::string
-describe_midi_sys(uint8_t* data);
-
-
-std::string
-describe_midi_voice(uint8_t* data, uint8_t size);
-
-
-std::string
-describe_midi(uint8_t* data, uint8_t size);
-
-
-uint8_t
-midi_msg_len(uint8_t cmd);
-
-
-bool
-is_distrho_event_out_port(Port* port);
+//forward declaration for function declarations blah
+struct SharedCache;
+struct lv2_zzub_info;
+struct Port;
 
 //use to read midi messages from the midi track column of the tracker, used in PluginAdapter and PluginInfo
 #pragma pack(1)
-
 
 union midi_msg {
     uint8_t bytes[3]{};
@@ -64,9 +59,6 @@ union midi_msg {
 
 std::ostream& operator<<(std::ostream& stream, const midi_msg& msg);
 
-
-
-
 struct trackvals {
     uint8_t note   = zzub::note_value_none;
     uint8_t volume = 0x40;
@@ -74,14 +66,90 @@ struct trackvals {
     midi_msg msg_2;
 };
 
-
 struct attrvals {
     int channel;
     int ui;
 };
 
-
 #pragma pack()
+
+// -----------------------------------------------------------------------
+
+namespace {
+    const char empty_str[1] = "";
+}
+
+extern "C" {
+    const char* 
+    unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid);
+
+    LV2_URID 
+    map_uri(LV2_URID_Map_Handle handle, const char *uri);
+
+    char* 
+    lv2_make_path(LV2_State_Make_Path_Handle handle, const char *path);
+}
+
+
+// use a pair of the livl_node_is_??? then lilv_node_as_??? functions to check and convert a lilv node's value to <typename T>
+template<typename T> T as_numeric(LilvNode *node, bool canFreeNode = false) {
+    T val = (T) 0;
+
+    if(node == nullptr) {
+        return val;
+    }
+
+    if (lilv_node_is_float(node)) {
+        val = (T) lilv_node_as_float(node);
+    } else if(lilv_node_is_int(node)) {
+        val = (T) lilv_node_as_int(node);
+    } else if (lilv_node_is_bool(node)) {
+        val = (T) lilv_node_as_bool(node) ? 1 : 0;
+    }
+
+    if(canFreeNode) {
+        lilv_node_free(node);
+    }
+
+    return val;
+}
+
+
+float as_float(const LilvNode *node, bool canFreeNode = false);
+
+int as_int(const LilvNode *node, bool canFreeNode = false);
+
+//   copy string and release the lilv pointer to string
+std::string free_string(char* owned_lilv_str);
+
+
+//  use get_node_as_uri and get_node_as_string. for the port's: name, value, label 
+std::string as_string(LilvNode *node, bool freeNode);
+std::string as_string(const LilvNode *node);
+
+
+unsigned scale_size(const LilvScalePoints *scale_points) ;
+
+unsigned nodes_size(const LilvNodes *nodes);
+
+std::string describe_port_type(PortType type);
+
+float get_ui_scale_factor(zzub::host* host);
+
+std::string as_hex(u_int8_t byte);
+
+char* note_param_to_str(u_int8_t note_value, char *text);
+
+std::string describe_midi_sys(uint8_t* data);
+
+std::string describe_midi_voice(uint8_t* data, uint8_t size);
+
+std::string describe_midi(uint8_t* data, uint8_t size); 
+
+uint8_t midi_msg_len(uint8_t cmd); 
+
+bool is_distrho_event_out_port(Port* port);
+
 
 
 #define MIDI_NOTE_ON(chan) (uint8_t)(LV2_MIDI_MSG_NOTE_ON | (chan & 0x0F))

@@ -5,6 +5,84 @@
 
 
 
+
+
+using boost::algorithm::trim;
+
+extern "C" {
+  #include "ext/symap.h"
+}
+
+#include <mutex>
+#include "lv2_defines.h"
+
+// -----------------------------------------------------------------------
+
+//forward declaration for function declarations blah
+struct SharedCache;
+struct lv2_zzub_info;
+struct LilvZzubParamPort;
+
+// -----------------------------------------------------------------------
+
+// char* owned_lilv_str  a char* pointer which is owned & released by the lilv library
+//     copy string/release a pointer to string -
+std::string free_string(char* owned_lilv_str) {
+    std::string dup_str(owned_lilv_str);
+    lilv_free(owned_lilv_str);
+    return dup_str;
+}
+
+std::string as_string(LilvNode *node, bool freeNode) {
+    std::string val("");
+
+    if(node == nullptr) {
+        return val;
+    }
+
+    if(lilv_node_is_string(node)) {
+        val.append(lilv_node_as_string(node));
+    } else if(lilv_node_is_uri(node)) {
+        val.append(lilv_node_as_uri(node));
+    }
+
+    if(freeNode) {
+        lilv_node_free((LilvNode*)node);
+    }
+
+    return val;
+}
+
+std::string as_string(const LilvNode *node) {
+    return as_string((LilvNode*) node, false);
+}
+
+float as_float(const LilvNode *node, bool canFreeNode) {
+    return as_numeric<float>((LilvNode*)node, canFreeNode);
+}
+
+int as_int(const LilvNode *node, bool canFreeNode) {
+    return as_numeric<int>((LilvNode*)node, canFreeNode);
+}
+
+unsigned scale_size(const LilvScalePoints *scale_points) {
+    return (scale_points != nullptr) ? lilv_scale_points_size(scale_points) : 0;
+}
+
+unsigned nodes_size(const LilvNodes *nodes) {
+    return (nodes != nullptr) ? lilv_nodes_size(nodes) : 0;
+}
+
+//uint64_t get_plugin_type(const PluginWorld *world, const LilvPlugin *lilvPlugin);
+
+extern "C" {
+    const char* unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid);
+    LV2_URID map_uri(LV2_URID_Map_Handle handle, const char *uri);
+    char* lv2_make_path(LV2_State_Make_Path_Handle handle, const char *path);
+}
+
+
+
 float
 get_ui_scale_factor(zzub::host* host) {
     GtkWidget* ui_window = (GtkWidget*) host->get_host_info()->host_ptr;

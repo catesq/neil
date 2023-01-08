@@ -26,8 +26,8 @@
 
 #include "lv2_defines.h"
 #include "lv2_utils.h"
-#include "PluginAdapter.h"
-#include "PluginInfo.h"
+#include "lv2_adapter.h"
+#include "lv2_zzub_info.h"
 
 #include <gdk/gdk.h>
 #include <glib-object.h>

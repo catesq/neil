@@ -1,6 +1,6 @@
 
 #include "worker.h"
-#include "../PluginAdapter.h"
+#include "../lv2_adapter.h"
 
 LV2_Worker_Status
 lv2_worker_respond (

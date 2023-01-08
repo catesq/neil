@@ -16,7 +16,7 @@ struct lv2_zzub_info : zzub::info {
 
     const LilvPlugin*   lilvPlugin;
 
-    SharedCache* cache;
+    SharedCache*        cache;
 
     std::vector<Port*>  ports;
 

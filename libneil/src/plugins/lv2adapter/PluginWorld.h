@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * Carla LV2 utils
  * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
@@ -15,129 +17,18 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#pragma once
+#include <mutex>
 
 #include "lilv/lilv.h"
-#include <boost/algorithm/string/trim.hpp>
 #include <lv2/state/state.h>
 #include "lv2/atom/forge.h"
-
-
-#ifdef _WIN32
-#    include <io.h>  /* for _mktemp */
-#define FILE_SEPARATOR std::string("\\")
-#else
-#    include <sys/stat.h>
-#    include <sys/types.h>
-#    include <unistd.h>
-#define FILE_SEPARATOR std::string("/")
-#endif
-
-using boost::algorithm::trim;
+#include "lv2_defines.h"
 
 extern "C" {
   #include "ext/symap.h"
 }
 
-#include <mutex>
-#include "lv2_defines.h"
-
 // -----------------------------------------------------------------------
-
-//forward declaration for function declarations blah
-struct SharedCache;
-struct PluginInfo;
-struct LilvZzubParamPort;
-
-// -----------------------------------------------------------------------
-
-namespace {
-    const char empty_str[1] = "";
-}
-
-// char* owned_lilv_str  a char* pointer which is owned & released by the lilv library
-//     copy string/release a pointer to string -
-inline std::string free_string(char* owned_lilv_str) {
-    std::string dup_str(owned_lilv_str);
-    lilv_free(owned_lilv_str);
-    return dup_str;
-}
-
-inline std::string as_string(LilvNode *node, bool freeNode = false) {
-    std::string val("");
-
-    if(node == nullptr) {
-        return val;
-    }
-
-    if(lilv_node_is_string(node)) {
-        val.append(lilv_node_as_string(node));
-    } else if(lilv_node_is_uri(node)) {
-        val.append(lilv_node_as_uri(node));
-    }
-
-    if(freeNode) {
-        lilv_node_free(node);
-    }
-
-    return val;
-}
-
-inline std::string as_string(const LilvNode *node) {
-    return as_string((LilvNode*) node, false);
-}
-
-template<typename T> T as_numeric(LilvNode *node, bool canFreeNode = false) {
-    T val = (T) 0;
-
-    if(node == nullptr) {
-        return val;
-    }
-
-    if (lilv_node_is_float(node)) {
-        val = (T) lilv_node_as_float(node);
-    } else if(lilv_node_is_int(node)) {
-        val = (T) lilv_node_as_int(node);
-    } else if (lilv_node_is_bool(node)) {
-        val = (T) lilv_node_as_bool(node) ? 1 : 0;
-    }
-
-    if(canFreeNode) {
-        lilv_node_free(node);
-    }
-
-    return val;
-}
-
-inline float as_float(const LilvNode *node, bool canFreeNode = false) {
-    return as_numeric<float>((LilvNode*)node, canFreeNode);
-}
-
-inline float as_int(const LilvNode *node, bool canFreeNode = false) {
-    return as_numeric<int>((LilvNode*)node, canFreeNode);
-}
-
-inline unsigned scale_size(const LilvScalePoints *scale_points) {
-    return (scale_points != nullptr) ? lilv_scale_points_size(scale_points) : 0;
-}
-
-inline unsigned nodes_size(const LilvNodes *nodes) {
-    return (nodes != nullptr) ? lilv_nodes_size(nodes) : 0;
-}
-
-//uint64_t get_plugin_type(const PluginWorld *world, const LilvPlugin *lilvPlugin);
-
-extern "C" {
-    const char* unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid);
-    LV2_URID map_uri(LV2_URID_Map_Handle handle, const char *uri);
-    char* lv2_make_path(LV2_State_Make_Path_Handle handle, const char *path);
-}
-
-// -----------------------------------------------------------------------
-// Custom Atom types
-
-
-
 
 //struct PlaybackPosition {
 //    uint32_t sampleRate;
@@ -179,35 +70,36 @@ extern "C" {
 
 
 struct SymapUrids {
-    u_int32_t atom_Float;
-    u_int32_t atom_Int;
-    u_int32_t atom_Double;
-    u_int32_t atom_Long;
-    u_int32_t atom_Bool;
-    u_int32_t atom_Chunk;
-    u_int32_t atom_Sequence;
-    u_int32_t atom_eventTransfer;
-    u_int32_t maxBlockLength;
-    u_int32_t minBlockLength;
-    u_int32_t bufSeqSize;
-    u_int32_t nominalBlockLength;
-    // u_int32_t log_Trace;
-    u_int32_t midi_MidiEvent;
-    u_int32_t param_sampleRate;
-    // u_int32_t patch_Set;
+    uint32_t atom_Float;
+    uint32_t atom_Int;
+    uint32_t atom_Double;
+    uint32_t atom_Long;
+    uint32_t atom_Bool;
+    uint32_t atom_Chunk;
+    uint32_t atom_Sequence;
+    uint32_t atom_eventTransfer;
+    uint32_t maxBlockLength;
+    uint32_t minBlockLength;
+    uint32_t bufSeqSize;
+    uint32_t nominalBlockLength;
+    uint32_t log_Trace;
+    uint32_t midi_MidiEvent;
+    uint32_t param_sampleRate;
+
+    uint32_t time_Position;
+    uint32_t time_bar;
+    uint32_t time_barBeat;
+    uint32_t time_beatUnit;
+    uint32_t time_beatsPerBar;
+    uint32_t time_beatsPerMinute;
+    uint32_t time_frame;
+    uint32_t time_speed;
+    uint32_t ui_updateRate;
+    uint32_t ui_scaleFactor;
+    uint32_t ui_transientWindowId;
+        // u_int32_t patch_Set;
     // u_int32_t patch_property;
     // u_int32_t patch_value;
-    u_int32_t time_Position;
-    u_int32_t time_bar;
-    u_int32_t time_barBeat;
-    u_int32_t time_beatUnit;
-    u_int32_t time_beatsPerBar;
-    u_int32_t time_beatsPerMinute;
-    u_int32_t time_frame;
-    u_int32_t time_speed;
-    u_int32_t ui_updateRate;
-    u_int32_t ui_scaleFactor;
-    u_int32_t ui_transientWindowId;
 };
 
 /////////
@@ -383,4 +275,3 @@ private:
 
     SharedCache();
 };
-

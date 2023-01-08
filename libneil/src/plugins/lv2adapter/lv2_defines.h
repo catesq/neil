@@ -7,9 +7,11 @@ static int verbose = 0;
 #include "zzub/zzub.h"
 
 #include "lv2/core/lv2.h"
-
 #include "lv2/data-access/data-access.h"
 #include "lv2/worker/worker.h"
+
+#include "lilv/lilv.h"
+
 #include "ext/lv2_programs.h"
 
 #define ZZUB_BUFLEN zzub_buffer_size
@@ -34,7 +36,7 @@ static int verbose = 0;
 //    read the archive using lilv state save
 #define ARCHIVE_USES_PARAMS 0xff8ade74
 
-
+// used by evbufs in the lv2_adapter for messages to and from the gui
 typedef struct {
     uint32_t index;
     uint32_t protocol;
@@ -60,7 +62,7 @@ enum PortType : unsigned {
 };
 
 
-
+// used as a LV2_Feature by lv2 adapter for lilv_plugin_instantiate
 struct Lv2HostParams {
     int32_t     blockLength    = ZZUB_BUFLEN;
     int32_t     minBlockLength = 16;

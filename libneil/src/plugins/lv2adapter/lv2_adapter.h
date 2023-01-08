@@ -5,7 +5,7 @@
 #include "lv2_defines.h"
 #include "lv2_utils.h"
 #include "Ports.h"
-#include "PluginInfo.h"
+#include "lv2_zzub_info.h"
 
 #include "zzub/zzub.h"
 #include "zzub/plugin.h"

@@ -4,6 +4,8 @@
 #include "zzub/plugin.h"
 
 #include "lv2_defines.h"
+#include "lv2_utils.h"
+
 #include "PluginWorld.h"
 #include "ext/lv2_evbuf.h"
 

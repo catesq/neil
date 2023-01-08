@@ -1,4 +1,4 @@
-#include "PluginAdapter.h"
+#include "lv2_adapter.h"
 #include <lv2/atom/atom.h>
 
 // these are the ui related function for the PLuginAdapter - the PluginAdapter file was getting unwieldy
