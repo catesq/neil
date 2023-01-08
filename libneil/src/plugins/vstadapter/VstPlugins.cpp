@@ -3,28 +3,28 @@
 
 
 
-VstPlugins::VstPlugins(const char* vst_path) {
+vst_plugins::vst_plugins(const char* vst_path) {
     this->vst_path = vst_path;
 }
 
-void VstPlugins::initialize(zzub::pluginfactory *factory) {
-    for(auto plugin_info: VstDescriptions(vst_path)) {
+void vst_plugins::initialize(zzub::pluginfactory *factory) {
+    for(auto plugin_info: vst_plugin_file_finder(vst_path)) {
         factory->register_info(plugin_info);
         printf("registered vst2 plugin: %s\n", plugin_info->name.c_str());
     }
 }
 
-const zzub::info *VstPlugins::get_info(const char *uri, zzub::archive *data) {
+const zzub::info *vst_plugins::get_info(const char *uri, zzub::archive *data) {
     return 0;
 }
 
-const char *VstPlugins::get_uri() {
+const char *vst_plugins::get_uri() {
     return 0;
 }
 
-void VstPlugins::configure(const char *key, const char *value) {}
+void vst_plugins::configure(const char *key, const char *value) {}
 
-void VstPlugins::destroy() {
+void vst_plugins::destroy() {
     delete this;
 }
 
@@ -35,7 +35,7 @@ zzub::plugincollection *zzub_get_plugincollection() {
     if(envpath == NULL)
         envpath = "vst:.vst";
 
-    return new VstPlugins(envpath);
+    return new vst_plugins(envpath);
 }
 
 const char *zzub_get_signature() { return ZZUB_SIGNATURE; }

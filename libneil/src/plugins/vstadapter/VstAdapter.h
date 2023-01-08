@@ -17,9 +17,9 @@ extern "C" {
 }
 
 
-struct VstAdapter : zzub::plugin, zzub::event_handler {
-    VstAdapter(const VstPluginInfo* info);
-    virtual ~VstAdapter();
+struct vst_adapter : zzub::plugin, zzub::event_handler {
+    vst_adapter(const vst_zzub_info* info);
+    virtual ~vst_adapter();
     virtual void init(zzub::archive* pi) override;
     virtual void created() override;
     virtual void save(zzub::archive *) override;
@@ -72,7 +72,7 @@ private:
     AEffect* plugin = nullptr;
     float ui_scale = 1.0f;
 
-    const VstPluginInfo* info;
+    const vst_zzub_info* info;
     std::vector<VstMidiEvent*> midi_events;
     VstEvents* vst_events;
     VstTimeInfo vst_time_info{};

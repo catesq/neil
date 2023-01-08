@@ -11,7 +11,11 @@
 #include <iostream>
 
 
-VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCategory category) : zzub::info(), filename(filename), category(category) {
+vst_zzub_info::vst_zzub_info(AEffect* plugin, 
+                             std::string filename, 
+                             VstPlugCategory category) 
+    : zzub::info(), filename(filename), category(category) 
+{
     dispatch(plugin, effOpen);
 
     vst_id = plugin->uniqueID;
@@ -41,7 +45,7 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
                                                              .set_description(strcp)
                                                              .set_state_flag();
 
-        auto vst_param = VstParameter::build(param_properties, zzub_param, idx);
+        auto vst_param = vst_parameter::build(param_properties, zzub_param, idx);
         vst_params.push_back(vst_param);
         flags  |= zzub_plugin_flag_has_event_input;
 
@@ -118,37 +122,57 @@ VstPluginInfo::VstPluginInfo(AEffect* plugin, std::string filename, VstPlugCateg
     dispatch(plugin, effClose);
 }
 
+
 /// TODO make a move constructor and a move constructor - to reuse/free the malloc'd strings in the zuub::param in global_parameters and reallocte
 /// the plugininfo will be reused and only be destroyed when the program is closed so putting this off is unclean but irrelevant
-VstPluginInfo::~VstPluginInfo() {
+vst_zzub_info::~vst_zzub_info() {
 }
 
-bool VstPluginInfo::get_is_synth() const {
+
+bool 
+vst_zzub_info::get_is_synth() const 
+{
     return flags & zzub::plugin_flag_is_instrument;
 }
 
-std::string VstPluginInfo::get_filename() const {
+
+std::string 
+vst_zzub_info::get_filename() const 
+{
     return filename;
 }
 
-int VstPluginInfo::get_param_count() const {
+
+int 
+vst_zzub_info::get_param_count() const 
+{
     return global_parameters.size();
 }
 
 
-const std::vector<std::string>& VstPluginInfo::get_param_names() const {
+const std::vector<std::string>& 
+vst_zzub_info::get_param_names() const 
+{
     return param_names;
 }
 
-const std::vector<VstParameter*>& VstPluginInfo::get_vst_params() const {
+
+const std::vector<vst_parameter*>& 
+vst_zzub_info::get_vst_params() const 
+{
     return vst_params;
 }
 
-VstParameter* VstPluginInfo::get_vst_param(int index) const {
+
+vst_parameter* 
+vst_zzub_info::get_vst_param(int index) const 
+{
     return vst_params[index];
 }
 
-zzub::plugin* VstPluginInfo::create_plugin() const {
-    return new VstAdapter(this);
+
+zzub::plugin* 
+vst_zzub_info::create_plugin() const {
+    return new vst_adapter(this);
 }
 

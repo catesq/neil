@@ -4,28 +4,32 @@
 #include "aeffectx.h"
 
 
-struct VstParameter {
-    VstParameter(VstParameterProperties*, zzub::parameter* zzub_param, uint16_t index);
+struct vst_parameter {
+    vst_parameter(VstParameterProperties*, zzub::parameter* zzub_param, uint16_t index);
 
     virtual float zzub_to_vst_value(uint16_t zzub) = 0;
     virtual uint16_t vst_to_zzub_value(float vst)  = 0;
 
-    static VstParameter* build(VstParameterProperties* vst_props, zzub::parameter* zzub_param, uint16_t index);
+    static vst_parameter* build(VstParameterProperties* vst_props, zzub::parameter* zzub_param, uint16_t index);
 
     VstParameterProperties* vst_props;
     zzub::parameter* zzub_param;
     uint16_t index;
 };
 
-struct VstSwitchParameter : VstParameter {
-    using VstParameter::VstParameter;
+
+
+struct vst_switch_parameter : vst_parameter {
+    using vst_parameter::vst_parameter;
 
     virtual float zzub_to_vst_value(uint16_t) override;
     virtual uint16_t vst_to_zzub_value(float vst) override;
 };
 
-struct VstIntParameter : VstParameter {
-    VstIntParameter(VstParameterProperties*, zzub::parameter* zzub_param, uint16_t index);
+
+
+struct vst_int_parameter : vst_parameter {
+    vst_int_parameter(VstParameterProperties*, zzub::parameter* zzub_param, uint16_t index);
 
     virtual float zzub_to_vst_value(uint16_t ) override;
     virtual uint16_t vst_to_zzub_value(float vst) override;
@@ -33,8 +37,10 @@ struct VstIntParameter : VstParameter {
     int min, max, vst_range;
 };
 
-struct VstFloatParameter : VstParameter {
-    VstFloatParameter(VstParameterProperties*, zzub::parameter* zzub_param, uint16_t index);
+
+
+struct vst_float_parameter : vst_parameter {
+    vst_float_parameter(VstParameterProperties*, zzub::parameter* zzub_param, uint16_t index);
 
     virtual float zzub_to_vst_value(uint16_t value) override;
     virtual uint16_t vst_to_zzub_value(float vst) override;

@@ -9,12 +9,16 @@ extern "C" {
 
 
 
-std::string get_param_name(AEffect* plugin, int index) {
+std::string 
+get_param_name(AEffect* plugin, int index) 
+{
     return get_plugin_string(plugin, effGetParamName, index);
 }
 
 
-std::string get_plugin_string(AEffect* plugin, VstInt32 opcode, int index) {
+std::string 
+get_plugin_string(AEffect* plugin, VstInt32 opcode, int index) 
+{
     static char vst_chars[64];
 
     dispatch(plugin, opcode, index, 0, (void*) vst_chars, 0.f);
@@ -28,7 +32,9 @@ std::string get_plugin_string(AEffect* plugin, VstInt32 opcode, int index) {
 }
 
 
-VstParameterProperties* get_param_props(AEffect* plugin, int index) {
+VstParameterProperties* 
+get_param_props(AEffect* plugin, int index) 
+{
     VstParameterProperties* param_props = (VstParameterProperties*) malloc(sizeof(VstParameterProperties));
 
     if(dispatch(plugin, effGetParameterProperties, index, 0, param_props, 0) == 1)
@@ -39,7 +45,9 @@ VstParameterProperties* get_param_props(AEffect* plugin, int index) {
 }
 
 
-AEffect* load_vst(boost::dll::shared_library& lib, std::string vst_filename, AEffectDispatcherProc callback, void* user_p) {
+AEffect* 
+load_vst(boost::dll::shared_library& lib, std::string vst_filename, AEffectDispatcherProc callback, void* user_p) 
+{
     boost::system::error_code ec{};
     lib.load(vst_filename, ec);
 

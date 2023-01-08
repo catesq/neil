@@ -35,7 +35,14 @@
 
 
 /// TODO proper set/get parameter handling and opcodes: 42,43 & 44 used by oxefm
-VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt) {
+VstIntPtr 
+VSTCALLBACK hostCallback(AEffect *effect, 
+                         VstInt32 opcode, 
+                         VstInt32 index, 
+                         VstIntPtr value, 
+                         void *ptr, 
+                         float opt) 
+{
     // the first call to this function, for opcode audioMasterVersion, is during vst startup
     // and vst_effect->resvd1 is undefined
     if(opcode == audioMasterVersion)
@@ -47,7 +54,7 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
         return 0;
     }
 
-    VstAdapter *vst_adapter = (VstAdapter*) effect->resvd1;
+    vst_adapter *vst_adapter = (vst_adapter*) effect->resvd1;
 
     switch(opcode) {
     case audioMasterBeginEdit:
@@ -97,16 +104,17 @@ VstIntPtr VSTCALLBACK hostCallback(AEffect *effect, VstInt32 opcode, VstInt32 in
 
 
 extern "C" {
+
 void on_window_destroy(GtkWidget* widget, gpointer data) {
-    static_cast<VstAdapter*>(data)->ui_destroy();
+    static_cast<vst_adapter*>(data)->ui_destroy();
+}
+
 }
 
 
-
-}
-
-
-VstAdapter::VstAdapter(const VstPluginInfo* info) : info(info) {
+vst_adapter::vst_adapter(const vst_zzub_info* info) 
+    : info(info) 
+{
     for(int idx=0; idx < MAX_TRACKS; idx++) {
         trackvalues[idx].note = zzub::note_value_none;
         trackvalues[idx].volume = VOLUME_DEFAULT;
@@ -132,7 +140,8 @@ VstAdapter::VstAdapter(const VstPluginInfo* info) : info(info) {
 }
 
 
-VstAdapter::~VstAdapter() {
+vst_adapter::~vst_adapter() 
+{
     dispatch(plugin, effMainsChanged, 0, 0, NULL, 0.0f);
     dispatch(plugin, effClose);
 
@@ -143,7 +152,9 @@ VstAdapter::~VstAdapter() {
 
 
 
-void VstAdapter::clear_vst_events() {
+void 
+vst_adapter::clear_vst_events() 
+{
     for(int idx=0; idx < vst_events->numEvents; idx++) {
         free(vst_events->events[idx]);
         vst_events->events[idx] = nullptr;
@@ -152,7 +163,9 @@ void VstAdapter::clear_vst_events() {
 }
 
 
-void VstAdapter::set_track_count(int track_count) {
+void 
+vst_adapter::set_track_count(int track_count) 
+{
     if (track_count < num_tracks) {
         for (int t = num_tracks; t < track_count; t++) {
             if (trackstates[t].note != zzub::note_value_none) {
@@ -165,7 +178,9 @@ void VstAdapter::set_track_count(int track_count) {
 }
 
 
-VstTimeInfo* VstAdapter::get_vst_time_info() {
+VstTimeInfo* 
+vst_adapter::get_vst_time_info() 
+{
     vst_time_info.samplePos  = sample_pos;
     vst_time_info.sampleRate = _master_info->samples_per_second;
     vst_time_info.tempo      = _master_info->beats_per_minute;
@@ -176,7 +191,9 @@ VstTimeInfo* VstAdapter::get_vst_time_info() {
 
 
 
-void VstAdapter::init(zzub::archive* arc) {
+void
+vst_adapter::init(zzub::archive* arc) 
+{
     plugin = load_vst(lib, info->get_filename(), hostCallback, this);
 
     if(plugin == nullptr)
@@ -208,7 +225,9 @@ void VstAdapter::init(zzub::archive* arc) {
 
 
 // reset vst parameters when loading from a save file
-void VstAdapter::init_from_archive(zzub::archive* arc) {
+void 
+vst_adapter::init_from_archive(zzub::archive* arc) 
+{
     zzub::instream *pi = arc->get_instream("");
     uint16_t param_count = 0;
     pi->read(&param_count, sizeof(uint16_t));
@@ -228,7 +247,9 @@ void VstAdapter::init_from_archive(zzub::archive* arc) {
 
 // completes the recreation of the plugin when loading a save file
 // when inserting a new vst it will set the parameters on the zzub side to
-void VstAdapter::created() {
+void 
+vst_adapter::created() 
+{
     initialized = true;
     printf("initialized\n");
 
@@ -240,7 +261,9 @@ void VstAdapter::created() {
 
 // simple save of plugin state. just store the current value of all the parameters 
 // should work for most plugins. more complex ones might need to use the save_preset 
-void VstAdapter::save(zzub::archive *arc) {
+void 
+vst_adapter::save(zzub::archive *arc) 
+{
     zzub::outstream *po = arc->get_outstream("");
 
     uint16_t param_count = info->global_parameters.size();
@@ -253,7 +276,9 @@ void VstAdapter::save(zzub::archive *arc) {
 }
 
 
-bool VstAdapter::invoke(zzub_event_data_t& data) {
+bool 
+vst_adapter::invoke(zzub_event_data_t& data) 
+{
     if (!plugin ||
         data.type != zzub::event_type_double_click ||
         is_editor_open ||
@@ -288,7 +313,9 @@ bool VstAdapter::invoke(zzub_event_data_t& data) {
 }
 
 
-void VstAdapter::ui_destroy() {
+void 
+vst_adapter::ui_destroy()
+{
     dispatch(plugin, effEditClose);
     is_editor_open = false;
 }
@@ -316,7 +343,9 @@ void VstAdapter::ui_destroy() {
 //}
 
 
-void VstAdapter::update_parameter_from_gui(int idx, float float_val) {
+void 
+vst_adapter::update_parameter_from_gui(int idx, float float_val) 
+{
     printf("update param from gui: index = %d, name: %s,  vst val = %f, zzub val = %d \n", idx, info->get_vst_param(idx)->zzub_param->name, float_val, info->get_vst_param(idx)->vst_to_zzub_value(float_val));
     globalvals[idx] = info->get_vst_param(idx)->vst_to_zzub_value(float_val);
     _host->control_change(metaplugin, 1, 0, idx, globalvals[idx], false, true);
@@ -324,7 +353,9 @@ void VstAdapter::update_parameter_from_gui(int idx, float float_val) {
 }
 
 
-void VstAdapter::process_events() {
+void 
+vst_adapter::process_events() 
+{
     if(!initialized)
         return;
 
@@ -343,7 +374,9 @@ void VstAdapter::process_events() {
 }
 
 
-void VstAdapter::process_midi_tracks() {
+void 
+vst_adapter::process_midi_tracks() 
+{
     for(int idx=0; idx < num_tracks; idx++) {
         if (trackvalues[idx].volume != VOLUME_NONE)
             trackstates[idx].volume = trackvalues[idx].volume;
@@ -393,7 +426,9 @@ void VstAdapter::process_midi_tracks() {
 }
 
 
-void VstAdapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg) {
+void 
+vst_adapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg) 
+{
     if(vals_msg.midi.cmd != TRACKVAL_NO_MIDI_CMD) {
         state_msg.midi.cmd = vals_msg.midi.cmd;
 
@@ -405,7 +440,9 @@ void VstAdapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg)
 }
 
 
-bool VstAdapter::process_stereo(float **pin, float **pout, int numsamples, int mode) {
+bool 
+vst_adapter::process_stereo(float **pin, float **pout, int numsamples, int mode) 
+{
     sample_pos += numsamples;
 
     if(midi_events.size() > 0) {
@@ -445,12 +482,16 @@ bool VstAdapter::process_stereo(float **pin, float **pout, int numsamples, int m
     return 1;
 }
 
-const char *VstAdapter::get_preset_file_extensions() {
+const char *
+vst_adapter::get_preset_file_extensions() 
+{
     return "Preset file=.fxp:Preset bank=.fxb";
 }
 
 
-bool VstAdapter::save_preset_file(const char* filename) {
+bool 
+vst_adapter::save_preset_file(const char* filename) 
+{
     printf("Save preset: %s\n", filename);
     std::filesystem::path path{filename};
     struct fxProgram program{};
@@ -489,20 +530,19 @@ bool VstAdapter::save_preset_file(const char* filename) {
         }
     }
 
-
 save_preset_end_true:
     if(chunk_data)
         free(chunk_data);
-
     return true;
-
 
 save_preset_end_false:
     return false;
 }
 
 
-bool VstAdapter::load_preset_file(const char* filename) {
+bool 
+vst_adapter::load_preset_file(const char* filename) 
+{
     printf("Load preset: %s\n", filename);
 
     std::filesystem::path path{filename};
@@ -578,7 +618,10 @@ load_preset_end_false:
     return false;
 }
 
-const char *VstAdapter::describe_value(int param, int value) {
+
+const char *
+vst_adapter::describe_value(int param, int value) 
+{
     static char cstr[32];
     auto str = std::to_string(value);
     std::strncpy(cstr, str.c_str(), 32);

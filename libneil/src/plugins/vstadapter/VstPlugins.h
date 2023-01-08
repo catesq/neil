@@ -28,16 +28,16 @@
 
 
 
-struct VstDescriptions {
-    VstDescriptions(const char* path_str) {
+struct vst_plugin_file_finder {
+    vst_plugin_file_finder(const char* path_str) {
         read_vsts(path_str);
     }
 
-    std::vector<VstPluginInfo*>::iterator begin() {
+    std::vector<vst_zzub_info*>::iterator begin() {
         return vsts.begin();
     }
 
-    std::vector<VstPluginInfo*>::iterator end() {
+    std::vector<vst_zzub_info*>::iterator end() {
         return vsts.end();
     }
 
@@ -95,7 +95,7 @@ private:
         if(category == kPlugCategShell)
             add_next_plugin(lib, plugin);
         else
-            vsts.push_back(new VstPluginInfo(plugin, path.string(), category));
+            vsts.push_back(new vst_zzub_info(plugin, path.string(), category));
 
     }
 
@@ -103,13 +103,13 @@ private:
 
     }
 
-    std::vector<VstPluginInfo*> vsts;
+    std::vector<vst_zzub_info*> vsts;
 };
 
 
 
-struct VstPlugins : zzub::plugincollection {
-    VstPlugins(const char* vst_path);
+struct vst_plugins : zzub::plugincollection {
+    vst_plugins(const char* vst_path);
     virtual void initialize(zzub::pluginfactory *factory);
     virtual const zzub::info *get_info(const char *uri, zzub::archive *data); // { return 0; }
     virtual const char *get_uri(); // { return 0; }
