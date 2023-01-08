@@ -5,8 +5,7 @@
 
 #include "lv2_defines.h"
 #include "lv2_utils.h"
-
-#include "PluginWorld.h"
+#include "lv2_lilv_world.h"
 
 #include "ext/lv2_evbuf.h"
 
@@ -25,8 +24,8 @@ struct PortCounter {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-u_int32_t get_port_properties(const SharedCache* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
-u_int32_t get_port_designation(const SharedCache* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
+u_int32_t get_port_properties(const lv2_lilv_world* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
+u_int32_t get_port_designation(const lv2_lilv_world* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort);
 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -55,10 +54,10 @@ union BodgeEndian {
 
 
 struct lv2_port {
-    // the lilvLilvPort, LilvPlugin and SharedCache are needed to assign the properties, designation and other class members and are not stored
+    // the lilvLilvPort, LilvPlugin and lv2_lilv_world are needed to assign the properties, designation and other class members and are not stored
     lv2_port(const LilvPort *lilvPort,
          const LilvPlugin* lilvPlugin,
-         SharedCache* cache,
+         lv2_lilv_world* cache,
          PortType type,
          PortFlow flow,
          PortCounter& counter
@@ -141,7 +140,7 @@ struct value_port: lv2_port {
 
     value_port(const LilvPort *lilvPort,
               const LilvPlugin* lilvPlugin,
-              SharedCache* cache,
+              lv2_lilv_world* cache,
               PortType type,
               PortFlow flow,
               PortCounter& counter);
@@ -161,7 +160,7 @@ struct control_port : value_port {
 
     control_port(const LilvPort *lilvPort,
                 const LilvPlugin* lilvPlugin,
-                SharedCache* cache,
+                lv2_lilv_world* cache,
                 PortType type,
                 PortFlow flow,
                 PortCounter& counter
@@ -177,7 +176,7 @@ struct control_port : value_port {
 struct param_port : value_port {
     param_port(const LilvPort *lilvPort,
               const LilvPlugin* lilvPlugin,
-              SharedCache* cache,
+              lv2_lilv_world* cache,
               PortType type,
               PortFlow flow,
               PortCounter& counter

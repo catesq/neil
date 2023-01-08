@@ -446,7 +446,9 @@ lv2_adapter::get_param_port(std::string symbol)
 
 void 
 lv2_adapter::stop() 
-{}
+{
+    
+}
 
 
 void 
@@ -697,10 +699,11 @@ lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int const
 
 
 struct lv2plugincollection : zzub::plugincollection {
-    SharedCache *world = SharedCache::getInstance();
+    lv2_lilv_world *world = lv2_lilv_world::get_instance();
 
     virtual void initialize(zzub::pluginfactory *factory) {
         const LilvPlugins* const collection = world->get_all_plugins();
+        
         LILV_FOREACH(plugins, iter, collection) {
             const LilvPlugin *plugin = lilv_plugins_get(collection, iter);
             lv2_zzub_info *info = new lv2_zzub_info(world, plugin);

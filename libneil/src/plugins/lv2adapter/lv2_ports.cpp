@@ -21,7 +21,7 @@ lv2_port::lv2_port(const lv2_port& other)
 
 lv2_port::lv2_port(const LilvPort *lilvPort,
                    const LilvPlugin* lilvPlugin,
-                   SharedCache* cache,
+                   lv2_lilv_world* cache,
                    PortType type,
                    PortFlow flow,
                    PortCounter& counter ) 
@@ -42,7 +42,7 @@ lv2_port::lv2_port(const LilvPort *lilvPort,
 // some data used by Control and Parameter ports initialised here
 value_port::value_port(const LilvPort *lilvPort,
            const LilvPlugin* lilvPlugin,
-           SharedCache* cache,
+           lv2_lilv_world* cache,
            PortType type,
            PortFlow flow,
            PortCounter& counter)
@@ -90,7 +90,7 @@ control_port::control_port(const control_port& other)
 
 control_port::control_port(const LilvPort *lilvPort,
                          const LilvPlugin* lilvPlugin,
-                         SharedCache* cache,
+                         lv2_lilv_world* cache,
                          PortType type,
                          PortFlow flow,
                          PortCounter& counter )
@@ -128,7 +128,7 @@ param_port::param_port(const param_port& other)
 
 param_port::param_port(const LilvPort *lilvPort,
                      const LilvPlugin* lilvPlugin,
-                     SharedCache* cache,
+                     lv2_lilv_world* cache,
                      PortType type,
                      PortFlow flow,
                      PortCounter& counter )
@@ -251,7 +251,7 @@ param_port::param_port(const LilvPort *lilvPort,
 //-----------------------------------------------------------------------------------
 
 
-uint32_t get_port_properties(const SharedCache* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
+uint32_t get_port_properties(const lv2_lilv_world* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
     uint32_t properties = 0;
     
     if (lilv_port_has_property(lilvPlugin, lilvPort, cache->nodes.pprop_optional))
@@ -306,7 +306,7 @@ uint32_t get_port_properties(const SharedCache* cache, const LilvPlugin *lilvPlu
 //-----------------------------------------------------------------------------------
 
 
-uint32_t get_port_designation(const SharedCache* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
+uint32_t get_port_designation(const lv2_lilv_world* cache, const LilvPlugin *lilvPlugin, const LilvPort *lilvPort) {
     uint32_t designation = 0;
 
     if (lilv_port_has_property(lilvPlugin, lilvPort, cache->nodes.reportsLatency))

@@ -2,21 +2,23 @@
 
 #include <unordered_map>
 
+#include "zzub/plugin.h"
+
 #include "lv2_defines.h"
 #include "lv2_ports.h"
-#include "PluginWorld.h"
-#include "zzub/plugin.h"
+#include "lv2_lilv_world.h"
+
 
 
 
 struct lv2_zzub_info : zzub::info {
-    lv2_zzub_info(SharedCache* cache, const LilvPlugin *lilvPlugin);
+    lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin *lilvPlugin);
 
     const LilvWorld*    lilvWorld;
 
     const LilvPlugin*   lilvPlugin;
 
-    SharedCache*        cache;
+    lv2_lilv_world*        cache;
 
     std::vector<lv2_port*>  ports;
 

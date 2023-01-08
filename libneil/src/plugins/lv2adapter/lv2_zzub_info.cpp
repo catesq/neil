@@ -5,8 +5,6 @@
 #include "lv2_adapter.h"
 #include "lv2_ports.h"
 
-
-
 inline void printport(const char *prefix, const LilvPlugin* lilvPlugin, const LilvPort* lilvPort, PortFlow flow) {
     printf("%s: Port '%s'. Plugin '%s'\nClasses:",
            prefix,
@@ -21,7 +19,7 @@ zzub::plugin *lv2_zzub_info::create_plugin() const {
 }
 
 
-lv2_zzub_info::lv2_zzub_info(SharedCache* cache, const LilvPlugin *lilvPlugin)
+lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin *lilvPlugin)
     : zzub::info(),
       lilvWorld(cache->lilvWorld),
       lilvPlugin(lilvPlugin),
@@ -90,7 +88,9 @@ lv2_zzub_info::lv2_zzub_info(SharedCache* cache, const LilvPlugin *lilvPlugin)
 
 
 
-PortFlow lv2_zzub_info::get_port_flow(const LilvPort* port) {
+PortFlow 
+lv2_zzub_info::get_port_flow(const LilvPort* port) 
+{
    if(lilv_port_is_a(lilvPlugin, port, cache->nodes.port_input)) {
         return PortFlow::Input;
     } else if(lilv_port_is_a(lilvPlugin, port, cache->nodes.port_output)) {
@@ -102,7 +102,9 @@ PortFlow lv2_zzub_info::get_port_flow(const LilvPort* port) {
 
 
 
-PortType lv2_zzub_info::get_port_type(const LilvPort* lilvPort, PortFlow flow) {
+PortType 
+lv2_zzub_info::get_port_type(const LilvPort* lilvPort, PortFlow flow) 
+{
     if(lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_control)) {
         return flow == PortFlow::Input ? PortType::Param : PortType::Control;
     } else if (lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_audio)) {
@@ -125,7 +127,9 @@ PortType lv2_zzub_info::get_port_type(const LilvPort* lilvPort, PortFlow flow) {
 
 
 
-lv2_port* lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter) {
+lv2_port* 
+lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter) 
+{
     switch(type) {
         case PortType::Control: {
             auto port = new control_port(lilvPort, lilvPlugin, cache, type, flow, counter);
@@ -165,7 +169,8 @@ lv2_port* lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, Por
 
 
 
-void lv2_zzub_info::add_generator_params()
+void 
+lv2_zzub_info::add_generator_params()
 {
     add_track_parameter().set_note();
 

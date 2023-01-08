@@ -1,6 +1,5 @@
-#include "PluginWorld.h"
 #include "lilv/lilv.h"
-#include <X11/Xlib.h>
+
 
 #include "lv2/event/event.h"
 #include "lv2/port-props/port-props.h"
@@ -12,27 +11,29 @@
 #include "suil/suil.h"
 
 #include "lv2_utils.h"
+#include "lv2_lilv_world.h"
 
+#include <X11/Xlib.h>
 //-----------------------------------------------------------------------------------
 
 extern "C" {
 
     LV2_URID map_uri(LV2_URID_Map_Handle handle, const char *uri) {
-        SharedCache* cache = (SharedCache*)handle;
+        lv2_lilv_world* cache = (lv2_lilv_world*)handle;
         const LV2_URID id = symap_map(cache->symap, uri);
 //        printf("mapped %u from %s\n", id, uri);
         return id;
     }
 
     const char* unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid) {
-        SharedCache* cache = (SharedCache*)handle;
+        lv2_lilv_world* cache = (lv2_lilv_world*)handle;
         const char* uri = symap_unmap(cache->symap, urid);
 //        printf("unmapped %u to %s\n", urid, uri);
         return uri;
     }
 
     char* lv2_make_path(LV2_State_Make_Path_Handle handle, const char *path) {
-        SharedCache *cache = (SharedCache*)handle;
+        lv2_lilv_world *cache = (lv2_lilv_world*)handle;
         std::string fname = cache->hostParams.tempDir + FILE_SEPARATOR + std::string(path);
         return strdup(fname.c_str());
     }
@@ -41,7 +42,7 @@ extern "C" {
 
 //-----------------------------------------------------------------------------------
 
-Nodes::Nodes(LilvWorld* world)
+lv2_lilv_nodes::lv2_lilv_nodes(LilvWorld* world)
     : port                (lilv_new_uri(world, LV2_CORE__port)),
       symbol              (lilv_new_uri(world, LV2_CORE__symbol)),
       designation         (lilv_new_uri(world, LV2_CORE__designation)),
@@ -108,17 +109,12 @@ Nodes::Nodes(LilvWorld* world)
       rdf_type            (lilv_new_uri(world, NS_rdf "type")) {
 }
 
-Nodes::~Nodes() {
+lv2_lilv_nodes::~lv2_lilv_nodes() {
     LilvNode** node = &this->port;
     do {
         lilv_node_free(*node);
 
     } while(*++node != this->rdf_type);
-}
-
-
-SharedCache::~SharedCache() {
-
 }
 
 //   class_bandpass    (new_uri(LV2_CORE__BandpassPlugin)),
@@ -163,14 +159,21 @@ SharedCache::~SharedCache() {
 //   patch_message      (new_uri(LV2_PATCH__Message)),
 
 
-std::mutex SharedCache::suil_mtx{};
-bool SharedCache::suil_is_init(false);
-bool SharedCache::are_threads_init(false);
+lv2_lilv_world::~lv2_lilv_world() { }
 
-SharedCache::SharedCache()
+std::mutex lv2_lilv_world::suil_mtx{};
+
+
+bool lv2_lilv_world::suil_is_init(false);
+
+bool lv2_lilv_world::are_threads_init(false);
+
+// private constriuctor for lv2_lilv_world singleton
+lv2_lilv_world::lv2_lilv_world()
     : lilvWorld(lilv_world_new()),
       nodes(lilvWorld),
-      symap(symap_new()) {
+      symap(symap_new()) 
+{
 
     lilv_world_load_all(lilvWorld);
     
@@ -235,10 +238,12 @@ SharedCache::SharedCache()
     }
 
     hostParams.tempDir = std::string(dtmp_res);
-
 }
 
-void SharedCache::init_suil() {
+
+void 
+lv2_lilv_world::init_suil() 
+{
     suil_mtx.lock();
 
     if(!suil_is_init) {
@@ -249,7 +254,10 @@ void SharedCache::init_suil() {
     suil_mtx.unlock();
 }
 
-void SharedCache::init_x_threads() {
+
+void 
+lv2_lilv_world::init_x_threads() 
+{
     suil_mtx.lock();
 
     if(!are_threads_init) {

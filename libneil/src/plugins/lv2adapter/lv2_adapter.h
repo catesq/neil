@@ -106,7 +106,7 @@ struct lv2_adapter : zzub::plugin, zzub::event_handler
     bool              program_change_update = false;
     bool              halting               = false;
     lv2_zzub_info*    info              = nullptr;
-    SharedCache*      cache             = nullptr;
+    lv2_lilv_world*   cache             = nullptr;
     LilvInstance*     lilvInstance      = nullptr;
     zzub_plugin_t*    metaPlugin        = nullptr;
     LilvUIs*          uis               = nullptr;

@@ -63,7 +63,7 @@ enum PortType : unsigned {
 
 
 // used as a LV2_Feature by lv2 adapter for lilv_plugin_instantiate
-struct Lv2HostParams {
+struct lv2_host_params {
     int32_t     blockLength    = ZZUB_BUFLEN;
     int32_t     minBlockLength = 16;
     int32_t     bufSize        = EVENT_BUF_SIZE;

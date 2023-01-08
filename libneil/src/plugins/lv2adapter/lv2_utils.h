@@ -40,7 +40,7 @@ using boost::algorithm::trim;
 // -----------------------------------------------------------------------
 
 //forward declaration for function declarations blah
-struct SharedCache;
+struct lv2_host_params;
 struct lv2_zzub_info;
 struct lv2_port;
 

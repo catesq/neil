@@ -38,7 +38,7 @@ if lv2_pluginenv['LV2'] == True:
         'lv2_adapter_ui.cpp', 
         'lv2_ports.cpp', 
         'lv2_zzub_info.cpp', 
-        'PluginWorld.cpp', 
+        'lv2_lilv_world.cpp', 
         'lv2_utils.cpp', 
         # 'lv2_defines.cpp',  
         'ext/lv2_evbuf.c', 'ext/symap.c', 'zix/ring.c', 'features/worker.cpp'

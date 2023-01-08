@@ -22,6 +22,7 @@
 #include "lilv/lilv.h"
 #include <lv2/state/state.h>
 #include "lv2/atom/forge.h"
+
 #include "lv2_defines.h"
 
 extern "C" {
@@ -69,7 +70,7 @@ extern "C" {
 //};
 
 
-struct SymapUrids {
+struct symap_urids {
     uint32_t atom_Float;
     uint32_t atom_Int;
     uint32_t atom_Double;
@@ -150,9 +151,9 @@ struct SymapUrids {
 // LilvNode *unit_unit;
 
 
-struct Nodes {
-    Nodes(LilvWorld* world);
-    ~Nodes();
+struct lv2_lilv_nodes {
+    lv2_lilv_nodes(LilvWorld* world);
+    ~lv2_lilv_nodes();
 
     LilvNode *port;
     LilvNode *symbol;
@@ -224,23 +225,26 @@ struct Nodes {
 // -----------------------------------------------------------------------
 // Our LV2 World class
 
-struct SharedCache {
-
+struct lv2_lilv_world {
     LilvWorld *lilvWorld;
 
-    Nodes nodes;
-
-    Lv2HostParams hostParams;
-    LV2_URID_Map map;
-    LV2_URID_Unmap unmap;
-    LV2_State_Make_Path make_path;
-//    LV2_URI_Map_Feature uri_map;
-
     Symap* symap;
-    SymapUrids urids;
+
+    LV2_State_Make_Path make_path;
 
     LV2_Atom_Forge forge;
 
+    LV2_URID_Map map;
+
+    LV2_URID_Unmap unmap;
+
+//    LV2_URI_Map_Feature uri_map;
+
+    symap_urids urids;
+
+    lv2_lilv_nodes nodes;
+
+    lv2_host_params hostParams;
 
 
     // Base Types
@@ -251,7 +255,7 @@ struct SharedCache {
 
     // -------------------------------------------------------------------
 
-    ~SharedCache();
+    ~lv2_lilv_world();
 
     void init_suil();
     void init_x_threads();
@@ -261,8 +265,8 @@ struct SharedCache {
         return lilv_world_get_all_plugins(lilvWorld);
     }
 
-    static SharedCache* getInstance() {
-        static SharedCache instance{};
+    static lv2_lilv_world* get_instance() {
+        static lv2_lilv_world instance{};
         return &instance;
     }
 
@@ -273,5 +277,5 @@ private:
     static bool are_threads_init;
 
 
-    SharedCache();
+    lv2_lilv_world();
 };
