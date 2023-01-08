@@ -9,8 +9,8 @@
 
 
 
-struct PluginInfo : zzub::info {
-    PluginInfo(SharedCache* cache, const LilvPlugin *lilvPlugin);
+struct lv2_zzub_info : zzub::info {
+    lv2_zzub_info(SharedCache* cache, const LilvPlugin *lilvPlugin);
 
     const LilvWorld*    lilvWorld;
 

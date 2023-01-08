@@ -42,7 +42,7 @@
 #include <iostream>
 
 
-lv2_adapter::lv2_adapter(PluginInfo *info) : info(info), cache(info->cache) {
+lv2_adapter::lv2_adapter(lv2_zzub_info *info) : info(info), cache(info->cache) {
     if(info->zzubTotalDataSize)  {
         global_values = malloc(info->zzubTotalDataSize);
         memset(global_values, 0, info->zzubTotalDataSize);
@@ -661,7 +661,7 @@ struct lv2plugincollection : zzub::plugincollection {
         const LilvPlugins* const collection = world->get_all_plugins();
         LILV_FOREACH(plugins, iter, collection) {
             const LilvPlugin *plugin = lilv_plugins_get(collection, iter);
-            PluginInfo *info = new PluginInfo(world, plugin);
+            lv2_zzub_info *info = new lv2_zzub_info(world, plugin);
             factory->register_info(info);
         }
     }

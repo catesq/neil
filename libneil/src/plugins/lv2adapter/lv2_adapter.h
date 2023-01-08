@@ -70,7 +70,7 @@ uint32_t lv2_port_index(
         );
 
 
-struct PluginInfo;
+struct lv2_zzub_info;
 struct ParamPort;
 struct SharedCache;
 
@@ -89,7 +89,7 @@ struct lv2_adapter : zzub::plugin, zzub::event_handler {
     attrvals        attr_values{0,0};
 
     bool            initialized       = false;
-    PluginInfo*     info              = nullptr;
+    lv2_zzub_info*     info              = nullptr;
     SharedCache*    cache             = nullptr;
     LilvInstance*   lilvInstance      = nullptr;
     zzub_plugin_t*  metaPlugin        = nullptr;
@@ -140,7 +140,7 @@ struct lv2_adapter : zzub::plugin, zzub::event_handler {
     std::vector<ParamPort*>    paramPorts;
 
 
-    lv2_adapter(PluginInfo *info);
+    lv2_adapter(lv2_zzub_info *info);
     ~lv2_adapter();
 
 
