@@ -68,7 +68,7 @@ value_port::value_port(const LilvPort *lilvPort,
     }
 
     if(defaultValue < minimumValue || defaultValue > maximumValue) {
-        defaultValue = (maximumValue - minimumValue) / 2.0f;
+        defaultValue = minimumValue + (maximumValue - minimumValue) / 2.0f;
     }
 }
 
@@ -108,7 +108,14 @@ param_port::param_port(param_port&& other)
     : value_port(other),
       paramIndex(other.paramIndex),
       zzubValOffset(other.zzubValOffset),
-      zzubValSize(other.zzubValSize) {
+      zzubValSize(other.zzubValSize) 
+{
+            printf("zzub param %d min %d max %d default %d none %d\n", paramIndex, zzubParam.value_min, zzubParam.value_max, zzubParam.value_default, zzubParam.value_none);
+
+    memcpy(&zzubParam, &other.zzubParam, sizeof(zzub::parameter));
+
+    for(auto& scalePoint: other.scalePoints)
+        scalePoints.push_back(scalePoint);
 }
 
 
@@ -119,6 +126,8 @@ param_port::param_port(const param_port& other)
       zzubValOffset(other.zzubValOffset),
       zzubValSize(other.zzubValSize)
 {
+        printf("zzub param %d min %d max %d default %d none %d\n", paramIndex, zzubParam.value_min, zzubParam.value_max, zzubParam.value_default, zzubParam.value_none);
+
     // each copy of the param_port needs it own copy of the zzub param
     // the zzub::info kinda holds a reference copy of the param_port/zzub::param
     // and each instance of the zzub::plugin has it's own copy of both
@@ -166,6 +175,7 @@ param_port::param_port(const LilvPort *lilvPort,
         zzubParam.value_default = lilv_to_zzub_value(defaultValue);
     }
 
+
     if(name == "VoiceCount") {
         printf("voicecount properties: %d\n", properties);
     }
@@ -180,7 +190,7 @@ param_port::param_port(const LilvPort *lilvPort,
             const LilvScalePoint *lilvScalePoint = lilv_scale_points_get(lilv_scale_points, spIter);
             scalePoints.push_back(ScalePoint(lilvScalePoint));
             if(verbose) {
-                auto last_item = scalePoints.size()-1;
+                auto last_item = scalePoints.size() - 1;
                 printf("\nScale point %f, %s", scalePoints[last_item].value, scalePoints[last_item].label.c_str());
             }
         }
@@ -493,7 +503,7 @@ param_port::lilv_to_zzub_value(float lilv_val)
         return (int) lilv_val;
 
     case zzub::parameter_type_switch:
-        return lilv_val == 0.f ? 1 : 0;
+        return lilv_val < 0.5f ? 1 : 1;
 
     case zzub::parameter_type_word:
     case zzub::parameter_type_byte:
@@ -555,9 +565,6 @@ param_port::putData(uint8_t *globals, int value)
     }
 
     case zzub::parameter_type_byte:
-        *dest = (u_int8_t) value;
-        break;
-
     case zzub::parameter_type_note:
         *dest = (u_int8_t) value;
         break;
