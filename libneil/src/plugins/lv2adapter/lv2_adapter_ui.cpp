@@ -9,10 +9,9 @@ extern "C"
     void
     ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data)
     {
-        gtk_widget_hide(widget);
-        static_cast<lv2_adapter*>(data)->ui_is_open = false;
+        gtk_widget_hide(static_cast<lv2_adapter*>(data)->gtk_ui_window);
+        static_cast<lv2_adapter*>(data)->ui_is_hidden = true;
     }
-
 }
 
 bool
@@ -33,8 +32,8 @@ lv2_adapter::is_ui_external(const LilvUI * ui) {
 
 void
 lv2_adapter::ui_reopen() {
-    gtk_window_present(GTK_WINDOW(gtk_ui_window));
-    ui_is_open = true;
+    gtk_widget_show(gtk_ui_window);
+    ui_is_hidden = false;
 }
 
 
