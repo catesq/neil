@@ -126,8 +126,7 @@ param_port::param_port(const param_port& other)
       zzubValOffset(other.zzubValOffset),
       zzubValSize(other.zzubValSize)
 {
-        printf("zzub param %d min %d max %d default %d none %d\n", paramIndex, zzubParam.value_min, zzubParam.value_max, zzubParam.value_default, zzubParam.value_none);
-
+        
     // each copy of the param_port needs it own copy of the zzub param
     // the zzub::info kinda holds a reference copy of the param_port/zzub::param
     // and each instance of the zzub::plugin has it's own copy of both
@@ -503,7 +502,7 @@ param_port::lilv_to_zzub_value(float lilv_val)
         return (int) lilv_val;
 
     case zzub::parameter_type_switch:
-        return lilv_val < 0.5f ? 1 : 1;
+        return lilv_val < 0.5f ? 0 : 1;
 
     case zzub::parameter_type_word:
     case zzub::parameter_type_byte:

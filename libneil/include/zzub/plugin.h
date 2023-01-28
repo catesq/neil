@@ -141,6 +141,9 @@ namespace zzub {
 
   enum volume_value {
     volume_none = zzub_volume_value_none,
+	  volume_min = zzub_volume_value_min,
+	  volume_default = zzub_volume_value_default,
+	  volume_max = zzub_volume_value_max
   };
 
   enum switch_value {
@@ -729,22 +732,18 @@ namespace zzub {
 
   #pragma pack(1)
   struct note_track {
-      uint8_t note;
-      uint8_t volume;
+      uint8_t note = zzub_note_value_none;
+      uint8_t volume = zzub_volume_value_none;
 
       int note_change_from(note_track& prev) {
-          if(is_volume_on()) {
-              prev.volume = volume;
-          }
-
           if(note == zzub::note_value_none) {
-              if(is_volume_on()) {
+              if(is_volume_on() && volume != prev.volume) {
                   return zzub_note_change_volume;
               } else {
                   return zzub_note_change_none;
               }
           }
-
+          
           if(note == zzub::note_value_off) {
               return zzub_note_change_noteoff;
           } else {

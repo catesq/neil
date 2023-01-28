@@ -55,7 +55,7 @@ lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin *lilvPlugin
                    .set_value_max(16)
                    .set_value_default(0);
 
-    add_attribute().set_name("Ui")
+    add_attribute().set_name("auto midi note off")
                    .set_value_min(0)
                    .set_value_max(1)
                    .set_value_default(1);
@@ -177,9 +177,9 @@ lv2_zzub_info::add_generator_params()
     add_track_parameter().set_byte()
                          .set_name("Track volume")
                          .set_description("Volume (00-7f)")
-                         .set_value_min(0)
-                         .set_value_max(0x007F)
-                         .set_value_none(TRACKVAL_VOLUME_UNDEFINED)
+                         .set_value_min(zzub_volume_value_min)
+                         .set_value_max(zzub_volume_value_max)
+                         .set_value_none(zzub_volume_value_none)
                          .set_value_default(0x40);
 
     add_track_parameter().set_byte()

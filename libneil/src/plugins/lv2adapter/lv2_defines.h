@@ -16,7 +16,7 @@ static int verbose = 0;
 
 #define ZZUB_BUFLEN zzub_buffer_size
 #define EVENT_BUF_SIZE 4096
-#define TRACKVAL_VOLUME_UNDEFINED 0x0FF
+// #define TRACKVAL_VOLUME_UNDEFINED 0x0FF
 #define TRACKVAL_NO_MIDI_CMD 0x00
 #define TRACKVAL_NO_MIDI_DATA 0xFFFF
 
@@ -44,6 +44,12 @@ typedef struct {
     uint8_t  body[];
 } ControlChange;
 
+
+#define DEBUG_INFO(plugin, format, ...) \
+    if(info->name == plugin) { \
+       printf("debug %s:", info->name.c_str());\
+        printf(format, __VA_ARGS__); \
+    }
 
 enum PortFlow : unsigned {
     Unknown = 0,

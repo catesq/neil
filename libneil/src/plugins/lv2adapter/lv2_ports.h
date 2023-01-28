@@ -8,6 +8,7 @@
 #include "lv2_lilv_world.h"
 
 #include "ext/lv2_evbuf.h"
+#include <memory>
 
 
 
@@ -54,7 +55,7 @@ union BodgeEndian {
 
 
 struct lv2_port {
-    // the lilvLilvPort, LilvPlugin and lv2_lilv_world are needed to assign the properties, designation and other class members and are not stored
+    // the LilvPort, LilvPlugin and lv2_lilv_world are needed to assign the properties, designation and other class members and are not stored
     lv2_port(const LilvPort *lilvPort,
          const LilvPlugin* lilvPlugin,
          lv2_lilv_world* cache,
@@ -84,18 +85,43 @@ struct lv2_port {
 
 
 struct audio_buf_port: lv2_port {
-    float* buf = nullptr;
+private:
+    float* buffer = nullptr;
 
-    using lv2_port::lv2_port;
+public:
+    audio_buf_port(const LilvPort *lilvPort,
+         const LilvPlugin* lilvPlugin,
+         lv2_lilv_world* cache,
+         PortType type,
+         PortFlow flow,
+         PortCounter& counter
+    ) : lv2_port(lilvPort, lilvPlugin, cache, type, flow, counter) {
+    }
+
+    audio_buf_port(const audio_buf_port& port) : lv2_port(port) {
+    }
+
+
+    void set_buffer(float* buf) {
+        this->buffer = buf;
+    }
+
 
     virtual ~audio_buf_port() override {
-        if(buf != nullptr){
-            free(buf);
+        if(buffer) {
+            free(buffer);
         }
     }
 
 
-    virtual void* data_pointer() override { return buf; }
+    virtual void* data_pointer() override { 
+        return buffer;
+    }
+
+    float* get_buffer() {
+        return buffer;
+    }
+
 
     virtual unsigned get_zzub_flags() override {
         if (type == PortType::CV) {
@@ -109,19 +135,41 @@ struct audio_buf_port: lv2_port {
 };
 
 
-struct event_buf_port : lv2_port {
-    LV2_Evbuf* eventBuf   = nullptr;
 
-    using lv2_port::lv2_port;
+struct event_buf_port : lv2_port {
+private:
+    LV2_Evbuf* event_buf = nullptr;
+    
+public:
+    event_buf_port(const LilvPort *lilvPort,
+         const LilvPlugin* lilvPlugin,
+         lv2_lilv_world* cache,
+         PortType type,
+         PortFlow flow,
+         PortCounter& counter
+    ) : lv2_port(lilvPort, lilvPlugin, cache, type, flow, counter) {
+    };
+
+    event_buf_port(const event_buf_port& port) : lv2_port(port) {
+    }
 
     virtual ~event_buf_port() override {
-        if(eventBuf != nullptr) {
-            lv2_evbuf_free(eventBuf);
+        printf("EVENT BUF DELETE %s\n", event_buf ? "YES" : "NO");
+        if(event_buf) {
+            lv2_evbuf_free(event_buf);
         }
     }
 
     virtual void* data_pointer() override {
-        return lv2_evbuf_get_buffer(eventBuf);
+        return lv2_evbuf_get_buffer(event_buf);
+    }
+
+    void set_buffer(LV2_Evbuf* buf) {
+        event_buf = buf;
+    }
+
+    LV2_Evbuf* get_lv2_evbuf() {
+        return event_buf;
     }
 
     virtual unsigned get_zzub_flags() override {
@@ -138,6 +186,7 @@ struct value_port: lv2_port {
 
     value_port(const value_port& vPort);
 
+
     value_port(const LilvPort *lilvPort,
               const LilvPlugin* lilvPlugin,
               lv2_lilv_world* cache,
@@ -147,6 +196,14 @@ struct value_port: lv2_port {
 
     virtual void* data_pointer() override {
         return &value;
+    }
+
+    void set_value(float value) {
+        this->value = value;
+    }
+
+    float get_value() {
+        return value;
     }
 
     virtual unsigned get_zzub_flags() override {
@@ -165,6 +222,7 @@ struct control_port : value_port {
                 PortFlow flow,
                 PortCounter& counter
     );
+
     control_port(const control_port& control_port);
 
     virtual unsigned get_zzub_flags() override {
@@ -181,8 +239,9 @@ struct param_port : value_port {
               PortFlow flow,
               PortCounter& counter
     );
-    param_port(const param_port& param_port);
     param_port(param_port&& param_port);
+
+    param_port(const param_port& param_port);
 
     virtual unsigned get_zzub_flags() override {
         return zzub_plugin_flag_has_event_input;
@@ -190,9 +249,19 @@ struct param_port : value_port {
 
     int         lilv_to_zzub_value(float lilv_val);
     float       zzub_to_lilv_value(int zzub_val);
+
+    // zzub packs 8 bit and 16 bit integers into a memory block with no paddinng or alignments
+    // get data uses zzubValOffset property to read the 8/16 bit integer which is then passed to zzub_to_lilv_value
+    // before being stored as the float proerty value_port->value
     int         getData(uint8_t *globals);
+
+    // the reverse of getData
     void        putData(uint8_t *globals, int value);
+
+    // 
     const char* describeValue(const int value, char *text);
+
+
 
     uint32_t  paramIndex;
     uint32_t  zzubValOffset;

@@ -5,7 +5,6 @@
 
 extern "C" 
 {
-
     void
     ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data)
     {
@@ -261,7 +260,7 @@ lv2_adapter::ui_event_import()
             update_port(static_cast<param_port*>(port), *((float*) body));
         } else if (ev.protocol == cache->urids.atom_eventTransfer && (port->type == PortType::Event || port->type == PortType::Midi)) {
             event_buf_port* eventPort = static_cast<event_buf_port*>(port);
-            LV2_Evbuf_Iterator e = lv2_evbuf_end(eventPort->eventBuf);
+            LV2_Evbuf_Iterator e = lv2_evbuf_end(eventPort->get_lv2_evbuf());
             const LV2_Atom* const atom = (const LV2_Atom*)body;
             lv2_evbuf_write(&e, samp_count, 0, atom->type, atom->size, (const uint8_t*)LV2_ATOM_BODY_CONST(atom));
         } else {

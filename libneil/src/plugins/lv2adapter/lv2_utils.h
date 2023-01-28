@@ -47,6 +47,7 @@ struct lv2_port;
 //use to read midi messages from the midi track column of the tracker, used in PluginAdapter and PluginInfo
 #pragma pack(1)
 
+
 union midi_msg {
     uint8_t bytes[3]{};
     struct {
@@ -66,7 +67,7 @@ struct trackvals {
 
 struct attrvals {
     int channel;
-    int ui;
+    int keep_notes;
 };
 
 #pragma pack()
