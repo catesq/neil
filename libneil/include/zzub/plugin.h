@@ -752,6 +752,8 @@ namespace zzub {
       }
 
       bool is_volume_on() { return volume != zzub_volume_value_none; }
+      bool get_volume() { return volume != zzub_volume_value_none ? volume : zzub_volume_value_default; }
+      uint8_t get_note() { return note; }
       bool is_note_on() { return note != zzub_note_value_none && note != zzub_note_value_off; };
   };
   #pragma pack()
