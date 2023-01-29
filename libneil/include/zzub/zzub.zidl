@@ -245,6 +245,9 @@ namespace zzub:
 
 	enum VolumeValue:
 		set none = 255
+		set default = 64   # 0x40
+		set min = 0        # 0x00
+		set max = 128      # 0x80
 
 	enum SwitchValue:
 		# predefined values for switches
