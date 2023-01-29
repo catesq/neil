@@ -63,6 +63,8 @@ private:
     float** audioIn;
     float** audioOut;
     unsigned num_tracks = 0;
+
+    attrvals attr_values { 0, 0 };
     std::array<tvals, MAX_TRACKS> trackvalues;
     std::array<tvals, MAX_TRACKS> trackstates;
 

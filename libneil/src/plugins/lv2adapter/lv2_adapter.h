@@ -102,7 +102,7 @@ struct lv2_adapter : zzub::plugin, zzub::event_handler
     // zzub engine boilerplate - trak_states are the previous plugin port values, trak_values are the new port values. attr_values are legacy.
     trackvals       trak_values[16]{};
     trackvals       trak_states[16]{};
-    attrvals        attr_values{0,0};
+    attrvals        attr_values {0,0};
     bool            initialized       = false;
     bool            ui_is_open        = false;
     bool            ui_is_hidden      = false;

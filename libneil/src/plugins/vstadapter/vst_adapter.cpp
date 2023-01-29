@@ -132,7 +132,7 @@ vst_adapter::vst_adapter(const vst_zzub_info* info)
     }
 
     globalvals = (uint16_t*) malloc(sizeof(uint16_t) * info->get_param_count());
-
+    attributes = (int*) &attr_values;
     track_values = &trackvalues[0];
     global_values = globalvals;
 
@@ -299,10 +299,11 @@ vst_adapter::invoke(zzub_event_data_t& data)
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), this);
 
-    gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(_host->get_host_info()->host_ptr));
+    // gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(_host->get_host_info()->host_ptr));
     gtk_window_set_title(GTK_WINDOW(window), info->name.c_str());
     gtk_window_present(GTK_WINDOW(window));
-    gtk_window_set_default_size(GTK_WINDOW(window), -1, -1);
+    // gtk_window_set_default_size(GTK_WINDOW(window), -1, -1);
+
 
     auto win_id = WIN_ID_FUNC(window);
 
@@ -310,10 +311,11 @@ vst_adapter::invoke(zzub_event_data_t& data)
 
     ERect* gui_size = nullptr;
     dispatch(plugin, effEditGetRect, 0, 0, (void*) &gui_size, 0);
-
-
-    if(gui_size)
+    dispatch(plugin, effGetProgram, 0, 0, nullptr, 0);
+    
+    if(gui_size) {
         gtk_widget_set_size_request(window, gui_size->right / ui_scale, gui_size->bottom / ui_scale);
+    }
 
     is_editor_open = true;
 
@@ -386,47 +388,79 @@ void
 vst_adapter::process_midi_tracks() 
 {
     for(int idx=0; idx < num_tracks; idx++) {
-        if (trackvalues[idx].volume != VOLUME_NONE)
-            trackstates[idx].volume = trackvalues[idx].volume;
+        auto prev = (zzub::note_track*) &trackstates[idx];
+        auto curr = (zzub::note_track*) &trackvalues[idx];
 
-
-        switch(trackvalues[idx].note) {
-        case zzub::note_value_none:
-            if(trackstates[idx].note != zzub::note_value_none) {
-                if(trackvalues[idx].volume == 0) {
-                    midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
-                    trackstates[idx].note = zzub::note_value_none;
-                } else if(trackvalues[idx].volume != VOLUME_NONE) {
-                    midi_events.insert(midi_events.begin(), midi_note_aftertouch(trackstates[idx].note, trackstates[idx].volume));
-                }
-            }
-
+        switch(curr->note_change_from(*prev)) {
+        case zzub_note_change_none:
             break;
 
-        case zzub::note_value_off:
-            if(trackstates[idx].volume == 0) {
-                for(int trk = 0; trk < num_tracks; trk++) {
-                    if(trackstates[trk].note != zzub::note_value_none && trackvalues[trk].note != zzub_note_value_none) {
-                        midi_events.insert(midi_events.begin(), midi_note_off(trackstates[trk].note));
-                        trackstates[trk].note = zzub::note_value_none;
-                    }
-                }
-            } else if(trackstates[idx].note != zzub::note_value_none) {
-                midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
-                trackstates[idx].note = zzub::note_value_none;
-            }
+        case zzub_note_change_noteoff:
+            if(prev->is_note_on())
+                midi_events.insert(midi_events.begin(), midi_note_off(prev->note));
 
+            prev->note = zzub::note_value_none;
             break;
 
-        default:
-            if(trackstates[idx].note != zzub::note_value_none) {
-                midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
-            }
+        case zzub_note_change_noteon:
+            if(curr->is_volume_on())
+                prev->volume = curr->volume;
 
-            midi_events.push_back(midi_note_on(trackvalues[idx].note, trackstates[idx].volume));
-            trackstates[idx].note = trackvalues[idx].note;
+            if(prev->is_note_on() && !attr_values.keep_notes)
+                midi_events.insert(midi_events.begin(), midi_note_off(prev->note));
+
+            prev->note = curr->note;
+            midi_events.push_back(midi_note_on(curr->note, prev->get_volume()));
+            break;
+
+        case zzub_note_change_volume:
+            prev->volume = curr->volume;
+            if(prev->is_note_on())
+                midi_events.insert(midi_events.begin(), midi_note_aftertouch(prev->note, prev->get_volume()));
             break;
         }
+
+        // if (trackvalues[idx].volume != VOLUME_NONE)
+        //     trackstates[idx].volume = trackvalues[idx].volume;
+
+
+        // switch(trackvalues[idx].note) {
+        // case zzub::note_value_none:
+        //     if(trackstates[idx].note != zzub::note_value_none) {
+        //         if(trackvalues[idx].volume == 0) {
+        //             midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
+        //             trackstates[idx].note = zzub::note_value_none;
+        //         } else if(trackvalues[idx].volume != VOLUME_NONE) {
+        //             midi_events.insert(midi_events.begin(), midi_note_aftertouch(trackstates[idx].note, trackstates[idx].volume));
+        //         }
+        //     }
+
+        //     break;
+
+        // case zzub::note_value_off:
+        //     if(trackstates[idx].volume == 0) {
+        //         for(int trk = 0; trk < num_tracks; trk++) {
+        //             if(trackstates[trk].note != zzub::note_value_none && trackvalues[trk].note != zzub_note_value_none) {
+        //                 midi_events.insert(midi_events.begin(), midi_note_off(trackstates[trk].note));
+        //                 trackstates[trk].note = zzub::note_value_none;
+        //             }
+        //         }
+        //     } else if(trackstates[idx].note != zzub::note_value_none) {
+        //         midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
+        //         trackstates[idx].note = zzub::note_value_none;
+        //     }
+
+        //     break;
+
+        // default:
+        //     if(trackstates[idx].note != zzub::note_value_none) {
+        //         midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
+        //     }
+
+        //     midi_events.push_back(midi_note_on(trackvalues[idx].note, trackstates[idx].volume));
+        //     trackstates[idx].note = trackvalues[idx].note;
+        //     break;
+        // }
 
         process_one_midi_track(trackvalues[idx].msg_1, trackstates[idx].msg_1);
         process_one_midi_track(trackvalues[idx].msg_2, trackstates[idx].msg_2);

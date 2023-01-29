@@ -52,6 +52,18 @@ vst_zzub_info::vst_zzub_info(AEffect* plugin,
         zzub_param->value_default = vst_param->vst_to_zzub_value(vst_val);
     }
 
+    add_attribute()
+			.set_name("MIDI channel (0 = disabled, 17 = omni)")
+			.set_value_min(0)
+			.set_value_max(17)
+			.set_value_default(0);
+
+    add_attribute()
+			.set_name("Auto midi note off. if note playing and note length not set for that note")
+			.set_value_min(0)
+			.set_value_max(1)
+			.set_value_default(0);
+
     switch(category) {
         case kPlugCategEffect:
         case kPlugCategMastering:
@@ -67,6 +79,7 @@ vst_zzub_info::vst_zzub_info(AEffect* plugin,
             min_tracks = 1;
             max_tracks = 16;
             flags |= zzub::plugin_flag_has_midi_input;
+
             add_track_parameter().set_note();
             add_track_parameter().set_byte()
                                  .set_name("Volume")

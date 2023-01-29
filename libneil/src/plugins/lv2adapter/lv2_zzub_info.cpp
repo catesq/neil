@@ -55,7 +55,7 @@ lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin *lilvPlugin
                    .set_value_max(16)
                    .set_value_default(0);
 
-    add_attribute().set_name("auto midi note off")
+    add_attribute().set_name("auto midi note off if note playing and note length not set for that note")
                    .set_value_min(0)
                    .set_value_max(1)
                    .set_value_default(1);

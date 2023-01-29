@@ -35,7 +35,7 @@ lv2_port::lv2_port(const LilvPort *lilvPort,
 
     name = as_string(lilv_port_get_name(lilvPlugin, lilvPort), true);
     symbol = as_string(lilv_port_get_symbol(lilvPlugin, lilvPort));
-    printf("name %s properties %d designation %d", name.c_str(), properties, designation);
+    // printf("name %s properties %d designation %d", name.c_str(), properties, designation);
 }
 
 
@@ -175,9 +175,9 @@ param_port::param_port(const LilvPort *lilvPort,
     }
 
 
-    if(name == "VoiceCount") {
-        printf("voicecount properties: %d\n", properties);
-    }
+    // if(name == "VoiceCount") {
+    //     printf("voicecount properties: %d\n", properties);
+    // }
 
     zzubParam.name        = name.c_str();
     zzubParam.description = zzubParam.name;

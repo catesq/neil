@@ -32,6 +32,13 @@ struct tvals {
   midi_msg msg_2;
 } __attribute__((__packed__));
 
+
+struct attrvals {
+    int channel;
+    int keep_notes;
+};
+
+
 #pragma pack()
 
 // from midi.lv2/midi.h
