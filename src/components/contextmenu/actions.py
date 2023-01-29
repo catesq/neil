@@ -41,13 +41,13 @@ def on_popup_show_params(widget, plugin):
 
 
 def on_popup_show_attribs(widget, plugin):
-    dlg = com.get('neil.core.attributesdialog', plugin, widget.get_top_level())
+    dlg = com.get('neil.core.attributesdialog', plugin, widget.get_toplevel())
     dlg.run()
     dlg.destroy()
 
 
 def on_popup_show_presets(widget, plugin):
-    com.get('neil.core.presetdialog.manager').show(plugin, widget.get_top_level())
+    com.get('neil.core.presetdialog.manager').show(plugin, widget.get_toplevel())
 
 
 def on_popup_rename(widget, plugin):
