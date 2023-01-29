@@ -250,7 +250,7 @@ class AttributesDialog(Gtk.Dialog):
         @rtype: int
         """
         store, rows = self.attriblist.get_selection().get_selected_rows()
-        return rows[0][0]
+        return rows[0][0] if rows and rows[0] else None
 
     def on_attrib_item_focused(self, selection):
         """
