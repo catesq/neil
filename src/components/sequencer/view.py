@@ -1,4 +1,5 @@
 
+
 import gi
 gi.require_version('PangoCairo', '1.0')
 
@@ -24,7 +25,6 @@ import zzub
 
 from .add_track import AddSequencerTrackDialog
 from .utils import Seq
-
 
 
 def get_random_color(seed):
@@ -54,7 +54,6 @@ class SequencerView(Gtk.DrawingArea):
         """
         Initialization.
         """
-
         self.panel = panel
         self.hscroll = hscroll
         self.vscroll = vscroll
@@ -84,6 +83,7 @@ class SequencerView(Gtk.DrawingArea):
         self.selection_end = None
         self.dragging = False
         Gtk.DrawingArea.__init__(self)
+
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.set_property('can-focus', True)
         self.connect("draw", self.on_draw)
