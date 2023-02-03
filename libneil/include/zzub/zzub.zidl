@@ -249,6 +249,19 @@ namespace zzub:
 		set min = 0        # 0x00
 		set max = 128      # 0x80
 
+	enum MidiCommandValue:
+		set none    = 0
+		set default = 0    
+		set min     = 1    
+		set max     = 255  
+		set length  = 1     # the midi command/data thing doubles up as note length message with a command of 0x01 
+
+	enum MidiDataValue:
+		set none    = 65535
+		set default = 65535 # 0x40
+		set min     = 0    # 0x00
+		set max     = 128  # 0x80
+
 	enum SwitchValue:
 		# predefined values for switches
 		set none	= 255

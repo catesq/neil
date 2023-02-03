@@ -756,6 +756,96 @@ namespace zzub {
       uint8_t get_note() { return note; }
       bool is_note_on() { return note != zzub_note_value_none && note != zzub_note_value_off; };
   };
+
+  struct midi_note_track {
+      uint8_t note = zzub_note_value_none;
+      uint8_t volume = zzub_volume_value_none;
+
+      uint8_t command = zzub_midi_command_value_none;
+      uint8_t data_1 = zzub_midi_data_value_none & 0xff;
+      uint8_t data_2 = zzub_midi_data_value_none & 0xff; 
+  };
+
+  struct midi_note_interface {
+    virtual void add_note_on();
+    virtual void add_note_off();
+    virtual void add_aftertouch();
+    virtual void add_midi_command();
+  };
+
+
+  // used by the lv2 and vst plugins to handle note/midi command tracks
+  struct midi_track_manager {
+    uint32_t num_tracks = 1;
+    uint64_t sample_count = 0;
+    uint32_t sample_rate = 0;
+
+    midi_note_track* curr;
+    midi_note_track* prev;
+
+    midi_track_manager(uint16_t max_num_tracks, midi_note_interface* interface) {
+      curr = new midi_note_track[max_num_tracks];
+      prev = new midi_note_track[max_num_tracks];
+    }
+
+    ~midi_track_manager() {
+      delete[] curr;
+      delete[] prev;
+    }
+
+    void set_sample_rate(uint32_t rate) {
+      sample_rate = rate;
+    }
+
+    void set_track_count(int num_tracks) {
+      
+    }
+
+    void update(int numsamples) {
+      
+    }
+
+    void connect(zzub::plugin *plugin) {
+      
+    }
+
+    static void prepare_plugin_info(zzub::info* info) {
+      info->add_track_parameter().set_note();
+
+      info->add_track_parameter().set_byte()
+            .set_name("Track volume")
+            .set_description("Volume (00-7f)")
+            .set_value_min(zzub_volume_value_min)
+            .set_value_max(zzub_volume_value_max)
+            .set_value_none(zzub_volume_value_none)
+            .set_value_default(zzub_volume_value_default);
+
+      info->add_track_parameter().set_byte()
+            .set_name("Midi command")
+            .set_description("")
+            .set_value_min(zzub_midi_command_value_min)
+            .set_value_max(zzub_midi_command_value_max)
+            .set_value_none(zzub_midi_command_value_none)
+            .set_value_default(zzub_midi_command_value_none);
+
+      info->add_track_parameter().set_byte()
+            .set_name("Midi data 1")
+            .set_description("Data byte 1")
+            .set_value_min(zzub_midi_data_value_min)
+            .set_value_max(zzub_midi_data_value_max)
+            .set_value_none(zzub_midi_data_value_none)
+            .set_value_default(zzub_midi_data_value_none);
+
+      info->add_track_parameter()
+            .set_byte()
+            .set_name("Midi data 2")
+            .set_description("Data byte 2")
+            .set_value_min(zzub_midi_data_value_min)
+            .set_value_max(zzub_midi_data_value_max)
+            .set_value_none(zzub_midi_data_value_none)
+            .set_value_default(zzub_midi_data_value_none);
+    }
+  };
   #pragma pack()
 
 
