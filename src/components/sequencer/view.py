@@ -54,18 +54,21 @@ class SequencerView(Gtk.DrawingArea):
         """
         Initialization.
         """
+
         self.panel = panel
         self.hscroll = hscroll
         self.vscroll = vscroll
 
         self.needfocus = True
 
-        # Variables that were previously defined as constants.
+        # Variables that were previously defined as globals.
         self.seq_track_size = 36
         self.seq_step = 16
         self.seq_left_margin = 96
         self.seq_top_margin = 20
         self.seq_row_size = 38
+
+        self.pango_ctx = None
 
         self.plugin_info = common.get_plugin_infos()
         player = com.get('neil.core.player')
@@ -1392,6 +1395,7 @@ class SequencerView(Gtk.DrawingArea):
         """
         width, height = self.get_client_size()
         cfg = config.get_config()
+
         colors = {
             'Background': cfg.get_float_color('SE Background'),
             'Border': cfg.get_float_color('SE Border'),
@@ -1415,15 +1419,17 @@ class SequencerView(Gtk.DrawingArea):
         player = com.get('neil.core.player')
         self.playpos = player.get_position()
 
-        pango_ctx = self.get_pango_context()
-        pango_layout = Pango.Layout(pango_ctx)
-        pango_layout.set_width(-1)
-        # Draw the background
+        if not self.pango_ctx:
+            self.pango_ctx = self.get_pango_context()
+            self.pango_layout = Pango.Layout(self.pango_ctx)
+            self.pango_layout.set_width(-1)
+
         ctx.set_source_rgb(*colors['Background'])
         ctx.rectangle(0, 0, width, height)
         ctx.fill()
-        self.draw_markers(ctx, pango_layout, colors)
-        self.draw_tracks(ctx, pango_layout, colors)
+        
+        self.draw_markers(ctx, self.pango_layout, colors)
+        self.draw_tracks(ctx, self.pango_layout, colors)
         self.draw_loop_points(ctx, colors)
         self.draw_cursors(ctx)
         self.draw_playpos(ctx)
