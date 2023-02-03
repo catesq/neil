@@ -1,14 +1,105 @@
 import gi
 from gi.repository import Gtk
 
-from neil.utils import add_scrollbars
+from neil.utils import add_scrollbars, get_new_pattern_name
 
 from .view import SequencerView
 from .toolbar import SequencerToolBar
+from .utils import Seq
+
+from neil.com import com
 from neil.common import MARGIN, MARGIN0
 import config
-from neil.com import com
-from .utils import Seq
+
+from patterns import show_pattern_dialog, DLGMODE_NEW, DLGMODE_COPY, DLGMODE_CHANGE
+
+class SequencerPatternListTreeView(Gtk.TreeView):
+    def __init__(self, sequencer_panel, seqliststore):
+        Gtk.TreeView.__init__(self, seqliststore)
+        self.sequencer_panel = sequencer_panel
+        self.seqpatternlist = Gtk.TreeView(seqliststore)
+        self.set_rules_hint(True)
+        self.connect("button-press-event", self.on_pattern_list_button)
+        self.connect("enter-notify-event", self.on_mouse_over)
+        self.connect("row-activated", self.on_visit_pattern)
+
+        tvkey = Gtk.TreeViewColumn("Key")
+        tvkey.set_resizable(True)
+        tvpname = Gtk.TreeViewColumn("Pattern Name")
+        tvpname.set_resizable(True)
+        cellkey = Gtk.CellRendererText()
+        cellpname = Gtk.CellRendererText()
+        tvkey.pack_start(cellkey, True)
+        tvpname.pack_start(cellpname, True)
+        tvkey.add_attribute(cellkey, 'text', 0)
+        tvpname.add_attribute(cellpname, 'text', 1)
+        self.append_column(tvkey)
+        self.append_column(tvpname)
+        self.set_search_column(0)
+        tvkey.set_sort_column_id(0)
+        tvpname.set_sort_column_id(1)
+
+    def on_mouse_over(self, widget, event):
+        widget.grab_focus()
+
+    def on_visit_pattern(self, treeview, treeiter, path):
+        self.sequencer_panel.jump_to_pattern(treeiter[0] - 2)
+
+    def on_pattern_list_button(self, treeview, event):
+        def on_create(item):
+            self.sequencer_panel.treeview_create_pattern(treeview)
+
+        def on_clone(item, pattern):
+            self.sequencer_panel.treeview_clone_pattern(treeview, pattern)
+
+        def on_rename(item, pattern):
+            self.sequencer_panel.treeview_rename_pattern(treeview, pattern)
+            
+        def on_clear(item, pattern):
+            plugin = self.sequencer_panel.get_active_plugin()
+            length = plugin.get_pattern_length(pattern)
+            name = plugin.get_pattern_name(pattern)
+            new_pattern = plugin.create_pattern(length)
+            new_pattern.set_name(name)
+            plugin.update_pattern(pattern, new_pattern)
+            player = com.get('neil.core.player')
+            player.history_commit("clear pattern")
+
+        def on_delete(item, pattern):
+            if pattern >= 0:
+                self.sequencer_panel.get_active_plugin().remove_pattern(pattern)
+                player = com.get('neil.core.player')
+                player.history_commit("remove pattern")
+
+        def add_menu_item(menu, label, callback, callback_data):
+            item = Gtk.MenuItem(label)
+            menu.append(item)
+            item.connect('activate', callback, callback_data)
+            item.show()
+
+        if event.button == 3:
+            if not self.sequencer_panel.get_active_plugin():
+                return
+
+            menu = Gtk.Menu()
+
+            add_menu_item(menu, "New pattern", on_create, None)
+
+            path = self.get_path_at_pos(int(event.x), int(event.y))
+
+            if path != None:
+                menu_entries = [
+                    ("Clone pattern", on_clone, path[0][0] - 2),
+                    ("Pattern properties", on_rename, path[0][0] - 2),
+                    ("Clear pattern", on_clear, path[0][0] - 2),
+                    ("Delete pattern", on_delete, path[0][0] - 2),
+                ]
+
+                for label, callback, callback_data in menu_entries:
+                    add_menu_item(menu, label, callback, callback_data)
+                
+            menu.popup(None, None, None, None, event.button, event.time)
+
 
 class SequencerPanel(Gtk.VBox):
     """
@@ -39,40 +130,24 @@ class SequencerPanel(Gtk.VBox):
         Gtk.VBox.__init__(self)
         self.splitter = Gtk.HPaned()
         self.seqliststore = Gtk.ListStore(str, str)
-
-        self.seqpatternlist = Gtk.TreeView(self.seqliststore)
-        self.seqpatternlist.set_rules_hint(True)
-        self.seqpatternlist.connect("button-press-event", self.on_pattern_list_button)
-        self.seqpatternlist.connect("enter-notify-event", self.on_mouse_over)
-        self.seqpatternlist.connect("row-activated", self.on_visit_pattern)
-
-        tvkey = Gtk.TreeViewColumn("Key")
-        tvkey.set_resizable(True)
-        tvpname = Gtk.TreeViewColumn("Pattern Name")
-        tvpname.set_resizable(True)
-        cellkey = Gtk.CellRendererText()
-        cellpname = Gtk.CellRendererText()
-        tvkey.pack_start(cellkey, True)
-        tvpname.pack_start(cellpname, True)
-        tvkey.add_attribute(cellkey, 'text', 0)
-        tvpname.add_attribute(cellpname, 'text', 1)
-        self.seqpatternlist.append_column(tvkey)
-        self.seqpatternlist.append_column(tvpname)
-        self.seqpatternlist.set_search_column(0)
-        tvkey.set_sort_column_id(0)
-        tvpname.set_sort_column_id(1)
+        self.seqpatternlist = SequencerPatternListTreeView(self, self.seqliststore)
 
         vscroll = Gtk.VScrollbar()
         hscroll = Gtk.HScrollbar()
 
+        self.plugin = None
         self.seqview = SequencerView(self, hscroll, vscroll)
         self.seqview.connect("enter-notify-event", self.on_mouse_over)
         self.viewport = Gtk.Viewport()
         self.viewport.add(self.seqview)
         scrollwin = Gtk.Table(2, 2)
-        scrollwin.attach(self.viewport, 0, 1, 0, 1,
-                         Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND,
-                         Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND)
+        scrollwin.attach(
+            self.viewport, 
+            0, 1, 0, 1,
+            Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND,
+            Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND
+        )
+        
         scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL)
         scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, 0)
 
@@ -98,115 +173,75 @@ class SequencerPanel(Gtk.VBox):
         eventbus = com.get('neil.core.eventbus')
         eventbus.edit_sequence_request += self.edit_sequence_request
 
-    def on_visit_pattern(self, treeview, treeiter, path):
-        pattern = treeiter[0] - 2
-        if pattern < 0:
+    def jump_to_patterm(self, pattern_num):
+        if pattern_num >= 0:
+            self.seqview.jump_to_pattern(pattern_num)
+
+    def get_active_plugin(self):
+        return self.plugin
+
+    # called from on_copy in SequencerTreeView
+    def treeview_create_pattern(self, treeview):
+        result = show_pattern_dialog(
+            treeview,
+            get_new_pattern_name(self.plugin),
+            self.seqview.step, 
+            DLGMODE_NEW, 
+            False
+        )
+
+        if result == None:
             return
-        else:
-            self.seqview.jump_to_pattern(self.plugin, pattern)
 
-    def on_pattern_list_button(self, treeview, event):
-        def on_create(item):
-            from patterns import show_pattern_dialog
-            from patterns import DLGMODE_NEW
-            from neil.utils import get_new_pattern_name
-            result = show_pattern_dialog(treeview,
-                                         get_new_pattern_name(self.plugin),
-                                         self.seqview.step, DLGMODE_NEW, False)
-            if result == None:
-                return
-            else:
-                name, length, switch = result
-                plugin = self.plugin
-                pattern = plugin.create_pattern(length)
-                pattern.set_name(name)
-                plugin.add_pattern(pattern)
-                player = com.get('neil.core.player')
-                player.history_commit("new pattern")
+        name, length, switch = result
+        plugin = self.plugin
+        pattern = plugin.create_pattern(length)
+        pattern.set_name(name)
+        plugin.add_pattern(pattern)
+        player = com.get('neil.core.player')
+        player.history_commit("new pattern")
 
-        def on_clone(item, pattern):
-            from patterns import show_pattern_dialog
-            from patterns import DLGMODE_COPY
-            from neil.utils import get_new_pattern_name
-            result = show_pattern_dialog(treeview,
-                                         get_new_pattern_name(self.plugin),
-                                         self.seqview.step, DLGMODE_COPY, False)
-            if result == None:
-                return
-            else:
-                name, patternsize, switch = result
-                m = self.plugin
-                p = m.get_pattern(pattern)
-                p.set_name(name)
-                m.add_pattern(p)
-                player = com.get('neil.core.player')
-                player.history_commit("clone pattern")
+    ## called from on)clone in SequencerTreeView
+    def treeview_clone_pattern(self, treeview, pattern):
+        result = show_pattern_dialog(
+            treeview,
+            get_new_pattern_name(self.plugin),
+            self.seqview.step, 
+            DLGMODE_COPY, 
+            False
+        )
 
-        def on_rename(item, pattern):
-            from patterns import show_pattern_dialog
-            from patterns import DLGMODE_CHANGE
-            from neil.utils import get_new_pattern_name
-            result = show_pattern_dialog(treeview,
-                                         self.plugin.get_pattern_name(pattern),
-                                         self.plugin.get_pattern_length(pattern),
-                                         DLGMODE_CHANGE, False)
-            if result == None:
-                return
-            else:
-                name, length, switch = result
-                plugin = self.plugin
-                plugin.set_pattern_name(pattern, name)
-                plugin.set_pattern_length(pattern, length)
-                player = com.get('neil.core.player')
-                player.history_commit("change pattern properties")
-            self.view.redraw()
+        if result == None:
+            return
 
-        def on_clear(item, pattern):
-            plugin = self.plugin
-            length = plugin.get_pattern_length(pattern)
-            name = plugin.get_pattern_name(pattern)
-            new_pattern = plugin.create_pattern(length)
-            new_pattern.set_name(name)
-            plugin.update_pattern(pattern, new_pattern)
-            player = com.get('neil.core.player')
-            player.history_commit("clear pattern")
+        name, patternsize, switch = result
+        m = self.plugin
+        p = m.get_pattern(pattern)
+        p.set_name(name)
+        m.add_pattern(p)
+        player = com.get('neil.core.player')
+        player.history_commit("clone pattern")
 
-        def on_delete(item, pattern):
-            plugin = self.plugin
-            if pattern >= 0:
-                plugin.remove_pattern(pattern)
-                player = com.get('neil.core.player')
-                player.history_commit("remove pattern")
 
-        if event.button == 3:
-            x = int(event.x)
-            y = int(event.y)
-            path = treeview.get_path_at_pos(x, y)
-            menu = Gtk.Menu()
-            new = Gtk.MenuItem("New pattern")
-            clone = Gtk.MenuItem("Clone pattern")
-            rename = Gtk.MenuItem("Pattern properties")
-            clear = Gtk.MenuItem("Clear pattern")
-            delete = Gtk.MenuItem("Delete pattern")
-            menu.append(new)
-            new.connect('activate', on_create)
-            menu.append(clone)
-            menu.append(rename)
-            menu.append(clear)
-            menu.append(delete)
-            if hasattr(self, 'plugin') and self.plugin != None:
-                new.show()
-            if path != None:
-                clone.connect('activate', on_clone, path[0][0] - 2)
-                clone.show()
-                rename.connect('activate', on_rename, path[0][0] - 2)
-                rename.show()
-                clear.connect('activate', on_clear, path[0][0] - 2)
-                clear.show()
-                delete.connect('activate', on_delete, path[0][0] - 2)
-                delete.show()
-            if hasattr(self, 'plugin') and self.plugin != None:
-                menu.popup(None, None, None, None, event.button, event.time)
+    def treeview_rename_pattern(self, treeview, pattern):
+        result = show_pattern_dialog(
+            treeview,
+            self.plugin.get_pattern_name(pattern),
+            self.plugin.get_pattern_length(pattern),
+            DLGMODE_CHANGE, 
+            False
+        )
+
+        if result == None:
+            return
+
+        name, length, switch = result
+        
+        self.plugin.set_pattern_name(pattern, name)
+        self.plugin.set_pattern_length(pattern, length)
+        player = com.get('neil.core.player')
+        player.history_commit("change pattern properties")
+        self.view.redraw()
 
     def on_mouse_over(self, widget, event):
         widget.grab_focus()
