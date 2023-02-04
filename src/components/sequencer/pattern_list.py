@@ -4,6 +4,7 @@ from gi.repository import Gtk
 from neil.com import com
 
 
+# the on_ function are actions for the context menu of the pattern list 
 def on_create(item, treeview, _):
     treeview.sequencer_panel.treeview_create_pattern(treeview)
 
@@ -40,7 +41,8 @@ def on_delete_list(item, treeview, pattern_indexes):
     player = com.get('neil.core.player')
     player.history_commit("remove patterns")
 
-# the pattern list embedded on left of panel.py 
+
+# the pattern list. embedded on left of the sequencer panel defined in panel.py 
 class SequencerPatternListTreeView(Gtk.TreeView):
     def __init__(self, sequencer_panel, seqliststore):
         Gtk.TreeView.__init__(self, seqliststore)
