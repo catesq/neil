@@ -3,6 +3,43 @@ import gi
 from gi.repository import Gtk
 from neil.com import com
 
+
+def on_create(item, treeview, _):
+    treeview.sequencer_panel.treeview_create_pattern(treeview)
+
+
+def on_clone(item, treeview, pattern_index):
+    treeview.sequencer_panel.treeview_clone_pattern(treeview, pattern_index)
+
+
+def on_rename(item, treeview, pattern_index):
+    treeview.sequencer_panel.treeview_rename_pattern(treeview, pattern_index)
+    
+
+def on_clear(item, treeview, pattern_index):
+    plugin = treeview.sequencer_panel.get_active_plugin()
+    length = plugin.get_pattern_length(pattern_index)
+    name = plugin.get_pattern_name(pattern_index)
+    new_pattern = plugin.create_pattern(length)
+    new_pattern.set_name(name)
+    plugin.update_pattern(pattern_index, new_pattern)
+    player = com.get('neil.core.player')
+    player.history_commit("clear pattern")
+
+
+def on_delete(item, treeview, pattern_index):
+    if pattern_index >= 0:
+        treeview.sequencer_panel.get_active_plugin().remove_pattern(pattern_index)
+        player = com.get('neil.core.player')
+        player.history_commit("remove pattern")
+
+def on_delete_list(item, treeview, pattern_indexes):
+    for pattern_index in pattern_indexes:
+        treeview.sequencer_panel.get_active_plugin().remove_pattern(pattern_index)
+
+    player = com.get('neil.core.player')
+    player.history_commit("remove patterns")
+
 # the pattern list embedded on left of panel.py 
 class SequencerPatternListTreeView(Gtk.TreeView):
     def __init__(self, sequencer_panel, seqliststore):
@@ -36,7 +73,7 @@ class SequencerPatternListTreeView(Gtk.TreeView):
         tvkey.set_sort_column_id(0)
         tvpname.set_sort_column_id(1)
 
-        self.set_can_focus(True)
+        self.set_can_focus(False)
         self.set_rubber_banding(True)
         self.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
 
@@ -44,60 +81,58 @@ class SequencerPatternListTreeView(Gtk.TreeView):
     def on_mouse_over(self, widget, event):
         widget.grab_focus()
 
+
     def on_visit_pattern(self, treeview, treeiter, path):
         self.sequencer_panel.jump_to_pattern(treeiter[0] - 2)
 
+
+    def add_menu_item(self, menu, label, callback, callback_data):
+        item = Gtk.MenuItem(label)
+        menu.append(item)
+        item.connect('activate', callback, self, callback_data)
+        item.show()
+
+    def build_menu_for_selected_rows(self, menu):
+        (model, paths) = self.get_selection().get_selected_rows()
+        pattern_nums = [path[0] - 2 for path in paths]
+
+        menu_entries = [
+            ("Delete patterns", on_delete_list, pattern_nums),
+        ]
+
+        for label, callback, callback_data in menu_entries:
+            self.add_menu_item(menu, label, callback, callback_data)
+
+
+    # when no patterns are selected then
+    def build_menu_for_row_at_clickpos(self, menu, path):
+        print("clickpos path", path[0][0] - 2)
+        menu_entries = [
+            ("Clone pattern", on_clone, path[0][0] - 2),
+            ("Pattern properties", on_rename, path[0][0] - 2),
+            ("Clear pattern", on_clear, path[0][0] - 2),
+            ("Delete pattern", on_delete, path[0][0] - 2),
+        ]
+
+        for label, callback, callback_data in menu_entries:
+            self.add_menu_item(menu, label, callback, callback_data)
+
     def on_pattern_list_button(self, treeview, event):
-        def on_create(item, _):
-            self.sequencer_panel.treeview_create_pattern(self)
+        if not self.sequencer_panel.get_active_plugin() or not event.button == 3:
+            return False
 
-        def on_clone(item, pattern):
-            self.sequencer_panel.treeview_clone_pattern(self, pattern)
+        menu = Gtk.Menu()
 
-        def on_rename(item, pattern):
-            self.sequencer_panel.treeview_rename_pattern(self, pattern)
-            
-        def on_clear(item, pattern):
-            plugin = self.sequencer_panel.get_active_plugin()
-            length = plugin.get_pattern_length(pattern)
-            name = plugin.get_pattern_name(pattern)
-            new_pattern = plugin.create_pattern(length)
-            new_pattern.set_name(name)
-            plugin.update_pattern(pattern, new_pattern)
-            player = com.get('neil.core.player')
-            player.history_commit("clear pattern")
+        click_path = self.get_path_at_pos(int(event.x), int(event.y))
+        selected_count = self.get_selection().count_selected_rows()
 
-        def on_delete(item, pattern):
-            if pattern >= 0:
-                self.sequencer_panel.get_active_plugin().remove_pattern(pattern)
-                player = com.get('neil.core.player')
-                player.history_commit("remove pattern")
+        self.add_menu_item(menu, "New pattern", on_create, None)
 
-        def add_menu_item(menu, label, callback, callback_data):
-            item = Gtk.MenuItem(label)
-            menu.append(item)
-            item.connect('activate', callback, callback_data)
-            item.show()
+        if selected_count > 0:
+            self.build_menu_for_selected_rows(menu)
+        elif click_path != None:
+            self.build_menu_for_row_at_clickpos(menu, click_path)
 
-        if event.button == 3:
-            if not self.sequencer_panel.get_active_plugin():
-                return
+        menu.popup(None, None, None, None, event.button, event.time)
 
-            menu = Gtk.Menu()
-
-            add_menu_item(menu, "New pattern", on_create, None)
-
-            path = self.get_path_at_pos(int(event.x), int(event.y))
-
-            if path != None:
-                menu_entries = [
-                    ("Clone pattern", on_clone, path[0][0] - 2),
-                    ("Pattern properties", on_rename, path[0][0] - 2),
-                    ("Clear pattern", on_clear, path[0][0] - 2),
-                    ("Delete pattern", on_delete, path[0][0] - 2),
-                ]
-
-                for label, callback, callback_data in menu_entries:
-                    add_menu_item(menu, label, callback, callback_data)
-                
-            menu.popup(None, None, None, None, event.button, event.time)
+        return True
