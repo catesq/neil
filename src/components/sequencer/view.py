@@ -1385,7 +1385,6 @@ class SequencerView(Gtk.DrawingArea):
             self.needfocus = False
         self.adjust_scrollbars()
         self.draw(ctx)
-        self.panel.update_list()
         return False
 
     def draw(self, ctx):

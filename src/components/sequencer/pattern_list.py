@@ -36,6 +36,11 @@ class SequencerPatternListTreeView(Gtk.TreeView):
         tvkey.set_sort_column_id(0)
         tvpname.set_sort_column_id(1)
 
+        self.set_can_focus(True)
+        self.set_rubber_banding(True)
+        self.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
+
+
     def on_mouse_over(self, widget, event):
         widget.grab_focus()
 

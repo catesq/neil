@@ -174,6 +174,7 @@ class SequencerPanel(Gtk.VBox):
         """
         Updates everything to reflect changes in the sequencer.
         """
+        print("Update all")
         self.update_list()
         self.toolbar.update_all()
         for k, v in self.view.plugin_info.items():
@@ -188,13 +189,13 @@ class SequencerPanel(Gtk.VBox):
         """
         Updates the panel to reflect a sequence view change.
         """
+        print("update list")
         self.seqliststore.clear()
         self.seqliststore.append(['-', 'Mute'])
         self.seqliststore.append([',', 'Break'])
         track = self.seqview.get_track()
         if track:
-            for pattern, key in zip(track.get_plugin().get_pattern_list(),
-                                    Seq.keys):
+            for pattern, key in zip(track.get_plugin().get_pattern_list(), Seq.keys):
                 self.seqliststore.append([key, pattern.get_name()])
             self.plugin = track.get_plugin()
 
