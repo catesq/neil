@@ -1312,7 +1312,7 @@ class RouteView(Gtk.DrawingArea):
 
     def on_draw(self, widget, ctx):
         self.draw(ctx)
-        return False
+        return True
 
     def draw(self, ctx):
         """
@@ -1393,8 +1393,8 @@ class RouteView(Gtk.DrawingArea):
 
         ctx.set_source_surface(self.surface, 0.0, 0.0)
         ctx.paint()
-
-        if self.connecting:
+        
+        if self.connecting and len(player.active_plugins) > 0:
             ctx.set_line_width(1)
             crx, cry = get_pixelpos(*player.active_plugins[0].get_position())
             rx, ry = self.connectpos
