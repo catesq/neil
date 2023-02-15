@@ -25,6 +25,8 @@
 #include "zzub.h"
 #include "types.h"
 
+#include <stdexcept>
+
 namespace zzub {
   enum {
     // Current version of the zzub interface. Pass this to the
@@ -766,50 +768,119 @@ namespace zzub {
       uint8_t data_2 = zzub_midi_data_value_none & 0xff; 
   };
 
-  struct midi_note_interface {
-    virtual void add_note_on();
-    virtual void add_note_off();
-    virtual void add_aftertouch();
-    virtual void add_midi_command();
+  #pragma pack()
+
+  // used by the zzub::plugin for LV2 & VST. 
+  // they have to register themselves by:
+  //   calling midi_track_manager::add_midi_track_info from their zzub::info midi_track_manager
+  //   and calling midi_track_manager::register_midi_manager from their zzub::plugin constructor 
+  // then they repeatedly call midi_track_manager::process_midi_events in the process_events method of the zzub::plugin 
+  struct midi_plugin_interface {
+    virtual void add_note_on() = 0;
+    virtual void add_note_off() = 0;
+    virtual void add_aftertouch() = 0;
+    virtual void add_midi_command() = 0;
+    // this is called in the constructor of midi_track_manager and the pointer can't be changed
+    virtual midi_note_track* get_track_data_pointer(uint16_t track_num) const = 0;
   };
 
-
-  // used by the lv2 and vst plugins to handle note/midi command tracks
+  namespace {
+    struct midi_note {
+      uint16_t note;
+      uint64_t start_at;
+      uint64_t end_at;
+    };
+  }
+    
+    // used by the lv2 and vst plugins to process midi notes, volume, note length and midi data/commands
   struct midi_track_manager {
+  private:
+    const midi_plugin_interface& plugin;
+  
+
+    // these are pointers to a subset of the void *track_values in the zzub::plugin 
+    // the midi events to process are supplied by the zzub engine every 'tick'. unsafe, everything in here gets written over
+    std::vector<midi_note_track*> curr {};
+  
+
+    // local data the track_manager creates and maintains, safe.
+    std::vector<midi_note_track> prev;
+  
+
+    // must be called by the plugin every time the number of tracks changes
     uint32_t num_tracks = 1;
+
+    uint16_t max_num_tracks = 1;
+  
+
+    // used a counter to send note length events
     uint64_t sample_count = 0;
-    uint32_t sample_rate = 0;
+  
 
-    midi_note_track* curr;
-    midi_note_track* prev;
+    uint32_t sample_rate = 48000; 
+  
 
-    midi_track_manager(uint16_t max_num_tracks, midi_note_interface* interface) {
-      curr = new midi_note_track[max_num_tracks];
-      prev = new midi_note_track[max_num_tracks];
+    std::vector<midi_note> active_notes {};
+  
+  public:
+    midi_track_manager(const midi_plugin_interface& plugin, uint16_t max_num_tracks)
+      : plugin(plugin), 
+        curr(),
+        max_num_tracks(max_num_tracks),
+        prev(max_num_tracks),
+        sample_rate(48000)
+    {
     }
 
-    ~midi_track_manager() {
-      delete[] curr;
-      delete[] prev;
+
+    ~midi_track_manager() 
+    {
+
     }
 
-    void set_sample_rate(uint32_t rate) {
+
+    void set_sample_rate(uint32_t rate) 
+    {
       sample_rate = rate;
     }
 
-    void set_track_count(int num_tracks) {
-      
+
+    void set_track_count(int num) 
+    {
+      num_tracks = num;
     }
 
-    void update(int numsamples) {
-      
+
+    // called in the process_events method of a plugin 
+    void process(uint32_t numsamples) 
+    {
+      sample_count += numsamples;
     }
 
-    void connect(zzub::plugin *plugin) {
-      
+    void init(uint32_t rate) {
+      set_sample_rate(rate);
+      for(auto idx = 0; idx < max_num_tracks; ++idx) {
+        auto ptr = plugin.get_track_data_pointer(idx);
+
+        if(!ptr) {
+          throw std::runtime_error("midi_track_manager::initialise: plugin.get_track_data_pointer returned null");
+        }
+
+        // clear the midi note track data in curr[idx]
+        ptr->note = zzub_note_value_none;
+        ptr->volume = zzub_volume_value_none;
+        ptr->command = zzub_midi_command_value_none;
+        ptr->data_1 = zzub_midi_data_value_none & 0xff;
+        ptr->data_2 = zzub_midi_data_value_none & 0xff;
+
+        curr.push_back(ptr);
+      }
     }
 
-    static void prepare_plugin_info(zzub::info* info) {
+
+    // called in the a zzub::info constructor - add the zzub tracks for a plugin to handle midi info
+    static void add_midi_track_info(zzub::info* info)
+    {
       info->add_track_parameter().set_note();
 
       info->add_track_parameter().set_byte()
@@ -822,7 +893,7 @@ namespace zzub {
 
       info->add_track_parameter().set_byte()
             .set_name("Midi command")
-            .set_description("")
+            .set_description("Command byte")
             .set_value_min(zzub_midi_command_value_min)
             .set_value_max(zzub_midi_command_value_max)
             .set_value_none(zzub_midi_command_value_none)
@@ -846,7 +917,6 @@ namespace zzub {
             .set_value_default(zzub_midi_data_value_none);
     }
   };
-  #pragma pack()
 
 
   struct midi_message {

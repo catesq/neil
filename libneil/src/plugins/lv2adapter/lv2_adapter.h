@@ -34,39 +34,39 @@
 
 
 void program_changed(
-        LV2_Programs_Handle handle,
-        int32_t index
+    LV2_Programs_Handle handle,
+    int32_t index
 );
 
 const void* get_port_value(
-        const char* port_symbol,
-        void*       user_data,
-        uint32_t*   size,
-        uint32_t*   type
+    const char* port_symbol,
+    void*       user_data,
+    uint32_t*   size,
+    uint32_t*   type
 );
 
 
 void set_port_value(
-        const char* port_symbol,
-        void*       user_data,
-        const void* value,
-        uint32_t    size,
-        uint32_t    type
+    const char* port_symbol,
+    void*       user_data,
+    const void* value,
+    uint32_t    size,
+    uint32_t    type
 );
 
 
 void write_events_from_ui(
-        void* const adapter_handle,
-        uint32_t    port_index,
-        uint32_t    buffer_size,
-        uint32_t    protocol,
-        const void* buffer
+    void* const adapter_handle,
+    uint32_t    port_index,
+    uint32_t    buffer_size,
+    uint32_t    protocol,
+    const void* buffer
 );
 
 
 uint32_t lv2_port_index(
-        void* const lv2adapter_handle,
-        const char* symbol
+    void* const lv2adapter_handle,
+    const char* symbol
 );
 
 
@@ -77,15 +77,11 @@ struct SharedCache;
 
 extern "C" 
 {
-//    bool on_window_destroy(GtkWidget* widget, gpointer data);
-
-    // event handle for close window button.
     void ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data);
-
 }
 
 
-struct lv2_adapter : zzub::plugin, zzub::event_handler 
+struct lv2_adapter : zzub::plugin, zzub::event_handler, zzub::midi_plugin_interface
 {
     std::vector<lv2_port*>         ports;
 
@@ -98,11 +94,13 @@ struct lv2_adapter : zzub::plugin, zzub::event_handler
 
     std::vector<control_port*>     controlPorts;
     std::vector<param_port*>       paramPorts;
+    zzub::midi_track_manager       midi_track_manager;
 
-    // zzub engine boilerplate - trak_states are the previous plugin port values, trak_values are the new port values. attr_values are legacy.
-    trackvals       trak_values[16]{};
-    trackvals       trak_states[16]{};
+    // zzub engine boilerplate - trak_states are the previous plugin port values, trak_values are the new port values. 
+//     trackvals       trak_values[NUJM_TRACKS]{};
+//     trackvals       trak_states[16]{};
     attrvals        attr_values {0,0};
+    
     bool            initialized       = false;
     bool            ui_is_open        = false;
     bool            ui_is_hidden      = false;
@@ -144,19 +142,25 @@ struct lv2_adapter : zzub::plugin, zzub::event_handler
     void                connect(LilvInstance* pluginInstance);
     void                update_all_from_ui();
     
-    virtual bool        invoke(zzub_event_data_t& data);
-    virtual void        destroy();
-    virtual void        init(zzub::archive *arc);
-    virtual void        created();
-    virtual void        process_events();
-    virtual const char* describe_value(int param, int value);
-    virtual void        set_track_count(int ntracks);
-    virtual void        stop();
-    virtual bool        process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate);
-    virtual bool        process_stereo(float **pin, float **pout, int numsamples, int const mode);
-    virtual void        save(zzub::archive *arc);
+    virtual bool        invoke(zzub_event_data_t& data) override;
+    virtual void        destroy() override;
+    virtual void        init(zzub::archive *arc) override;
+    virtual void        created() override;
+    virtual void        process_events() override;
+    virtual const char* describe_value(int param, int value) override;
+    virtual void        set_track_count(int ntracks) override;
+    virtual void        stop() override;
+    virtual bool        process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) override;
+    virtual bool        process_stereo(float **pin, float **pout, int numsamples, int const mode) override;
+    virtual void        save(zzub::archive *arc) override;
 
     param_port*         get_param_port(std::string symbol);
+
+    virtual void add_note_on() override;
+    virtual void add_note_off() override;
+    virtual void add_aftertouch() override;
+    virtual void add_midi_command() override;
+    virtual zzub::midi_note_track* get_track_data_pointer(uint16_t track_num) const override;
 
 private:
 

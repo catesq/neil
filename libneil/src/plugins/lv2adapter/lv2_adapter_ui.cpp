@@ -14,11 +14,13 @@ extern "C"
 }
 
 bool
-lv2_adapter::is_ui_external(const LilvUI * ui) {
+lv2_adapter::is_ui_external(const LilvUI * ui) 
+{
     const LilvNodes* ui_classes = lilv_ui_get_classes(ui);
     std::string name = as_string(lilv_ui_get_uri(ui));
 
-    LILV_FOREACH (nodes, it, ui_classes) {
+    LILV_FOREACH (nodes, it, ui_classes) 
+    {
         const LilvNode* ui_type = lilv_nodes_get(ui_classes, it);
 
         if (lilv_node_equals(ui_type, lilv_new_uri(cache->lilvWorld, "http://kxstudio.sf.net/ns/lv2ext/external-ui#Widget")))
@@ -30,14 +32,16 @@ lv2_adapter::is_ui_external(const LilvUI * ui) {
 
 
 void
-lv2_adapter::ui_reopen() {
+lv2_adapter::ui_reopen() 
+{
     gtk_widget_show(gtk_ui_window);
     ui_is_hidden = false;
 }
 
 
 void
-lv2_adapter::ui_open() {
+lv2_adapter::ui_open() 
+{
     cache->init_suil();
     cache->init_x_threads();
 
@@ -46,13 +50,15 @@ lv2_adapter::ui_open() {
 
     ui_select(GTK3_URI, &lilv_ui_type, &lilv_ui_type_node);
 
-    if(lilv_ui_type != NULL) {
+    if(lilv_ui_type != NULL) 
+    {
         std::string uiname = as_string(lilv_ui_type_node);
         is_ui_external(lilv_ui_type);
     }
 
     auto datatypes = lilv_plugin_get_extension_data(info->lilvPlugin);
-    LILV_FOREACH(nodes, n, datatypes) {
+    LILV_FOREACH(nodes, n, datatypes) 
+    {
         printf("Ext data type: %s\n", lilv_node_as_uri(lilv_nodes_get(datatypes, n)));
     }
 
@@ -68,7 +74,8 @@ lv2_adapter::ui_open() {
 
     transient_wid = _host->get_host_info()->host_ptr;
 
-    const LV2_Feature* ui_features[] = {
+    const LV2_Feature* ui_features[] = 
+    {
         &features.map_feature,
         &features.unmap_feature,
         &features.program_host_feature,
@@ -80,7 +87,8 @@ lv2_adapter::ui_open() {
         NULL
     };
 
-    if(!suil_ui_instance) {
+    if(!suil_ui_instance) 
+    {
         suil_ui_instance = suil_instance_new(suil_ui_host,
                                              this,
                                              GTK3_URI,
@@ -108,15 +116,16 @@ lv2_adapter::ui_open() {
 //    if(!use_show_interface_method) {
     if(!suil_widget) {
         suil_widget = (GtkWidget*)suil_instance_get_widget(suil_ui_instance);
-
     }
-        gtk_container_add(GTK_CONTAINER(gtk_ui_parent_box), suil_widget);
-        gtk_widget_show_all(gtk_ui_root_box);
-        gtk_widget_grab_focus(suil_widget);
+
+    gtk_container_add(GTK_CONTAINER(gtk_ui_parent_box), suil_widget);
+    gtk_widget_show_all(gtk_ui_root_box);
+    gtk_widget_grab_focus(suil_widget);
 //    }
 
         // Set initial control port values
-    for (auto& paramPort: paramPorts) {
+    for (auto& paramPort: paramPorts) 
+    {
         suil_instance_port_event(
             suil_ui_instance,
             paramPort->index,
@@ -126,7 +135,8 @@ lv2_adapter::ui_open() {
         );
     }
 
-    for (auto& controlPort: controlPorts) {
+    for (auto& controlPort: controlPorts) 
+    {
         suil_instance_port_event(
             suil_ui_instance,
             controlPort->index,
@@ -150,9 +160,8 @@ lv2_adapter::ui_open() {
 
 
 GtkWidget*
-lv2_adapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_container) {
-
-
+lv2_adapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_container) 
+{
     GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 //    g_signal_connect(window, "delete-event", G_CALLBACK(on_window_destroy), this);
     g_signal_connect(window, "delete-event", G_CALLBACK(ui_close), this);
@@ -188,7 +197,8 @@ void
 lv2_adapter::ui_destroy() 
 {
 //    printf("kill suil host\n");
-    if(!ui_is_open) {
+    if(!ui_is_open) 
+    {
         return;
     }
 

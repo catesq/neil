@@ -28,6 +28,8 @@ static int verbose = 0;
 
 #define MAX_PATHLEN 1024
 
+#define NUM_TRACKS 16
+
 // -----------------------------------------------------------------------
 
 // if an zzub::archive passed to init() starts with these bytes then:
