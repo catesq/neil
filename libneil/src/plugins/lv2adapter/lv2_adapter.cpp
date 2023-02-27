@@ -97,77 +97,84 @@ lv2_adapter::build_ports()
     // also store each port in a vector for that port type, mainly so it's easier to use them in the process_stereo()
     for(lv2_port* port: info->ports) {
         switch(port->type) {
-        case PortType::Control:
-            controlPorts.emplace_back(new control_port(*static_cast<control_port*>(port)));
-            ports.push_back(controlPorts.back());
-            break;
-
-
-        case PortType::Param: {
-            auto par_port = new param_port(*static_cast<param_port*>(port));
-            par_port->set_value(par_port->defaultValue);
-
-            paramPorts.emplace_back(par_port);
-            ports.push_back(par_port);
-            break;
-        }
-
-        case PortType::Audio: {
-            auto audio_port = new audio_buf_port(*static_cast<audio_buf_port*>(port));
-            audio_port->set_buffer((float*) malloc(sizeof(float) * ZZUB_BUFLEN));
-            memset(audio_port->data_pointer(), 0, sizeof(float) * ZZUB_BUFLEN);
-
-            if(port->flow == PortFlow::Input) {
-                audioInPorts.push_back(audio_port);
-            } else if (port->flow == PortFlow::Output) {
-                audioOutPorts.push_back(audio_port);
+            case PortType::Control:
+            {
+                controlPorts.emplace_back(new control_port(*static_cast<control_port*>(port)));
+                ports.push_back(controlPorts.back());
+                break;
             }
 
-            ports.push_back(audio_port);
-            break;
-        }
-
-        case PortType::CV:{
-            auto cv_port = new audio_buf_port(*static_cast<audio_buf_port*>(port));
-
-            cv_port->set_buffer((float*) malloc(sizeof(float) * ZZUB_BUFLEN));
-
-            memset(cv_port->data_pointer(), 0, sizeof(float) * ZZUB_BUFLEN);
-
-            cvPorts.push_back(cv_port);
-            ports.push_back(cv_port);
-            break;
-        }
-
-        case PortType::Event:
+            case PortType::Param: 
             {
-            auto event_port = new event_buf_port(*static_cast<event_buf_port*>(port));
+                auto par_port = new param_port(*static_cast<param_port*>(port));
+                par_port->set_value(par_port->defaultValue);
 
-            auto buf_size = is_distrho_event_out_port(port) ? cache->hostParams.paddedBufSize : cache->hostParams.bufSize;
+                paramPorts.emplace_back(par_port);
+                ports.push_back(par_port);
+                break;
+            }
 
-            auto event_buf = lv2_evbuf_new(buf_size, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
-            
-            event_port->set_buffer(event_buf); 
+            case PortType::Audio: 
+            {
+                auto audio_port = new audio_buf_port(*static_cast<audio_buf_port*>(port));
+                audio_port->set_buffer((float*) malloc(sizeof(float) * ZZUB_BUFLEN));
+                memset(audio_port->data_pointer(), 0, sizeof(float) * ZZUB_BUFLEN);
 
-            eventPorts.push_back(event_port);
-            ports.push_back(event_port);
-            break;
-        }
+                if(port->flow == PortFlow::Input) {
+                    audioInPorts.push_back(audio_port);
+                } else if (port->flow == PortFlow::Output) {
+                    audioOutPorts.push_back(audio_port);
+                }
 
-        case PortType::Midi:{
-            auto midi_port = new event_buf_port(*static_cast<event_buf_port*>(port));
-            auto event_buf = lv2_evbuf_new(cache->hostParams.bufSize, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
+                ports.push_back(audio_port);
+                break;
+            }
 
-            midi_port->set_buffer(event_buf);
-            
-            midiPorts.push_back(midi_port);
-            ports.push_back(midi_port);
-            break;
-        }
+            case PortType::CV:
+            {
+                auto cv_port = new audio_buf_port(*static_cast<audio_buf_port*>(port));
 
-        default:
-            ports.push_back(new lv2_port(*port));
-            break;
+                cv_port->set_buffer((float*) malloc(sizeof(float) * ZZUB_BUFLEN));
+
+                memset(cv_port->data_pointer(), 0, sizeof(float) * ZZUB_BUFLEN);
+
+                cvPorts.push_back(cv_port);
+                ports.push_back(cv_port);
+                break;
+            }
+
+            case PortType::Event:
+            {
+                auto event_port = new event_buf_port(*static_cast<event_buf_port*>(port));
+
+                auto buf_size = is_distrho_event_out_port(port) ? cache->hostParams.paddedBufSize : cache->hostParams.bufSize;
+
+                auto event_buf = lv2_evbuf_new(buf_size, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
+                
+                event_port->set_buffer(event_buf); 
+
+                eventPorts.push_back(event_port);
+                ports.push_back(event_port);
+                break;
+            }
+
+            case PortType::Midi:
+            {
+                auto midi_port = new event_buf_port(*static_cast<event_buf_port*>(port));
+                auto event_buf = lv2_evbuf_new(cache->hostParams.bufSize, cache->urids.atom_Chunk, cache->urids.atom_Sequence);
+
+                midi_port->set_buffer(event_buf);
+                
+                midiPorts.push_back(midi_port);
+                ports.push_back(midi_port);
+                break;
+            }
+
+            default:
+            {
+                ports.push_back(new lv2_port(*port));
+                break;
+            }
         }
     }
 }
@@ -202,8 +209,8 @@ lv2_adapter::get_track_data_pointer(uint16_t track_num) const {
 void
 lv2_adapter::init(zzub::archive *arc) 
 {
-    sample_rate      = _master_info->samples_per_second;
-    ui_scale         = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
+    sample_rate = _master_info->samples_per_second;
+    ui_scale = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
 
     midi_track_manager.init(sample_rate);
 
