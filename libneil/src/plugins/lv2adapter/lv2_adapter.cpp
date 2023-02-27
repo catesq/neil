@@ -47,7 +47,7 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info)
     cache(info->cache), 
     midi_track_manager(*this, NUM_TRACKS)
 {
-    ;
+    
     if(info->zzubTotalDataSize) 
     {
         global_values = malloc(info->zzubTotalDataSize);
@@ -57,11 +57,44 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info)
     uis = lilv_plugin_get_uis(info->lilvPlugin);
     ui_events = zix_ring_new(EVENT_BUF_SIZE);
     plugin_events = zix_ring_new(EVENT_BUF_SIZE);
-
     attributes   = (int *) &attr_values;
 
-    // some of the ports use audio/event buffers so each instance of the plugin needs
-    // it's own copy of the port. 
+    track_values = malloc(sizeof(struct zzub::midi_note_track) * NUM_TRACKS);
+
+    init_ports();
+
+    if(verbose) { printf("Construted buffers. audio & cv buflen: %u, event buflen: %i.\n", ZZUB_BUFLEN, cache->hostParams.bufSize); }
+}
+
+lv2_adapter::~lv2_adapter() 
+{
+    halting = true;
+    lv2_worker_finish(&this->worker);
+
+    if(this->suil_ui_instance)
+        this->ui_destroy();
+
+    zix_ring_free(ui_events);
+    zix_ring_free(plugin_events);
+    zix_sem_destroy(&worker.sem);
+
+    for(auto port: ports) 
+        delete port;
+
+    if(lilvInstance != nullptr)
+        lilv_instance_free(lilvInstance);
+
+    lilv_uis_free(uis);
+
+    free(global_values);
+}
+
+
+void
+lv2_adapter::build_ports()
+{
+    // build buffers for audio samples, midi events, control value samples etc. 
+    // also store each port in a vector for that port type, mainly so it's easier to use them in the process_stereo()
     for(lv2_port* port: info->ports) {
         switch(port->type) {
         case PortType::Control:
@@ -137,54 +170,26 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info)
             break;
         }
     }
-
-    track_values = malloc(sizeof(struct zzub::midi_note_track) * NUM_TRACKS);
-
-    if(verbose) { printf("Construted buffers. audio & cv buflen: %u, event buflen: %i.\n", ZZUB_BUFLEN, cache->hostParams.bufSize); }
-}
-
-lv2_adapter::~lv2_adapter() 
-{
-    halting = true;
-    lv2_worker_finish(&this->worker);
-
-    if(this->suil_ui_instance)
-        this->ui_destroy();
-
-    zix_ring_free(ui_events);
-    zix_ring_free(plugin_events);
-    zix_sem_destroy(&worker.sem);
-
-    for(auto port: ports) {
-        delete port;
-    }
-
-    if(lilvInstance != nullptr)
-        lilv_instance_free(lilvInstance);
-
-    lilv_uis_free(uis);
-
-    free(global_values);
 }
 
 void 
-lv2_adapter::add_note_on() {
-
+lv2_adapter::add_note_on(uint8_t note, uint8_t volume) {
+    midiEvents.noteOn(0, note, volume);
 }
 
 void 
-lv2_adapter::add_note_off() {
-
+lv2_adapter::add_note_off(uint8_t note) {
+    midiEvents.noteOff(0, note);
 }
 
 void 
-lv2_adapter::add_aftertouch() {
-
+lv2_adapter::add_aftertouch(uint8_t note, uint8_t volume) {
+    midiEvents.aftertouch(0, note, volume);
 }
 
 void 
-lv2_adapter::add_midi_command() {
-
+lv2_adapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
+    midiEvents.add(0, cmd, data1, data2);
 }
 
 zzub::midi_note_track* 
@@ -192,15 +197,6 @@ lv2_adapter::get_track_data_pointer(uint16_t track_num) const {
     return &((zzub::midi_note_track*) track_values)[track_num];
 }
 
-    
-//   struct midi_plugin_interface {
-//     virtual void add_note_on() = 0;
-//     virtual void add_note_off() = 0;
-//     virtual void add_aftertouch() = 0;
-//     virtual void add_midi_command() = 0;
-//     // this is called in the constructor of midi_track_manager and the pointer can't be changed
-//     virtual midi_note_track* get_track_data_pointer(uint16_t track_num) const = 0;
-//   };
 
 
 void
@@ -211,7 +207,8 @@ lv2_adapter::init(zzub::archive *arc)
 
     midi_track_manager.init(sample_rate);
 
-    LV2_Options_Option options[] = {
+    LV2_Options_Option options[] = 
+    {
         {
             LV2_OPTIONS_INSTANCE, 0,
             cache->urids.param_sampleRate,
@@ -283,7 +280,8 @@ lv2_adapter::init(zzub::archive *arc)
     features.worker_schedule.handle        = &worker;
     features.worker_schedule.schedule_work = &lv2_worker_schedule;
 
-    const LV2_Feature* feature_list[] = {
+    const LV2_Feature* feature_list[] = 
+    {
         &features.map_feature,
         &features.unmap_feature,
         &features.program_host_feature,
@@ -308,7 +306,8 @@ lv2_adapter::init(zzub::archive *arc)
     metaPlugin                        = _host->get_metaplugin();
     _host->set_event_handler(metaPlugin, this);
 
-    if (worker.enable) {
+    if (worker.enable) 
+    {
         auto iface = lilv_instance_get_extension_data (lilvInstance, LV2_WORKER__interface);
         lv2_worker_init(this, &worker, (const LV2_Worker_Interface*) iface, true);
     }
@@ -402,13 +401,8 @@ lv2_adapter::read_archive_params(zzub::instream* instream)
     if(param_count != paramPorts.size())
         return;
 
-    for(auto& param_port: paramPorts) {
-    
+    for(auto& param_port: paramPorts)
         instream->read(param_port->value);
-        // if(param_port->paramIndex < 25 && info->name == "Helm")
-        // DEBUG_INFO("Helm", "param %d(\"%s\") val( %.2f)\n", param_port->paramIndex, param_port->name.c_str(), param_port->value);
-            // printf("reload param %d: %.2e\n", param_port->paramIndex, param_port->value);
-    }
 }
 
 
@@ -419,9 +413,8 @@ lv2_adapter::save_archive_params(zzub::outstream *outstream)
     outstream->write((uint32_t) ARCHIVE_USES_PARAMS);
     outstream->write((uint32_t) paramPorts.size());
 
-    for(auto& param_port: paramPorts) {
+    for(auto& param_port: paramPorts)
         outstream->write(param_port->value);
-    }
 }
 
 
@@ -460,7 +453,14 @@ lv2_adapter::save_archive_state(zzub::outstream *outstream)
         nullptr
     );
 
-    char *state_str = lilv_state_to_string(cache->lilvWorld, &cache->map, &cache->unmap, state, "http://uri", nullptr);
+    char *state_str = lilv_state_to_string(
+        cache->lilvWorld, 
+        &cache->map, 
+        &cache->unmap, 
+        state, 
+        "http://uri",
+        nullptr
+    );
 
     outstream->write((uint32_t) strlen(state_str));
     outstream->write(state_str, strlen(state_str));
@@ -471,9 +471,10 @@ lv2_adapter::save_archive_state(zzub::outstream *outstream)
 void 
 lv2_adapter::save(zzub::archive *arc) 
 {
-    if (verbose) printf("PluginAdapter: in save()!\n");
-    zzub::outstream *outstream = arc->get_outstream("");
+    if (verbose) 
+    printf("PluginAdapter: in save()!\n");
 
+    zzub::outstream *outstream = arc->get_outstream("");
     // if(prefer_state_save()) {
         save_archive_state(outstream);
     // } else {
@@ -486,15 +487,14 @@ const char *
 lv2_adapter::describe_value(int param, int value) 
 {
     static char text[256];
-    if(param < paramPorts.size()) {
+    if(param < paramPorts.size())
         return paramPorts[param]->describeValue(value, text);
-    }
     return 0;
 }
 
 
 void 
-lv2_adapter::set_track_count(int ntracks) 
+lv2_adapter::set_track_count(int new_num) 
 {
     // if (ntracks < trackCount) {
     //     for (int t = ntracks; t < trackCount; t++) {
@@ -504,8 +504,8 @@ lv2_adapter::set_track_count(int ntracks)
     //     }
     // }
 
-    trackCount = ntracks;
-    midi_track_manager.set_track_count(ntracks);
+    trackCount = new_num;
+    midi_track_manager.set_track_count(new_num);
 }
 
 
@@ -532,6 +532,7 @@ lv2_adapter::update_port(param_port* port, float float_val)
 {
     printf("Update port: index=%d, name='%s', value=%f\r", port->paramIndex, port->name.c_str(), float_val);
     port->value = float_val;
+    
     //    int zzub_val = port->lilv_to_zzub_value(float_val);
     //    values[port->paramIndex] = float_val;
     //    port->putData((uint8_t*) global_values, zzub_val);
@@ -562,25 +563,26 @@ lv2_adapter::process_events()
     uint8_t* globals = (u_int8_t*) global_values;
     int value = 0;
 
-    for (auto &paramPort: paramPorts) {
-        switch(paramPort->zzubParam.type) {
-        case zzub::parameter_type_word:
-            value = *((unsigned short*) globals);
-            break;
-        case zzub::parameter_type_switch:
-        case zzub::parameter_type_note:
-        case zzub::parameter_type_byte:
-            value = *((unsigned char*) globals);
-            break;
+    for (auto &paramPort: paramPorts) 
+    {
+        switch(paramPort->zzubParam.type) 
+        {
+            case zzub::parameter_type_word:
+                value = *((unsigned short*) globals);
+                break;
+            case zzub::parameter_type_switch:
+            case zzub::parameter_type_note:
+            case zzub::parameter_type_byte:
+                value = *((unsigned char*) globals);
+                break;
         }
 
         globals += paramPort->zzubValSize;
         
-        if (value != paramPort->zzubParam.value_none) {
+        if (value != paramPort->zzubParam.value_none)
             paramPort->value = paramPort->zzub_to_lilv_value(value);
-            // DEBUG_INFO("Helm", "\nSet param %d(%s). zzub val: %d lilv val: %f\n", paramPort->paramIndex, paramPort->name.c_str(), value, paramPort->value)
-        }
     }
+
 
     // if(info->flags & zzub_plugin_flag_is_instrument)
     //     midi_track_manager.process_midi_events();
@@ -588,75 +590,31 @@ lv2_adapter::process_events()
 }
 
 
+
 void
-lv2_adapter::process_all_midi_tracks() 
+lv2_adapter::send_midi_events() 
 {
-    // for (int t = 0; t < trackCount; t++) {
-    //     auto prev = (zzub::note_track*) &trak_states[t];
-    //     auto curr = (zzub::note_track*) &trak_values[t];
+    if(midiEvents.count() == 0)
+        return; 
 
-    //     switch(curr->note_change_from(*prev)) {
-    //     case zzub_note_change_none:
-    //         break;
+    for(event_buf_port* midiPort: midiPorts) 
+    {
+        if(midiPort->flow != PortFlow::Input || midiEvents.count() == 0)
+            continue;
 
-    //     case zzub_note_change_noteoff:
-    //         if(prev->is_note_on())
-    //             midiEvents.noteOff(attr_values.channel, prev->note);
+        LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiPort->get_lv2_evbuf());
 
-    //         prev->note = zzub::note_value_none;
-    //         break;
+        for (auto& midi_event: midiEvents.data)
+        {
+            lv2_evbuf_write(&buf_iter,
+                            midi_event.time, 0,
+                            cache->urids.midi_MidiEvent,
+                            midi_event.size,
+                            midi_event.data);
+        }
+    }
 
-    //     case zzub_note_change_noteon:
-    //         if(curr->is_volume_on())
-    //             prev->volume = curr->volume;
-
-    //         if(prev->is_note_on() && !attr_values.keep_notes)
-    //             midiEvents.noteOff(attr_values.channel, prev->note);
-
-    //         prev->note = curr->note;
-    //         midiEvents.noteOn(attr_values.channel, curr->note, prev->is_volume_on() ? prev->volume : zzub_volume_value_default);
-    //         break;
-
-    //     case zzub_note_change_volume:
-    //         prev->volume = curr->volume;
-    //         if(prev->is_note_on()) 
-    //             midiEvents.aftertouch(attr_values.channel, curr->note, prev->volume);
-    //         break;
-    //     }
-    // }
-
-
-    // for(event_buf_port* midiPort: midiPorts) {
-    //     if(midiPort->flow != PortFlow::Input || midiEvents.count() == 0)
-    //         continue;
-
-    //     LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiPort->get_lv2_evbuf());
-
-    //     for (auto& midi_event: midiEvents.data)
-    //         lv2_evbuf_write(&buf_iter,
-    //                         midi_event.time, 0,
-    //                         cache->urids.midi_MidiEvent,
-    //                         midi_event.size,
-    //                         midi_event.data);
-    // }
-
-    // midiEvents.reset();
-}
-
-
-
-void 
-lv2_adapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg) 
-{
-    // if(vals_msg.midi.cmd != TRACKVAL_NO_MIDI_CMD) 
-    // {
-    //     state_msg.midi.cmd = vals_msg.midi.cmd;
-
-    //     if (vals_msg.midi.data != TRACKVAL_NO_MIDI_DATA)
-    //         state_msg.midi.data = vals_msg.midi.data;
-
-    //     midiEvents.add_message(state_msg);
-    // }
+    midiEvents.reset();
 }
 
 
@@ -711,9 +669,14 @@ lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int const
     if (halting || mode == zzub::process_mode_no_io)
         return false;
 
-    if(info->flags & zzub_plugin_flag_is_instrument)
+    if(info->flags & zzub_plugin_flag_is_instrument) 
+    {
         midi_track_manager.process(numsamples);
-
+        
+        if(midiEvents.count() > 0)
+            send_midi_events();        
+    }
+    
     samp_count += numsamples;
 
     for(event_buf_port* eventPort: eventPorts)
@@ -784,28 +747,26 @@ lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int const
 }
 
 
-struct lv2plugincollection : zzub::plugincollection {
+struct lv2plugincollection : zzub::plugincollection 
+{
     lv2_lilv_world *world = lv2_lilv_world::get_instance();
 
-    virtual void initialize(zzub::pluginfactory *factory) {
+    virtual void initialize(zzub::pluginfactory *factory) 
+    {
         const LilvPlugins* const collection = world->get_all_plugins();
         
-        LILV_FOREACH(plugins, iter, collection) {
+        LILV_FOREACH(plugins, iter, collection) 
+        {
             const LilvPlugin *plugin = lilv_plugins_get(collection, iter);
             lv2_zzub_info *info = new lv2_zzub_info(world, plugin);
             factory->register_info(info);
         }
     }
 
-    virtual const zzub::info *get_info(const char *uri, zzub::archive *data) { return 0; }
-
+    virtual const       zzub::info *get_info(const char *uri, zzub::archive *data) { return 0; }
     virtual const char *get_uri() { return 0; }
-
-    virtual void configure(const char *key, const char *value) {}
-
-    virtual void destroy() {
-        delete this;
-    }
+    virtual void        configure(const char *key, const char *value) {}
+    virtual void        destroy() { delete this; }
 };
 
 

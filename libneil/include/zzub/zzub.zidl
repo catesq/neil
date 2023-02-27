@@ -249,6 +249,12 @@ namespace zzub:
 		set min = 0        # 0x00
 		set max = 128      # 0x80
 
+	enum NoteChange:
+		set none    = 0
+		set noteoff = 1
+		set noteon  = 2
+		set volume  = 3
+
 	enum MidiCommandValue:
 		set none    = 0
 		set default = 0    
@@ -358,15 +364,6 @@ namespace zzub:
 		set pattern = 0
 		set wave = 1
 		set automation = 2
-
-	enum NoteChange:
-		set None = 0
-		set Volume = 1
-		set NoteOn = 2
-		set NoteOff = 3
-
-	class NoteTrack:
-		def get_change(NoteTrack prev_notetrack): int
 
 	"Audio Driver Methods"
 	"Configure and create an audio driver instance."
@@ -478,7 +475,6 @@ namespace zzub:
 		def get_column(): int
 		def get_channel(): int
 		def get_controller(): int
-		
 	"Offline pattern methods"
 	"These functions are meant to help editing patterns. Note you cannot"
 	"retreive a direct zzub_pattern_t object for a \"live pattern\". You can"

@@ -2889,8 +2889,4 @@ void zzub_output_seek(zzub_output_t* f, int a, int b) {
     f->seek(a, b);
 }
 
-int zzub_note_track_get_change(zzub_note_track_t *notetrack, zzub_note_track_t *prev_notetrack) {
-    return notetrack->note_change_from(*prev_notetrack);
-}
-
 } // extern "C"

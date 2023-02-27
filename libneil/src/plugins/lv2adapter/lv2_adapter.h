@@ -139,58 +139,60 @@ struct lv2_adapter : zzub::plugin, zzub::event_handler, zzub::midi_plugin_interf
     lv2_adapter(lv2_zzub_info *info);
     ~lv2_adapter();
 
-    void                connect(LilvInstance* pluginInstance);
-    void                update_all_from_ui();
+    param_port* get_param_port(std::string symbol);
     
-    virtual bool        invoke(zzub_event_data_t& data) override;
-    virtual void        destroy() override;
-    virtual void        init(zzub::archive *arc) override;
-    virtual void        created() override;
-    virtual void        process_events() override;
+    void connect(LilvInstance* pluginInstance);
+    void update_all_from_ui();
+
+    virtual bool invoke(zzub_event_data_t& data) override;
+    virtual void destroy() override;
+    virtual void init(zzub::archive *arc) override;
+    virtual void created() override;
+    virtual void process_events() override;
+    virtual void set_track_count(int ntracks) override;
+    virtual void stop() override;
+    virtual bool process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) override;
+    virtual bool process_stereo(float **pin, float **pout, int numsamples, int const mode) override;
+    virtual void save(zzub::archive *arc) override;
     virtual const char* describe_value(int param, int value) override;
-    virtual void        set_track_count(int ntracks) override;
-    virtual void        stop() override;
-    virtual bool        process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) override;
-    virtual bool        process_stereo(float **pin, float **pout, int numsamples, int const mode) override;
-    virtual void        save(zzub::archive *arc) override;
 
-    param_port*         get_param_port(std::string symbol);
 
-    virtual void add_note_on() override;
-    virtual void add_note_off() override;
-    virtual void add_aftertouch() override;
-    virtual void add_midi_command() override;
+    virtual void add_note_on(uint8_t note, uint8_t volume) override;
+    virtual void add_note_off(uint8_t note) override;
+    virtual void add_aftertouch(uint8_t note, uint8_t volume) override;
+    virtual void add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) override;
     virtual zzub::midi_note_track* get_track_data_pointer(uint16_t track_num) const override;
 
 private:
 
     GtkWidget* ui_open_window(GtkWidget** root_container, GtkWidget** parent_container);
-
     const bool ui_select(const char *native_ui_type, const LilvUI** ui_type_ui, const LilvNode** ui_type_node);
+    void ui_open();
+    void ui_reopen();
+    void ui_destroy();
+    bool is_ui_resizable();
+    bool is_ui_external(const LilvUI* ui);
 
-    void       ui_open();
-    void       ui_reopen();
-    void       ui_destroy();
+    void send_midi_events();
 
-    bool       is_ui_resizable();
-    bool       is_ui_external(const LilvUI* ui);
-    void       process_all_midi_tracks();
-    void       process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg);
-    void       update_port(param_port* port, float float_val);
+    void update_port(param_port* port, float float_val);
 
-    void       read_archive_params(zzub::instream* instream);
-    void       read_archive_state(zzub::instream* instream,  uint32_t length);
-    void       save_archive_params(zzub::outstream *oustream);
-    void       save_archive_state(zzub::outstream *oustream);
+    void read_archive_params(zzub::instream* instream);
+    void read_archive_state(zzub::instream* instream,  uint32_t length);
+    void save_archive_params(zzub::outstream *oustream);
+    void save_archive_state(zzub::outstream *oustream);
 
-    bool       prefer_state_save() { return true; }
+    bool prefer_state_save() { return true; }
 
     //
-    void       ui_event_import();
+    void ui_event_import();
     // sends events to the ui - eg when a new patch has been loaded and all the controls have been changed
-    void       ui_event_dispatch();
+    void ui_event_dispatch();
 
-    void       init_static_features();
+    // use data from lv2_zzub_info to build midi/event/audio buffers used by the lv2 plugin
+    void init_ports();
+    
+    void init_static_features();
 
     //    const LV2UI_Idle_Interface* idle_interface = nullptr;
     //    const LV2UI_Show_Interface* show_interface = nullptr;

@@ -207,6 +207,10 @@ struct MidiEvents {
         data.push_back(evt);
     }
 
+    void add(uint8_t cmd, uint8_t data1, uint8_t data2) {
+        data.push_back(MidiEvent(0, {cmd, data1, data2}));
+    }
+
     void add_message(midi_msg msg) {
         data.emplace_back(0, msg);
     }
