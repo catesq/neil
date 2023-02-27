@@ -879,7 +879,6 @@ namespace zzub {
     void process(uint32_t numsamples) 
     {
       sample_count += numsamples;
-      printf("DEBUGME %s::%s %s\n", "midi_track_manager", "process", "ourmessagegoeshere");
       for (int track_num = 0; track_num < num_tracks; track_num++) {
         auto prev = &prev_tracks[track_num];
         auto curr = curr_tracks[track_num];
@@ -930,7 +929,7 @@ namespace zzub {
         auto curr_ptr = plugin.get_track_data_pointer(idx);
 
         if(!curr_ptr) {
-          throw std::runtime_error("midi_track_manager::initialise: plugin.get_track_data_pointer returned null");
+          throw std::runtime_error("midi_track_manager::init - plugin.get_track_data_pointer returned null for track " + std::to_string(idx));
         }
 
         // clear the midi note track data in curr[idx]

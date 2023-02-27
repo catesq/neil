@@ -8,30 +8,11 @@
 
 #include "zzub/plugin.h"
 
-#define VOLUME_DEFAULT 0x40
-#define VOLUME_NONE 0xFF
 
-#define TRACKVAL_NO_MIDI_CMD 0x00
-#define TRACKVAL_NO_MIDI_DATA 0xFFFF
+#define MAX_TRACKS 16
+#define MAX_EVENTS 256
 
 #pragma pack(1)
-
-union midi_msg {
-    uint8_t bytes[3]{};
-    struct {
-        uint8_t  cmd;
-        uint16_t data;
-    } midi;
-};
-
-struct tvals {
-  uint8_t note = zzub::note_value_none;
-  uint8_t volume = VOLUME_NONE;
-
-  midi_msg msg_1;
-  midi_msg msg_2;
-} __attribute__((__packed__));
-
 
 struct attrvals {
     int channel;
@@ -124,6 +105,6 @@ inline VstMidiEvent* midi_note_aftertouch(uint8_t note, uint8_t volume) {
     return vst_midi_event({MIDI_MSG_NOTE_PRESSURE, MIDI_NOTE(note), volume});
 }
 
-inline VstMidiEvent* midi_message(midi_msg& msg) {
-    return vst_midi_event({msg.bytes[0], msg.bytes[1], msg.bytes[2]});
+inline VstMidiEvent* midi_message(uint8_t cmd, uint8_t data1, uint8_t data2) {
+    return vst_midi_event({cmd, data1, data2});
 }

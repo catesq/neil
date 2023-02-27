@@ -8,8 +8,7 @@
 
 #include "vst_defines.h"
 
-#define MAX_TRACKS 16
-#define MAX_EVENTS 256
+
 
 struct vst_zzub_info;
 
@@ -18,7 +17,10 @@ extern "C" {
 }
 
 
-struct vst_adapter : zzub::plugin, zzub::event_handler {
+struct vst_adapter : zzub::plugin, 
+                     zzub::event_handler, 
+                     zzub::midi_plugin_interface 
+{
     vst_adapter(const vst_zzub_info* info);
     virtual ~vst_adapter();
     virtual void init(zzub::archive* pi) override;
@@ -51,11 +53,16 @@ struct vst_adapter : zzub::plugin, zzub::event_handler {
     // if a valid archive is given to the init function then get the read the vst parameter values from the save file 
     void init_from_archive(zzub::archive*);
 
+    virtual void add_note_on(uint8_t note, uint8_t volume) override;
+    virtual void add_note_off(uint8_t note) override;
+    virtual void add_aftertouch(uint8_t note, uint8_t volume) override;
+    virtual void add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) override;
+    virtual zzub::midi_note_track* get_track_data_pointer(uint16_t track_num) const override;
+    
 private:
     bool initialized = false;
 
-    void process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg);
-    void process_midi_tracks();
+    zzub::midi_track_manager midi_track_manager;
     int active_index = -1;   // keep track of which parameter index is being adjusted (see audioMasterBeginEdit audioMasterEndEdit)
                              // the octasine plugin - or the vst-rs module - sends a burst of spurious EndEdit messages - 
                              // with inaccurate indexes - *after* the EndEdit with the correct index has been sent
@@ -65,8 +72,6 @@ private:
     unsigned num_tracks = 0;
 
     attrvals attr_values { 0, 0 };
-    std::array<tvals, MAX_TRACKS> trackvalues;
-    std::array<tvals, MAX_TRACKS> trackstates;
 
     uint16_t* globalvals;
     boost::dll::shared_library lib{};

@@ -121,22 +121,19 @@ void on_window_destroy(GtkWidget* widget, gpointer data) {
 
 
 vst_adapter::vst_adapter(const vst_zzub_info* info) 
-    : info(info) 
+    : info(info),
+      midi_track_manager(*this, MAX_TRACKS)
 {
-    for(int idx=0; idx < MAX_TRACKS; idx++) {
-        trackvalues[idx].note = zzub::note_value_none;
-        trackvalues[idx].volume = VOLUME_DEFAULT;
-
-        trackstates[idx].note = zzub::note_value_none;
-        trackstates[idx].volume = VOLUME_DEFAULT;
-    }
-
     globalvals = (uint16_t*) malloc(sizeof(uint16_t) * info->get_param_count());
+    
     attributes = (int*) &attr_values;
-    track_values = &trackvalues[0];
     global_values = globalvals;
 
-    if(info->flags & zzub_plugin_flag_is_instrument) {
+    printf("INIT VST ADAPTER");
+    if(info->flags & zzub_plugin_flag_has_midi_input) 
+    {
+        printf("Init vst adapter midi input\n");
+        track_values = malloc(sizeof(struct zzub::midi_note_track) * MAX_TRACKS);
         num_tracks = 1;
         set_track_count(num_tracks);
     }
@@ -153,6 +150,9 @@ vst_adapter::~vst_adapter()
     dispatch(plugin, effMainsChanged, 0, 0, NULL, 0.0f);
     dispatch(plugin, effClose);
 
+    if(track_values)
+        free(track_values);
+
     clear_vst_events();
     free(globalvals);
     free(vst_events);
@@ -163,10 +163,12 @@ vst_adapter::~vst_adapter()
 void 
 vst_adapter::clear_vst_events() 
 {
-    for(int idx=0; idx < vst_events->numEvents; idx++) {
-        free(vst_events->events[idx]);
-        vst_events->events[idx] = nullptr;
-    }
+    for(auto evt: midi_events)
+        free(evt);
+
+    midi_events.clear();
+    
+    memset(vst_events->events, 0, sizeof(VstEvent*) * vst_events->numEvents);
     vst_events->numEvents = 0;
 }
 
@@ -174,14 +176,7 @@ vst_adapter::clear_vst_events()
 void 
 vst_adapter::set_track_count(int track_count) 
 {
-    if (track_count < num_tracks) {
-        for (int t = num_tracks; t < track_count; t++) {
-            if (trackstates[t].note != zzub::note_value_none) {
-                midi_events.push_back(midi_note_off(trackstates[t].note));
-            }
-        }
-    }
-
+    midi_track_manager.set_track_count(track_count);
     num_tracks = track_count;
 }
 
@@ -203,13 +198,16 @@ void
 vst_adapter::init(zzub::archive* arc) 
 {
     plugin = load_vst(lib, info->get_filename(), hostCallback, this);
-
+    
     if(plugin == nullptr)
         return;
 
     metaplugin = _host->get_metaplugin();
     _host->set_event_handler(metaplugin, this);
     ui_scale = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
+
+    if(info->flags & zzub_plugin_flag_has_midi_input)
+        midi_track_manager.init(_master_info->samples_per_second);
 
     dispatch(plugin, effOpen);
     dispatch(plugin, effSetSampleRate, 0, 0, nullptr, (float) _master_info->samples_per_second);
@@ -287,11 +285,7 @@ vst_adapter::save(zzub::archive *arc)
 bool 
 vst_adapter::invoke(zzub_event_data_t& data) 
 {
-    if (!plugin ||
-        data.type != zzub::event_type_double_click ||
-        is_editor_open ||
-        !(info->flags & zzub_plugin_flag_has_custom_gui)
-    ) {
+    if (!plugin || data.type != zzub::event_type_double_click || is_editor_open || !(info->flags & zzub_plugin_flag_has_custom_gui) ) {
         return true;
     }
 
@@ -299,11 +293,8 @@ vst_adapter::invoke(zzub_event_data_t& data)
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), this);
 
-    // gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(_host->get_host_info()->host_ptr));
     gtk_window_set_title(GTK_WINDOW(window), info->name.c_str());
     gtk_window_present(GTK_WINDOW(window));
-    // gtk_window_set_default_size(GTK_WINDOW(window), -1, -1);
-
 
     auto win_id = WIN_ID_FUNC(window);
 
@@ -331,28 +322,6 @@ vst_adapter::ui_destroy()
 }
 
 
-//void VstAdapter::update_zzub_globals_from_plugin(bool dispatch_control_change) {
-//    //    uint8_t* globals = (uint8_t*) global_values;
-//    if(dispatch_control_change)
-//        printf("update all params with control change\n");
-//    else
-//        printf("update all params\n");
-//    // (AEffectGetParameterProc)
-//    // AEffectGetParameterProc get_parameter = plugin->getParameter;
-    
-//    for(int idx=0; idx < info->global_parameters.size(); idx++) {
-//        float vst_val = plugin->getParameter(plugin, idx);
-//        uint16_t zzub_val = info->get_vst_param(idx)->vst_to_zzub_value(vst_val);
-
-//        globalvals[idx] = zzub_val;
-//        printf("update global from plugin: %d, name: %s, vst val: %f, zzub val: %d. global_val: %d\n", idx, info->get_vst_param(idx)->zzub_param->name, vst_val, zzub_val, globalvals[idx]);
-
-//        if(dispatch_control_change)
-//            _host->control_change(metaplugin, 1, 0, idx, globalvals[idx], false, true);
-//    }
-//}
-
-
 void 
 vst_adapter::update_parameter_from_gui(int idx, float float_val) 
 {
@@ -378,107 +347,38 @@ vst_adapter::process_events()
 
         ((AEffectSetParameterProc) plugin->setParameter)(plugin, idx, vst_param->zzub_to_vst_value(value));
     }
-
-    if(info->flags & zzub_plugin_flag_is_instrument)
-        process_midi_tracks();
 }
 
 
+
 void 
-vst_adapter::process_midi_tracks() 
-{
-    for(int idx=0; idx < num_tracks; idx++) {
-        auto prev = (zzub::note_track*) &trackstates[idx];
-        auto curr = (zzub::note_track*) &trackvalues[idx];
+vst_adapter::add_note_on(uint8_t note, uint8_t volume) {
+    if(midi_events.size() < MAX_EVENTS)
+        midi_events.push_back(midi_note_on(note, volume));
+}
 
-        switch(curr->note_change_from(*prev)) {
-        case zzub_note_change_none:
-            break;
+void 
+vst_adapter::add_note_off(uint8_t note) {
+    if(midi_events.size() < MAX_EVENTS)
+        midi_events.insert(midi_events.begin(), midi_note_off(note));
+}
 
-        case zzub_note_change_noteoff:
-            if(prev->is_note_on())
-                midi_events.insert(midi_events.begin(), midi_note_off(prev->note));
+void 
+vst_adapter::add_aftertouch(uint8_t note, uint8_t volume) {
+    if(midi_events.size() < MAX_EVENTS)
+        midi_events.push_back(midi_note_aftertouch(note, volume));
+}
 
-            prev->note = zzub::note_value_none;
-            break;
-
-        case zzub_note_change_noteon:
-            if(curr->is_volume_on())
-                prev->volume = curr->volume;
-
-            if(prev->is_note_on() && !attr_values.keep_notes)
-                midi_events.insert(midi_events.begin(), midi_note_off(prev->note));
-
-            prev->note = curr->note;
-            midi_events.push_back(midi_note_on(curr->note, prev->get_volume()));
-            break;
-
-        case zzub_note_change_volume:
-            prev->volume = curr->volume;
-            if(prev->is_note_on())
-                midi_events.insert(midi_events.begin(), midi_note_aftertouch(prev->note, prev->get_volume()));
-            break;
-        }
-
-        // if (trackvalues[idx].volume != VOLUME_NONE)
-        //     trackstates[idx].volume = trackvalues[idx].volume;
-
-
-        // switch(trackvalues[idx].note) {
-        // case zzub::note_value_none:
-        //     if(trackstates[idx].note != zzub::note_value_none) {
-        //         if(trackvalues[idx].volume == 0) {
-        //             midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
-        //             trackstates[idx].note = zzub::note_value_none;
-        //         } else if(trackvalues[idx].volume != VOLUME_NONE) {
-        //             midi_events.insert(midi_events.begin(), midi_note_aftertouch(trackstates[idx].note, trackstates[idx].volume));
-        //         }
-        //     }
-
-        //     break;
-
-        // case zzub::note_value_off:
-        //     if(trackstates[idx].volume == 0) {
-        //         for(int trk = 0; trk < num_tracks; trk++) {
-        //             if(trackstates[trk].note != zzub::note_value_none && trackvalues[trk].note != zzub_note_value_none) {
-        //                 midi_events.insert(midi_events.begin(), midi_note_off(trackstates[trk].note));
-        //                 trackstates[trk].note = zzub::note_value_none;
-        //             }
-        //         }
-        //     } else if(trackstates[idx].note != zzub::note_value_none) {
-        //         midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
-        //         trackstates[idx].note = zzub::note_value_none;
-        //     }
-
-        //     break;
-
-        // default:
-        //     if(trackstates[idx].note != zzub::note_value_none) {
-        //         midi_events.insert(midi_events.begin(), midi_note_off(trackstates[idx].note));
-        //     }
-
-        //     midi_events.push_back(midi_note_on(trackvalues[idx].note, trackstates[idx].volume));
-        //     trackstates[idx].note = trackvalues[idx].note;
-        //     break;
-        // }
-
-        process_one_midi_track(trackvalues[idx].msg_1, trackstates[idx].msg_1);
-        process_one_midi_track(trackvalues[idx].msg_2, trackstates[idx].msg_2);
-    }
+void 
+vst_adapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
+    if(midi_events.size() < MAX_EVENTS)
+        midi_events.push_back(midi_message(cmd, data1, data2));
 }
 
 
-void 
-vst_adapter::process_one_midi_track(midi_msg &vals_msg, midi_msg& state_msg) 
-{
-    if(vals_msg.midi.cmd != TRACKVAL_NO_MIDI_CMD) {
-        state_msg.midi.cmd = vals_msg.midi.cmd;
-
-        if (vals_msg.midi.data != TRACKVAL_NO_MIDI_DATA)
-            state_msg.midi.data = vals_msg.midi.data;
-
-        midi_events.push_back(midi_message(state_msg));
-    }
+zzub::midi_note_track* 
+vst_adapter::get_track_data_pointer(uint16_t track_num) const {
+    return &((zzub::midi_note_track*) track_values)[track_num];
 }
 
 
@@ -487,12 +387,16 @@ vst_adapter::process_stereo(float **pin, float **pout, int numsamples, int mode)
 {
     sample_pos += numsamples;
 
-    if(midi_events.size() > 0) {
-        memcpy(&vst_events->events[0], &midi_events[0], midi_events.size() * sizeof(VstMidiEvent*));
-        vst_events->numEvents = midi_events.size();
-        dispatch(plugin, effProcessEvents, 0, 0, vst_events, 0.f);
-        midi_events.clear();
-        clear_vst_events();
+    if(info->flags & zzub_plugin_flag_has_midi_input) {
+        midi_track_manager.process(numsamples);
+
+        if(midi_events.size() > 0) 
+        {
+            vst_events->numEvents = midi_events.size();
+            memcpy(&vst_events->events[0], &midi_events[0], vst_events->numEvents * sizeof(VstMidiEvent*));
+            dispatch(plugin, effProcessEvents, 0, 0, vst_events, 0.f);
+            clear_vst_events();
+        }
     }
 
     if(mode == zzub::process_mode_no_io)
