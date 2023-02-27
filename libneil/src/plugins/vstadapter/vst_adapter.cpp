@@ -122,7 +122,7 @@ void on_window_destroy(GtkWidget* widget, gpointer data) {
 
 vst_adapter::vst_adapter(const vst_zzub_info* info) 
     : info(info),
-      midi_track_manager(*this, MAX_TRACKS)
+      midi_track_manager(*this, MAX_TRACKS, true)
 {
     globalvals = (uint16_t*) malloc(sizeof(uint16_t) * info->get_param_count());
     
@@ -165,6 +165,12 @@ vst_adapter::clear_vst_events()
 {
     for(auto evt: midi_events)
         free(evt);
+
+    // for(int idx=0; idx < vst_events->numEvents; idx++) {
+    //     free(vst_events->events[idx]);
+    //     vst_events->events[idx] = nullptr;
+    // }
+
 
     midi_events.clear();
     
@@ -347,30 +353,40 @@ vst_adapter::process_events()
 
         ((AEffectSetParameterProc) plugin->setParameter)(plugin, idx, vst_param->zzub_to_vst_value(value));
     }
+    if(info->flags & zzub_plugin_flag_has_midi_input)
+        midi_track_manager.process_events();
 }
 
 
 
 void 
 vst_adapter::add_note_on(uint8_t note, uint8_t volume) {
+    printf("vst_adapter add_note_on %d at time %d\n", note, sample_pos);
+
     if(midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_note_on(note, volume));
 }
 
 void 
 vst_adapter::add_note_off(uint8_t note) {
+    printf("vst_adapter add_note_off %d at time \n", note, sample_pos);
+
     if(midi_events.size() < MAX_EVENTS)
         midi_events.insert(midi_events.begin(), midi_note_off(note));
 }
 
 void 
 vst_adapter::add_aftertouch(uint8_t note, uint8_t volume) {
+        printf("vst_adapter add_aftertouch %d\n", sample_pos);
+
     if(midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_note_aftertouch(note, volume));
 }
 
 void 
 vst_adapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
+        printf("vst_adapter add_midi_command  %d\n", sample_pos);
+
     if(midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_message(cmd, data1, data2));
 }
@@ -387,11 +403,15 @@ vst_adapter::process_stereo(float **pin, float **pout, int numsamples, int mode)
 {
     sample_pos += numsamples;
 
-    if(info->flags & zzub_plugin_flag_has_midi_input) {
-        midi_track_manager.process(numsamples);
+    if(info->flags & zzub_plugin_flag_has_midi_input) 
+    {
+            
+
+        midi_track_manager.process_samples(numsamples);
 
         if(midi_events.size() > 0) 
         {
+            printf("vst_adapter sed midi events\n");
             vst_events->numEvents = midi_events.size();
             memcpy(&vst_events->events[0], &midi_events[0], vst_events->numEvents * sizeof(VstMidiEvent*));
             dispatch(plugin, effProcessEvents, 0, 0, vst_events, 0.f);

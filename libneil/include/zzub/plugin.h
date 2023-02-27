@@ -784,7 +784,8 @@ namespace zzub {
   // they have to register themselves by:
   //   calling midi_track_manager::add_midi_track_info from their zzub::info midi_track_manager
   //   and calling midi_track_manager::register_midi_manager from their zzub::plugin constructor 
-  // then they repeatedly call midi_track_manager::process_midi_events in the process_events method of the zzub::plugin 
+  // then they repeatedly call midi_track_manager::process_events in the process_events method of the zzub::plugin
+  // and midi_track_manager::process_samples from zzub_pligin::process_steroe with the number of samples 
   struct midi_plugin_interface {
     virtual void add_note_on(uint8_t note, uint8_t volume) = 0;
     virtual void add_note_off(uint8_t note) = 0;
@@ -876,9 +877,8 @@ namespace zzub {
 
 
     // called in the process_events method of a plugin 
-    void process(uint32_t numsamples) 
+    void process_events() 
     {
-      sample_count += numsamples;
       for (int track_num = 0; track_num < num_tracks; track_num++) {
         auto prev = &prev_tracks[track_num];
         auto curr = curr_tracks[track_num];
@@ -919,6 +919,11 @@ namespace zzub {
             break;
         }
       }
+    }
+
+    // will handle the note length messages
+    void process_samples(uint16_t numsamples) {
+        sample_count += numsamples;
     }
 
     void init(uint32_t rate) 

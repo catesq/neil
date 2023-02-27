@@ -80,6 +80,7 @@ inline VstInt32 dispatch(AEffect* plugin, VstInt32 opcode) {
 inline VstMidiEvent* vst_midi_event(std::array<uint8_t, 3> data) {
     auto event = new VstMidiEvent();
     memset(event, 0, sizeof(VstMidiEvent));
+    
     event->type = kVstMidiType;
     event->byteSize = sizeof(VstMidiEvent);
     event->deltaFrames = 0;

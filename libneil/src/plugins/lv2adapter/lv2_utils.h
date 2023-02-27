@@ -211,10 +211,6 @@ struct MidiEvents {
         data.push_back(MidiEvent(0, {cmd, data1, data2}));
     }
 
-    void add_message(midi_msg msg) {
-        data.emplace_back(0, msg);
-    }
-
     void noteOn(uint8_t chan, uint8_t note, uint8_t velocity) {
 		add(0, MIDI_NOTE_ON(chan), MIDI_NOTE(note), MIDI_DATA(velocity));
     }

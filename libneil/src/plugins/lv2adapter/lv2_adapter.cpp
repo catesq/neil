@@ -59,7 +59,11 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info)
     plugin_events = zix_ring_new(EVENT_BUF_SIZE);
     attributes   = (int *) &attr_values;
 
-    track_values = malloc(sizeof(struct zzub::midi_note_track) * NUM_TRACKS);
+    if(info->flags & zzub_plugin_flag_is_instrument) {
+        track_values = malloc(sizeof(struct zzub::midi_note_track) * NUM_TRACKS);
+        trackCount = 1;
+        set_track_count(trackCount);
+    }
 
     init_ports();
 
@@ -91,7 +95,7 @@ lv2_adapter::~lv2_adapter()
 
 
 void
-lv2_adapter::build_ports()
+lv2_adapter::init_ports()
 {
     // build buffers for audio samples, midi events, control value samples etc. 
     // also store each port in a vector for that port type, mainly so it's easier to use them in the process_stereo()
@@ -181,11 +185,13 @@ lv2_adapter::build_ports()
 
 void 
 lv2_adapter::add_note_on(uint8_t note, uint8_t volume) {
+    printf("add note on\n");
     midiEvents.noteOn(0, note, volume);
 }
 
 void 
 lv2_adapter::add_note_off(uint8_t note) {
+    printf("add note off\n");
     midiEvents.noteOff(0, note);
 }
 
@@ -212,7 +218,8 @@ lv2_adapter::init(zzub::archive *arc)
     sample_rate = _master_info->samples_per_second;
     ui_scale = gtk_widget_get_scale_factor((GtkWidget*) _host->get_host_info()->host_ptr);
 
-    midi_track_manager.init(sample_rate);
+    if(info->flags & zzub_plugin_flag_is_instrument)
+        midi_track_manager.init(sample_rate);
 
     LV2_Options_Option options[] = 
     {
@@ -352,6 +359,9 @@ lv2_adapter::created()
 {
     initialized = true;
     printf("Initialised lv2 adapter\n");
+    // if(!init_from_params)
+        // return false;
+
     for(param_port* port: paramPorts) {
         _host->set_parameter(metaPlugin, 1, 0, port->paramIndex, port->lilv_to_zzub_value(port->value));
         // DEBUG_INFO("Helm", "\nSet param %d(%s). lilv val: %f, zzub val: %d\n", port->paramIndex, port->name.c_str(), port->value, port->lilv_to_zzub_value(port->value))
@@ -401,7 +411,7 @@ lv2_adapter::read_archive_params(zzub::instream* instream)
     printf("PluginAdapter::read_archive_params\n");
     uint32_t param_count = 0;
     instream->read(param_count);
-
+    // init_from_params = true;
     // DEBUG_INFO("Helm", "store helm param %d: %.2f, params in archive(%d).  params in plugin(%zu)\n", param_port->paramIndex, param_port->value, param_count, paramPorts.size())
     // printf("plugin %s: get %u params from archive, %zu params extected\n", info->name.c_str(), param_count, paramPorts.size());
 
@@ -503,14 +513,6 @@ lv2_adapter::describe_value(int param, int value)
 void 
 lv2_adapter::set_track_count(int new_num) 
 {
-    // if (ntracks < trackCount) {
-    //     for (int t = ntracks; t < trackCount; t++) {
-    //         if (trak_states[t].note != zzub::note_value_none) {
-    //             midiEvents.noteOff(t, trak_states[t].note, 0);
-    //         }
-    //     }
-    // }
-
     trackCount = new_num;
     midi_track_manager.set_track_count(new_num);
 }
@@ -590,10 +592,8 @@ lv2_adapter::process_events()
             paramPort->value = paramPort->zzub_to_lilv_value(value);
     }
 
-
-    // if(info->flags & zzub_plugin_flag_is_instrument)
-    //     midi_track_manager.process_midi_events();
-        // process_all_midi_tracks();
+    if(info->flags & zzub_plugin_flag_is_instrument)
+        midi_track_manager.process_events();
 }
 
 
@@ -601,12 +601,13 @@ lv2_adapter::process_events()
 void
 lv2_adapter::send_midi_events() 
 {
+    printf("Send midi events\n");
     if(midiEvents.count() == 0)
         return; 
 
     for(event_buf_port* midiPort: midiPorts) 
     {
-        if(midiPort->flow != PortFlow::Input || midiEvents.count() == 0)
+        if(midiPort->flow != PortFlow::Input)
             continue;
 
         LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiPort->get_lv2_evbuf());
@@ -678,7 +679,9 @@ lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int const
 
     if(info->flags & zzub_plugin_flag_is_instrument) 
     {
-        midi_track_manager.process(numsamples);
+        midi_track_manager.process_samples(numsamples);
+        printf("process stereo\n");
+        
         
         if(midiEvents.count() > 0)
             send_midi_events();        
@@ -699,21 +702,21 @@ lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int const
 
 
     switch(audioInPorts.size()) {
-    case 0:    // No audio inputs
-        break;
+        case 0:    // No audio inputs
+            break;
 
-    case 1: {
-        float *sample = audioInPorts[0]->get_buffer();
-        for (int i = 0; i < numsamples; i++)
-            *sample++ = (pin[0][i] + pin[1][i]) * 0.5f;
-        break;
-    }
+        case 1: {
+            float *sample = audioInPorts[0]->get_buffer();
+            for (int i = 0; i < numsamples; i++)
+                *sample++ = (pin[0][i] + pin[1][i]) * 0.5f;
+            break;
+        }
 
-    case 2:
-    default:   // FIXME if it's greater than 2, should mix some of them.
-        memcpy(audioInPorts[0]->get_buffer(), pin[0], sizeof(float) * numsamples);
-        memcpy(audioInPorts[1]->get_buffer(), pin[1], sizeof(float) * numsamples);
-        break;
+        case 2:
+        default:   // FIXME if it's greater than 2, should mix some of them.
+            memcpy(audioInPorts[0]->get_buffer(), pin[0], sizeof(float) * numsamples);
+            memcpy(audioInPorts[1]->get_buffer(), pin[1], sizeof(float) * numsamples);
+            break;
     }
 
     lilv_instance_run(lilvInstance, numsamples);

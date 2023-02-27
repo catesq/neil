@@ -81,7 +81,9 @@ extern "C"
 }
 
 
-struct lv2_adapter : zzub::plugin, zzub::event_handler, zzub::midi_plugin_interface
+struct lv2_adapter : zzub::plugin, 
+                     zzub::event_handler, 
+                     zzub::midi_plugin_interface
 {
     std::vector<lv2_port*>         ports;
 
@@ -156,7 +158,6 @@ struct lv2_adapter : zzub::plugin, zzub::event_handler, zzub::midi_plugin_interf
     virtual void save(zzub::archive *arc) override;
     virtual const char* describe_value(int param, int value) override;
 
-
     virtual void add_note_on(uint8_t note, uint8_t volume) override;
     virtual void add_note_off(uint8_t note) override;
     virtual void add_aftertouch(uint8_t note, uint8_t volume) override;
@@ -164,7 +165,6 @@ struct lv2_adapter : zzub::plugin, zzub::event_handler, zzub::midi_plugin_interf
     virtual zzub::midi_note_track* get_track_data_pointer(uint16_t track_num) const override;
 
 private:
-
     GtkWidget* ui_open_window(GtkWidget** root_container, GtkWidget** parent_container);
     const bool ui_select(const char *native_ui_type, const LilvUI** ui_type_ui, const LilvNode** ui_type_node);
     void ui_open();
@@ -175,6 +175,8 @@ private:
 
     void send_midi_events();
 
+    // use data from lv2_zzub_info to build midi/event/audio buffers used by the lv2 plugin
+    void init_ports();
     void update_port(param_port* port, float float_val);
 
     void read_archive_params(zzub::instream* instream);
@@ -189,8 +191,6 @@ private:
     // sends events to the ui - eg when a new patch has been loaded and all the controls have been changed
     void ui_event_dispatch();
 
-    // use data from lv2_zzub_info to build midi/event/audio buffers used by the lv2 plugin
-    void init_ports();
     
     void init_static_features();
 
