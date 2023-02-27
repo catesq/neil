@@ -733,39 +733,49 @@ namespace zzub {
 
 
   #pragma pack(1)
+
+  #define NOTE_VOLUME_FUNCTIONS(TRACK_TYPE) bool is_volume_on() { return volume != zzub_volume_value_none; } \
+      uint8_t get_note() { return note; } \
+      bool get_volume() { return volume != zzub_volume_value_none ? volume : zzub_volume_value_default; } \
+      bool is_note_on() { return note != zzub_note_value_none && note != zzub_note_value_off; }  \
+      int note_change_from(TRACK_TYPE &prev) \
+      { \
+        if(note == zzub::note_value_none) { \
+          if(is_volume_on() && volume != prev.volume) { \
+            return zzub_note_change_volume; \
+          } else { \
+            return zzub_note_change_none; \
+          } \
+        } \
+        if(note == zzub::note_value_off) { \
+            return zzub_note_change_noteoff; \
+        } else { \
+            return zzub_note_change_noteon; \
+        } \
+       }\
+
+
   struct note_track {
       uint8_t note = zzub_note_value_none;
       uint8_t volume = zzub_volume_value_none;
 
-      int note_change_from(note_track& prev) {
-          if(note == zzub::note_value_none) {
-              if(is_volume_on() && volume != prev.volume) {
-                  return zzub_note_change_volume;
-              } else {
-                  return zzub_note_change_none;
-              }
-          }
-          
-          if(note == zzub::note_value_off) {
-              return zzub_note_change_noteoff;
-          } else {
-              return zzub_note_change_noteon;
-          }
-      }
-
-      bool is_volume_on() { return volume != zzub_volume_value_none; }
-      bool get_volume() { return volume != zzub_volume_value_none ? volume : zzub_volume_value_default; }
-      uint8_t get_note() { return note; }
-      bool is_note_on() { return note != zzub_note_value_none && note != zzub_note_value_off; };
+      NOTE_VOLUME_FUNCTIONS(note_track);
+      
   };
 
+
+  // the track values for a midi instrument
   struct midi_note_track {
       uint8_t note = zzub_note_value_none;
       uint8_t volume = zzub_volume_value_none;
 
-      uint8_t command = zzub_midi_command_value_none;
-      uint8_t data_1 = zzub_midi_data_value_none & 0xff;
-      uint8_t data_2 = zzub_midi_data_value_none & 0xff; 
+      uint8_t command_1 = zzub_midi_command_value_none;
+      uint16_t data_1 = zzub_midi_data_value_none;
+      uint8_t command_2 = zzub_midi_command_value_none;
+      uint16_t data_2 = zzub_midi_data_value_none;
+
+      NOTE_VOLUME_FUNCTIONS(midi_note_track);
+
   };
 
   #pragma pack()
@@ -776,15 +786,26 @@ namespace zzub {
   //   and calling midi_track_manager::register_midi_manager from their zzub::plugin constructor 
   // then they repeatedly call midi_track_manager::process_midi_events in the process_events method of the zzub::plugin 
   struct midi_plugin_interface {
-    virtual void add_note_on() = 0;
-    virtual void add_note_off() = 0;
-    virtual void add_aftertouch() = 0;
-    virtual void add_midi_command() = 0;
+    virtual void add_note_on(uint8_t note, uint8_t volume) = 0;
+    virtual void add_note_off(uint8_t note) = 0;
+    virtual void add_aftertouch(uint8_t note, uint8_t volume) = 0;
+    virtual void add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) = 0;
+
     // this is called in the constructor of midi_track_manager and the pointer can't be changed
     virtual midi_note_track* get_track_data_pointer(uint16_t track_num) const = 0;
   };
 
   namespace {
+    // each midi track has entries for two midi command/midi data messages per row
+    union midi_cmd_data {
+        uint8_t bytes[3]{};
+        struct {
+            uint8_t  cmd;
+            uint16_t data;
+        } midi;
+    };
+    
+    // the track_manager has a list of active notes and when they started and should end
     struct midi_note {
       uint16_t note;
       uint64_t start_at;
@@ -795,16 +816,16 @@ namespace zzub {
     // used by the lv2 and vst plugins to process midi notes, volume, note length and midi data/commands
   struct midi_track_manager {
   private:
-    const midi_plugin_interface& plugin;
+    midi_plugin_interface& plugin;
   
 
     // these are pointers to a subset of the void *track_values in the zzub::plugin 
     // the midi events to process are supplied by the zzub engine every 'tick'. unsafe, everything in here gets written over
-    std::vector<midi_note_track*> curr {};
+    std::vector<midi_note_track*> curr_tracks {};
   
 
     // local data the track_manager creates and maintains, safe.
-    std::vector<midi_note_track> prev;
+    std::vector<midi_note_track> prev_tracks;
   
 
     // must be called by the plugin every time the number of tracks changes
@@ -818,17 +839,20 @@ namespace zzub {
   
 
     uint32_t sample_rate = 48000; 
+
+    bool keep_notes_on = false;
   
 
     std::vector<midi_note> active_notes {};
   
   public:
-    midi_track_manager(const midi_plugin_interface& plugin, uint16_t max_num_tracks)
+    midi_track_manager(midi_plugin_interface& plugin, uint16_t max_num_tracks, bool keep_notes_on = false)
       : plugin(plugin), 
-        curr(),
+        curr_tracks(),
         max_num_tracks(max_num_tracks),
-        prev(max_num_tracks),
-        sample_rate(48000)
+        prev_tracks(max_num_tracks),
+        sample_rate(48000),
+        keep_notes_on(keep_notes_on)
     {
     }
 
@@ -855,25 +879,69 @@ namespace zzub {
     void process(uint32_t numsamples) 
     {
       sample_count += numsamples;
+      printf("DEBUGME %s::%s %s\n", "midi_track_manager", "process", "ourmessagegoeshere");
+      for (int track_num = 0; track_num < num_tracks; track_num++) {
+        auto prev = &prev_tracks[track_num];
+        auto curr = curr_tracks[track_num];
+
+        switch(curr->note_change_from(*prev)) {
+        case zzub_note_change_none:
+            break;
+
+        case zzub_note_change_noteoff:
+            if(prev->is_note_on())
+                plugin.add_note_off(prev->note);
+
+            prev->note = zzub::note_value_none;
+            break;
+
+        case zzub_note_change_noteon:
+            if(curr->is_volume_on())
+                prev->volume = curr->volume;
+
+            if(prev->is_note_on() && !keep_notes_on)
+                plugin.add_note_off(prev->note);
+
+            prev->note = curr->note;
+
+            if(prev->is_volume_on())
+              plugin.add_note_on(curr->note, prev->volume);
+            else
+              plugin.add_note_on(curr->note, zzub_volume_value_default);
+
+            break;
+
+        case zzub_note_change_volume:
+            prev->volume = curr->volume;
+
+            if(prev->is_note_on()) 
+                plugin.add_aftertouch(curr->note, prev->volume);
+
+            break;
+        }
+      }
     }
 
-    void init(uint32_t rate) {
+    void init(uint32_t rate) 
+    {
       set_sample_rate(rate);
-      for(auto idx = 0; idx < max_num_tracks; ++idx) {
-        auto ptr = plugin.get_track_data_pointer(idx);
 
-        if(!ptr) {
+      for(auto idx = 0; idx < max_num_tracks; ++idx) {
+        auto curr_ptr = plugin.get_track_data_pointer(idx);
+
+        if(!curr_ptr) {
           throw std::runtime_error("midi_track_manager::initialise: plugin.get_track_data_pointer returned null");
         }
 
         // clear the midi note track data in curr[idx]
-        ptr->note = zzub_note_value_none;
-        ptr->volume = zzub_volume_value_none;
-        ptr->command = zzub_midi_command_value_none;
-        ptr->data_1 = zzub_midi_data_value_none & 0xff;
-        ptr->data_2 = zzub_midi_data_value_none & 0xff;
+        curr_ptr->note = zzub_note_value_none;
+        curr_ptr->volume = zzub_volume_value_none;
+        curr_ptr->command_1 = zzub_midi_command_value_none;
+        curr_ptr->command_2 = zzub_midi_command_value_none;
+        curr_ptr->data_1 = zzub_midi_data_value_none;
+        curr_ptr->data_2 = zzub_midi_data_value_none;
 
-        curr.push_back(ptr);
+        curr_tracks.push_back(curr_ptr);
       }
     }
 
@@ -892,25 +960,32 @@ namespace zzub {
             .set_value_default(zzub_volume_value_default);
 
       info->add_track_parameter().set_byte()
-            .set_name("Midi command")
-            .set_description("Command byte")
+            .set_name("Midi command 1")
+            .set_description("Command 1")
             .set_value_min(zzub_midi_command_value_min)
             .set_value_max(zzub_midi_command_value_max)
             .set_value_none(zzub_midi_command_value_none)
             .set_value_default(zzub_midi_command_value_none);
 
-      info->add_track_parameter().set_byte()
-            .set_name("Midi data 1")
-            .set_description("Data byte 1")
+      info->add_track_parameter().set_word()
+            .set_name("Data 1")
+            .set_description("Data 1")
             .set_value_min(zzub_midi_data_value_min)
             .set_value_max(zzub_midi_data_value_max)
             .set_value_none(zzub_midi_data_value_none)
             .set_value_default(zzub_midi_data_value_none);
 
-      info->add_track_parameter()
-            .set_byte()
-            .set_name("Midi data 2")
-            .set_description("Data byte 2")
+      info->add_track_parameter().set_byte()
+            .set_name("Midi command 2")
+            .set_description("Command 2")
+            .set_value_min(zzub_midi_command_value_min)
+            .set_value_max(zzub_midi_command_value_max)
+            .set_value_none(zzub_midi_command_value_none)
+            .set_value_default(zzub_midi_command_value_none);
+
+      info->add_track_parameter().set_word()
+            .set_name("Data 2")
+            .set_description("Data 2")
             .set_value_min(zzub_midi_data_value_min)
             .set_value_max(zzub_midi_data_value_max)
             .set_value_none(zzub_midi_data_value_none)
