@@ -19,14 +19,17 @@ def clear_pattern(plugin, pattern_index):
 # these are actions for the context menu of the pattern list when a single pattern is selected 
 def on_create(item, treeview, _):
     treeview.sequencer_panel.treeview_create_pattern(treeview)
+    treeview.update_list()
 
 
 def on_clone(item, treeview, pattern_index):
     treeview.sequencer_panel.treeview_clone_pattern(treeview, pattern_index)
+    treeview.update_list()
 
 
 def on_rename(item, treeview, pattern_index):
     treeview.sequencer_panel.treeview_rename_pattern(treeview, pattern_index)
+    treeview.update_list()
 
 
 def on_clear(item, treeview, pattern_index):
@@ -43,6 +46,7 @@ def on_delete(item, treeview, pattern_index):
         treeview.sequencer_panel.get_active_plugin().remove_pattern(pattern_index)
         player = com.get('neil.core.player')
         player.history_commit("remove pattern")
+        treeview.update_list()
 
 
 # these are the actions for when a group of items are selected
@@ -58,6 +62,7 @@ def on_clear_list(item, treeview, pattern_indexes):
 def on_clone_list(item, treeview, pattern_indexes):
     for pattern_index in pattern_indexes:
         treeview.sequencer_panel.treeview_clone_pattern(treeview, pattern_index)
+    treeview.update_list()
 
 
 def on_delete_list(item, treeview, pattern_indexes):
@@ -66,6 +71,7 @@ def on_delete_list(item, treeview, pattern_indexes):
 
     player = com.get('neil.core.player')
     player.history_commit("remove patterns")
+    treeview.update_list()
 
 
 
@@ -155,6 +161,8 @@ class SequencerPatternListTreeView(Gtk.TreeView):
         (model, paths) = self.get_selection().get_selected_rows()
         return [path[0] - 2 for path in paths if path[0] > 1]
 
+    def update_list(self):
+        self.sequencer_panel.update_list()
 
     def on_pattern_list_button(self, treeview, event):
         # only show context menu on right clicks when an plugin in the sequencer panel is active is highlighted
