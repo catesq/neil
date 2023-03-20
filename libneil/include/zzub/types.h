@@ -25,10 +25,10 @@
 #ifdef stdcall
 #undef stdcall
 #endif
-#	define ZZUB_CALLING_CONVENTION __attribute__((cdecl))
+#define ZZUB_CALLING_CONVENTION __attribute__((cdecl))
 #else
-#	define ZZUB_CALLING_CONVENTION __cdecl
+#define ZZUB_CALLING_CONVENTION __cdecl
 #endif
 #define ZZUB_EXTERN_C extern "C"
 
-#endif // __ZZUBTYPES_H
+#endif  // __ZZUBTYPES_H
