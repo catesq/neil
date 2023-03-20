@@ -1,49 +1,44 @@
-#include <string>
-#include <ostream>
-
 #include "lv2_zzub_info.h"
+
+#include <ostream>
+#include <string>
+
 #include "lv2_adapter.h"
 #include "lv2_ports.h"
 
-inline void printport(const char *prefix, const LilvPlugin* lilvPlugin, const LilvPort* lilvPort, PortFlow flow) {
+inline void printport(const char* prefix, const LilvPlugin* lilvPlugin, const LilvPort* lilvPort, PortFlow flow) {
     printf("%s: Port '%s'. Plugin '%s'\nClasses:",
            prefix,
            as_string(lilv_port_get_name(lilvPlugin, lilvPort), true).c_str(),
-           as_string(lilv_plugin_get_name(lilvPlugin), true).c_str()
-    );
+           as_string(lilv_plugin_get_name(lilvPlugin), true).c_str());
 }
 
-
-zzub::plugin *lv2_zzub_info::create_plugin() const {
-    return new lv2_adapter((lv2_zzub_info*) &(*this));
+zzub::plugin* lv2_zzub_info::create_plugin() const {
+    return new lv2_adapter((lv2_zzub_info*)&(*this));
 }
 
-
-lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin *lilvPlugin)
+lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin* lilvPlugin)
     : zzub::info(),
       lilvWorld(cache->lilvWorld),
       lilvPlugin(lilvPlugin),
-      cache(cache)
-{
-
+      cache(cache) {
     // gui's are created in invoke() after a double click
-    //it's possible that the custom gui is not supported on gtk3
+    // it's possible that the custom gui is not supported on gtk3
     LilvUIs* uis = lilv_plugin_get_uis(lilvPlugin);
 
-    if(uis) 
-    {
+    if (uis) {
         flags |= zzub_plugin_flag_has_custom_gui;
         lilv_uis_free(uis);
     }
 
-    name       = as_string(lilv_plugin_get_name(lilvPlugin), true);
-    author     = as_string(lilv_plugin_get_author_name(lilvPlugin), true);
+    name = as_string(lilv_plugin_get_name(lilvPlugin), true);
+    author = as_string(lilv_plugin_get_author_name(lilvPlugin), true);
 
     libraryPath = free_string(lilv_file_uri_parse(as_string(lilv_plugin_get_library_uri(lilvPlugin)).c_str(), NULL));
-    bundlePath  = free_string(lilv_file_uri_parse(as_string(lilv_plugin_get_bundle_uri(lilvPlugin)).c_str(), NULL));
-    lv2Uri      = as_string(lilv_plugin_get_uri(lilvPlugin));
+    bundlePath = free_string(lilv_file_uri_parse(as_string(lilv_plugin_get_bundle_uri(lilvPlugin)).c_str(), NULL));
+    lv2Uri = as_string(lilv_plugin_get_uri(lilvPlugin));
     lv2ClassUri = as_string(lilv_plugin_class_get_uri(lilv_plugin_get_class(lilvPlugin)));
-    zzubUri     = std::string("@zzub.org/lv2adapter/") + (strncmp(lv2Uri.c_str(), "http://", 6) == 0 ? std::string(lv2Uri.substr(7)) : lv2Uri);
+    zzubUri = std::string("@zzub.org/lv2adapter/") + (strncmp(lv2Uri.c_str(), "http://", 6) == 0 ? std::string(lv2Uri.substr(7)) : lv2Uri);
 
     uri = zzubUri.c_str();
     short_name.append(name);
@@ -51,21 +46,15 @@ lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin *lilvPlugin
     min_tracks = 1;
     max_tracks = 16;
 
-    add_attribute().set_name("MIDI Channel (0=off)")
-                   .set_value_min(0)
-                   .set_value_max(16)
-                   .set_value_default(0);
+    add_attribute().set_name("MIDI Channel (0=off)").set_value_min(0).set_value_max(16).set_value_default(0);
 
-    add_attribute().set_name("auto midi note off if note playing and note length not set for that note")
-                   .set_value_min(0)
-                   .set_value_max(1)
-                   .set_value_default(1);
+    add_attribute().set_name("auto midi note off if note playing and note length not set for that note").set_value_min(0).set_value_max(1).set_value_default(1);
 
     printf("Registered plugin: name='%s', uri='%s', path='%s'\n", name.c_str(), uri.c_str(), bundlePath.c_str());
 
     PortCounter counter{};
-    for(; counter.portIndex < lilv_plugin_get_num_ports(lilvPlugin); counter.portIndex++) {
-        const LilvPort *lilvPort = lilv_plugin_get_port_by_index(lilvPlugin, counter.portIndex);
+    for (; counter.portIndex < lilv_plugin_get_num_ports(lilvPlugin); counter.portIndex++) {
+        const LilvPort* lilvPort = lilv_plugin_get_port_by_index(lilvPlugin, counter.portIndex);
 
         PortFlow flow = get_port_flow(lilvPort);
         PortType type = get_port_type(lilvPort, flow);
@@ -77,7 +66,7 @@ lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin *lilvPlugin
 
     zzubTotalDataSize = counter.dataOffset;
 
-    if(lv2ClassUri == LV2_CORE__InstrumentPlugin) {
+    if (lv2ClassUri == LV2_CORE__InstrumentPlugin) {
         zzub::midi_track_manager::add_midi_track_info(this);
         flags |= zzub::plugin_flag_is_instrument;
     } else if (flags & zzub::plugin_flag_has_audio_output) {
@@ -87,34 +76,28 @@ lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin *lilvPlugin
     }
 }
 
-
-
-PortFlow 
-lv2_zzub_info::get_port_flow(const LilvPort* port) 
-{
-   if(lilv_port_is_a(lilvPlugin, port, cache->nodes.port_input)) {
+PortFlow
+lv2_zzub_info::get_port_flow(const LilvPort* port) {
+    if (lilv_port_is_a(lilvPlugin, port, cache->nodes.port_input)) {
         return PortFlow::Input;
-   } else if(lilv_port_is_a(lilvPlugin, port, cache->nodes.port_output)) {
-       return PortFlow::Output;
-   } else {
-       return PortFlow::Unknown;
-   }
+    } else if (lilv_port_is_a(lilvPlugin, port, cache->nodes.port_output)) {
+        return PortFlow::Output;
+    } else {
+        return PortFlow::Unknown;
+    }
 }
 
-
-
-PortType 
-lv2_zzub_info::get_port_type(const LilvPort* lilvPort, PortFlow flow) 
-{
-    if(lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_control)) {
+PortType
+lv2_zzub_info::get_port_type(const LilvPort* lilvPort, PortFlow flow) {
+    if (lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_control)) {
         return flow == PortFlow::Input ? PortType::Param : PortType::Control;
     } else if (lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_audio)) {
         return PortType::Audio;
-    } else if(lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_cv)) {
+    } else if (lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_cv)) {
         return PortType::CV;
-    } else if(lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_atom) ||
-              lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_event) ||
-              lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_midi)) {
+    } else if (lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_atom) ||
+               lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_event) ||
+               lilv_port_is_a(lilvPlugin, lilvPort, cache->nodes.port_midi)) {
         if (lilv_port_supports_event(lilvPlugin, lilvPort, cache->nodes.midi_event)) {
             return PortType::Midi;
         } else {
@@ -126,12 +109,9 @@ lv2_zzub_info::get_port_type(const LilvPort* lilvPort, PortFlow flow)
     }
 }
 
-
-
-lv2_port* 
-lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter) 
-{
-    switch(type) {
+lv2_port*
+lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, PortType type, PortCounter& counter) {
+    switch (type) {
         case PortType::Control: {
             auto port = new control_port(lilvPort, lilvPlugin, cache, type, flow, counter);
 
@@ -168,9 +148,7 @@ lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, PortType type
     }
 }
 
-
-
-// void 
+// void
 // lv2_zzub_info::add_generator_params()
 // {
 //     add_track_parameter().set_note();

@@ -1,26 +1,21 @@
-#include "lv2_adapter.h"
 #include <lv2/atom/atom.h>
+
+#include "lv2_adapter.h"
 
 // these are the ui related function for the PLuginAdapter - the PluginAdapter file was getting unwieldy
 
-extern "C" 
-{
-    void
-    ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data)
-    {
-        gtk_widget_hide(static_cast<lv2_adapter*>(data)->gtk_ui_window);
-        static_cast<lv2_adapter*>(data)->ui_is_hidden = true;
-    }
+extern "C" {
+void ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data) {
+    gtk_widget_hide(static_cast<lv2_adapter*>(data)->gtk_ui_window);
+    static_cast<lv2_adapter*>(data)->ui_is_hidden = true;
+}
 }
 
-bool
-lv2_adapter::is_ui_external(const LilvUI * ui) 
-{
+bool lv2_adapter::is_ui_external(const LilvUI* ui) {
     const LilvNodes* ui_classes = lilv_ui_get_classes(ui);
     std::string name = as_string(lilv_ui_get_uri(ui));
 
-    LILV_FOREACH (nodes, it, ui_classes) 
-    {
+    LILV_FOREACH(nodes, it, ui_classes) {
         const LilvNode* ui_type = lilv_nodes_get(ui_classes, it);
 
         if (lilv_node_equals(ui_type, lilv_new_uri(cache->lilvWorld, "http://kxstudio.sf.net/ns/lv2ext/external-ui#Widget")))
@@ -30,65 +25,55 @@ lv2_adapter::is_ui_external(const LilvUI * ui)
     return false;
 }
 
-
-void
-lv2_adapter::ui_reopen() 
-{
+void lv2_adapter::ui_reopen() {
     gtk_widget_show(gtk_ui_window);
     ui_is_hidden = false;
 }
 
-
-void
-lv2_adapter::ui_open() 
-{
+void lv2_adapter::ui_open() {
     cache->init_suil();
     cache->init_x_threads();
 
     if (!suil_ui_host)
-        suil_ui_host = suil_host_new(write_events_from_ui, lv2_port_index, nullptr, nullptr); //&update_port, &remove_port);
+        suil_ui_host = suil_host_new(write_events_from_ui, lv2_port_index, nullptr, nullptr);  //&update_port, &remove_port);
 
     ui_select(GTK3_URI, &lilv_ui_type, &lilv_ui_type_node);
 
-    if(lilv_ui_type != NULL) 
-    {
+    if (lilv_ui_type != NULL) {
         std::string uiname = as_string(lilv_ui_type_node);
         is_ui_external(lilv_ui_type);
     }
 
     auto datatypes = lilv_plugin_get_extension_data(info->lilvPlugin);
-    LILV_FOREACH(nodes, n, datatypes) 
-    {
+    LILV_FOREACH(nodes, n, datatypes) {
         printf("Ext data type: %s\n", lilv_node_as_uri(lilv_nodes_get(datatypes, n)));
     }
 
-    if(!lilv_ui_type)
+    if (!lilv_ui_type)
         return;
 
     gtk_ui_window = ui_open_window(&gtk_ui_root_box, &gtk_ui_parent_box);
 
-    const char* bundle_uri  = lilv_node_as_uri(lilv_ui_get_bundle_uri(lilv_ui_type));
-    const char* binary_uri  = lilv_node_as_uri(lilv_ui_get_binary_uri(lilv_ui_type));
-    char*       bundle_path = lilv_file_uri_parse(bundle_uri, NULL);
-    char*       binary_path = lilv_file_uri_parse(binary_uri, NULL);
+    const char* bundle_uri = lilv_node_as_uri(lilv_ui_get_bundle_uri(lilv_ui_type));
+    const char* binary_uri = lilv_node_as_uri(lilv_ui_get_binary_uri(lilv_ui_type));
+    char* bundle_path = lilv_file_uri_parse(bundle_uri, NULL);
+    char* binary_path = lilv_file_uri_parse(binary_uri, NULL);
 
     transient_wid = _host->get_host_info()->host_ptr;
 
-    const LV2_Feature* ui_features[] = 
-    {
-        &features.map_feature,
-        &features.unmap_feature,
-        &features.program_host_feature,
-        &features.ui_parent_feature,
-        &features.ui_instance_feature,
-        &features.ui_data_access_feature,
-        &features.ui_idle_feature,
-        &features.options_feature,
-        NULL
-    };
+    const LV2_Feature* ui_features[] =
+        {
+            &features.map_feature,
+            &features.unmap_feature,
+            &features.program_host_feature,
+            &features.ui_parent_feature,
+            &features.ui_instance_feature,
+            &features.ui_data_access_feature,
+            &features.ui_idle_feature,
+            &features.options_feature,
+            NULL};
 
-    if(!suil_ui_instance) 
-    {
+    if (!suil_ui_instance) {
         suil_ui_instance = suil_instance_new(suil_ui_host,
                                              this,
                                              GTK3_URI,
@@ -102,52 +87,47 @@ lv2_adapter::ui_open()
         suil_ui_handle = suil_instance_get_handle(suil_ui_instance);
     }
 
-//    if(use_show_interface_method) {
-//        idle_interface = (const LV2UI_Idle_Interface *) suil_instance_extension_data(suil_ui_instance, LV2_UI__idleInterface);
-//        show_interface = (const LV2UI_Show_Interface *) suil_instance_extension_data(suil_ui_instance, LV2_UI__showInterface);
-//    }
+    //    if(use_show_interface_method) {
+    //        idle_interface = (const LV2UI_Idle_Interface *) suil_instance_extension_data(suil_ui_instance, LV2_UI__idleInterface);
+    //        show_interface = (const LV2UI_Show_Interface *) suil_instance_extension_data(suil_ui_instance, LV2_UI__showInterface);
+    //    }
 
     lilv_free(binary_path);
     lilv_free(bundle_path);
 
-    if(!suil_ui_instance)
+    if (!suil_ui_instance)
         return;
 
-//    if(!use_show_interface_method) {
-    if(!suil_widget) {
+    //    if(!use_show_interface_method) {
+    if (!suil_widget) {
         suil_widget = (GtkWidget*)suil_instance_get_widget(suil_ui_instance);
     }
 
     gtk_container_add(GTK_CONTAINER(gtk_ui_parent_box), suil_widget);
     gtk_widget_show_all(gtk_ui_root_box);
     gtk_widget_grab_focus(suil_widget);
-//    }
+    //    }
 
-        // Set initial control port values
-    for (auto& paramPort: paramPorts) 
-    {
+    // Set initial control port values
+    for (auto& paramPort : paramPorts) {
         suil_instance_port_event(
             suil_ui_instance,
             paramPort->index,
             sizeof(float),
             0,
-            &paramPort->value
-        );
+            &paramPort->value);
     }
 
-    for (auto& controlPort: controlPorts) 
-    {
+    for (auto& controlPort : controlPorts) {
         suil_instance_port_event(
             suil_ui_instance,
             controlPort->index,
             sizeof(float),
             0,
-            &controlPort->value
-        );
+            &controlPort->value);
     }
 
-
-    if(features.ui_idle_feature.data) {
+    if (features.ui_idle_feature.data) {
         printf("Idle feature for %s in invoke\n", info->name.c_str());
     }
 
@@ -157,13 +137,10 @@ lv2_adapter::ui_open()
     return;
 }
 
-
-
 GtkWidget*
-lv2_adapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_container) 
-{
+lv2_adapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_container) {
     GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-//    g_signal_connect(window, "delete-event", G_CALLBACK(on_window_destroy), this);
+    //    g_signal_connect(window, "delete-event", G_CALLBACK(on_window_destroy), this);
     g_signal_connect(window, "delete-event", G_CALLBACK(ui_close), this);
 
     gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(_host->get_host_info()->host_ptr));
@@ -177,10 +154,10 @@ lv2_adapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_conta
 
     GtkWidget* alignment = gtk_alignment_new(0.5, 0.5, 1.0, 1.0);
 
-    *parent_container               = alignment;
-    *root_container                 = vbox;
+    *parent_container = alignment;
+    *root_container = vbox;
     features.ui_parent_feature.data = *parent_container;
-    ui_scale                        = gtk_widget_get_scale_factor(window);
+    ui_scale = gtk_widget_get_scale_factor(window);
 
     gtk_box_pack_start(GTK_BOX(vbox), alignment, TRUE, TRUE, 0);
 
@@ -191,14 +168,9 @@ lv2_adapter::ui_open_window(GtkWidget** root_container, GtkWidget** parent_conta
     return window;
 }
 
-
-
-void
-lv2_adapter::ui_destroy() 
-{
-//    printf("kill suil host\n");
-    if(!ui_is_open) 
-    {
+void lv2_adapter::ui_destroy() {
+    //    printf("kill suil host\n");
+    if (!ui_is_open) {
         return;
     }
 
@@ -223,20 +195,16 @@ lv2_adapter::ui_destroy()
     suil_ui_instance = nullptr;
 }
 
-
-
-bool
-lv2_adapter::is_ui_resizable() 
-{
-    if(!lilv_ui_type)
+bool lv2_adapter::is_ui_resizable() {
+    if (!lilv_ui_type)
         return false;
 
-    const LilvNode* s   = lilv_ui_get_uri(lilv_ui_type);
-    LilvNode*       p   = lilv_new_uri(cache->lilvWorld, LV2_CORE__optionalFeature);
-    LilvNode*       fs  = lilv_new_uri(cache->lilvWorld, LV2_UI__fixedSize);
-    LilvNode*       nrs = lilv_new_uri(cache->lilvWorld, LV2_UI__noUserResize);
+    const LilvNode* s = lilv_ui_get_uri(lilv_ui_type);
+    LilvNode* p = lilv_new_uri(cache->lilvWorld, LV2_CORE__optionalFeature);
+    LilvNode* fs = lilv_new_uri(cache->lilvWorld, LV2_UI__fixedSize);
+    LilvNode* nrs = lilv_new_uri(cache->lilvWorld, LV2_UI__noUserResize);
 
-    LilvNodes* fs_matches  = lilv_world_find_nodes(cache->lilvWorld, s, p, fs);
+    LilvNodes* fs_matches = lilv_world_find_nodes(cache->lilvWorld, s, p, fs);
     LilvNodes* nrs_matches = lilv_world_find_nodes(cache->lilvWorld, s, p, nrs);
 
     lilv_nodes_free(nrs_matches);
@@ -248,13 +216,9 @@ lv2_adapter::is_ui_resizable()
     return !fs_matches && !nrs_matches;
 }
 
-
-
-void
-lv2_adapter::ui_event_import() 
-{
+void lv2_adapter::ui_event_import() {
     ControlChange ev;
-    const size_t  space = zix_ring_read_space(ui_events);
+    const size_t space = zix_ring_read_space(ui_events);
     for (size_t i = 0; i < space; i += sizeof(ev) + ev.size) {
         zix_ring_read(ui_events, (char*)&ev, sizeof(ev));
         char body[ev.size];
@@ -267,7 +231,7 @@ lv2_adapter::ui_event_import()
         lv2_port* port = ports[ev.index];
 
         if (ev.protocol == 0 && port->type == PortType::Param) {
-            update_port(static_cast<param_port*>(port), *((float*) body));
+            update_port(static_cast<param_port*>(port), *((float*)body));
         } else if (ev.protocol == cache->urids.atom_eventTransfer && (port->type == PortType::Event || port->type == PortType::Midi)) {
             event_buf_port* eventPort = static_cast<event_buf_port*>(port);
             LV2_Evbuf_Iterator e = lv2_evbuf_end(eventPort->get_lv2_evbuf());
@@ -280,19 +244,11 @@ lv2_adapter::ui_event_import()
     zix_ring_reset(ui_events);
 }
 
-
-
-void
-lv2_adapter::ui_event_dispatch() 
-{
+void lv2_adapter::ui_event_dispatch() {
     zix_ring_reset(plugin_events);
 }
 
-
-
-void
-lv2_adapter::update_all_from_ui() 
-{
+void lv2_adapter::update_all_from_ui() {
     printf("PluginAdapter::update_all_from_ui\n");
 
     // const char *dir = world->hostParams.tempDir;
@@ -302,34 +258,28 @@ lv2_adapter::update_all_from_ui()
     //             dir, dir, dir, dir,
     //             get_port_value, this, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE, nullptr);
 
-
     // printf("\n");
 }
 
-
-
 const bool
-lv2_adapter::ui_select(const char *native_ui_type,
-                         const LilvUI** ui_type_ui,
-                         const LilvNode** ui_type_node) 
-{
+lv2_adapter::ui_select(const char* native_ui_type,
+                       const LilvUI** ui_type_ui,
+                       const LilvNode** ui_type_node) {
     // native_ui_type is
     //   nullptr if LV2_UI__showInterface was a required feature for this plugin
     //   GTK3    if LV2_UI__showInterface is an optional feature or not supported
 
-
-
-    if(native_ui_type != nullptr) {
+    if (native_ui_type != nullptr) {
         // Try to find an embeddable UI
         LilvNode* native_type = lilv_new_uri(cache->lilvWorld, native_ui_type);
 
-        LILV_FOREACH (uis, u, uis) {
-            const LilvUI*   ui_type   = lilv_uis_get(uis, u);
-            const LilvNode* ui_node   = NULL;
-            const bool      supported = lilv_ui_is_supported(ui_type, suil_ui_supported, native_type, &ui_node);
+        LILV_FOREACH(uis, u, uis) {
+            const LilvUI* ui_type = lilv_uis_get(uis, u);
+            const LilvNode* ui_node = NULL;
+            const bool supported = lilv_ui_is_supported(ui_type, suil_ui_supported, native_type, &ui_node);
 
             if (supported) {
-                const char *str = lilv_node_as_uri(ui_node);
+                const char* str = lilv_node_as_uri(ui_node);
                 lilv_node_free(native_type);
 
                 *ui_type_node = ui_node;
@@ -341,10 +291,10 @@ lv2_adapter::ui_select(const char *native_ui_type,
         lilv_node_free(native_type);
         return false;
 
-    } else  {
+    } else {
         // Try to find a UI with ui:showInterface
-        LILV_FOREACH (uis, u, uis) {
-            const LilvUI*   ui      = lilv_uis_get(uis, u);
+        LILV_FOREACH(uis, u, uis) {
+            const LilvUI* ui = lilv_uis_get(uis, u);
             const LilvNode* ui_node = lilv_ui_get_uri(ui);
 
             lilv_world_load_resource(cache->lilvWorld, ui_node);
@@ -367,17 +317,12 @@ lv2_adapter::ui_select(const char *native_ui_type,
     return false;
 }
 
-
-
-void
-write_events_from_ui(void* const adapter_handle,
-                     uint32_t    port_index,
-                     uint32_t    buffer_size,
-                     uint32_t    protocol,
-                     const void* buffer) 
-{
-
-    lv2_adapter* const adapter = (lv2_adapter *) adapter_handle;
+void write_events_from_ui(void* const adapter_handle,
+                          uint32_t port_index,
+                          uint32_t buffer_size,
+                          uint32_t protocol,
+                          const void* buffer) {
+    lv2_adapter* const adapter = (lv2_adapter*)adapter_handle;
 
     if (protocol != 0 && protocol != adapter->cache->urids.atom_eventTransfer) {
         fprintf(stderr, "UI write with unsupported protocol %u (%s)\n", protocol, unmap_uri(&adapter->cache, protocol));
@@ -391,39 +336,33 @@ write_events_from_ui(void* const adapter_handle,
 
     char buf[sizeof(ControlChange) + buffer_size];
     ControlChange* ev = (ControlChange*)buf;
-    ev->index    = port_index;
+    ev->index = port_index;
     ev->protocol = protocol;
-    ev->size     = buffer_size;
+    ev->size = buffer_size;
     memcpy(ev->body, buffer, buffer_size);
     zix_ring_write(adapter->ui_events, buf, sizeof(buf));
 }
 
-
-
 uint32_t
 lv2_port_index(void* const adapter_handle,
-               const char* symbol) 
-{
-    lv2_adapter* const adapter = (lv2_adapter *) adapter_handle;
+               const char* symbol) {
+    lv2_adapter* const adapter = (lv2_adapter*)adapter_handle;
 
-    for(auto& port: adapter->info->ports)
-        if(strncmp(port->symbol.c_str(), symbol, port->symbol.size()) == 0)
+    for (auto& port : adapter->info->ports)
+        if (strncmp(port->symbol.c_str(), symbol, port->symbol.size()) == 0)
             return port->index;
 
     return LV2UI_INVALID_PORT_INDEX;
 }
 
-
-
 const void*
 get_port_value(const char* port_symbol,
-               void*       user_data,
-               uint32_t*   size,
-               uint32_t*   type) 
-{
-//    printf("PluginAdapter::get_port_value\n");
+               void* user_data,
+               uint32_t* size,
+               uint32_t* type) {
+    //    printf("PluginAdapter::get_port_value\n");
 
-    lv2_adapter* adapter = (lv2_adapter*) user_data;
+    lv2_adapter* adapter = (lv2_adapter*)user_data;
     param_port* port = adapter->get_param_port(port_symbol);
 
     if (port != nullptr) {
@@ -436,18 +375,14 @@ get_port_value(const char* port_symbol,
     return NULL;
 }
 
-
-
-void
-set_port_value(const char* port_symbol,
-               void*       user_data,
-               const void* value,
-               uint32_t    size,
-               uint32_t    type)
-{
+void set_port_value(const char* port_symbol,
+                    void* user_data,
+                    const void* value,
+                    uint32_t size,
+                    uint32_t type) {
     // if(verbose)
-//    printf("SET PORT VALUE %s\n", port_symbol);
-    lv2_adapter* adapter = (lv2_adapter*) user_data;
+    //    printf("SET PORT VALUE %s\n", port_symbol);
+    lv2_adapter* adapter = (lv2_adapter*)user_data;
     //			                                                   port->lilv_port);
     param_port* port = adapter->get_param_port(port_symbol);
 
@@ -473,14 +408,14 @@ set_port_value(const char* port_symbol,
 
     port->value = fvalue;
 
-//    if (adapter->suil_ui_instance) {
-//        // Update UI
-//        char buf[sizeof(ControlChange) + sizeof(fvalue)];
-//        ControlChange* ev = (ControlChange*)buf;
-//        ev->index    = port->index;
-//        ev->protocol = 0;
-//        ev->size     = sizeof(fvalue);
-//        *(float*)ev->body = fvalue;
-//        zix_ring_write(adapter->plugin_events, buf, sizeof(buf));
-//    }
+    //    if (adapter->suil_ui_instance) {
+    //        // Update UI
+    //        char buf[sizeof(ControlChange) + sizeof(fvalue)];
+    //        ControlChange* ev = (ControlChange*)buf;
+    //        ev->index    = port->index;
+    //        ev->protocol = 0;
+    //        ev->size     = sizeof(fvalue);
+    //        *(float*)ev->body = fvalue;
+    //        zix_ring_write(adapter->plugin_events, buf, sizeof(buf));
+    //    }
 }

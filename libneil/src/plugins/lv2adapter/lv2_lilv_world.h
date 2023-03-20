@@ -17,22 +17,22 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include <lv2/state/state.h>
+
 #include <mutex>
 
 #include "lilv/lilv.h"
-#include <lv2/state/state.h>
 #include "lv2/atom/forge.h"
-
 #include "lv2_defines.h"
 
 extern "C" {
-  #include "ext/symap.h"
+#include "ext/symap.h"
 }
 
 // -----------------------------------------------------------------------
 
-//struct PlaybackPosition {
-//    uint32_t sampleRate;
+// struct PlaybackPosition {
+//     uint32_t sampleRate;
 
 //    uint32_t workPos;
 
@@ -43,8 +43,8 @@ extern "C" {
 //    float beatsPerMinute;
 //    bool playing = true;
 
-//public:
-//    PlaybackPosition() {}
+// public:
+//     PlaybackPosition() {}
 
 //    PlaybackPosition& update(zzub::master_info *masterInfo, zzub::mixer *mixer) {
 //        if(workPos == mixer->work_position) {
@@ -68,7 +68,6 @@ extern "C" {
 //        return *this;
 //    }
 //};
-
 
 struct symap_urids {
     uint32_t atom_Float;
@@ -98,7 +97,7 @@ struct symap_urids {
     uint32_t ui_updateRate;
     uint32_t ui_scaleFactor;
     uint32_t ui_transientWindowId;
-        // u_int32_t patch_Set;
+    // u_int32_t patch_Set;
     // u_int32_t patch_property;
     // u_int32_t patch_value;
 };
@@ -150,9 +149,8 @@ struct symap_urids {
 // LilvNode *unit_symbol;
 // LilvNode *unit_unit;
 
-
 struct lv2_lilv_nodes {
-    lv2_lilv_nodes(LilvWorld* world);
+    lv2_lilv_nodes(LilvWorld *world);
     ~lv2_lilv_nodes();
 
     LilvNode *port;
@@ -160,7 +158,7 @@ struct lv2_lilv_nodes {
     LilvNode *designation;
     LilvNode *freeWheeling;
     LilvNode *reportsLatency;
-    LilvNode *port_input;       // Port Types
+    LilvNode *port_input;  // Port Types
     LilvNode *port_output;
     LilvNode *port_control;
     LilvNode *port_audio;
@@ -168,7 +166,7 @@ struct lv2_lilv_nodes {
     LilvNode *port_atom;
     LilvNode *port_event;
     LilvNode *port_midi;
-    LilvNode *pprop_optional;     // Port Properties
+    LilvNode *pprop_optional;  // Port Properties
     LilvNode *pprop_enumeration;
     LilvNode *pprop_integer;
     LilvNode *pprop_sampleRate;
@@ -183,7 +181,7 @@ struct lv2_lilv_nodes {
     LilvNode *pprop_notOnGUI;
     LilvNode *pprop_trigger;
     LilvNode *pprop_nonAutomable;
-    LilvNode *oldPropArtifacts;    //Deprecated in favour of the pprop variants but useful
+    LilvNode *oldPropArtifacts;  // Deprecated in favour of the pprop variants but useful
     LilvNode *oldPropContinuousCV;
     LilvNode *oldPropDiscreteCV;
     LilvNode *oldPropExpensive;
@@ -192,7 +190,7 @@ struct lv2_lilv_nodes {
     LilvNode *oldPropNotAutomatic;
     LilvNode *oldPropNotOnGUI;
     LilvNode *oldPropTrigger;
-    LilvNode *ui_gtk2;   // UI Types
+    LilvNode *ui_gtk2;  // UI Types
     LilvNode *ui_gtk3;
     LilvNode *ui_qt4;
     LilvNode *ui_qt5;
@@ -219,7 +217,6 @@ struct lv2_lilv_nodes {
     LilvNode *showInterface;
     LilvNode *transientWindow;
     LilvNode *rdf_type;
-
 };
 
 // -----------------------------------------------------------------------
@@ -228,7 +225,7 @@ struct lv2_lilv_nodes {
 struct lv2_lilv_world {
     LilvWorld *lilvWorld;
 
-    Symap* symap;
+    Symap *symap;
 
     LV2_State_Make_Path make_path;
 
@@ -238,7 +235,7 @@ struct lv2_lilv_world {
 
     LV2_URID_Unmap unmap;
 
-//    LV2_URI_Map_Feature uri_map;
+    //    LV2_URI_Map_Feature uri_map;
 
     symap_urids urids;
 
@@ -246,12 +243,9 @@ struct lv2_lilv_world {
 
     lv2_host_params hostParams;
 
-
     // Base Types
 
-
-//    PlaybackPosition playbackPosition{};
-
+    //    PlaybackPosition playbackPosition{};
 
     // -------------------------------------------------------------------
 
@@ -260,22 +254,19 @@ struct lv2_lilv_world {
     void init_suil();
     void init_x_threads();
 
-
     const LilvPlugins *get_all_plugins() {
         return lilv_world_get_all_plugins(lilvWorld);
     }
 
-    static lv2_lilv_world* get_instance() {
+    static lv2_lilv_world *get_instance() {
         static lv2_lilv_world instance{};
         return &instance;
     }
 
-
-private:
+   private:
     static std::mutex suil_mtx;
     static bool suil_is_init;
     static bool are_threads_init;
-
 
     lv2_lilv_world();
 };
