@@ -1,5 +1,6 @@
 
 
+import time
 import gi
 gi.require_version('PangoCairo', '1.0')
 
@@ -1189,15 +1190,18 @@ class SequencerView(Gtk.DrawingArea):
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
         pango_layout.set_font_description(Pango.FontDescription("sans 8"))
+        start = time.time()
 
         sequencer = player.get_current_sequencer()
         tracks = sequencer.get_track_list()
+        
         for track_index in range(self.starttrack, len(tracks)):
             track = tracks[track_index]
             plugin = track.get_plugin()
             plugin_info = self.plugin_info.get(plugin)
             # Draw the pattern boxes
             event_list = list(track.get_event_list())
+
             for (position, value), index in zip(event_list, range(len(event_list))):
                 pattern = None
                 if value >= 0x10:
@@ -1227,42 +1231,7 @@ class SequencerView(Gtk.DrawingArea):
                             gfxctx.set_source_rgb(*pattern_color)
                             gfxctx.rectangle(0, 0, gfx_w, gfx_h)
                             gfxctx.fill()
-                            if plugin.get_pluginloader().get_uri() == '@neil/lunar/controller/Control;1':
-                                ctx.set_foreground(0.25, 0.25, 0.25)
-                                for row in range(length - 1):
-                                    val1 = pattern.get_value(row, 1, 0, 0)
-                                    val2 = pattern.get_value(row, 1, 0, 0)
-                                    param = plugin.get_parameter(1, 0, 0)
-                                    scale = 1.0 / (param.get_value_max() - param.get_value_min())
-                                    if val1 != param.get_value_none() and val2 != param.get_value_none:
-                                        scaled1 = (val1 - param.get_value_min()) * scale
-                                        scaled2 = (val2 - param.get_value_min()) * scale
-                                        gfxctx.move_to(int(1 + gfx_w * (row / float(length))),
-                                                      int(1 + (gfx_h - 2) * (1.0 - scaled1)))
-                                        gfxctx.line_to(int(1 + gfx_w * ((row + 1) / float(length))),
-                                                      int(1 + (gfx_h - 2) * (1.0 - scaled2)))
-                                        gfxctx.stroke()
-                            else:
-                                ctx.set_source_rgb(0.25, 0.25, 0.25)
-                                for row in range(length):
-                                    groups = pattern.get_group_count()
-                                    for group in range(groups):
-                                        tracks_ = pattern.get_track_count(group)
-                                        for track in range(tracks_):
-                                            cols = pattern.get_column_count(group, track)
-                                            for col in range(cols):
-                                                val = pattern.get_value(row, group, track, col)
-                                                param = plugin.get_parameter(group, track, col)
-                                                if param.get_type() in [0, 2, 3]:
-                                                    if val != param.get_value_none():
-                                                        scale = 1.0 / (param.get_value_max() - param.get_value_min())
-                                                        scaled = (val - param.get_value_min()) * scale
-                                                        gfxctx.rectangle(int(1 + gfx_w * (row / float(length))),
-                                                                           int(1 + (gfx_h - 2) * (1.0 - scaled)), 2, 2)
-                                                        gfxctx.fill()
-                            # gfxctx.set_source_rgb(*colors['Border'])
-                            # gfxctx.rectangle(0, 0, gfx_w, gfx_h)
-                            # gfxctx.stroke()
+
                             pango_layout.set_markup("<small>%s</small>" % name)
                             px, py = pango_layout.get_pixel_size()
                             gfxctx.set_source_rgb(*colors['Text'])
@@ -1289,6 +1258,8 @@ class SequencerView(Gtk.DrawingArea):
                     ctx.set_line_width(1)
                 else:
                     print(("Weird pattern id value: ", value))
+
+                    
             # Draw the track name boxes.
             name = plugin.get_name()
             title = prepstr(name)
@@ -1417,16 +1388,13 @@ class SequencerView(Gtk.DrawingArea):
 
         player = com.get('neil.core.player')
         self.playpos = player.get_position()
-
         if not self.pango_ctx:
             self.pango_ctx = self.get_pango_context()
             self.pango_layout = Pango.Layout(self.pango_ctx)
             self.pango_layout.set_width(-1)
-
         ctx.set_source_rgb(*colors['Background'])
         ctx.rectangle(0, 0, width, height)
         ctx.fill()
-        
         self.draw_markers(ctx, self.pango_layout, colors)
         self.draw_tracks(ctx, self.pango_layout, colors)
         self.draw_loop_points(ctx, colors)
