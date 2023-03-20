@@ -27,8 +27,7 @@ import struct
 
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GdkPixbuf
-from gi.repository import GObject
+from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject
 
 import weakref
 import neil.com as com
@@ -1340,8 +1339,9 @@ class PropertyEventHandler(type):
         getattr(com.get('neil.core.eventbus'), eventname)(values[:])
 
 def refresh_gui():
-    while Gtk.events_pending():
-        Gtk.main_iteration_do(blocking=False)
+    main_context = GLib.MainContext.default()
+    while main_context.pending():
+        main_context.iteration(False)
 
 def synchronize_list(old_list, new_list, insert_entry_func=None, del_entry_func=None, swap_entry_func=None):
     """
