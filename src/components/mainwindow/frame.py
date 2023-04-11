@@ -44,7 +44,7 @@ import config
 import zzub
 from preferences import show_preferences
 
-from .utils import cmp_view
+from .cmp import cmp_view
 
 
 class FramePanel(Gtk.Notebook):
