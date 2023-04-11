@@ -335,14 +335,17 @@ class SequencerView(Gtk.DrawingArea):
         from neil.utils import get_new_pattern_name
         player = com.get('neil.core.player')
         machine, pattern_id, _ = self.get_pattern_at(self.track, self.row, includespecial=True)
-        if pattern_id is not None:
-            pattern_id -= 0x10
-            name = get_new_pattern_name(machine)
-            pattern = machine.get_pattern(pattern_id)
-            pattern.set_name(name)
-            machine.add_pattern(pattern)
-            self.insert_at_cursor(machine.get_pattern_count() + 0x10 - 1)
-            player.history_commit("clone pattern")
+        if pattern_id is None:
+            return
+
+        pattern_id -= 0x10
+        name = get_new_pattern_name(machine)
+        pattern = machine.get_pattern(pattern_id)
+        pattern.set_name(name)
+        machine.add_pattern(pattern)
+        self.insert_at_cursor(machine.get_pattern_count() + 0x10 - 1)
+        player.history_commit("clone pattern")
+        self.update_list()
 
     def on_popup_merge(self, *args):
         player = com.get('neil.core.player')
@@ -356,6 +359,7 @@ class SequencerView(Gtk.DrawingArea):
         except TypeError:
             # There is no selection.
             return
+
         for t in seq.get_track_list()[start[0]:(end[0] + 1)]:
             patternsize = 0
             eventlist = []
@@ -394,6 +398,7 @@ class SequencerView(Gtk.DrawingArea):
         player.set_callback_state(True)
         eventbus = com.get('neil.core.eventbus')
         eventbus.document_loaded()
+        self.update_list()
 
     def on_popup_cut(self, *args):
         self.on_popup_copy(*args)
@@ -419,6 +424,7 @@ class SequencerView(Gtk.DrawingArea):
         player.set_callback_state(True)
         eventbus = com.get('neil.core.eventbus')
         eventbus.document_loaded()
+        self.update_list()
 
     def on_popup_delete(self, *args):
         player = com.get('neil.core.player')
@@ -441,6 +447,7 @@ class SequencerView(Gtk.DrawingArea):
         player.set_callback_state(True)
         eventbus = com.get('neil.core.eventbus')
         eventbus.document_loaded()
+        self.update_list()
 
     def on_popup_delete_track(self, *args):
         """
