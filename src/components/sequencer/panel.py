@@ -168,13 +168,13 @@ class SequencerPanel(Gtk.VBox):
         #framepanel.select_viewpanel(self)
 
     def handle_focus(self):
+        self.update_list()
         self.view.needfocus = True
 
     def update_all(self):
         """
         Updates everything to reflect changes in the sequencer.
         """
-        print("Update all")
         self.update_list()
         self.toolbar.update_all()
         for k, v in self.view.plugin_info.items():
@@ -189,7 +189,6 @@ class SequencerPanel(Gtk.VBox):
         """
         Updates the panel to reflect a sequence view change.
         """
-        print("update list")
         self.seqliststore.clear()
         self.seqliststore.append(['-', 'Mute'])
         self.seqliststore.append([',', 'Break'])
