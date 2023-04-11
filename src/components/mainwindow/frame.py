@@ -44,14 +44,8 @@ import config
 import zzub
 from preferences import show_preferences
 
+from .utils import cmp_view
 
-
-
-
-def cmp_view(a, b):
-    a_order = (hasattr(a, '__view__') and a.__view__.get('order',0)) or 0
-    b_order = (hasattr(b, '__view__') and b.__view__.get('order',0)) or 0
-    return a_order <= b_order
 
 class FramePanel(Gtk.Notebook):
     __neil__ = dict(
@@ -70,6 +64,7 @@ class FramePanel(Gtk.Notebook):
         com.get("neil.core.icons") # make sure theme icons are loaded
         defaultpanel = None
         self.pages = sorted(com.get_from_category('neil.viewpanel'), key=cmp_to_key(cmp_view))
+
         for index, panel in enumerate(self.pages):
             if not hasattr(panel, '__view__'):
                 print(("panel",panel,"misses attribute __view__"))
@@ -129,72 +124,6 @@ class Accelerators(Gtk.AccelGroup):
         return widget.add_accelerator(signal, self,  key,  modifier,
                                       Gtk.AccelFlags.VISIBLE)
 
-class ViewMenu(Menu):
-    __neil__ = dict(
-        id = 'neil.core.viewmenu',
-        singleton = True,
-        categories = [],
-    )
-
-    def on_check_item(self, menuitem, view):
-        if menuitem.get_active():
-            view.show_all()
-        else:
-            view.hide()
-
-    def on_activate_item(self, menuitem, view):
-        if 'neil.viewpanel' in view.__neil__.get('categories',[]):
-            framepanel = com.get('neil.core.framepanel')
-            framepanel.select_viewpanel(view)
-        else:
-            view.hide()
-
-    def on_activate(self, widget, item, view):
-        item.set_active(view.get_property('visible'))
-
-    def __init__(self):
-        Menu.__init__(self)
-        views = sorted(com.get_from_category('view'), key=cmp_to_key(cmp_view))
-        com.get("neil.core.icons") # make sure theme icons are loaded
-        accel = com.get('neil.core.accelerators')
-        for view in views:
-            if not hasattr(view, '__view__'):
-                print(("view",view,"misses attribute __view__"))
-                continue
-            options = view.__view__
-            label = options['label']
-            stockid = options.get('stockid', None)
-            shortcut = options.get('shortcut', None)
-            if options.get('toggle'):
-                item = self.add_check_item(label, False, self.on_check_item, view)
-                self.connect('show', self.on_activate, item, view)
-            elif stockid:
-                item = self.add_image_item(label, new_theme_image(stockid,
-                                                                  Gtk.IconSize.MENU),
-                                           self.on_activate_item, view)
-            else:
-                item = self.add_item(label, self.on_activate_item)
-            if shortcut:
-                accel.add_accelerator(shortcut, item)
-        if 0:
-            # TODO: themes
-            neil_frame =  com.get('neil.core.accelerators')
-            # main_frame = get_root_window()
-            tempsubmenu = Gtk.Menu()
-            defaultitem = Gtk.RadioMenuItem(label="Default")
-            tempsubmenu.append(defaultitem)
-            self.thememenu = tempsubmenu
-            cfg = config.get_config()
-            if not cfg.get_active_theme():
-                defaultitem.set_active(True)
-            defaultitem.connect('toggled', neil_frame.on_select_theme, None)
-            for name in sorted(cfg.get_theme_names()):
-                item = Gtk.RadioMenuItem(label=prepstr(name), group=defaultitem)
-                if name == cfg.get_active_theme():
-                    item.set_active(True)
-                item.connect('toggled', neil_frame.on_select_theme, name)
-                tempsubmenu.append(item)
-            self.append(make_submenu_item(tempsubmenu, "Themes"))
 
 #~class NeilToolbar(Gtk.Toolbar):
 #~ __neil__ = dict(
@@ -279,29 +208,35 @@ class NeilFrame(Gtk.Window):
         self.set_geometry_hints(self, geometry, hints)
         self.set_position(Gtk.WindowPosition.CENTER)
 
-        self.open_dlg = Gtk.FileChooserDialog(title="Open",
-                                              parent=self,
-                                              action=Gtk.FileChooserAction.OPEN,
-                                              buttons=(
-                                                  Gtk.STOCK_CANCEL,
-                                                  Gtk.ResponseType.CANCEL,
-                                                  Gtk.STOCK_OPEN,
-                                                  Gtk.ResponseType.OK
-                                              )
-                                            )
+        self.open_dlg = Gtk.FileChooserDialog(
+            title="Open",
+            parent=self,
+            action=Gtk.FileChooserAction.OPEN,
+            buttons=(
+                Gtk.STOCK_CANCEL,
+                Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_OPEN,
+                Gtk.ResponseType.OK
+            )
+        )
+
         self.open_dlg.add_shortcut_folder(filepath('demosongs'))
+
         for filefilter in self.OPEN_SONG_FILTER:
             self.open_dlg.add_filter(filefilter)
-        self.save_dlg = Gtk.FileChooserDialog(title="Save",
-                                              parent=self,
-                                              action=Gtk.FileChooserAction.SAVE,
-                                              buttons=(
-                                                  Gtk.STOCK_CANCEL,
-                                                  Gtk.ResponseType.CANCEL,
-                                                  Gtk.STOCK_SAVE,
-                                                  Gtk.ResponseType.OK
-                                              )
-                                            )
+
+        self.save_dlg = Gtk.FileChooserDialog(
+            title="Save",
+            parent=self,
+            action=Gtk.FileChooserAction.SAVE,
+            buttons=(
+                Gtk.STOCK_CANCEL,
+                Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_SAVE,
+                Gtk.ResponseType.OK
+            )
+        )
+
         self.save_dlg.set_do_overwrite_confirmation(True)
         for filefilter in self.SAVE_SONG_FILTER:
             self.save_dlg.add_filter(filefilter)
@@ -335,6 +270,7 @@ class NeilFrame(Gtk.Window):
         toolitems = com.get_from_category('menuitem.tool', self.toolsmenu)
         if not toolitems:
             item.destroy()
+            
         tempmenu = Gtk.Menu()
         tempmenu.append(make_stock_menu_item(Gtk.STOCK_HELP, self.on_help_contents))
         # Menu item that launches a pdf reader with a document explaining Neil shortcuts
@@ -516,8 +452,8 @@ class NeilFrame(Gtk.Window):
 
     def page_select(self, notebook, page, page_num, *args):
         new_page = notebook.get_nth_page(page_num)
-        #print new_page
-        new_page.handle_focus()
+        if hasattr(new_page, 'page_selected'):
+            new_page.page_selected()
 
     def update_filemenu(self, *args):
         """
@@ -986,16 +922,3 @@ class NeilFrame(Gtk.Window):
 
 
 
-__neil__ = dict(
-    classes = [
-        FramePanel,
-        ViewMenu,
-        Accelerators,
-        NeilFrame,
-        #NeilStatusbar,
-        #~NeilToolbar,
-    ],
-)
-
-if __name__ == '__main__':
-    pass
