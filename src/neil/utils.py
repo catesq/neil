@@ -46,7 +46,9 @@ class PluginType(Enum):
     Streamer = 5
     Other = 6
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+# used in the router view
 def rename_plugin(player, plugin):
     num = 1
     name = plugin.get_name() + f"_{num}"
@@ -97,7 +99,11 @@ def clone_plugin_patterns(plugin, new_plugin):
         new_plugin.add_pattern(new_pattern)
 
 
-# the raw window pointer is used by the gui of the lv2 adapter
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+# the window pointer is used by the lv2 and vst adapters, we open a gtk window and pass the pointer to the plugin 
+
 # https://stackoverflow.com/questions/23021327/how-i-can-get-drawingarea-window-handle-in-gtk3/27236258#27236258
 # http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=examples/gtkvlc.py;hb=HEAD
 def get_window_pointer(window):
@@ -108,6 +114,8 @@ def get_window_pointer(window):
     ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
     return ctypes.pythonapi.PyCapsule_GetPointer(window.__gpointer__, None)
 
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def is_debug():
     if os.environ.get('NEIL_DEBUG'):
