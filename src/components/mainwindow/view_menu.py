@@ -15,7 +15,7 @@ import config
 from neil.utils import \
     Menu, new_theme_image, make_submenu_item
 
-from .utils import cmp_view
+from .cmp import cmp_view
 
 
 class ViewMenu(Menu):
