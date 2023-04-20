@@ -15,8 +15,10 @@ extern "C" {
     typedef Steinberg::IPluginFactory* (PLUGIN_API *GetFactoryProc) ();
 }
 
-struct Vst3Library {
-    Vst3Library(boost::filesystem::path lib_path) : lib_path(lib_path.string()) {}
+
+
+struct vst3_library_loader {
+    vst3_library_loader(boost::filesystem::path lib_path) : lib_path(lib_path.string()) {}
 
     bool load() {
         void* dl_handle = dlopen(lib_path.c_str(), RTLD_LAZY);
@@ -49,7 +51,7 @@ struct Vst3Library {
         return factory;
     }
 
-    ~Vst3Library() {
+    ~vst3_library_loader() {
         factory = VST3::Hosting::PluginFactory{nullptr};
 
         if(lib_handle.use_count() > 1)
@@ -73,7 +75,7 @@ private:
 
 
 void add_vst3(Vst3Iterator& self, boost::filesystem::path path) {
-    Vst3Library lib{path};
+    vst3_library_loader lib{path};
 
     if(!lib.load())
         return;
