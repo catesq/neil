@@ -772,31 +772,48 @@ struct info {
 
 #pragma pack(1)
 
-#define NOTE_VOLUME_FUNCTIONS(TRACK_TYPE) bool is_volume_on() { return volume != zzub_volume_value_none; }                                    \
-    uint8_t get_note() { return note; }                                                                 \
-    bool get_volume() { return volume != zzub_volume_value_none ? volume : zzub_volume_value_default; } \
-    bool is_note_on() { return note != zzub_note_value_none && note != zzub_note_value_off; }           \
-    int note_change_from(TRACK_TYPE &prev) {                                                            \
-        if (note == zzub::note_value_none) {                                                            \
-            if (is_volume_on() && volume != prev.volume) {                                              \
-                return zzub_note_change_volume;                                                         \
-            } else {                                                                                    \
-                return zzub_note_change_none;                                                           \
-            }                                                                                           \
-        }                                                                                               \
-        if (note == zzub::note_value_off) {                                                             \
-            return zzub_note_change_noteoff;                                                            \
-        } else {                                                                                        \
-            return zzub_note_change_noteon;                                                             \
-        }                                                                                               \
-    }\
+// #define NOTE_VOLUME_FUNCTIONS(TRACK_TYPE) bool is_volume_on() { return volume != zzub_volume_value_none; } \
+//     uint8_t get_note() { return note; }                                                                    \
+//     bool get_volume() { return volume != zzub_volume_value_none ? volume : zzub_volume_value_default; }    \
+//     bool is_note_on() { return note != zzub_note_value_none && note != zzub_note_value_off; }              \
+//     int note_change_from(TRACK_TYPE &prev) {                                                               \
+//         if (note == zzub::note_value_none) {                                                               \
+//             if (is_volume_on() && volume != prev.volume) {                                                 \
+//                 return zzub_note_change_volume;                                                            \
+//             } else {                                                                                       \
+//                 return zzub_note_change_none;                                                              \
+//             }                                                                                              \
+//         }                                                                                                  \
+//         if (note == zzub::note_value_off) {                                                                \
+//             return zzub_note_change_noteoff;                                                               \
+//         } else {                                                                                           \
+//             return zzub_note_change_noteon;                                                                \
+//         }                                                                                                  \
+//     }
 
-struct note_track {
-    uint8_t note = zzub_note_value_none;
-    uint8_t volume = zzub_volume_value_none;
+// struct note_track {
+//     uint8_t note = zzub_note_value_none;
+//     uint8_t volume = zzub_volume_value_none;
 
-    NOTE_VOLUME_FUNCTIONS(note_track);
+//     NOTE_VOLUME_FUNCTIONS(note_track);
+// };
+
+
+enum midi_note_len_types {
+    midi_note_len_samples = 1,
+    midi_note_len_seconds = 2,
+    midi_note_len_milliseconds = 3,
+    midi_note_len_ticks = 4,
+    midi_note_len_beats = 5,
+    
 };
+
+
+struct midi_note_len {
+    uint8_t type;
+    uint16_t length;
+};
+
 
 // the track values for a midi instrument
 struct midi_note_track {
@@ -805,10 +822,56 @@ struct midi_note_track {
 
     uint8_t command_1 = zzub_midi_command_value_none;
     uint16_t data_1 = zzub_midi_data_value_none;
+
     uint8_t command_2 = zzub_midi_command_value_none;
     uint16_t data_2 = zzub_midi_data_value_none;
 
-    NOTE_VOLUME_FUNCTIONS(midi_note_track);
+    uint8_t get_note() { 
+        return note; 
+    }
+
+    bool get_volume() { 
+        return volume != zzub_volume_value_none ? volume : zzub_volume_value_default; 
+    }
+
+    bool is_note_on() { 
+        return note != zzub_note_value_none && note != zzub_note_value_off; 
+    }
+
+    void set_note_off() {
+        note = zzub_note_value_off;
+    }
+
+    bool is_volume_on() { 
+        return volume != zzub_volume_value_none; 
+    }
+
+    int note_change_from(midi_note_track &prev) {                                                               
+        if (note == zzub::note_value_none) {                                                               
+            if (is_volume_on() && volume != prev.volume) {                                                 
+                return zzub_note_change_volume;                                                            
+            } else {                                                                                       
+                return zzub_note_change_none;                                                              
+            }                                                                                              
+        }                                                                                                  
+
+        if (note == zzub::note_value_off) {                                                                
+            return zzub_note_change_noteoff;                                                               
+        } else {                                                                                           
+            return zzub_note_change_noteon;                                                                
+        }                                                                                                  
+    }
+
+    bool has_note_len() {
+        return false;
+    }
+
+    midi_note_len get_note_len() {
+        if(command_1 & midi_note_len_flag && data_1 != zzub_midi_data_value_none) {
+            return midi_note_len {command_1 & 0x0f, data_1};
+        }
+        return midi_note_len();
+    }
 };
 
 #pragma pack()
@@ -826,6 +889,9 @@ struct midi_plugin_interface {
     // the vst or lv2 plugin adapter using this interface will return a pointer to
     //   a midi_note_track struct in the zzub_plugin::track_values for that adapter
     virtual midi_note_track *get_track_data_pointer(uint16_t track_num) const = 0;
+
+    // convert a note length into a number of samples. 0 means infinite or auto note off 
+    // virtual uint64_t get_note_length(midi_note_len &note_len) const = 0;
 };
 
 namespace {
@@ -839,11 +905,13 @@ union midi_cmd_data {
 };
 
 // the track_manager has a list of active notes and when they started and should end
-struct midi_note {
+struct active_note {
     uint16_t note;
     uint64_t start_at;
-    uint64_t end_at;
+    uint64_t length;
+    midi_note_track* note_track;
 };
+
 }  // namespace
 
 // used by the lv2 and vst plugins to process midi notes, volume, note length and midi data/commands
@@ -870,7 +938,7 @@ struct midi_track_manager {
 
     bool keep_notes_on = false;
 
-    std::vector<midi_note> active_notes{};
+    std::vector<active_note> active_notes{};
 
    public:
     midi_track_manager(midi_plugin_interface &plugin, uint16_t max_num_tracks, bool keep_notes_on = false)
@@ -878,6 +946,7 @@ struct midi_track_manager {
           curr_tracks(),
           max_num_tracks(max_num_tracks),
           prev_tracks(max_num_tracks),
+          active_notes(max_num_tracks),
           sample_rate(48000),
           keep_notes_on(keep_notes_on) {
     }
@@ -891,6 +960,18 @@ struct midi_track_manager {
 
     void set_track_count(int num) {
         num_tracks = num;
+        if(num_tracks > max_num_tracks) {
+            max_num_tracks = num_tracks;
+
+            prev_tracks.resize(num_tracks);
+            active_notes.resize(num_tracks);
+            curr_tracks.resize(num_tracks);
+
+            for (int i = 0; i < num_tracks; i++) {
+                prev_tracks.resize(num_tracks);
+                curr_tracks[i] = plugin.get_track_data_pointer(i);
+            }
+        }
     }
 
     // called in the process_events method of a plugin
@@ -914,15 +995,24 @@ struct midi_track_manager {
                     if (curr->is_volume_on())
                         prev->volume = curr->volume;
 
-                    if (prev->is_note_on() && !keep_notes_on)
-                        plugin.add_note_off(prev->note);
+                    if (prev->is_note_on() && !keep_notes_on) {
+                        // iterate over active notes and remove matching notes with zero length
+                        for (auto it = active_notes.begin(); it != active_notes.end(); ++it) {
+                            if (it->note == prev->note && it->length == 0) {
+                                plugin.add_note_off(prev->note);
+                                active_notes.erase(it);
+                                break;
+                            }
+                        }
+                    }
 
                     prev->note = curr->note;
 
-                    if (prev->is_volume_on())
-                        plugin.add_note_on(curr->note, prev->volume);
-                    else
-                        plugin.add_note_on(curr->note, zzub_volume_value_default);
+                    uint8_t volume = prev->is_volume_on() ? prev->volume : zzub_volume_value_default;
+                    uint64_t length = curr->has_note_length() ? this->get_note_length(curr) : 0;
+
+                    plugin.add_note_on(curr->note, volume);
+                    active_notes.emplace_back(curr->note, sample_count, length, &prev_tracks[track_num]);
 
                     break;
 
@@ -940,6 +1030,18 @@ struct midi_track_manager {
     // will handle the note length messages
     void process_samples(uint16_t numsamples) {
         sample_count += numsamples;
+        // iterate over  reverse, remove any note which have ended
+        for (auto it = active_notes.begin(); it != active_notes.end(); ++it) {
+            auto &note = *it;
+            if (note.length > 0 && sample_count >= note.start_at + note.length) {
+                if (note.note_track->is_note_on()) {
+                    plugin.add_note_off(note.note_track->note);
+                    note.note_track->set_note_off();
+                }
+
+                active_notes.erase(it);
+            }
+        }
     }
 
     void init(uint32_t rate) {
@@ -966,17 +1068,53 @@ struct midi_track_manager {
 
     // called in the a zzub::info constructor - add the zzub tracks for a plugin to handle midi info
     static void add_midi_track_info(zzub::info *info) {
-        info->add_track_parameter().set_note();
+        info->add_track_parameter()
+             .set_note();
 
-        info->add_track_parameter().set_byte().set_name("Track volume").set_description("Volume (00-7f)").set_value_min(zzub_volume_value_min).set_value_max(zzub_volume_value_max).set_value_none(zzub_volume_value_none).set_value_default(zzub_volume_value_default);
+        info->add_track_parameter()
+             .set_byte()
+             .set_name("Track volume")
+             .set_description("Volume (00-7f)")
+             .set_value_min(zzub_volume_value_min)
+             .set_value_max(zzub_volume_value_max)
+             .set_value_none(zzub_volume_value_none)
+             .set_value_default(zzub_volume_value_default);
 
-        info->add_track_parameter().set_byte().set_name("Midi command 1").set_description("Command 1").set_value_min(zzub_midi_command_value_min).set_value_max(zzub_midi_command_value_max).set_value_none(zzub_midi_command_value_none).set_value_default(zzub_midi_command_value_none);
+        info->add_track_parameter()
+              .set_byte()
+              .set_name("Midi command 1")
+              .set_description("Command 1")
+              .set_value_min(zzub_midi_command_value_min)
+              .set_value_max(zzub_midi_command_value_max)
+              .set_value_none(zzub_midi_command_value_none)
+              .set_value_default(zzub_midi_command_value_none);
 
-        info->add_track_parameter().set_word().set_name("Data 1").set_description("Data 1").set_value_min(zzub_midi_data_value_min).set_value_max(zzub_midi_data_value_max).set_value_none(zzub_midi_data_value_none).set_value_default(zzub_midi_data_value_none);
+        info->add_track_parameter()
+              .set_word()
+              .set_name("Data 1")
+              .set_description("Data 1")
+              .set_value_min(zzub_midi_data_value_min)
+              .set_value_max(zzub_midi_data_value_max)
+              .set_value_none(zzub_midi_data_value_none)
+              .set_value_default(zzub_midi_data_value_none);
 
-        info->add_track_parameter().set_byte().set_name("Midi command 2").set_description("Command 2").set_value_min(zzub_midi_command_value_min).set_value_max(zzub_midi_command_value_max).set_value_none(zzub_midi_command_value_none).set_value_default(zzub_midi_command_value_none);
+        info->add_track_parameter()
+              .set_byte()
+              .set_name("Midi command 2")
+              .set_description("Command 2")
+              .set_value_min(zzub_midi_command_value_min)
+              .set_value_max(zzub_midi_command_value_max)
+              .set_value_none(zzub_midi_command_value_none)
+              .set_value_default(zzub_midi_command_value_none);
 
-        info->add_track_parameter().set_word().set_name("Data 2").set_description("Data 2").set_value_min(zzub_midi_data_value_min).set_value_max(zzub_midi_data_value_max).set_value_none(zzub_midi_data_value_none).set_value_default(zzub_midi_data_value_none);
+        info->add_track_parameter()
+              .set_word()
+              .set_name("Data 2")
+              .set_description("Data 2")
+              .set_value_min(zzub_midi_data_value_min)
+              .set_value_max(zzub_midi_data_value_max)
+              .set_value_none(zzub_midi_data_value_none)
+              .set_value_default(zzub_midi_data_value_none);
     }
 };
 
