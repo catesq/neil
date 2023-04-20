@@ -65,7 +65,7 @@ class HDRecorderDialog(Gtk.Dialog):
         Gtk.Dialog.__init__(self, title="Hard Disk Recorder", flags=0)
         self.connect('delete-event', self.hide_popup_dialog)
         #self.add_button(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE)
-        self.set_size_request(500,-1)
+        self.set_size_request(600,-1)
 
         self.set_resizable(True)
         btnsaveas = Gtk.Button.new_with_mnemonic("_Save As")
@@ -146,7 +146,10 @@ class HDRecorderDialog(Gtk.Dialog):
 
     def hide_popup_dialog(self, widget, evt):
         print("hide popup dialog hd recorder", evt)
+        self.hide()
 #        pass
+
+        return True
 
     def on_timer(self):
         """
@@ -199,9 +202,11 @@ class HDRecorderDialog(Gtk.Dialog):
         recorder = player.get_stream_recorder()
         recorder.set_parameter_value_direct(zzub.zzub_parameter_group_global, 0, 1, widget.get_active(), False)
 
+
 __all__ = [
     'HDRecorderDialog',
 ]
+
 
 __neil__ = dict(
     classes = [
