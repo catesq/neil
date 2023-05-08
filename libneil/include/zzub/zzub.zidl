@@ -255,35 +255,52 @@ namespace zzub:
 		set noteon  = 2
 		set volume  = 3
 
-	enum MidiCommandValue:
+	enum NoteLen:
+		set none    = 0
+		set default = 256  
+		set min     = 1        
+		set max     = 65535     
+
+	enum NoteUnit:
+		set none    = 255
+		set min     = 0 
+		set max     = 4
+		set default = 0
+		set beats_256ths = 0 
+		set beats        = 1
+		set secs_256ths  = 2 
+		set secs         = 3
+		set samps        = 4
+
+	enum MidiCommand:
 		set none    = 0
 		set default = 0    
 		set min     = 1    
 		set max     = 255  
 		set length  = 1     # the midi command/data thing doubles up as note length message with a command of 0x01 
 
-	enum MidiDataValue:
+	enum MidiData:
 		set none    = 65535
-		set default = 65535 # 0x40
-		set min     = 0    # 0x00
-		set max     = 128  # 0x80
+		set default = 65535  # 0x40
+		set min     = 0      # 0x00
+		set max     = 128    # 0x80
 
 	enum SwitchValue:
 		# predefined values for switches
-		set none	= 255
-		set off	= 0
-		set on	= 1
+		set none = 255
+		set off  = 0
+		set on   = 1
 
 	enum WavetableIndexValue:
 		# predefined values for wavetable indices
-		set none	= 0
-		set min	= 1
-		set max	= 200
+		set none = 0
+		set min	 = 1
+		set max	 = 200
 
 	enum ParameterFlag:
 		# parameter flags
 		set wavetable_index	= bit 0
-		set state	= bit 1
+		set state	        = bit 1
 		set event_on_edit	= bit 2
 
 	enum PluginFlag:

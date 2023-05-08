@@ -40,23 +40,29 @@
 #define VSTADAPTER(effect) ((VstAdapter*)effect->resvd1)
 // #endif
 
+
+extern "C" {
+    void on_window_destroy(GtkWidget* widget, gpointer data) {
+        static_cast<vst_adapter*>(data)->ui_destroy();
+    }
+}
+
+
 /// TODO proper set/get parameter handling and opcodes: 42,43 & 44 used by oxefm
 VstIntPtr
-    VSTCALLBACK
-    hostCallback(AEffect* effect,
-                 VstInt32 opcode,
-                 VstInt32 index,
-                 VstIntPtr value,
-                 void* ptr,
-                 float opt) {
-    // the first call to this function, for opcode audioMasterVersion, is during vst startup
-    // and vst_effect->resvd1 is undefined
-    if (opcode == audioMasterVersion)
+VSTCALLBACK hostCallback(
+    AEffect* effect,
+    VstInt32 opcode,
+    VstInt32 index,
+    VstIntPtr value,
+    void* ptr,
+    float opt
+) {
+
+    // the first use to hostCollback is during vst startup so effect->resvd1 is undefined
+    if (opcode == audioMasterVersion) {
         return 2400;
-
-    assert(effect != nullptr);
-
-    if (!effect->resvd1) {
+    } else if (!effect || !effect->resvd1) {
         return 0;
     }
 
@@ -112,17 +118,9 @@ VstIntPtr
     return 0;
 }
 
-extern "C" {
 
-void on_window_destroy(GtkWidget* widget, gpointer data) {
-    static_cast<vst_adapter*>(data)->ui_destroy();
-}
-
-}
-
-vst_adapter::vst_adapter(const vst_zzub_info* info)
-    : info(info),
-      midi_track_manager(*this, MAX_TRACKS, true) {
+vst_adapter::vst_adapter(const vst_zzub_info* info) 
+  : info(info), midi_track_manager(*this, MAX_TRACKS) {
 
     globalvals = (uint16_t*)malloc(sizeof(uint16_t) * info->get_param_count());
     attributes = (int*)&attr_values;
@@ -366,7 +364,7 @@ vst_adapter::add_note_on(uint8_t note, uint8_t volume) {
 
 void 
 vst_adapter::add_note_off(uint8_t note) {
-    printf("vst_adapter add_note_off %d at time \n", note, sample_pos);
+    printf("vst_adapter add_note_off %d at time  %d\n", note, sample_pos);
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.insert(midi_events.begin(), midi_note_off(note));
@@ -578,8 +576,24 @@ load_preset_end_false:
 
 const char*
 vst_adapter::describe_value(int param, int value) {
-    static char cstr[32];
-    auto str = std::to_string(value);
-    std::strncpy(cstr, str.c_str(), 32);
-    return cstr;
+    printf("describe_value: %d %d\n", param, value);
+
+    static char description_chars[32];
+
+    if (param < 0) {
+        return nullptr;
+    }
+
+    std::string description_str;
+    
+    if (param < info->get_param_count()) {
+        description_str = std::to_string(value);
+    } else {
+        int track_param = param - info->get_param_count();
+        description_str = midi_track_manager.describe_value(track_param / 6, track_param % 6, value);
+    }
+
+    std::strncpy(description_chars, description_str.c_str(), 32);
+
+    return description_chars;
 }
