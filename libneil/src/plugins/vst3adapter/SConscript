@@ -1,23 +1,102 @@
 import sys
 Import('pluginenv', 'build_plugin')
 
+
 cmakefile = pluginenv.FindFile('CMakeLists.txt', 'vst3sdk')
-lib_subdir = 'vst3sdk/neil_build/lib/'
 
-vst_libs=['base', 'pluginterfaces', 'sdk', 'sdk_common', 'sdk_hosting', 'vstgui', 'vstgui_standalone', 'vstgui_support', 'vstgui_uidescription']
-vst_hosting_sources = [
-    'vst3sdk/public.sdk/source/vst/hosting/plugprovider.cpp',
-    'vst3sdk/public.sdk/source/common/threadchecker_linux.cpp',
-]
-#'vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp',
 
-print(cmakefile)
 if not cmakefile:
-    print("No vst sdk")
+    print("libneil/src/plugins/vst3adapter/vst3sdk/CMakeLists.txt not found")
     sys.exit()
 
 
 vst3_pluginenv = pluginenv.Clone()
-vst3_pluginenv.Append(CCFLAGS='-pthread `pkg-config gtk+-3.0 --cflags` -Ilibneil/src/libzzub -Ilibneil/src/utils/ -Ilibneil/src/plugins/vst3adapter/ -Ilibneil/src/plugins/vst3adapter/vst3sdk -Ilibneil/src/plugins/vst3adapter/pluginterfaces -Ilibneil/src/plugins/vst3adapter/public.sdk -Ilibneil/src/plugins/vst3adapter/base -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui')
-vst3_pluginenv.Append(LIBS=['boost_system', 'boost_filesystem', 'stdc++fs']+vst_libs, LIBPATH=lib_subdir)
-vst3_build = build_plugin(vst3_pluginenv, 'vst3adapter', ['Vst3Plugins.cpp', 'Vst3PluginInfo.cpp', 'Vst3Defines.cpp'] + vst_hosting_sources)
+
+
+vst_lib_subdir = 'vst3sdk/neil-build/lib/'
+
+
+vst_static_libs = [
+    'base', 
+    'pluginterfaces', 
+    'sdk', 
+    'sdk_common', 
+    'sdk_hosting', 
+    'vstgui', 
+    'vstgui_standalone', 
+    'vstgui_support', 
+    'vstgui_uidescription'
+]
+
+
+common_sdk_sources = [
+    "vst3sdk/public.sdk/source/vst/hosting/connectionproxy.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/eventlist.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/hostclasses.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/module.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/parameterchanges.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/pluginterfacesupport.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/plugprovider.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/processdata.cpp",
+    "vst3sdk/public.sdk/source/vst/utility/stringconvert.cpp",
+    "vst3sdk/public.sdk/source/vst/vstinitiids.cpp",
+]
+
+
+linux_sdk_sources = [
+    "vst3sdk/public.sdk/source/common/threadchecker_linux.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp",
+]
+
+
+windows_sdk_sources = [
+    "vst3sdk/public.sdk/source/vst/hosting/module_win32.cpp",
+]
+
+
+mac_sdk_sources = [
+    "vst3sdk/public.sdk/source/vst/hosting/module_mac.mm",
+]
+
+
+vst3_pluginenv.Append(
+    CCFLAGS='''
+    -pthread `pkg-config gtk+-3.0 --cflags` 
+    -Ilibneil/src/libzzub -Ilibneil/src/utils/ -Ilibneil/src/plugins/vst3adapter/ 
+    -Ilibneil/src/plugins/vst3adapter/vst3sdk -Ilibneil/src/plugins/vst3adapter/pluginterfaces 
+    -Ilibneil/src/plugins/vst3adapter/public.sdk -Ilibneil/src/plugins/vst3adapter/base 
+    -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui''',
+    LIBS=['boost_system', 'boost_filesystem', 'stdc++fs'] + vst_static_libs, 
+    LIBPATH=vst_lib_subdir,
+)
+
+
+adapter_sources = ['Collection.cpp', 'Info.cpp', 'Param.cpp', 'Defines.cpp']
+
+vst3_build = build_plugin(
+    vst3_pluginenv, 
+    'vst3adapter', 
+    adapter_sources + common_sdk_sources + linux_sdk_sources,
+)
+
+
+
+
+# [self@fedora neil.v2]$ echo "clang++ -o libneil/lib/zzub/libvst3adapter.so -Wl,--whole-archive -lbase -lpluginterfaces -lsdk     -Wl,--no-whole-archive,-rpath=/home/me/stuff/apps/neil/v3m/lib -shared libneil/src/plugins/vst3adapter/Collection.os libneil/src/plugins/vst3adapter/Info.os libneil/src/plugins/vst3adapter/Param.os libneil/src/plugins/vst3adapter/Defines.os libneil/src/plugins/vst3adapter/vst3sdk/public.sdk/source/vst/hosting/plugprovider.os libneil/src/plugins/vst3adapter/vst3sdk/public.sdk/source/common/threadchecker_linux.os -Llibneil/lib -Llibneil/src/plugins/vst3adapter/vst3sdk/neil-build/lib -lboost_system -lboost_filesystem -lstdc++fs  -lvstgui -lvstgui_standalone -lvstgui_support -lvstgui_uidescription -lsdk_hosting -lsdk_common"
+
+#'vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp',
+
+
+
+# vst3_pluginenv.Append(
+#     CCFLAGS='''
+#     -pthread `pkg-config gtk+-3.0 --cflags` 
+#     -Ilibneil/src/libzzub -Ilibneil/src/utils/ -Ilibneil/src/plugins/vst3adapter/ 
+#     -Ilibneil/src/plugins/vst3adapter/vst3sdk -Ilibneil/src/plugins/vst3adapter/pluginterfaces 
+#     -Ilibneil/src/plugins/vst3adapter/public.sdk -Ilibneil/src/plugins/vst3adapter/base 
+#     -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui''',
+#     LIBS=['boost_system', 'boost_filesystem', 'stdc++fs'] + vst_libs, 
+#     LIBPATH=lib_subdir,
+#     LINKFLAGS=['--whole-archive']
+# )
+

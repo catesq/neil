@@ -14,15 +14,29 @@
 #define PATH_SEPARATOR ":"
 #endif
 
+
+
+// T will be a subclass of zzub::info used as an adapter between lv2/vst plugins and zzub plugins 
+// eg Vst3Info from libneils/src/plugins/vst3adapter/Info.h
+
+// a PluginInfoLoader is used by the PluginInfoIterator
+
+template<typename T>
+struct PluginInfoLoader {
+    // tests a file/directory to see if it's a plugin (just using file ending for now)  
+    virtual bool is_plugin(boost::filesystem::path path) = 0;
+
+    // the get_plugin_infos finds all the plugins in files found by is_plugin
+    virtual std::vector<T*> get_plugin_infos(boost::filesystem::path path) = 0;
+};
+
+
 /**
  * @brief The PluginInfoIterator class
  *
- * Recursively iterate through some plugin directories, to find any files
- * with a filename extension equal to [".so" or ".dll" or ".vst" - depending on platform]
-
- * Matching filenames are passed to the maybe_add_plugin_info(info_iterator, path) callback
-
- * the callback function checks it's a valid plugin and calls info_iterator.add_info on any valid plugin(s)
+ * Iterate over all files in a list of directories, check if each file is a vst/lv2/lv2 plugin
+ * and build zzub::info a object for every plugin found 
+ * 
  */
 
 
@@ -44,57 +58,46 @@ struct PluginInfoIterator {
      *     // and factory->register_info(plugin_info); is the only use
      * }
      */
-    using ThisType = PluginInfoIterator<PluginInfoType>;
-    using AddInfo = std::function<void(ThisType& self, boost::filesystem::path)>;
-    using CanAdd = std::function<bool(boost::filesystem::path)>;
 
-    PluginInfoIterator(CanAdd can_add, AddInfo add_info, std::string paths, std::string separators=PATH_SEPARATOR) {
-        for(auto& dir: get_dirs((char*)paths.c_str(), separators.c_str()))
-            if(boost::filesystem::is_directory(dir))
-                for(auto& entry: boost::filesystem::recursive_directory_iterator(dir, boost::filesystem::symlink_option::recurse))
-                    if(can_add(entry.path()))
-                        add_info(*this, entry.path());
+    PluginInfoIterator(
+        PluginInfoLoader<PluginInfoType>& loader, 
+        std::string paths, 
+        std::string separators=PATH_SEPARATOR
+    ) : loader(loader), paths(paths), separators(separators) {
     }
 
-    typename std::vector<PluginInfoType*>::iterator begin() {
-        return plugin_infos.begin();
+
+    std::vector<PluginInfoType*> get_plugin_infos() {
+        std::vector<PluginInfoType*> plugin_infos {};
+
+        auto directory_names = get_directory_names((char*)paths.c_str(), separators.c_str());
+
+        for(auto& dir: directory_names) {
+            if(boost::filesystem::is_directory(dir)) {
+                auto dir_iter = boost::filesystem::recursive_directory_iterator(dir);
+                
+                for(auto& entry: dir_iter) {
+                    if(loader.is_plugin(entry.path())) { 
+                        for(auto& plugin_info: loader.get_plugin_infos(entry.path())) {
+                            plugin_infos.push_back(plugin_info);
+                        }
+                    }
+                }
+            }
+        }
+
+        return plugin_infos;
     }
 
-    typename std::vector<PluginInfoType*>::iterator end() {
-        return plugin_infos.end();
-    }
-
-    void add(PluginInfoType* info) {
-        plugin_infos.push_back(info);
-    }
 
 private:
+    PluginInfoLoader<PluginInfoType>& loader; 
+    std::string paths;
+    std::string separators=PATH_SEPARATOR;
+    
 
-    void maybe_add(const boost::filesystem::path& path, CanAdd can_add) {
-        if(already_iterated_dir(path))
-            return;
-
-        auto add_plugin_info = can_add(*this, path);
-
-        if(!add_plugin_info)
-            return;
-
-        add_plugin_info(*this, path);
-    }
-
-
-    bool already_iterated_dir(const boost::filesystem::path& path) {
-        auto dir = boost::filesystem::canonical(path.parent_path());
-        for(auto& iterated_file: already_done)
-            if(dir.string().find(iterated_file) != std::string::npos)
-                return true;
-
-        return false;
-    }
-
-    std::vector<std::string> already_done;
-
-    std::vector<std::string> get_dirs(char* path_str, const char* separators) {
+    // split a text separated by ';' and maybe other charecters into a vector of directory names
+    std::vector<std::string> get_directory_names(char* path_str, const char* separators) {
         std::vector<std::string> dirs;
 
         char* path_str_curr_p = NULL;
@@ -110,5 +113,4 @@ private:
         return dirs;
     }
 
-    std::vector<PluginInfoType*> plugin_infos;
 };

@@ -1,4 +1,4 @@
-#include "Vst3Defines.h"
+#include "Defines.h"
 
 extern "C" {
 //    VstIntPtr VSTCALLBACK dummyHostCallback(AEffect *effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt) {
