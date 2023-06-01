@@ -992,14 +992,20 @@ def padded_partition(iterable, part_len, pad_val=None):
     itr = chain(iter(iterable), padding)
     return partition(itr, part_len)
 
-
 # PLUGIN_FLAGS_MASK = zzub.zzub_plugin_flag_is_root|zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output|zzub.zzub_plugin_flag_has_event_output|zzub.zzub_plugin_flag_has_cv_input|zzub.zzub_plugin_flag_has_cv_output
 # ROOT_PLUGIN_FLAGS = zzub.zzub_plugin_flag_is_root|zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output
 # GENERATOR_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_audio_output
 # EFFECT_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_audio_input|zzub.zzub_plugin_flag_has_audio_output
 # CONTROLLER_PLUGIN_FLAGS = zzub.zzub_plugin_flag_has_event_output
 
-adapters = {"lv2adapter": "lv2", "ladspadapter": "ladspa", "dssidapter": "dssi", "vstadapter": "vst2"}
+adapters = {
+    "lv2adapter": "lv2", 
+    "ladspadapter": "ladspa", 
+    "dssidapter": "dssi", 
+    "vstadapter": "vst2",
+    "vst3adapter": "vst3",
+}
+
 def get_adapter_name(pluginloader):
     # plugins using adapter plugins have a name made of:
     #   the 10 char prefix "@zzub.org/"

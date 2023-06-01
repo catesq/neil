@@ -35,7 +35,6 @@ import neil.pathconfig as pathconfig
 
 from neil.utils import (camelcase_to_unixstyle, etcpath, filenameify, filepath, iconpath, sharedpath)
 
-
 CONFIG_OPTIONS = dict(
     # insert all sections at this level, in the format
     #
@@ -175,6 +174,12 @@ CONFIG_OPTIONS = dict(
             default='false',
             vtype=bool,
             doc="Show VST 2 plugins."
+        ),
+        ShowVst3=dict(
+            func='pluginlistbrowser_show_vst3',
+            default='false',
+            vtype=bool,
+            doc="Show VST 3 plugins."
         ),
     ),
     WavetablePaths=dict(

@@ -33,17 +33,31 @@ from neil import com, common
 
 import zzub
 
+# build checkboxes for all machine types and plugin adapters
+def build_checkbox(container, name, callback):
+    checkbox = Gtk.CheckButton(label=name)
+    container.add(checkbox)
+    checkbox.connect("toggled", callback)
+    return checkbox
+
+
 # the plugin search creates checkboxes for:
-    # plugin adapter: 'lv2', 'vst2', 'ladspa', 'dssi', 'zzub'
+    # plugin adapter: 'lv2', 'vst2', 'vst3', 'ladspa', 'dssi', 'zzub'
     # machine type  : "generators", "effects", "controllers", "others"
 
-# toggling the checkbox will set/unset a config variable named:
+# toggling the checkbox will set/unset a config variable 
+# using magic monkeypatched methods in components/config.py 
+
     # config.pluginlistbrowser_show_lv2
     # config.pluginlistbrowser_show_vst2
-    # ... other plugin adapters ...
+    # ... etc ...
     # config.pluginlistbrowser_show_generators
     # config.pluginlistbrowser_show_effects
-    # ... other machine types ...
+    # ... etc ... 
+
+# the config is auto-saved and loaded to remember the search 
+
+
 
 class SearchPluginsDialog(Gtk.Window):
     __neil__ = dict(
@@ -74,18 +88,19 @@ class SearchPluginsDialog(Gtk.Window):
         cfg = com.get('neil.core.config') # get the config object with the 'pluginlistbrowser_show_' config settings
 
         box_container = Gtk.HBox()
-        self.check_containers = [Gtk.VBox() for i in range(2)]
+        self.check_containers = [Gtk.VBox() for i in range(3)]
 
         box_container.pack_start(self.check_containers[0], False, False, 0)
         box_container.pack_end(self.check_containers[1], True, False, 0)
+        box_container.pack_end(self.check_containers[2], True, False, 0)
         self.vbox.pack_end(box_container, False, False, 0)
 
         self.machine_types = ["Generators", "Effects", "Controllers", "Others"]
         self.machine_type_check = dict(zip(self.machine_types, [is_generator, is_effect, is_controller, is_other]))
 
-        labels = ['Zzub', 'LV2', 'VST 2', 'Ladspa', 'Dssi']
-
-        self.adapter_names = ['zzub', 'lv2', 'vst2', 'ladspa', 'dssi']
+        # labels and adapger names must be in the same order
+        labels = ['Zzub', 'Ladspa', 'Dssi', 'LV2', 'VST 2', 'VST3']
+        self.adapter_names = ['zzub', 'ladspa', 'dssi', 'lv2', 'vst2', 'vst3']
         self.adapter_labels = dict(zip(self.adapter_names, labels))
 
         # prepare the plugin list
@@ -108,19 +123,24 @@ class SearchPluginsDialog(Gtk.Window):
         self.treeview.set_model(self.filter)
         self.filter.set_visible_func(self.filter_item, data=None)
 
-        # build checkboxes for all machine types and plugin adapters
-        def build_checkbox(container, name):
-            checkbox = Gtk.CheckButton(label=name)
-            container.add(checkbox)
-            checkbox.connect("toggled", self.on_checkbox_changed)
-            return checkbox
-
+        
         self.checkboxes = {}
         for machine_type in self.machine_types:
-            self.checkboxes[machine_type] = build_checkbox(self.check_containers[0], machine_type)
+            self.checkboxes[machine_type] = build_checkbox(
+                self.check_containers[0], 
+                machine_type,
+                self.on_checkbox_changed
+            )
 
-        for adapter_name in self.adapter_names:
-            self.checkboxes[adapter_name] = build_checkbox(self.check_containers[1], self.adapter_labels[adapter_name])
+        for index, adapter_name in enumerate(self.adapter_names):
+            container = self.check_containers[1] if index < 3 else self.check_containers[2]
+
+            self.checkboxes[adapter_name] = build_checkbox(
+                container, 
+                self.adapter_labels[adapter_name], 
+                self.on_checkbox_changed
+            )
+
 
         # read current config settings to check/uncheck each checkbox
         for plugin_name in self.checkboxes.keys():
@@ -140,7 +160,7 @@ class SearchPluginsDialog(Gtk.Window):
         self.searchbox.connect("changed", self.on_entry_changed)
         self.searchbox.set_text(cfg.pluginlistbrowser_search_term)
 
-        self.set_size_request(400, 600)
+        self.set_size_request(600, 800)
         self.connect('realize', self.realize)
         self.conn_id = False
 
