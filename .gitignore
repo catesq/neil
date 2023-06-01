@@ -45,6 +45,7 @@ libneil/include/zzub/zzub.h
 libneil/include/zzub/signature.h
 libneil/src/pyzzub/zzub/
 libneil/src/plugins/vstadapter/VST_SDK_2.4
+libneil/src/plugins/vst3adapter/vst3sdk
 
 src/neil/lib/
 .qtc_clangd/
