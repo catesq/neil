@@ -4,14 +4,14 @@
 
 #include "vst_adapter.h"
 
-vst_plugins::vst_plugins(const char *vst_path) {
-    this->vst_path = vst_path;
+vst_plugins::vst_plugins(const char *vst_path) : 
+    vst_path(vst_path ? vst_path : "vst:.vst") {
 }
 
 void vst_plugins::initialize(zzub::pluginfactory *factory) {
     for (auto plugin_info : vst_plugin_file_finder(vst_path)) {
-        factory->register_info(plugin_info);
         printf("registered vst2 plugin: %s\n", plugin_info->name.c_str());
+        factory->register_info(plugin_info);
     }
 }
 
@@ -32,12 +32,7 @@ void vst_plugins::destroy() {
 
 zzub::plugincollection *
 zzub_get_plugincollection() {
-    const char *envpath = std::getenv("VST_PATH");
-
-    if (envpath == NULL)
-        envpath = "vst:.vst";
-
-    return new vst_plugins(envpath);
+    return new vst_plugins(std::getenv("VST_PATH"));
 }
 
 const char *
