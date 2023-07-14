@@ -840,7 +840,7 @@ struct active_note {
 }  // namespace
 
 
-
+#define ZZUB_MAX_MIDI_NOTE_TRACKS 16
 // the track values for a midi instrument
 // this wraps the values of a single row for one of the tracks for a vst/lv2 instrument
 struct midi_note_track {
@@ -911,8 +911,9 @@ struct midi_plugin_interface {
     virtual void add_aftertouch(uint8_t note, uint8_t volume) = 0;
     virtual void add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) = 0;
 
-    // the vst or lv2 plugin adapter using this interface will return a pointer to
-    //   a midi_note_track struct in the zzub_plugin::track_values for that adapter
+    // this is used by midi_track_manager::init()
+    // to get a pointer to each midi_note_track of zzub::plugin::track_values
+
     virtual midi_note_track *get_track_data_pointer(uint16_t track_num) const = 0;
 };
 
@@ -954,7 +955,7 @@ public:
           prev_tracks(max_num_tracks),
           note_len_types(max_num_tracks, zzub_note_unit_beats_256ths),
           active_notes(max_num_tracks),
-          sample_rate(48000),
+          sample_rate(44100),
           bpm(126) {
     }
 
@@ -998,6 +999,7 @@ public:
 
     void set_track_count(int num) {
         num_tracks = num;
+        
         if(num_tracks > max_num_tracks) {
             max_num_tracks = num_tracks;
 
@@ -1142,6 +1144,7 @@ public:
         }
     }
 
+
     inline float get_beat_length() {
         return (60.0f * sample_rate) / bpm;
     }
@@ -1197,6 +1200,7 @@ public:
         }
     }
 
+
     // called in the a zzub::info constructor - add the zzub tracks for a plugin to handle midi info
     static void add_midi_track_info(zzub::info *info) {
         info->add_track_parameter()
@@ -1246,6 +1250,10 @@ public:
               .set_value_max(zzub_midi_data_max)
               .set_value_none(zzub_midi_data_none)
               .set_value_default(zzub_midi_data_none);
+    }
+
+    uint32_t get_max_num_tracks() const {
+        return max_num_tracks;
     }
 };
 
