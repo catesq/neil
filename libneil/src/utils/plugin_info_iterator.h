@@ -1,6 +1,7 @@
 #pragma once
 #include <boost/filesystem.hpp>
 #include <string>
+#include <algorithm>
 
 #if defined(WINOS)
 #define strtok_r strtok_s
@@ -77,8 +78,16 @@ struct PluginInfoIterator {
                 auto dir_iter = boost::filesystem::recursive_directory_iterator(dir);
                 
                 for(auto& entry: dir_iter) {
-                    if(loader.is_plugin(entry.path())) { 
-                        for(auto& plugin_info: loader.get_plugin_infos(entry.path())) {
+                    auto path = weakly_canonical(entry.path());
+
+                    if(std::find(checked_paths.begin(), checked_paths.end(), path.string()) != checked_paths.end()) {
+                        continue;
+                    }
+
+                    checked_paths.push_back(path.string());
+
+                    if(loader.is_plugin(path)) {
+                        for(auto& plugin_info: loader.get_plugin_infos(path)) {
                             plugin_infos.push_back(plugin_info);
                         }
                     }
@@ -94,6 +103,7 @@ private:
     PluginInfoLoader<PluginInfoType>& loader; 
     std::string paths;
     std::string separators=PATH_SEPARATOR;
+    std::vector<std::string> checked_paths;
     
 
     // split a text separated by ';' and maybe other charecters into a vector of directory names

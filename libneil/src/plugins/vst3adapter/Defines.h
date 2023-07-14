@@ -4,50 +4,37 @@
 #include <string>
 #include <boost/dll.hpp>
 
-
-#if defined DEBUG
-#define _DEBUG 1
-#else
-#define RELEASE 1
-#endif
+#include <gtk/gtk.h>
 
 
-#if defined(MACOS)
-#define SHARED_LIBRARY_EXT ".so"
-#elif defined(WINOS)
-#define SHARED_LIBRARY_EXT "dll"
-#else
-#define SHARED_LIBRARY_EXT ".so"
-#endif
+// #if GDK_WINDOWING_WIN32
 
-#define VOLUME_DEFAULT 0x40
-#define VOLUME_NONE 0xFF
+// #include <gdk/win32/gdkwin32.h>
+// #define WIN_ID_TYPE HWND
+// #define WIN_ID_FUNC(widget) GDK_WINDOW_HWND(gtk_widget_get_window(widget));
 
-// from midi.lv2/midi.h
-typedef enum {
-  MIDI_MSG_INVALID          = 0,    /**< Invalid Message */
-  MIDI_MSG_NOTE_OFF         = 0x80, /**< Note Off */
-  MIDI_MSG_NOTE_ON          = 0x90, /**< Note On */
-  MIDI_MSG_NOTE_PRESSURE    = 0xA0, /**< Note Pressure */
-  MIDI_MSG_CONTROLLER       = 0xB0, /**< Controller */
-  MIDI_MSG_PGM_CHANGE       = 0xC0, /**< Program Change */
-  MIDI_MSG_CHANNEL_PRESSURE = 0xD0, /**< Channel Pressure */
-  MIDI_MSG_BENDER           = 0xE0, /**< Pitch Bender */
-  MIDI_MSG_SYSTEM_EXCLUSIVE = 0xF0, /**< System Exclusive Begin */
-  MIDI_MSG_MTC_QUARTER      = 0xF1, /**< MTC Quarter Frame */
-  MIDI_MSG_SONG_POS         = 0xF2, /**< Song Position */
-  MIDI_MSG_SONG_SELECT      = 0xF3, /**< Song Select */
-  MIDI_MSG_TUNE_REQUEST     = 0xF6, /**< Tune Request */
-  MIDI_MSG_CLOCK            = 0xF8, /**< Clock */
-  MIDI_MSG_START            = 0xFA, /**< Start */
-  MIDI_MSG_CONTINUE         = 0xFB, /**< Continue */
-  MIDI_MSG_STOP             = 0xFC, /**< Stop */
-  MIDI_MSG_ACTIVE_SENSE     = 0xFE, /**< Active Sensing */
-  MIDI_MSG_RESET            = 0xFF  /**< Reset */
-} Midi_Message_Type;
+// #elif GDK_WINDOWING_QUARTZ
 
-//zzub to midi note
-#define MIDI_NOTE(note) (uint8_t)((note >> 4) * 12 + (note & 0xf) - 1)
+// #include <gdk/quartz/gdkquartz.h>
+// #define WIN_ID_TYPE widget
+// #define WIN_ID_FUNC(WIDGET) gdk_quartz_window_get_nsview(gtk_widget_get_window(widget));
+
+// #else // GDK_WINDOWING_X11
+
+#include <gdk/gdkx.h>
+
+//
+
+
+#define WIN_ID_TYPE gulong
+#define WIN_ID_FUNC(widget) gdk_x11_window_get_xid(gtk_widget_get_window(widget))
+
+
+
+
+
+
+
 
 //std::string get_plugin_string(AEffect* plugin, VstInt32 opcode, int index);
 
