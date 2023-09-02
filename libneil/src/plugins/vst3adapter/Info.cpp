@@ -11,6 +11,7 @@ using MediaTypes = Steinberg::Vst::MediaTypes;
 using BusDirections = Steinberg::Vst::BusDirections;
 
 
+
 Vst3Info::Vst3Info(
     std::string filename,
     VST3::Hosting::Module::Ptr host_module,
@@ -19,7 +20,7 @@ Vst3Info::Vst3Info(
 ) : zzub::info(),
     filename(filename),
     host_module(host_module),
-    class_info(class_info) 
+    class_info(class_info)
 {
     auto controller = provider->getController();
     auto plugin_component = provider->getComponent();
@@ -106,6 +107,7 @@ Vst3Info::Vst3Info(
 }
 
 
+
 /// TODO make a move constructor and a move constructor - to reuse/free the malloc'd strings in the zuub::param in global_parameters and reallocte
 /// the plugininfo will be reused and only be destroyed when the program is closed so putting this off is unclean but irrelevant
 Vst3Info::~Vst3Info() {
@@ -114,6 +116,7 @@ Vst3Info::~Vst3Info() {
 
     params.clear();
 }
+
 
 
 const std::vector<Steinberg::Vst::BusInfo>& Vst3Info::get_bus_infos(
@@ -141,6 +144,7 @@ const std::vector<Steinberg::Vst::BusInfo>& Vst3Info::get_bus_infos(
 }
 
 
+
 const Steinberg::Vst::BusInfo& Vst3Info::get_bus_info(
     Steinberg::Vst::MediaTypes type,
     Steinberg::Vst::BusDirections direction,
@@ -149,12 +153,15 @@ const Steinberg::Vst::BusInfo& Vst3Info::get_bus_info(
     return get_bus_infos(type, direction)[index];
 }
 
+
+
 uint32_t Vst3Info::get_bus_count(
     Steinberg::Vst::MediaTypes type,
     Steinberg::Vst::BusDirections direction
 ) const {
     return get_bus_infos(type, direction).size();
 }
+
 
 
 std::vector<Steinberg::Vst::BusInfo> Vst3Info::build_bus_infos(
@@ -175,6 +182,7 @@ std::vector<Steinberg::Vst::BusInfo> Vst3Info::build_bus_infos(
 }
 
 
+
 uint32_t 
 Vst3Info::get_global_param_count() const 
 {
@@ -182,11 +190,13 @@ Vst3Info::get_global_param_count() const
 }
 
 
+
 uint32_t 
 Vst3Info::get_track_param_count() const 
 {
     return track_parameters.size();
 }
+
 
 
 Vst3Category 
@@ -209,16 +219,19 @@ Vst3Info::get_main_category(
 }
 
 
+
 Vst3Param* 
 Vst3Info::get_vst_param(uint32_t index) const {
     return params[index];
 }
 
 
+
 bool 
 Vst3Info::is_valid() const {
     return is_valid_plugin;
 }
+
 
 
 zzub::plugin* 
