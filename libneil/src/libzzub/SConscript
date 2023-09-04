@@ -70,12 +70,12 @@ localenv.Append(CCFLAGS=['-D_LIB','-D_LIBZZUB'])
 # '-Wno-deprecated',
 # ])
 
-localenv.Append(LIBPATH='${MINIZIP_SRC_PATH}/release')
+# localenv.Append(LIBPATH='${MINIZIP_SRC_PATH}/release')
 localenv.Append(LIBS=[
     'pthread',
     localenv['LIB_DL'],
     localenv['LIB_COMPAT'],
-    'minizip',
+    'minizip-ng',
     'ssl',
 ])
 
@@ -94,23 +94,23 @@ if localenv['USE_SIGNATURE'] == True:
         ])
 
         # portmidi support
-        localenv.Append(CPPPATH=[
-            '${PORTMIDI_SRC_PATH}/pm_common',
-            '${PORTMIDI_SRC_PATH}/porttime'
-        ])
+        # localenv.Append(CPPPATH=[
+        #     '${PORTMIDI_SRC_PATH}/pm_common',
+        #     '${PORTMIDI_SRC_PATH}/porttime'
+        # ])
 
-        # porttime and portmidi
-        files += [
-            '${PORTMIDI_SRC_PATH}/porttime/porttime.c',
-            '${PORTMIDI_SRC_PATH}/pm_common/pmutil.c',
-            '${PORTMIDI_SRC_PATH}/pm_common/portmidi.c',
-            '${PORTMIDI_SRC_PATH}/porttime/ptlinux.c',
-            '${PORTMIDI_SRC_PATH}/pm_linux/pmlinux.c',
-        ]
-        localenv.Append(CCFLAGS=[
-            '-DPM_CHECK_ERRORS',
-            '-DNEWBUFFER'
-        ])
+        # # porttime and portmidi
+        # files += [
+        #     '${PORTMIDI_SRC_PATH}/porttime/porttime.c',
+        #     '${PORTMIDI_SRC_PATH}/pm_common/pmutil.c',
+        #     '${PORTMIDI_SRC_PATH}/pm_common/portmidi.c',
+        #     '${PORTMIDI_SRC_PATH}/porttime/ptlinux.c',
+        #     '${PORTMIDI_SRC_PATH}/pm_linux/pmlinux.c',
+        # ]
+        # localenv.Append(CCFLAGS=[
+        #     '-DPM_CHECK_ERRORS',
+        #     '-DNEWBUFFER'
+        # ])
 
         #######################################
         # portaudio
@@ -124,6 +124,7 @@ if localenv['USE_SIGNATURE'] == True:
             'pthread',
             'm',
             'portaudio',
+            'portmidi',
         ])
 
         #######################################

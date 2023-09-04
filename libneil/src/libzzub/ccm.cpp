@@ -21,7 +21,8 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include "../minizip-ng/mz_compat.h"
+#include "minizip-ng/mz_compat.h"
+
 #include <FLAC/all.h>
 
 #include "ccm.h"

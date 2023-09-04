@@ -45,10 +45,9 @@ libneil/include/zzub/zzub.h
 libneil/include/zzub/signature.h
 libneil/src/pyzzub/zzub/
 libneil/src/plugins/vstadapter/VST_SDK_2.4
+libneil/src/plugins/vst3adapter/vst3-*-build
 libneil/src/plugins/vst3adapter/vst3sdk
 
 src/neil/lib/
 .qtc_clangd/
 neil.*
-libneil/src/minizip-ng
-libneil/src/minizip

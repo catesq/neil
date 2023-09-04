@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "../minizip-ng/mz_compat.h"
+#include "minizip-ng/mz_compat.h"
 
 #include "pugixml.hpp"
 
