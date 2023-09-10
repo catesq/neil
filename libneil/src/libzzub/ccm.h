@@ -84,7 +84,7 @@ struct mem_archive;
 
 class CcmWriter {
     ArchiveWriter arch;
-
+    
     xml_node saveParameter(xml_node &parent, const zzub::parameter &p);
     xml_node saveClasses(xml_node &parent, zzub::song &player);
     xml_node saveClass(xml_node &parent, const zzub::info &pl);

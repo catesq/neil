@@ -1454,17 +1454,29 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
 
                 m.plugin->attributes_changed();
 
+                // if (!tracks.empty()) {
+                //     vector<xml_node> tracknodes;
+                //     tracks.all_elements_by_name("track", std::back_inserter(tracknodes));
+                //     int trackcount = (int)tracknodes.size();
+                //     for (unsigned int a = 0; a != tracknodes.size(); ++a) {
+                //         // if we find any track with a higher index, extend the size
+                //         trackcount = std::max(trackcount, tracknodes[a].attribute("index").as_int());
+                //     }
+
+                //     player.plugin_set_track_count(plugin_id, trackcount);
+                // }
+
                 if (!tracks.empty()) {
-                    vector<xml_node> tracknodes;
-                    tracks.all_elements_by_name("track", std::back_inserter(tracknodes));
-                    int trackcount = (int)tracknodes.size();
-                    for (unsigned int a = 0; a != tracknodes.size(); ++a) {
+                    auto track_nodeset = tracks.select_nodes("track");
+                    int trackcount = (int)track_nodeset.size();
+                    for (auto track: track_nodeset) {
                         // if we find any track with a higher index, extend the size
-                        trackcount = std::max(trackcount, tracknodes[a].attribute("index").as_int());
+                        trackcount = std::max(trackcount, track.node().attribute("index").as_int());
                     }
 
                     player.plugin_set_track_count(plugin_id, trackcount);
                 }
+
 
                 // plugin default parameter values are read after connections are made
                 ccache cc;
@@ -1929,7 +1941,7 @@ bool CcmReader::open(std::string fileName, zzub::player* player) {
             arch.read(xmldata, cfi.uncompressed_size);
             arch.closeFileInArchve();
             xml_document xml;
-            if (xml.parse(xmldata)) {
+            if (xml.load_string(xmldata)) {
                 xml_node xmix = xml.child("xmix");
                 if (!xmix.empty()) {
                     xmix.traverse(*this); // collect all ids

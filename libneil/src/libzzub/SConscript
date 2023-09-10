@@ -51,7 +51,6 @@ files = [
     'song.cpp',
     'synchronization.cpp',
     'undo.cpp',
-    'pugixml.cpp',
     'thread_id.cpp',
 ]
 
@@ -75,6 +74,7 @@ localenv.Append(LIBS=[
     'pthread',
     localenv['LIB_DL'],
     localenv['LIB_COMPAT'],
+    'pugixml',
     'minizip-ng',
     'ssl',
 ])
