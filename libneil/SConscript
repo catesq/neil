@@ -35,6 +35,26 @@ x86_64 = platform.machine() == 'x86_64'
 #
 ######################################
 
+#  describe an error about a missing library
+class LibraryNotFound:
+    def __init__(self, lib):
+        self.lib = lib
+    def __str__(self):
+        return "error: unable to find dev headers for '%s'" % self.lib
+
+class ExecNotFound:
+    def __init__(self, prog):
+        self.prog = prog
+    def __str__(self):
+        return "error: unable to find executable file for '%s'" % self.prog
+
+class PkgVersionErr:
+    def __init__(self, lib, version):
+        self.lib = lib
+        self.version = version
+    def __str__(self):
+        return "error: '%s' version needs to be > %s" % (self.lib, self.version)
+
 def tools_converter(value):
     return value.split(',')
 
@@ -50,7 +70,7 @@ def audioengine_converter(value):
     value = value.lower()
     if not value in ('portaudio'):
         print("invalid option for AUDIOENGINE:",value)
-        Exit(1)
+        sys.Exit(1)
     return value
 
 opts = Variables( 'options.conf', ARGUMENTS )
@@ -389,85 +409,89 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
             'CheckPKGVersion' : check_pkg_version,
             }
     )
+
+    # make sure all the development libraries are installed
+
+    lib_errors = []
+
     if not conf.CheckCHeader('zlib.h'):
-        print("Error: no zlib development files seem to be installed.")
-        print("zlib libraries and headers are required for building.")
-        Exit(1)
+        lib_errors += LibraryNotFound("zlib")
+
     if not conf.CheckCHeader('sndfile.h'):
-        print("Error: no libsndfile development files seem to be installed.")
-        print("libsndfile libraries and headers are required for building.")
-        Exit(1)
+        lib_errors += LibraryNotFound("libsndfile")
+
     if not conf.CheckCHeader('samplerate.h'):
-        print("Error: no libsamplerate (libsrc) development files seem to be installed.")
-        print("libsamplerate (libsrc) libraries and headers are required for building.")
-        Exit(1)
+        lib_errors += LibraryNotFound("libsamplerate (libsrc)")
+
     if not conf.CheckCHeader('fftw3.h'):
-        print("Error: no libfftw3 development files seem to be installed.")
-        print("libfftw3 libraries and headers are required for building.")
-        Exit(1)
+        lib_errors += LibraryNotFound("libfftw3")
+
     if not conf.CheckCHeader('mad.h'):
-        print("Error: no libmad development files seem to be installed.")
-        print("libmad libraries and headers are required for building.")
-        Exit(1)
+        lib_errors += LibraryNotFound("libmad")
+
     if not conf.CheckCHeader('mpg123.h'):
-        print("Error: no mpg123 development files seem to be installed.")
-        print("libmpg123 libraries and headers are required for building.")
-        Exit(1)
-    boostgraphheaders = [
-        'boost/graph/adjacency_list.hpp',
-        'boost/graph/visitors.hpp',
-        'boost/graph/depth_first_search.hpp',
-        ]
-    for header in boostgraphheaders:
-        if not conf.CheckCXXHeader(header):
-            print("Error: no libboost-graph development files seem to be installed.")
-            print("libboost-graph libraries and headers are required for building.")
-            Exit(1)
+        lib_errors += LibraryNotFound("libmpg123")
+
+    if not conf.CheckCHeader('boost/graph/adjacency_list.hpp'):
+        lib_errors += LibraryNotFound("libboost-graph")
+        
+    if not conf.CheckCHeader('pugixml.hpp'):
+        lib_errors += LibraryNotFound("libpugixml")
+
+    if not conf.CheckCHeader('FLAC/all.h'):
+        lib_errors += LibraryNotFound("libflac")
+    
+    if not conf.CheckCHeader('portaudio.h'):
+        lib_errors += LibraryNotFound("portaudio")
+        
+    if not conf.CheckCHeader('mad.h'):
+        env['MAD'] = False
+    else:
+        env['MAD'] = True
+        
     if conf.CheckCHeader('ladspa.h'):
         env['LADSPA'] = True
+
     if conf.CheckCHeader('dssi.h') and conf.CheckCHeader('lo/lo.h'):
         env['DSSI'] = True
     else:
         env['DSSI'] = False
 
-    if conf.CheckCHeader('lilv-0/lilv/lilv.h') and conf.CheckCHeader('lv2.h') and conf.CheckCHeader('suil-0/suil/suil.h'):
+    missing_lv2 = []
+    for pkg, header in (('lilv-0', 'lilv-0/lilv/lilv.h'), ('lv2', 'lv2.h'), ('suil-0', 'suil-0/suil/suil.h')):
+        if not conf.CheckCHeader(header):
+            missing_lv2 += pkg
+    
+    if missing_lv2:
+        lib_errors += missing_lv2.join()
+    else:
         env['LV2'] = True
-    else:
-        print("Need lilv-0, suil-0 and lv2 headers to build LV2 plugins")
-        Exit(1)
-
-    if not conf.CheckCHeader('FLAC/all.h'):
-        print("Error: no FLAC library development files found.")
-        Exit(1)
-    if not conf.CheckCHeader('mad.h'):
-        env['MAD'] = False
-    else:
-        env['MAD'] = True
-    if not conf.CheckCHeader('portaudio.h'):
-        print("Error: portaudio is not available on your system.")
-        Exit(1)
-    if not conf.HasExecutable('xmlto'):
-        print("Error: xmlto is not available on your system.")
-        Exit(1)
 
     if conf.CheckCPUFlag('sse'):
         env['SSE'] = True
+
     if conf.CheckCPUFlag('sse2'):
         env['SSE'] = False
         env['SSE2'] = True
-
-    if not conf.CheckPKGConfig('0.15.0'):
-        print('pkg-config >= 0.15.0 not found.')
-        Exit(1)
 
     if conf.CheckPKG('gtk+-3.0'):
         env['GTK3'] = True
     else:
         env['GTK3'] = False
 
+    if not conf.CheckPKGConfig('0.15.0'):
+        lib_errors += PkgVersionErr("pkh-config", "0.15.0")
+
     if not conf.CheckPKGVersion('portaudio-2.0', '19'):
-        print('Error: need at least portaudio 19.')
-        Exit(1)
+        lib_errors += PkgVersionErr("portaudio-2.0", "19")
+
+    if not conf.HasExecutable('xmlto'):
+        lib_errors += ExecNotFound("xmlto")
+
+    if lib_errors:
+        print("Could not build, dependency problems:")
+        print("\n".join(lib_errors))
+        sys.Exit(1)
 
     print("Finished configuration.")
     print()
@@ -498,7 +522,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     print("\tscons")
     print("To install scons, run")
     print("\t[sudo] scons install")
-    Exit(0)
+    sys.Exit(0)
 
 ######################################
 # save config
@@ -511,7 +535,7 @@ if (not is_cleaning()) and (env['CONFIGURED'] != VERSION):
     print("libzzub is not configured for version %s yet." % VERSION)
     print()
     print("Please run 'scons configure' to configure libzzub.")
-    Exit(1)
+    sys.Exit(1)
 
 
 #######################################
