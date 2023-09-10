@@ -93,25 +93,6 @@ if localenv['USE_SIGNATURE'] == True:
             '-DUSE_SNDFILE',
         ])
 
-        # portmidi support
-        # localenv.Append(CPPPATH=[
-        #     '${PORTMIDI_SRC_PATH}/pm_common',
-        #     '${PORTMIDI_SRC_PATH}/porttime'
-        # ])
-
-        # # porttime and portmidi
-        # files += [
-        #     '${PORTMIDI_SRC_PATH}/porttime/porttime.c',
-        #     '${PORTMIDI_SRC_PATH}/pm_common/pmutil.c',
-        #     '${PORTMIDI_SRC_PATH}/pm_common/portmidi.c',
-        #     '${PORTMIDI_SRC_PATH}/porttime/ptlinux.c',
-        #     '${PORTMIDI_SRC_PATH}/pm_linux/pmlinux.c',
-        # ]
-        # localenv.Append(CCFLAGS=[
-        #     '-DPM_CHECK_ERRORS',
-        #     '-DNEWBUFFER'
-        # ])
-
         #######################################
         # portaudio
         #######################################
