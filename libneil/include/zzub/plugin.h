@@ -26,7 +26,6 @@
 
 #include <cstdint>
 
-
 #include "types.h"
 #include "zzub.h"
 
@@ -932,6 +931,8 @@ private:
     // local data the track_manager creates and maintains, safe.
     std::vector<midi_note_track> prev_tracks;
 
+    std::vector<active_note> active_notes{};
+
     std::vector<int> note_len_types{};
 
     // must be called by the plugin every time the number of tracks changes
@@ -947,18 +948,14 @@ private:
 
     float bpm = 126.0f;
 
-    std::vector<active_note> active_notes{};
 
 public:
     midi_track_manager(midi_plugin_interface &plugin, uint16_t max_num_tracks)
         : plugin(plugin),
-          curr_tracks(),
-          max_num_tracks(max_num_tracks),
           prev_tracks(max_num_tracks),
-          note_len_types(max_num_tracks, zzub_note_unit_beats_256ths),
           active_notes(max_num_tracks),
-          sample_rate(44100),
-          bpm(126) {
+          note_len_types(max_num_tracks, zzub_note_unit_beats_256ths),
+          max_num_tracks(max_num_tracks) {
     }
 
 
