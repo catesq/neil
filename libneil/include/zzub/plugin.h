@@ -24,6 +24,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <cstdint>
+
 
 #include "types.h"
 #include "zzub.h"
