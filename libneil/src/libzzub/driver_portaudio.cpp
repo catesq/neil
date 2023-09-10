@@ -4,7 +4,7 @@
 #include <portaudio.h>
 #include <cassert>
 #include "timer.h"
-#include "driver.h"
+
 #include "driver_portaudio.h"
 
 using namespace std;

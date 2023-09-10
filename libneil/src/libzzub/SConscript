@@ -99,6 +99,7 @@ if localenv['USE_SIGNATURE'] == True:
 
         files += [
             'driver_portaudio.cpp',
+            'driver_rainout.cpp',
         ]
 
         localenv.Append(LIBS=[

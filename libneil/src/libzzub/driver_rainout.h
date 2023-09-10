@@ -1,35 +1,29 @@
-#ifndef LIBNEIL_DRIVER_PORTAUDIO_H
-#define LIBNEIL_DRIVER_PORTAUDIO_H
+#pragma once
 
 #include "driver.h"
-#include <portaudio.h>
+#include "timer.h"
 #include <string>
 
-namespace zzub {
+// namespace zzub {
 
 
-struct audiodriver_portaudio : audiodriver {
-
-
+struct audiodriver_rainout : zzub::audiodriver {
     zzub::timer timer;								// hires timer, for cpu-meter
     double last_work_time;							// length of last WorkStereo
     double cpu_load;
-    PaStream *stream;
 
-    audiodriver_portaudio();
+    audiodriver_rainout();
 
-    virtual ~audiodriver_portaudio();
-    virtual void initialize(audioworker *worker);
+    virtual ~audiodriver_rainout();
+    virtual void initialize(zzub::audioworker *worker);
     virtual bool enable(bool e);
 
     virtual int getDeviceCount();
     virtual bool createDevice(int outputIndex, int inputIndex);
     virtual void destroyDevice();
     virtual int getDeviceByName(const char* name);
-    audiodevice* getDeviceInfo(int index);
+    zzub::audiodevice* getDeviceInfo(int index);
     double getCpuLoad();
 };
 
-}
 
-#endif // LIBNEIL_DRIVER_PORTAUDIO_H

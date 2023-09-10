@@ -31,7 +31,7 @@
 #include "zzub/zzub.h"
 
 #include "driver_portaudio.h"
-
+#include "driver_rainout.h"
 #include "driver_silent.h"
 
 namespace zzub {
@@ -1933,6 +1933,12 @@ using namespace std;
 /** \brief Create an audio driver that uses the PortAudio API. */
 zzub_audiodriver_t* zzub_audiodriver_create_portaudio(zzub_player_t* player) {
     audiodriver_portaudio *driver = new audiodriver_portaudio();
+    driver->initialize(player);
+    return driver;
+}
+
+zzub_audiodriver_t* zzub_audiodriver_create_rainout(zzub_player_t* player) {
+    audiodriver_rainout *driver = new audiodriver_rainout();
     driver->initialize(player);
     return driver;
 }
