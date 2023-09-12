@@ -655,7 +655,7 @@ env.Signature(target='${BUILD_PATH}/libneil/include/zzub/signature.h', source='o
 env.SConscript('${LANTERNFISH_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/lanternfish', duplicate=0)
 env.SConscript('${KISSFFT_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/kiss_fft', duplicate=0)
 env.SConscript('${LIBZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/libzzub', duplicate=0)
-env.SConscript('${PLUGINS_SRC_PATH}/SConscript')
+env.SConscript('${PLUGINS_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/plugins', duplicate=0)
 env.SConscript('${PYZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/pyzzub', duplicate=0)
 env.SConscript('${UTILS_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/utils', duplicate=0)
 

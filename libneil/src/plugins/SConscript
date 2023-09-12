@@ -53,5 +53,5 @@ for filename in os.listdir('.'):
     if os.path.isfile(os.path.join(plugin_dir_path,'SConscript')):
         pluginenv = env.Clone()
         Export('plugin_dir_path', 'pluginenv')
-        env.SConscript(os.path.join(plugin_dir_path, 'SConscript'), variant_dir='${BUILD_PATH}/libneil/src/plugins/' + plugin_name, duplicate=0)
+        env.SConscript(os.path.join(plugin_dir_path, 'SConscript'), variant_dir='${BUILD_PATH}/libneil/src/plugins/' + plugin_name, duplicate=1)
 
