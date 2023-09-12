@@ -25,7 +25,7 @@ import os, glob, sys, time, platform
 import distutils.sysconfig
 
 posix = os.name == 'posix'
-linux = sys.platform == 'linux2'
+linux = sys.platform == 'linux'
 x86_64 = platform.machine() == 'x86_64'
 
 Import('main_env')
@@ -491,9 +491,9 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     print()
     print("=== Using ===".center(50))
     print("GTK3:".rjust(30), yesno[env['GTK3'] == True])
-    print("MAD:".rjust(30), yesno[env['MAD'] == True])
-    print("Use SSE CPU Extension:".rjust(30),yesno[env['SSE'] == True])
-    print("Use SSE2 CPU Extension:".rjust(30),yesno[env['SSE2'] == True])
+    print("MAD:".rjust(30), yesno[env['MAD'] == True])  
+    print("Use SSE CPU extension:".rjust(30),yesno[env['SSE'] == True])
+    print("Use SSE2 CPU extension:".rjust(30),yesno[env['SSE2'] == True])
     print()
     print("=== Components ===".center(50))
     print("DSSI:".rjust(30),yesno[env['DSSI'] == True])
@@ -504,9 +504,9 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     print("=== Directories ===".center(50))
     print("Prefix:".rjust(30),env['PREFIX'])
     print("Install into:".rjust(30),env.Dir("${DESTDIR}${PREFIX}"))
-    print("Library Directory:".rjust(30),env.Dir("${PREFIX}${LIBDIR}"))
+    print("Library directory:".rjust(30),env.Dir("${PREFIX}${LIBDIR}"))
     print()
-    print("Generate Debug Info:".rjust(30),env['DEBUG'])
+    print("Generate debug info:".rjust(30),env['DEBUG'])
 
     env = conf.Finish()
     env['CONFIGURED'] = VERSION
@@ -628,6 +628,7 @@ output.append(env.ZIDLPyCtypes('${BUILD_PATH}/libneil/pyzzub/zzub/__init__.py', 
 env.Depends(output, '${SRC_PATH}/libneil/tools/zidl')
 
 #duplicate this header so it's usable in ide's when SRC_PATH/libneil/include has been added to the includepath, alternative is adding one of the build variant dirs to the build path
+
 env.ZIDLCHeader('${SRC_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl')
 #######################################
 #
