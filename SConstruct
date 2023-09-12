@@ -1,4 +1,4 @@
-# Neil
+3# Neil
 # Modular Sequencer
 # Copyright (C) 2006 The Neil Development Team
 #
@@ -74,9 +74,14 @@ def get_settings_dir():
 
 distutils_prefix = "%s%s" % (env['DESTDIR'], env['PREFIX'])
 
-env['ROOTPATH'] = os.getcwd()
-env['SITE_PACKAGE_PATH'] = \
-    distutils.sysconfig.get_python_lib(prefix=distutils_prefix)
+env['SRC_PATH'] = os.getcwd()
+
+is_debug = 'DEBUG' in env and env['DEBUG']
+build_subdir = 'debug' if is_debug else 'release'
+
+env['BUILD_PATH'] = os.path.join(env['SRC_PATH'], 'build', build_subdir)
+
+env['SITE_PACKAGE_PATH'] = distutils.sysconfig.get_python_lib(prefix=distutils_prefix)
 env['APPLICATIONS_PATH'] = '${DESTDIR}${PREFIX}/share/applications'
 env['BIN_PATH'] = '${DESTDIR}${PREFIX}/bin'
 env['SHARE_PATH'] = '${DESTDIR}${PREFIX}/share/neil'
@@ -97,7 +102,7 @@ CONFIG_PATHS = dict(
     icons_hicolor = 'ICONS_HICOLOR_PATH',
     pixmaps = 'PIXMAPS_PATH',
     etc = 'ETC_PATH',
-    settings = 'SETTINGS_PATH'
+    settings = 'SETTINGS_PATH',
 )
 
 ######################################
@@ -173,8 +178,10 @@ builders = dict(
 
 env['BUILDERS'].update(builders)
 
+main_env = env.Clone()
+
 Export(
-    'env',
+    'main_env',
     'install',
     'install_recursive',
     'get_settings_dir',
@@ -182,16 +189,17 @@ Export(
     'win32', 'mac', 'posix', 
 )
 
-env.SConscript('applications/SConscript')
-env.SConscript('bin/SConscript')
+env.SConscript('applications/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'applications'), duplicate = 0)
+env.SConscript('bin/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'bin'), duplicate = 0)
 env.SConscript('doc/SConscript')
-env.SConscript('demosongs/SConscript')
-env.SConscript('etc/SConscript')
-env.SConscript('icons/SConscript')
-env.SConscript('pixmaps/SConscript')
-env.SConscript('presets/SConscript')
-env.SConscript('themes/SConscript')
-env.SConscript('src/SConscript')
+env.SConscript('demosongs/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'demosongs'), duplicate = 0)
+env.SConscript('etc/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'etc'), duplicate = 0)
+env.SConscript('icons/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'icons'), duplicate = 0)
+env.SConscript('pixmaps/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'pixmaps'), duplicate = 0)
+env.SConscript('presets/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'presets'), duplicate = 0)
+env.SConscript('themes/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'themes'), duplicate = 0)
+env.SConscript('src/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'src'), duplicate = 0)
+
 
 # libneil
-env.SConscript('libneil/SConscript')
+env.SConscript('libneil/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'libneil'), duplicate = 1)

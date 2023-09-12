@@ -35,6 +35,7 @@
 .vscode
 *.code-workspace
 .sconf_temp/
+build
 doc/manual/
 .sconsign.dblite
 libneil/REVISION

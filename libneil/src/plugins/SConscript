@@ -35,7 +35,6 @@ def ZzubPlugin(self, target, source):
 # enables us to generate project files and the like.
 
 plugin_dir_path = ""
-base_plugin_path = ""
 pluginenv = None
 def build_plugin(localenv, libname, files, helpfiles=None, deffile='zzub_plugin.def'):
     files = [plugin_dir_path + "/" + filename for filename in files]
@@ -48,11 +47,11 @@ def build_plugin(localenv, libname, files, helpfiles=None, deffile='zzub_plugin.
 
 Export('build_plugin')
 
-base_plugin_path = os.getcwd()
 for filename in os.listdir('.'):
     plugin_dir_path = os.path.abspath(filename)
+    plugin_name = os.path.basename(plugin_dir_path)
     if os.path.isfile(os.path.join(plugin_dir_path,'SConscript')):
         pluginenv = env.Clone()
-        Export('plugin_dir_path','pluginenv')
-        env.SConscript(os.path.join(plugin_dir_path,'SConscript'))
+        Export('plugin_dir_path', 'pluginenv')
+        env.SConscript(os.path.join(plugin_dir_path, 'SConscript'), variant_dir='${BUILD_PATH}/libneil/src/plugins/' + plugin_name, duplicate=0)
 

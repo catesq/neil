@@ -18,9 +18,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-Import('env')
+Import('main_env')
 
-env.SConscript('neil/SConscript')
-env.SConscript('components/SConscript')
+main_env.SConscript('neil/SConscript')
+main_env.SConscript('components/SConscript')
 
-env.AddPostAction('always-install', "rdflib")
+main_env.AddPostAction('always-install', "rdflib")

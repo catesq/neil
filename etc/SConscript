@@ -18,9 +18,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-Import('env', 'install', 'install_recursive')
+Import('main_env', 'install', 'install_recursive')
 import glob
 
 #install('${ETC_PATH}', 'neil.cfg', 0644)
-env.BuildPathConfig('${ETC_PATH}/path.cfg', ['${ROOTPATH}/options.conf', '${ROOTPATH}/SConstruct'])
+main_env.BuildPathConfig('${ETC_PATH}/path.cfg', ['${SRC_PATH}/options.conf', '${SRC_PATH}/SConstruct'])
 

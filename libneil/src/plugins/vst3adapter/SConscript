@@ -1,19 +1,18 @@
-import sys
+import sys, os
 Import('pluginenv', 'build_plugin')
 
 
-cmakefile = pluginenv.FindFile('CMakeLists.txt', 'vst3sdk')
+vst_cmake_file = pluginenv.FindFile('CMakeLists.txt', 'vst3sdk')
 
-
-if not cmakefile:
-    print("libneil/src/plugins/vst3adapter/vst3sdk/CMakeLists.txt not found")
+if not vst_cmake_file:
+    print("libneil/src/plugins/vst3adapter/vst3sdk/CMakeLists.txt not found. Maybe 'git submodule --init --update' to get the VST3 SDK.")
     sys.exit()
 
 
+vst_build_dir = 'vst3-debug-build' if pluginenv['DEBUG'] else 'vst3-release-build'
+
+
 vst3_pluginenv = pluginenv.Clone()
-
-
-vst_lib_subdir = 'vst3sdk/neil-build/lib/'
 
 
 vst_static_libs = [
@@ -62,19 +61,22 @@ mac_sdk_sources = [
 vst3_pluginenv.Append(
     CCFLAGS='''
     -pthread `pkg-config gtk+-3.0 --cflags` 
+    --include=stdint.h
     -Ilibneil/src/libzzub -Ilibneil/src/utils/ -Ilibneil/src/plugins/vst3adapter/ 
     -Ilibneil/src/plugins/vst3adapter/vst3sdk -Ilibneil/src/plugins/vst3adapter/pluginterfaces 
     -Ilibneil/src/plugins/vst3adapter/public.sdk -Ilibneil/src/plugins/vst3adapter/base 
     -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui''',
     LIBS=['boost_system', 'boost_filesystem', 'stdc++fs'] + vst_static_libs, 
-    LIBPATH=vst_lib_subdir,
+    LIBPATH=os.path.join(vst_build_dir, 'lib'),
+
 )
 
 
 adapter_sources = ['Adapter.cpp', 'Collection.cpp', 'Info.cpp', 'Param.cpp', 'Defines.cpp']
 
+
 vst3_build = build_plugin(
     vst3_pluginenv, 
     'vst3adapter', 
-    adapter_sources + common_sdk_sources + linux_sdk_sources,
+    adapter_sources + common_sdk_sources + linux_sdk_sources
 )

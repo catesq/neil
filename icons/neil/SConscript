@@ -18,7 +18,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-Import('env', 'install', 'install_recursive', 'win32')
+Import('install', 'win32')
 import glob
 
 install('${ICONS_NEIL_PATH}/16x16', glob.glob('16x16/*.png'), 0o644)

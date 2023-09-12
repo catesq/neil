@@ -27,7 +27,9 @@ import glob
 #
 #######################################
 
+
 localenv = env.Clone()
+
 
 files = [
     'compress.cpp',
@@ -52,77 +54,61 @@ files = [
     'synchronization.cpp',
     'undo.cpp',
     'thread_id.cpp',
+    'driver_portaudio.cpp',
+    'driver_rainout.cpp',
 ]
 
 
-localenv.Append(LIBS=[
-    'FLAC',
-    'z',
-    'mad',
-    'mpg123'
-])
+localenv.Append(
+    LIBS=[
+        'FLAC',
+        'z',
+        'mad',
+        'mpg123',
+        'pthread',
+        localenv['LIB_DL'],
+        localenv['LIB_COMPAT'],
+        'pugixml',
+        'minizip-ng',
+        'ssl',
+        'pthread',
+        'm',
+        'portaudio',
+        'portmidi',
+    ],
+    CCFLAGS=[
+        '-D_LIB', 
+        '-D_LIBZZUB',
+        '-I${BUILD_PATH}/include/'
+    ]
+)
 
-localenv.Append(CCFLAGS=['-D_LIB','-D_LIBZZUB'])
-
-# neccessities
-# localenv.Append(CCFLAGS=[
-# '-Wno-deprecated',
-# ])
-
-# localenv.Append(LIBPATH='${MINIZIP_SRC_PATH}/release')
-localenv.Append(LIBS=[
-    'pthread',
-    localenv['LIB_DL'],
-    localenv['LIB_COMPAT'],
-    'pugixml',
-    'minizip-ng',
-    'ssl',
-])
 
 if localenv['USE_SIGNATURE'] == True:
-    localenv.Append(CCFLAGS=[
-    '-DUSE_SIGNATURE'
-    ])
+    localenv.Append(CCFLAGS=['-DUSE_SIGNATURE'])
 
 
-    if localenv['SNDFILE']:
-        localenv.Append(LIBS=[
-            'sndfile',
-        ])
-        localenv.Append(CCFLAGS=[
-            '-DUSE_SNDFILE',
-        ])
+if localenv['SNDFILE']:
+    localenv.Append(
+        LIBS=[ 'sndfile' ],
+        CCFLAGS=[ '-DUSE_SNDFILE' ]
+    )
 
-        #######################################
-        # portaudio
-        #######################################
 
-        files += [
-            'driver_portaudio.cpp',
-            'driver_rainout.cpp',
-        ]
+#######################################
+# targets
+#######################################
 
-        localenv.Append(LIBS=[
-            'pthread',
-            'm',
-            'portaudio',
-            'portmidi',
-        ])
-
-        #######################################
-        # targets
-        #######################################
-
-        shlibsuffix = localenv['SHLIBSUFFIX']
-        localenv['SHLIBSUFFIX'] += '.' + env['LIBZZUB_VERSION']
-        libzzub = localenv.SharedLibrary('${LIB_BUILD_PATH}/zzub',files)
-        installed_libzzub = install_lib(libzzub)
-        vcomps = env['LIBZZUB_VERSION'].split('.')
-        for i in range(len(vcomps)):
-            v = '.'.join(vcomps[:i])
-            if v:
-                v = '.'+v
-            symlinkcmd = 'cd $TARGET.dir && rm -f $TARGET.name && ln -s $SOURCE.name $TARGET.name'
-            localenv.Command('${LIB_BUILD_PATH}/libzzub'+shlibsuffix+v, libzzub, symlinkcmd)
-            localenv.Command('${DESTDIR}${PREFIX}${LIBDIR}/libzzub'+shlibsuffix+v, installed_libzzub, symlinkcmd)
+shlibsuffix = localenv['SHLIBSUFFIX']
+localenv['SHLIBSUFFIX'] += '.' + env['LIBZZUB_VERSION']
+libzzub = localenv.SharedLibrary('${LIB_BUILD_PATH}/zzub', files)
+installed_libzzub = install_lib(libzzub)
+vcomps = env['LIBZZUB_VERSION'].split('.')
+for i in range(len(vcomps)):
+    v = '.'.join(vcomps[:i])
+    if v:
+        v = '.'+v
+    symlinkcmd = 'cd $TARGET.dir && rm -f $TARGET.name && ln -s $SOURCE.name $TARGET.name'
+    localenv.Command('${LIB_BUILD_PATH}/libzzub'+shlibsuffix+v, libzzub, symlinkcmd)
+    localenv.Command('${DESTDIR}${PREFIX}${LIBDIR}/libzzub'+shlibsuffix+v, installed_libzzub, symlinkcmd)
 

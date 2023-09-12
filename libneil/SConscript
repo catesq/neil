@@ -28,6 +28,7 @@ posix = os.name == 'posix'
 linux = sys.platform == 'linux2'
 x86_64 = platform.machine() == 'x86_64'
 
+Import('main_env')
 
 ######################################
 #
@@ -70,7 +71,7 @@ def audioengine_converter(value):
     value = value.lower()
     if not value in ('portaudio'):
         print("invalid option for AUDIOENGINE:",value)
-        sys.Exit(1)
+        sys.exit(1)
     return value
 
 opts = Variables( 'options.conf', ARGUMENTS )
@@ -100,13 +101,6 @@ opts.Add("MAD", "Support libmad encoder", False, None, bool_converter)
 env = Environment(ENV = os.environ, options = opts)
 
 def get_revision():
-    # if this is a repository, take the string from hg
-    hgpath = env.WhereIs('hg', os.environ['PATH'])
-    if os.path.isdir('.hg') and (hgpath != None):
-        rev = os.popen('hg id -ni').readline().strip()
-        if rev != "" and rev != "exported":
-            revid, revn = rev.split(' ')
-            return '%s:%s' % (revn, revid)
     # its a release build, take the string from a special file
     if os.path.isfile('REVISION'):
         rev = open('REVISION').readline().strip()
@@ -126,20 +120,18 @@ env.SConsignFile()
 #
 ######################################
 
-
-env['ROOTPATH'] = os.getcwd()
+env['SRC_PATH'] = main_env['SRC_PATH']
+# env['LIBNEIL_SRC_PATH'] = os.path.join(env['SRC_PATH'], 'libneil')
+env['BUILD_PATH'] = main_env['BUILD_PATH']
 
 env.Append(CCFLAGS=['-D__SCONS__'])
-env.Append(LIBPATH=['${ROOTPATH}/lib'])
+env.Append(LIBPATH=['${BUILD_PATH}/lib'])
 
 SetOption('num_jobs', env['JOBS'].replace('-j', ''))
 
-env.Append(CCFLAGS=[
-        '-DPOSIX',
-        ])
-env.Append(LINKFLAGS=[
-        '-Wl,-rpath=%s' % str(env.Dir('${DESTDIR}${PREFIX}${LIBDIR}')),
-        ])
+env.Append(CCFLAGS=[ '-DPOSIX', ])
+env.Append(LINKFLAGS=[ '-Wl,-rpath=%s' % str(env.Dir('${DESTDIR}${PREFIX}${LIBDIR}')), ])
+
 if os.uname()[0] == 'FreeBSD':
     env.Append(CCFLAGS=[ '-I/usr/local/include' ])
     env.Append(LINKFLAGS=[ '-L/usr/local/lib' ])
@@ -183,23 +175,23 @@ if gcc:
         env.Append(CCFLAGS=ARGUMENTS.get('CCFLAGS'))
     else:
         env.Append(CCFLAGS=[
-                '-g',
-                '-DDEBUG',
-                '-D_DEBUG',
+            '-g',
+            '-DDEBUG',
+            '-D_DEBUG',
         ])
     if env['SSE2'] == True:
         if not x86_64:
             env.Append(CCFLAGS=[
-                    '-march=i686',
+                '-march=i686',
             ])
         env.Append(CCFLAGS=[
-                '-mfpmath=sse',
-                '-msse2',
+            '-mfpmath=sse',
+            '-msse2',
         ])
     elif env['SSE'] == True:
         if not x86_64:
             env.Append(CCFLAGS=[
-                    '-march=i686',
+                '-march=i686',
             ])
         env.Append(CCFLAGS=[
                 '-mfpmath=sse',
@@ -224,8 +216,8 @@ if x86_64:
     env['BUILDERS']['StaticLibrary'] = picLibBuilder
     env['BUILDERS']['Library'] = picLibBuilder
     env.Append(CCFLAGS=[
-            '-D__X86_64__'
-            ])
+        '-D__X86_64__'
+    ])
 
 ######################################
 #
@@ -295,27 +287,29 @@ def install_lib(source):
     if posix and (not env['DESTDIR']):
         env.AddPostAction(result, env.LdConfig(libpath))
     return result
+
 def install_python_extension(name,files):
     return install(pyextpath + "/"+name, files)
+
 def install_bin(source):
     return install(binpath, source)
+
 def install_plugin(source):
     return install(pluginpath, source)
+
 def install_plugin_help(name, files):
     return install("${DESTDIR}${PREFIX}/share/doc/zzub/plugins/"+name, files, 0o644)
 
-env['PORTMIDI_SRC_PATH'] = '${ROOTPATH}/src/portmidi'
-env['LIBZZUB_SRC_PATH'] = '${ROOTPATH}/src/libzzub'
-env['MINIZIP_SRC_PATH'] = '${ROOTPATH}/src/minizip-ng'
-env['PLUGINS_SRC_PATH'] = '${ROOTPATH}/src/plugins'
-env['PYZZUB_SRC_PATH'] = '${ROOTPATH}/src/pyzzub'
-env['LANTERNFISH_SRC_PATH'] = '${ROOTPATH}/src/lanternfish'
-env['KISSFFT_SRC_PATH'] = '${ROOTPATH}/src/kiss_fft'
-env['UTILS_SRC_PATH'] = '${ROOTPATH}/src/utils'
+env['LIBZZUB_SRC_PATH'] = '${SRC_PATH}/libneil/src/libzzub'
+env['PLUGINS_SRC_PATH'] = '${SRC_PATH}/libneil/src/plugins'
+env['PYZZUB_SRC_PATH'] = '${SRC_PATH}/libneil/src/pyzzub'
+env['LANTERNFISH_SRC_PATH'] = '${SRC_PATH}/libneil/src/lanternfish'
+env['KISSFFT_SRC_PATH'] = '${SRC_PATH}/libneil/src/kiss_fft'
+env['UTILS_SRC_PATH'] = '${SRC_PATH}/libneil/src/utils'
 
 
-env['LIB_BUILD_PATH'] = '${ROOTPATH}/lib'
-env['BIN_BUILD_PATH'] = '${ROOTPATH}/bin'
+env['LIB_BUILD_PATH'] = '${BUILD_PATH}/lib'
+env['BIN_BUILD_PATH'] = '${BUILD_PATH}/bin'
 
 ######################################
 #
@@ -323,7 +317,7 @@ env['BIN_BUILD_PATH'] = '${ROOTPATH}/bin'
 #
 ######################################
 
-env.Append(CPPPATH=['${ROOTPATH}/include'])
+env.Append(CPPPATH=['${BUILD_PATH}/libneil/include'])
 
 ######################################
 #
@@ -432,10 +426,10 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     if not conf.CheckCHeader('mpg123.h'):
         lib_errors += LibraryNotFound("libmpg123")
 
-    if not conf.CheckCHeader('boost/graph/adjacency_list.hpp'):
+    if not conf.CheckCXXHeader('boost/graph/adjacency_list.hpp'):
         lib_errors += LibraryNotFound("libboost-graph")
         
-    if not conf.CheckCHeader('pugixml.hpp'):
+    if not conf.CheckCXXHeader('pugixml.hpp'):
         lib_errors += LibraryNotFound("libpugixml")
 
     if not conf.CheckCHeader('FLAC/all.h'):
@@ -491,7 +485,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     if lib_errors:
         print("Could not build, dependency problems:")
         print("\n".join(lib_errors))
-        sys.Exit(1)
+        sys.exit(1)
 
     print("Finished configuration.")
     print()
@@ -520,7 +514,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     print()
     print("Please check if above settings reflect what you want, then build libzzub using")
     print("\tscons")
-    sys.Exit(0)
+    sys.exit(0)
 
 ######################################
 # save config
@@ -533,7 +527,7 @@ if (not is_cleaning()) and (env['CONFIGURED'] != VERSION):
     print("libzzub is not configured for version %s yet." % VERSION)
     print()
     print("Please run 'scons configure' to configure libzzub.")
-    sys.Exit(1)
+    sys.exit(1)
 
 
 #######################################
@@ -613,9 +607,9 @@ builders = dict(
     BuildConfig = Builder(action = build_buildconfig),
     Signature = Builder(action = build_signature),
     PyExtension = Builder(action = build_python_extension),
-    ZIDLCHeader = Builder(action = 'python ${ROOTPATH}/tools/zidl --c-header $TARGET $SOURCE'),
-    ZIDLCDef = Builder(action = 'python ${ROOTPATH}/tools/zidl --c-def $TARGET $SOURCE'),
-    ZIDLPyCtypes = Builder(action = 'python ${ROOTPATH}/tools/zidl --libversion $LIBZZUB_VERSION --py-ctypes $TARGET $SOURCE'),
+    ZIDLCHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --c-header $TARGET $SOURCE'),
+    ZIDLCDef = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --c-def $TARGET $SOURCE'),
+    ZIDLPyCtypes = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --libversion $LIBZZUB_VERSION --py-ctypes $TARGET $SOURCE'),
 )
 
 env['BUILDERS'].update(builders)
@@ -625,15 +619,16 @@ env['BUILDERS'].update(builders)
 # zidl
 #
 #######################################
-
 output = []
-output.append(env.ZIDLCHeader('${ROOTPATH}/include/zzub/zzub.h', '${ROOTPATH}/include/zzub/zzub.zidl'))
-output.append(env.ZIDLCDef('${LIBZZUB_SRC_PATH}/libzzub.def', '${ROOTPATH}/include/zzub/zzub.zidl'))
-output.append(env.ZIDLPyCtypes('${PYZZUB_SRC_PATH}/zzub/__init__.py', '${ROOTPATH}/include/zzub/zzub.zidl'))
+output.append(env.ZIDLCHeader('${BUILD_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLCDef('${BUILD_PATH}/libneil/pyzzub/libzzub.def', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLPyCtypes('${BUILD_PATH}/libneil/pyzzub/zzub/__init__.py', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
 
-# make targets dependent from script
-env.Depends(output, '${ROOTPATH}/tools/zidl')
+# make targets dependent on script
+env.Depends(output, '${SRC_PATH}/libneil/tools/zidl')
 
+#duplicate this header so it's usable in ide's when SRC_PATH/libneil/include has been added to the includepath, alternative is adding one of the build variant dirs to the build path
+env.ZIDLCHeader('${SRC_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl')
 #######################################
 #
 # SConscripts
@@ -654,14 +649,14 @@ Export(
 )
 
 # generate signature
-env.Signature(target='include/zzub/signature.h',source='options.conf')
+env.Signature(target='${BUILD_PATH}/libneil/include/zzub/signature.h', source='options.conf')
 
-env.SConscript('${LANTERNFISH_SRC_PATH}/SConscript')
-env.SConscript('${KISSFFT_SRC_PATH}/SConscript')
-env.SConscript('${LIBZZUB_SRC_PATH}/SConscript')
+env.SConscript('${LANTERNFISH_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/lanternfish', duplicate=0)
+env.SConscript('${KISSFFT_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/kiss_fft', duplicate=0)
+env.SConscript('${LIBZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/libzzub', duplicate=0)
 env.SConscript('${PLUGINS_SRC_PATH}/SConscript')
-env.SConscript('${PYZZUB_SRC_PATH}/SConscript')
-env.SConscript('${UTILS_SRC_PATH}/SConscript')
+env.SConscript('${PYZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/pyzzub', duplicate=0)
+env.SConscript('${UTILS_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/utils', duplicate=0)
 
 #######################################
 #
@@ -670,7 +665,7 @@ env.SConscript('${UTILS_SRC_PATH}/SConscript')
 #######################################
 
 # install zzub plugin and type headers
-install(includepath+'/zzub', 'include/zzub/plugin.h')
-install(includepath+'/zzub', 'include/zzub/types.h')
-install(includepath+'/zzub', 'include/zzub/zzub.h')
-install(includepath+'/zzub', 'include/zzub/signature.h')
+install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/plugin.h')
+install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/types.h')
+install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/zzub.h')
+# install(includepath+'/zzub', '${BUILD_PATH}/include/zzub/signature.h')

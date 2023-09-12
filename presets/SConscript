@@ -16,12 +16,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-Import('env', 'install', 'install_recursive')
+Import('main_env', 'install', 'install_recursive')
 import glob
 import os
 
 for filename in glob.glob('*.prs'):
 	install('${SHARE_PATH}/presets', filename, 0o644)
 
-env.Install(dir='${SETTINGS_PATH}', source='mdaDrumLibrary')
+main_env.Install(dir='${SETTINGS_PATH}', source='mdaDrumLibrary')
 
