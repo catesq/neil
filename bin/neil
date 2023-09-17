@@ -12,8 +12,8 @@ paths = {
         "LV2_PATH": "/usr/lib/lv2:/usr/local/lib/lv2:{HOME}/.lv2:/usr/local/lib64/lv2:/usr/lib64/lv2",
 #		"DSSI_PATH": "/usr/local/lib/dssi:/usr/lib/x86_64-linux-gnu/dssi/:/usr/lib/dssi",
 #		"LADSPA_PATH": "/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa",
-        "VST_PATH": "{HOME}/.vst",
-        "VST3_PATH": "{HOME}/.vst3"
+        "VST_PATH": "{HOME}/.vst:/usr/lib64/vst:/usr/lib/vst",
+        "VST3_PATH": "{HOME}/.vst3:/usr/lib64/vst3/:/usr/lib/vst3/",
     },
 
     "xplatform": {
@@ -25,7 +25,7 @@ paths = {
 updated_env = False
 
 
-# manjaro had /usr/lib/64 symlinked to /usr/lib. this polluted stdout with many warnings about duplicate lv2 plugins
+# manjaro symlinks /usr/lib64 to /usr/lib making each lv2 in there plugin show a warning about a duplicate plugin
 def remove_symlinks(pathstr, separator=':'):
     paths = [str(Path(path).resolve()) for path in pathstr.split(separator)]
     remove = []

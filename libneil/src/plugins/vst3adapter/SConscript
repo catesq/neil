@@ -66,7 +66,7 @@ vst3_pluginenv.Append(
     -Ilibneil/src/plugins/vst3adapter/vst3sdk -Ilibneil/src/plugins/vst3adapter/pluginterfaces 
     -Ilibneil/src/plugins/vst3adapter/public.sdk -Ilibneil/src/plugins/vst3adapter/base 
     -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui''',
-    LIBS=['boost_system', 'boost_filesystem', 'stdc++fs'] + vst_static_libs, 
+    LIBS=['boost_system', 'boost_filesystem', 'stdc++fs', 'zzub'] + vst_static_libs, 
     LIBPATH=os.path.join(vst_build_dir, 'lib'),
 
 )

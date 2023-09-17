@@ -405,7 +405,7 @@ vst_adapter::process_stereo(float** pin, float** pout, int numsamples, int mode)
     sample_pos += numsamples;
 
     if (info->flags & zzub_plugin_flag_has_midi_input) {
-        midi_track_manager.process_samples(numsamples);
+        midi_track_manager.process_samples(numsamples, mode);
 
         if (midi_events.size() > 0) {
             printf("vst_adapter sed midi events\n");
