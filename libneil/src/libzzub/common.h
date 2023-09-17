@@ -117,7 +117,7 @@ typedef zzub::note_track zzub_note_track_t;
 #include "pluginloader.h"
 #include "timer.h"
 #include "driver.h"
-#include "midi.h"
+#include "midi_driver.h"
 #include "wavetable.h"
 #include "input.h"
 #include "output.h"

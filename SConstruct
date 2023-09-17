@@ -43,6 +43,7 @@ def bool_converter(value):
         return False
     return bool(value)
 
+
 opts = Variables('options.conf', ARGUMENTS )
 opts.Add("PREFIX", 'Set the install "prefix" ( /path/to/PREFIX )', "/usr/local")
 opts.Add("DESTDIR", 'Set the root directory to install into ( /path/to/DESTDIR )', "")
@@ -53,10 +54,10 @@ if posix:
 
 env = Environment(ENV = os.environ, options=opts)
 
-if posix and env['COMPILER'] == 'clang':
-    env["CC"] = (os.getenv("CC") or env["CC"])
-    env["CXX"] = (os.getenv("CXX") or env["CXX"])
-    env["ENV"].update(x for x in os.environ.items() if x[0].startswith("CCC_"))
+# if posix and env['COMPILER'] == 'clang':
+#     env["CC"] = (os.getenv("CC") or env["CC"])
+#     env["CXX"] = (os.getenv("CXX") or env["CXX"])
+#     env["ENV"].update(x for x in os.environ.items() if x[0].startswith("CCC_"))
 
 env.SConsignFile()
 

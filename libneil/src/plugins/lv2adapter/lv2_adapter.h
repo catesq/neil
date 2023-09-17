@@ -21,6 +21,8 @@
 #include "zzub/signature.h"
 #include "zzub/zzub.h"
 
+#include "libzzub/midi_track.h"
+
 #ifndef _WIN32
 #define HAVE_MLOCK 1  // zix checks for HAVE_MLOCK before using mlock - in sys/mman.h - for memory locking
 #endif

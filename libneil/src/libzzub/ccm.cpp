@@ -542,7 +542,7 @@ xml_node CcmWriter::saveInit(xml_node &parent, zzub::song &player, int plugin) {
     mem_archive arc;
     metaplugin& m = *player.plugins[plugin];
     m.plugin->save(&arc);
-    saveArchive(item, id_from_ptr((const void*)plugin), arc);
+    saveArchive(item, id_from_ptr((const void*)((long) plugin)), arc);
 
     if (m.info->global_parameters.size()) {
         xml_node global = item.append_child(node_element);

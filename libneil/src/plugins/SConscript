@@ -45,13 +45,14 @@ def build_plugin(localenv, libname, files, helpfiles=None, deffile='zzub_plugin.
         install_plugin_help(libname, [filename for filename in helpfiles])
     return plugin
 
+
 Export('build_plugin')
 
 for filename in os.listdir('.'):
     plugin_dir_path = os.path.abspath(filename)
-    plugin_name = os.path.basename(plugin_dir_path)
+    plugin_name = os.path.basename(filename)
     if os.path.isfile(os.path.join(plugin_dir_path,'SConscript')):
         pluginenv = env.Clone()
         Export('plugin_dir_path', 'pluginenv')
-        env.SConscript(os.path.join(plugin_dir_path, 'SConscript'), variant_dir='${BUILD_PATH}/libneil/src/plugins/' + plugin_name, duplicate=1)
+        env.SConscript(os.path.join(plugin_dir_path, 'SConscript'))
 

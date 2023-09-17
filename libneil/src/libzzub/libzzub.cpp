@@ -34,9 +34,6 @@
 #include "driver_rainout.h"
 #include "driver_silent.h"
 
-namespace zzub {
-
-}
 
 struct zzub_flatapi_player : zzub::player {
     //zzub::audiodriver_rtaudio driver;

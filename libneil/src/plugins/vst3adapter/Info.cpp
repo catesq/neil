@@ -56,11 +56,7 @@ Vst3Info::Vst3Info(
             break;
 
         case Vst3Category::Instrument:
-            min_tracks = 1;
-            max_tracks = ZZUB_MAX_MIDI_NOTE_TRACKS;
-
             zzub::midi_track_manager::add_midi_track_info(this);
-
             flags |= (zzub::plugin_flag_is_instrument | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_has_midi_input);
             break;
 

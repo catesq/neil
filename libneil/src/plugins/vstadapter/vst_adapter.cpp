@@ -120,7 +120,7 @@ VSTCALLBACK hostCallback(
 
 
 vst_adapter::vst_adapter(const vst_zzub_info* info) 
-  : info(info), midi_track_manager(*this, MAX_TRACKS) {
+  : info(info), midi_track_manager(*this) {
 
     globalvals = (uint16_t*)malloc(sizeof(uint16_t) * info->get_param_count());
     attributes = (int*)&attr_values;
@@ -129,7 +129,7 @@ vst_adapter::vst_adapter(const vst_zzub_info* info)
     printf("INIT VST ADAPTER");
     if (info->flags & zzub_plugin_flag_has_midi_input) {
         printf("Init vst adapter midi input\n");
-        track_values = malloc(sizeof(struct zzub::midi_note_track) * MAX_TRACKS);
+        track_values = malloc(sizeof(struct zzub::midi_note_track) * midi_track_manager.get_max_num_tracks());
         num_tracks = 1;
         set_track_count(num_tracks);
     }
@@ -353,18 +353,23 @@ vst_adapter::process_events() {
 }
 
 
+
+
+inline std::string describe_time(std::string tag, zzub::master_info* master_info, uint64_t sampl_pos) {
+    return tag + " at beat pos: " + std::to_string(SAMPLES_TO_BEATS(sampl_pos, master_info->samples_per_second, master_info->beats_per_minute)) + "\n";
+}
+
 void 
 vst_adapter::add_note_on(uint8_t note, uint8_t volume) {
-    printf("vst_adapter add_note_on %d at time %d\n", note, sample_pos);
+    printf(describe_time("vst_adapter add_note_on", _master_info, sample_pos).c_str());
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_note_on(note, volume));
 }
 
-
 void 
 vst_adapter::add_note_off(uint8_t note) {
-    printf("vst_adapter add_note_off %d at time  %d\n", note, sample_pos);
+    printf(describe_time("vst_adapter add_note_off", _master_info, sample_pos).c_str());
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.insert(midi_events.begin(), midi_note_off(note));
@@ -373,7 +378,7 @@ vst_adapter::add_note_off(uint8_t note) {
 
 void 
 vst_adapter::add_aftertouch(uint8_t note, uint8_t volume) {
-    printf("vst_adapter add_aftertouch %d\n", sample_pos);
+    printf(describe_time("vst_adapter add_aftertouch", _master_info, sample_pos).c_str());
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_note_aftertouch(note, volume));
@@ -382,7 +387,7 @@ vst_adapter::add_aftertouch(uint8_t note, uint8_t volume) {
 
 void 
 vst_adapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
-    printf("vst_adapter add_midi_command  %d\n", sample_pos);
+    printf(describe_time("vst_adapter add_midi_command", _master_info, sample_pos).c_str());
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_message(cmd, data1, data2));
@@ -589,6 +594,7 @@ vst_adapter::describe_value(int param, int value) {
     if (param < info->get_param_count()) {
         description_str = std::to_string(value);
     } else {
+        printf("describe using midi track manager\n");
         int track_param = param - info->get_param_count();
         description_str = midi_track_manager.describe_value(track_param / 6, track_param % 6, value);
     }

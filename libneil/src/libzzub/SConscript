@@ -43,7 +43,8 @@ files = [
     'pluginloader.cpp',
     'tools.cpp',
     'wavetable.cpp',
-    'midi.cpp',
+    'midi_driver.cpp',
+    'midi_track.cpp',
     'recorder.cpp',
     'ccm.cpp',
     'connections.cpp',
@@ -79,7 +80,7 @@ localenv.Append(
     CCFLAGS=[
         '-D_LIB', 
         '-D_LIBZZUB',
-        '-I${BUILD_PATH}/include/'
+        # '-I${BUILD_PATH}/include/'
     ]
 )
 

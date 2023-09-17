@@ -6,7 +6,9 @@
 #include <boost/dll.hpp>
 
 #include "vst_defines.h"
+
 #include "zzub/plugin.h"
+#include "libzzub/midi_track.h"
 
 
 struct vst_zzub_info;

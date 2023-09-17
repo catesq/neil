@@ -13,6 +13,8 @@
 
 #include "zzub/plugin.h"
 
+#include "libzzub/midi_track.h"
+
 #include "Info.h"
 #include "Defines.h"
 

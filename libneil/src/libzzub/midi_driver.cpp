@@ -21,7 +21,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <porttime.h>
 #include <portmidi.h>
 #include <pmutil.h>
-#include "midi.h"
+
+#include "midi_driver.h"
 
 namespace zzub {
 

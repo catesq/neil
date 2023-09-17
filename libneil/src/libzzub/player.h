@@ -25,7 +25,7 @@
 #include <stack>
 
 #include "undo.h"
-#include "midi.h"
+#include "midi_driver.h"
 #include "input.h"
 #include "output.h"
 #include "recorder.h"

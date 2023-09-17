@@ -23,7 +23,7 @@ Vst3PluginAdapter::Vst3PluginAdapter(
     Steinberg::Vst::PlugProvider* provider 
 ) : info((const Vst3Info*) info),
     provider(provider), 
-    midi_track_manager(*this, ZZUB_MAX_MIDI_NOTE_TRACKS),
+    midi_track_manager(*this),
     window_resizer([this](int width, int height) { return ui_resize(width, height); })
 {
     printf("build vst3 plugin\n");

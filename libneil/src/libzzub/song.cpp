@@ -537,6 +537,7 @@ void song::transfer_plugin_parameter_track_row(int plugin_id, int g, int t, cons
         param_ofs += size;
     }
 }
+
 void song::invoke_plugin_parameter_changes(int plugin_id, int g) {
     const zzub::pattern::group& group = plugins[plugin_id]->state_write.groups[g];
     for (int j = 0; j < (int)group.size(); j++) {
