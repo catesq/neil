@@ -382,7 +382,7 @@ zzub::midi_note_track* Vst3PluginAdapter::get_track_data_pointer(uint16_t track_
 
 bool Vst3PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, int mode) {
     if (info->flags & zzub_plugin_flag_has_midi_input) {
-        midi_track_manager.process_samples(numsamples);
+        midi_track_manager.process_samples(numsamples, mode);
 
         if (eventbuf.size() > 0) {
             printf("vst_adapter sed midi events\n");

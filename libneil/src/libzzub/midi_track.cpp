@@ -69,15 +69,21 @@ void midi_track_manager::set_track_count(int num) {
 
 
 // will handle the note length messages
-void midi_track_manager::process_samples(uint16_t numsamples) {
-    sample_pos += numsamples;
+void midi_track_manager::process_samples(uint16_t numsamples, int mode) {
+    if(mode == zzub_process_mode_no_io) {
+        return;
+    } else if (prev_mode == zzub_process_mode_no_io) {
+        prev_mode = mode;
+        prev_play_pos = play_pos;
+    }
+
     auto it = active_notes.begin();
 
     // iterate over active notes and remove any note's which have ended
     while(it != active_notes.end()) {
         auto &active = *it;
 
-        if ( active.has_ended_at(sample_pos) &&
+        if ( active.has_ended_at(play_pos) &&
             active.track_num < prev_tracks.size() && 
             prev_tracks[active.track_num].is_note_on() && 
             prev_tracks[active.track_num].note == active.note
@@ -162,7 +168,7 @@ void midi_track_manager::process_events() {
                 active_notes.push_back(active_note{ 
                     curr->note, 
                     track_num,
-                    sample_pos,
+                    play_pos,
                     samp_len
                 });
                 

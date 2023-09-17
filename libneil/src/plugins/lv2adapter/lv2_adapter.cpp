@@ -564,7 +564,7 @@ bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int 
         return false;
 
     if (info->flags & zzub_plugin_flag_is_instrument) {
-        midi_track_manager.process_samples(numsamples);
+        midi_track_manager.process_samples(numsamples, mode);
 
         if (midiEvents.count() > 0)
             send_midi_events();

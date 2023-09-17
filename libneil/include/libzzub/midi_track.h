@@ -205,14 +205,17 @@ private:
     uint16_t max_num_tracks = 1;
 
     // used a counter to send note length events
-    uint64_t sample_pos = 0;
+    uint64_t play_pos = 0;
 
 
-    uint64_t start_sample_pos = 0;
+    uint64_t prev_play_pos = 0;
 
     uint32_t sample_rate = 48000;
 
     float bpm = 126.0f;
+
+    int prev_mode = zzub_process_mode_no_io;
+
 
 
 public:
@@ -257,7 +260,7 @@ public:
 
 
     // will handle the note length messages
-    void process_samples(uint16_t numsamples);
+    void process_samples(uint16_t numsamples, int mode);
 
 
     void init(uint32_t rate) ;
