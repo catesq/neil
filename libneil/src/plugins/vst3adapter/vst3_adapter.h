@@ -15,8 +15,8 @@
 
 #include "libzzub/midi_track.h"
 
-#include "Info.h"
-#include "Defines.h"
+#include "vst3_info.h"
+#include "vst3_defines.h"
 
 extern "C" {
     void on_window_destroy(GtkWidget* widget, gpointer data);

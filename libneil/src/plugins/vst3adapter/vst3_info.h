@@ -3,8 +3,8 @@
 #include <pluginterfaces/vst/ivstaudioprocessor.h>
 #include <public.sdk/source/vst/hosting/plugprovider.h>
 
-#include "Defines.h"
-#include "Param.h"
+#include "vst3_defines.h"
+#include "vst3_param.h"
 #include "zzub/plugin.h"
  
 

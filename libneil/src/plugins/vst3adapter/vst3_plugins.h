@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Info.h"
+#include "vst3_info.h"
 
 #include "zzub/plugin.h"
 #include "zzub/signature.h"

@@ -1,5 +1,5 @@
-#include "Collection.h"
 #include <cstdlib>
+#include "vst3_plugins.h"
 #include "vst3_info.h"
 #include "vst3_info_loader.h"
 
