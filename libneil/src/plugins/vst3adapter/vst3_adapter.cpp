@@ -1,4 +1,4 @@
-#include "Adapter.h"
+#include "vst3_adapter.h"
 
 #include "public.sdk/source/vst/hosting/eventlist.h"
 #include "public.sdk/source/vst/hosting/parameterchanges.h"

@@ -1,7 +1,7 @@
 #include "Collection.h"
 #include <cstdlib>
-#include "Info.h"
-#include "InfoLoader.h"
+#include "vst3_info.h"
+#include "vst3_info_loader.h"
 
 
 #include "public.sdk/source/vst/hosting/module.h"

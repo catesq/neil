@@ -1,5 +1,5 @@
 
-#include "Param.h"
+#include "vst3_param.h"
 
 
 Vst3Param* 

@@ -72,7 +72,7 @@ vst3_pluginenv.Append(
 )
 
 
-adapter_sources = ['Adapter.cpp', 'Collection.cpp', 'Info.cpp', 'Param.cpp', 'Defines.cpp']
+adapter_sources = ['vst3_adapter.cpp', 'vst3_plugins.cpp', 'vst3_info.cpp', 'vst3_param.cpp', 'vst3_defines.cpp']
 
 
 vst3_build = build_plugin(

@@ -4,8 +4,8 @@
 #include "public.sdk/source/vst/utility/stringconvert.h"
 #include "pluginterfaces/gui/iplugview.h"
 
-#include "Info.h"
-#include "Adapter.h"
+#include "vst3_info.h"
+#include "vst3_adapter.h"
 
 using MediaTypes = Steinberg::Vst::MediaTypes;
 using BusDirections = Steinberg::Vst::BusDirections;
