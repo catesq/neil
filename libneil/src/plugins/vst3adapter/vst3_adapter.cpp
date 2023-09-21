@@ -9,6 +9,7 @@
 using MediaTypes = Steinberg::Vst::MediaTypes;
 
 using BusDirections = Steinberg::Vst::BusDirections;
+namespace SpeakerArr = Steinberg::Vst::SpeakerArr;
 
 
 extern "C" {
@@ -87,6 +88,19 @@ void Vst3PluginAdapter::init(zzub::archive* pi) {
     process_context.projectTimeSamples = 0;
 }
 
+inline void print_arrangements(Steinberg::Vst::SpeakerArrangement* data, uint8_t num) {
+    for(uint8_t idx=0; idx < num; idx++) {
+        printf("bus %d: %d \n", idx, data[idx]);
+    }
+    printf("\n");
+}
+
+inline void print_arrangements(std::vector<Steinberg::Vst::SpeakerArrangement>& speakers) {
+    for(auto speaker: speakers) {
+        printf("%d", speaker);
+    }
+    printf("\n");
+}
 
 void Vst3PluginAdapter::created() {
     controller = provider->getController();
@@ -95,21 +109,26 @@ void Vst3PluginAdapter::created() {
 
     Steinberg::FUnknownPtr<Steinberg::Vst::IConnectionPoint>(component)->connect(Steinberg::FUnknownPtr<Steinberg::Vst::IConnectionPoint>(controller));
 
-    Steinberg::Vst::SpeakerArrangement stereoArrangement = Steinberg::Vst::SpeakerArr::kStereo;
+    //define a int array of length bus count populated with Steinberg::Vst::SpeakerArr::kStereo
+    auto audio_in_count = info->get_bus_count(MediaTypes::kAudio, BusDirections::kInput);
+    auto audio_out_count = info->get_bus_count(MediaTypes::kAudio, BusDirections::kOutput);
+
+    std::vector<Steinberg::Vst::SpeakerArrangement> input_speakers(audio_in_count, SpeakerArr::kStereo);
+    std::vector<Steinberg::Vst::SpeakerArrangement> output_speakers(audio_out_count, SpeakerArr::kStereo);
 
     auto res = processor->setBusArrangements(
-        &stereoArrangement, info->get_bus_count(MediaTypes::kAudio, BusDirections::kInput),
-        &stereoArrangement, info->get_bus_count(MediaTypes::kAudio, BusDirections::kOutput)
+        input_speakers.data(), audio_in_count,
+        output_speakers.data(), audio_out_count
     );
 
-    if (res != Steinberg::kResultOk) {
-		std::cout << "Failed to set bus arrangements" << std::endl;
+    if (res == Steinberg::kResultFalse) {
+		std::cout << "Failed to set bus arrangements: " << res << std::endl;
         return;
 	}
 
     res = processor->setupProcessing(process_setup);
     if (res != Steinberg::kResultOk) {
-        std::cout << "Failed to setup VST processing" << std::endl;
+        std::cout << "Failed to setup VST processing: " << res << std::endl;
         return;
     }
 
@@ -130,7 +149,6 @@ void Vst3PluginAdapter::created() {
     }
 
     res = processor->setProcessing(true);
-
     ok = true;
 }
 

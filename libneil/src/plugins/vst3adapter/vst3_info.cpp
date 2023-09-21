@@ -106,7 +106,8 @@ Vst3Info::Vst3Info(
 
 /// TODO make a move constructor and a move constructor - to reuse/free the malloc'd strings in the zuub::param in global_parameters and reallocte
 /// the plugininfo will be reused and only be destroyed when the program is closed so putting this off is unclean but irrelevant
-Vst3Info::~Vst3Info() {
+Vst3Info::~Vst3Info() 
+{
     for(auto param: params)
         free(param);
 
@@ -115,7 +116,8 @@ Vst3Info::~Vst3Info() {
 
 
 
-const std::vector<Steinberg::Vst::BusInfo>& Vst3Info::get_bus_infos(
+const std::vector<Steinberg::Vst::BusInfo>& Vst3Info::get_bus_infos
+(
     Steinberg::Vst::MediaTypes type,
     Steinberg::Vst::BusDirections direction
 ) const {
@@ -141,7 +143,8 @@ const std::vector<Steinberg::Vst::BusInfo>& Vst3Info::get_bus_infos(
 
 
 
-const Steinberg::Vst::BusInfo& Vst3Info::get_bus_info(
+const Steinberg::Vst::BusInfo& Vst3Info::get_bus_info
+(
     Steinberg::Vst::MediaTypes type,
     Steinberg::Vst::BusDirections direction,
     uint32_t index
@@ -151,7 +154,8 @@ const Steinberg::Vst::BusInfo& Vst3Info::get_bus_info(
 
 
 
-uint32_t Vst3Info::get_bus_count(
+uint32_t Vst3Info::get_bus_count
+(
     Steinberg::Vst::MediaTypes type,
     Steinberg::Vst::BusDirections direction
 ) const {
@@ -160,7 +164,8 @@ uint32_t Vst3Info::get_bus_count(
 
 
 
-std::vector<Steinberg::Vst::BusInfo> Vst3Info::build_bus_infos(
+std::vector<Steinberg::Vst::BusInfo> Vst3Info::build_bus_infos
+(
     Steinberg::Vst::IComponent* plugin,
     Steinberg::Vst::MediaTypes type, 
     Steinberg::Vst::BusDirections direction
@@ -170,7 +175,6 @@ std::vector<Steinberg::Vst::BusInfo> Vst3Info::build_bus_infos(
     for(int index=0; index < plugin->getBusCount(type, direction); index++)  {
         Steinberg::Vst::BusInfo bus_info;
         plugin->getBusInfo(type, direction, index, bus_info);
-        
         bus_infos.push_back(bus_info);
     }
 
@@ -196,7 +200,8 @@ Vst3Info::get_track_param_count() const
 
 
 Vst3Category 
-Vst3Info::get_main_category(
+Vst3Info::get_main_category
+(
     const VST3::Hosting::ClassInfo& class_info
 ) const {
     for(auto& category: class_info.subCategories()) {
@@ -217,21 +222,24 @@ Vst3Info::get_main_category(
 
 
 Vst3Param* 
-Vst3Info::get_vst_param(uint32_t index) const {
+Vst3Info::get_vst_param(uint32_t index) const 
+{
     return params[index];
 }
 
 
 
 bool 
-Vst3Info::is_valid() const {
+Vst3Info::is_valid() const 
+{
     return is_valid_plugin;
 }
 
 
 
 zzub::plugin* 
-Vst3Info::create_plugin() const {
+Vst3Info::create_plugin() const 
+{
     auto factory = host_module->getFactory();
     auto provider = new Steinberg::Vst::PlugProvider(factory, class_info, true);
     
