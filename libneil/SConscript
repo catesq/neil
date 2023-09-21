@@ -21,7 +21,7 @@
 
 VERSION = "0.3"
 
-import os, glob, sys, time, platform
+import os, sys, platform
 import distutils.sysconfig
 
 posix = os.name == 'posix'
@@ -449,6 +449,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     else:
         env['DSSI'] = False
 
+    # need  about uninstalled lv2 packages 
     missing_lv2 = []
     for pkg, header in (('lilv-0', 'lilv-0/lilv/lilv.h'), ('lv2', 'lv2.h'), ('suil-0', 'suil-0/suil/suil.h')):
         if not conf.CheckCHeader(header):
@@ -573,9 +574,6 @@ output.append(env.ZIDLPyCtypes('${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__.p
 # make targets dependent on script
 env.Depends(output, '${SRC_PATH}/libneil/tools/zidl')
 
-#duplicate this header so it's more usable in ide's
-#can add $SRC_PATH/libneil/include to the includepath instead of build dirs to the includepath
-
 env.ZIDLCHeader('${SRC_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl')
 #######################################
 #
@@ -597,7 +595,6 @@ Export(
 )
 
 # generate signature
-print("env.signature start")
 env.Signature(target='include/zzub/signature.h', source='options.conf')
 # env.Signature(target='${BUILD_PATH}/libneil/include/zzub/signature.h', source='options.conf')
 print("env.signature done")
@@ -605,7 +602,7 @@ print("env.signature done")
 env.SConscript('${LANTERNFISH_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/lanternfish', duplicate=0)
 env.SConscript('${KISSFFT_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/kiss_fft', duplicate=0)
 env.SConscript('${LIBZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/libzzub', duplicate=0)
-env.SConscript('${PLUGINS_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/plugins', duplicate=1)
+env.SConscript('${PLUGINS_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/plugins', duplicate=0)
 env.SConscript('${PYZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/pyzzub', duplicate=0)
 env.SConscript('${UTILS_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/utils', duplicate=0)
 

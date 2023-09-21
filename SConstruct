@@ -26,7 +26,6 @@ win32 = os.name == 'nt'
 mac = os.name == 'mac'
 
 
-
 ######################################
 #
 # init environment and define options

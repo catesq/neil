@@ -1,60 +1,39 @@
 import sys, os
-Import('pluginenv', 'build_plugin')
+Import('plugin_dir', 'pluginenv', 'build_plugin')
+
+src_dir = plugin_dir
+vst3_pluginenv = pluginenv.Clone()
+
+vst3sdk_dir = os.path.join(src_dir, 'vst3sdk')
+vst3sdk_cmakelists_file = os.path.join(vst3sdk_dir, 'CMakeLists.txt')
+
+vst3sdk_build_dir = os.path.join(pluginenv['BUILD_PATH'], 'vst3')
+build_type = 'Debug' if vst3_pluginenv['DEBUG'] else 'Release'
 
 
-vst_cmake_file = pluginenv.FindFile('CMakeLists.txt', 'vst3sdk')
+def build_vstdsk(build_dir, src_dir, build_type):
+    prev_dir = os.getcwd()
+    if not os.path.exists(build_dir):
+        os.mkdir(build_dir)
+    os.chdir(build_dir)
+    vst3_pluginenv.Execute('cmake ' + vst3sdk_dir + ' -DCMAKE_CXX_FLAGS="-include stdint.h" -DSMTG_ADD_VST3_PLUGINS_SAMPLES=0 -DSMTG_ADD_VST3_HOSTING_SAMPLES=0')
+    vst3_pluginenv.Execute('cmake --build . --config ' + build_type)
+    os.chdir(prev_dir)
 
-if not vst_cmake_file:
-    print("libneil/src/plugins/vst3adapter/vst3sdk/CMakeLists.txt not found. Maybe 'git submodule --init --update' to get the VST3 SDK.")
+
+if not os.path.exists(vst3sdk_cmakelists_file):
+    print("vst3sdk in '%s' not ok. Maybe 'git submodule --init --update' to get the VST3 SDK." % vst3sdk_cmakelists_file)
     sys.exit()
 
 
-vst_build_dir = 'vst3-debug-build' if pluginenv['DEBUG'] else 'vst3-release-build'
-
-
-vst3_pluginenv = pluginenv.Clone()
+if not os.path.exists(os.path.join(vst3sdk_build_dir, 'lib')):
+    build_vstdsk(vst3sdk_build_dir, vst3sdk_dir, build_type)
 
 
 vst_static_libs = [
-    'base', 
-    'pluginterfaces', 
-    'sdk', 
-    'sdk_common', 
-    'sdk_hosting', 
-    'vstgui', 
-    'vstgui_standalone', 
-    'vstgui_support', 
-    'vstgui_uidescription'
-]
-
-
-common_sdk_sources = [
-    "vst3sdk/public.sdk/source/vst/hosting/connectionproxy.cpp",
-    "vst3sdk/public.sdk/source/vst/hosting/eventlist.cpp",
-    "vst3sdk/public.sdk/source/vst/hosting/hostclasses.cpp",
-    "vst3sdk/public.sdk/source/vst/hosting/module.cpp",
-    "vst3sdk/public.sdk/source/vst/hosting/parameterchanges.cpp",
-    "vst3sdk/public.sdk/source/vst/hosting/pluginterfacesupport.cpp",
-    "vst3sdk/public.sdk/source/vst/hosting/plugprovider.cpp",
-    "vst3sdk/public.sdk/source/vst/hosting/processdata.cpp",
-    "vst3sdk/public.sdk/source/vst/utility/stringconvert.cpp",
-    "vst3sdk/public.sdk/source/vst/vstinitiids.cpp",
-]
-
-
-linux_sdk_sources = [
-    "vst3sdk/public.sdk/source/common/threadchecker_linux.cpp",
-    "vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp",
-]
-
-
-windows_sdk_sources = [
-    "vst3sdk/public.sdk/source/vst/hosting/module_win32.cpp",
-]
-
-
-mac_sdk_sources = [
-    "vst3sdk/public.sdk/source/vst/hosting/module_mac.mm",
+    'base', 'pluginterfaces', 'sdk', 'sdk_common', 
+    'sdk_hosting', 'vstgui', 'vstgui_standalone', 
+    'vstgui_support', 'vstgui_uidescription'
 ]
 
 
@@ -67,16 +46,41 @@ vst3_pluginenv.Append(
     -Ilibneil/src/plugins/vst3adapter/public.sdk -Ilibneil/src/plugins/vst3adapter/base 
     -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui''',
     LIBS=['boost_system', 'boost_filesystem', 'stdc++fs', 'zzub'] + vst_static_libs, 
-    LIBPATH=os.path.join(vst_build_dir, 'lib'),
-
+    LIBPATH=os.path.join(vst3sdk_build_dir, 'lib'),
 )
 
 
-adapter_sources = ['vst3_adapter.cpp', 'vst3_plugins.cpp', 'vst3_info.cpp', 'vst3_param.cpp', 'vst3_defines.cpp']
+sdk_src = [
+    "vst3sdk/public.sdk/source/vst/hosting/connectionproxy.cpp", 
+    "vst3sdk/public.sdk/source/vst/hosting/eventlist.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/hostclasses.cpp", 
+    "vst3sdk/public.sdk/source/vst/hosting/module.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/parameterchanges.cpp", 
+    "vst3sdk/public.sdk/source/vst/hosting/pluginterfacesupport.cpp",
+    "vst3sdk/public.sdk/source/vst/hosting/plugprovider.cpp", 
+    "vst3sdk/public.sdk/source/vst/hosting/processdata.cpp",
+    "vst3sdk/public.sdk/source/vst/utility/stringconvert.cpp", 
+    "vst3sdk/public.sdk/source/vst/vstinitiids.cpp",
+]
+
+
+platform = {
+    "linux" : ["vst3sdk/public.sdk/source/common/threadchecker_linux.cpp", "vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp"],
+    "windows" : ["vst3sdk/public.sdk/source/vst/hosting/module_win32.cpp"],
+    "mac": ["vst3sdk/public.sdk/source/vst/hosting/module_mac.mm"],
+}
+
+
+platform_src = platform["linux"]
+
+
+adapter_src = [
+    'vst3_adapter.cpp', 'vst3_plugins.cpp', 'vst3_info.cpp', 'vst3_param.cpp', 'vst3_defines.cpp'
+]
 
 
 vst3_build = build_plugin(
     vst3_pluginenv, 
     'vst3adapter', 
-    adapter_sources + common_sdk_sources + linux_sdk_sources
+    adapter_src + sdk_src + platform_src,
 )
