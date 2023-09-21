@@ -1,6 +1,6 @@
 #encoding: latin-1
 
-# libzzub, Buzé, Aldrin
+# libzzub, Buzï¿½, Aldrin
 # Modular Sequencer
 # Copyright (C) 2006 The Aldrin Development Team
 #
@@ -20,7 +20,5 @@
 
 Import('pluginenv', 'build_plugin')
 
-build_plugin(pluginenv, 'MadBrains_Dynamite6', [
-	'MadBrains_Dynamite6.cpp',
-])
+build_plugin(pluginenv, 'MadBrains_Dynamite6', [ 'MadBrains_Dynamite6.cpp', ])
 

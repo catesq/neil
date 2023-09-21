@@ -1,6 +1,6 @@
 #encoding: latin-1
 
-# libzzub, Buzé, Aldrin
+# libzzub, Buzï¿½, Aldrin
 # Modular Sequencer
 # Copyright (C) 2006 The Aldrin Development Team
 #
@@ -20,6 +20,4 @@
 
 Import('pluginenv', 'build_plugin')
 
-build_plugin(pluginenv, 'joachims_multi_v2', files=[
-		'main.cpp',
-	])
+build_plugin(pluginenv, 'joachims_multi_v2', files=[ 'main.cpp', ])
