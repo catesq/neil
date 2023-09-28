@@ -7,6 +7,9 @@
 #include "aeffectx.h"
 #include "zzub/plugin.h"
 
+#include "loguru.hpp"
+
+
 #define MAX_TRACKS 16
 #define MAX_EVENTS 256
 

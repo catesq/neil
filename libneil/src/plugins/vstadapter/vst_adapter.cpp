@@ -14,6 +14,7 @@
 #include "vst_plugin_info.h"
 #include "vstfxstore.h"
 
+
 //
 
 // #if GDK_WINDOWING_WIN32
@@ -70,11 +71,14 @@ VSTCALLBACK hostCallback(
 
     switch (opcode) {
         case audioMasterBeginEdit:
-            printf("opcode begin edit\n");
+            LOG_F(INFO, "hostCallback: opcode begin edit");
+            
+            // printf("opcode begin edit\n");
             break;
 
         case audioMasterEndEdit:  // so far I can get the same info from audioMasterAutomate
-            printf("opcode end edit\n");
+            LOG_F(INFO, "hostCallback: opcode end edit");
+            // printf("opcode end edit\n");
             break;
 
         case audioMasterAutomate:
@@ -125,9 +129,10 @@ vst_adapter::vst_adapter(const vst_zzub_info* info)
     globalvals = (uint16_t*)malloc(sizeof(uint16_t) * info->get_param_count());
     attributes = (int*)&attr_values;
     global_values = globalvals;
+    LOG_F(INFO, "init adapter");
 
-    printf("INIT VST ADAPTER");
     if (info->flags & zzub_plugin_flag_has_midi_input) {
+        LOG_F(INFO, "init midi input");
         printf("Init vst adapter midi input\n");
         track_values = malloc(sizeof(struct zzub::midi_note_track) * midi_track_manager.get_max_num_tracks());
         num_tracks = 1;
@@ -408,7 +413,7 @@ vst_adapter::process_stereo(float** pin, float** pout, int numsamples, int mode)
         midi_track_manager.process_samples(numsamples, mode);
 
         if (midi_events.size() > 0) {
-            printf("vst_adapter sed midi events\n");
+            printf("vst_adapter has midi events\n");
             vst_events->numEvents = midi_events.size();
             memcpy(&vst_events->events[0], &midi_events[0], vst_events->numEvents * sizeof(VstMidiEvent*));
             dispatch(plugin, effProcessEvents, 0, 0, vst_events, 0.f);

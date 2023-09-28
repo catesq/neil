@@ -36,6 +36,22 @@ get_param_props(AEffect* plugin, int index) {
     return nullptr;
 }
 
+typedef AEffect *(*CreatePluginCallback)(AEffectDispatcherProc);
+
+CreatePluginCallback get_vst_main(boost::dll::shared_library& lib) {
+    try {
+        return lib.get<AEffect*(AEffectDispatcherProc)>("VSTPluginMain");
+    } catch(boost::system::system_error e) {
+    }
+
+    try {
+        return lib.get<AEffect *(AEffectDispatcherProc)>("main");
+    } catch(boost::system::system_error e) { }
+
+    return nullptr;
+}
+
+
 AEffect*
 load_vst(boost::dll::shared_library& lib, std::string vst_filename, AEffectDispatcherProc callback, void* user_p) {
     boost::system::error_code ec{};
@@ -44,12 +60,12 @@ load_vst(boost::dll::shared_library& lib, std::string vst_filename, AEffectDispa
     if (ec)
         return nullptr;
 
-    auto entryPoint = lib.get<AEffect*(AEffectDispatcherProc)>("VSTPluginMain");
+    CreatePluginCallback entry_point = get_vst_main(lib);
 
-    if (!entryPoint)
+    if (!entry_point)
         return nullptr;
 
-    auto plugin = entryPoint(callback);
+    auto plugin = entry_point(callback);
 
     if (!plugin || plugin->magic != kEffectMagic)
         return nullptr;
