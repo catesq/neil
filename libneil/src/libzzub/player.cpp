@@ -40,11 +40,34 @@ extern size_t sizeFromWaveFormat(int waveFormat);
 
 struct find_info_by_uri : public std::unary_function<const zzub::info*, bool> {
     std::string uri;
+    bool is_versioned = false;
+    std::string unversioned_uri{};
+
     find_info_by_uri(std::string u) {
         uri = u;
+        is_versioned = is_versioned_uri(uri);
+
+        if(is_versioned) {
+            unversioned_uri = get_deversioned_uri(uri);
+        }
     }
+
+    bool is_versioned_uri(std::string uri) {
+        return uri.find_first_not_of("0123456789", uri.find_last_of('/') + 1) == std::string::npos;
+    }
+
+    std::string get_deversioned_uri(std::string uri) {
+        return uri.substr(0, uri.find_last_of('/'));
+    }
+
     bool operator()(const zzub::info* info) {
-        return strcmpi(uri.c_str(), info->uri.c_str()) == 0;
+        if (strcmpi(uri.c_str(), info->uri.c_str()) == 0)
+            return true;
+
+        if(is_versioned && is_versioned_uri(info->uri) && strcmpi(unversioned_uri.c_str(), get_deversioned_uri(info->uri).c_str()) == 0)
+            return true;
+
+        return false;
     }
 };
 
@@ -395,12 +418,14 @@ void waveimporter::close() {
 
   ***/
 
+
 player::player() {
     swap_operations_commit = false;
 
     history_position = history.begin();
 
 }
+
 
 player::~player(void) {
     if (front.plugins[0] != 0) {
@@ -416,6 +441,7 @@ player::~player(void) {
     }
     plugin_libraries.clear();
 }
+
 
 bool player::initialize() {
 #if defined(__SSE__)
@@ -464,6 +490,7 @@ void player::load_plugin_library(const std::string &fullpath) {
     }
 }
 
+
 void player::initialize_plugin_directory(std::string folder) {
     using namespace std;
 
@@ -494,6 +521,7 @@ void player::initialize_plugin_directory(std::string folder) {
 
 }
 
+
 void player::initialize_plugin_libraries() {
     // add input collection
     plugin_libraries.push_back(new pluginlib("input", *this, &inputPluginCollection));
@@ -507,6 +535,7 @@ void player::initialize_plugin_libraries() {
         initialize_plugin_directory(plugin_folders[i]);
     }
 }
+
 
 void player::set_state(player_state newstate) {
     op_state_change* o = new op_state_change(newstate);
@@ -524,6 +553,7 @@ void player::set_state(player_state newstate) {
     // set_state_direct() instead, not requiring a flush. (phew!)
 }
 
+
 void player::set_state_direct(player_state newstate) {
     op_state_change o(newstate);
     o.prepare(front);
@@ -533,6 +563,7 @@ void player::set_state_direct(player_state newstate) {
     //execute_single_operation(&o);
 }
 
+
 void player::set_play_position(int pos) {
     op_player_song_position* o = new op_player_song_position(pos);
     backbuffer_operations.push_back(o);
@@ -541,6 +572,7 @@ void player::set_play_position(int pos) {
 
     // NOTE: also see note for player::set_state(). the same stuff goes on here too.
 }
+
 
 /*	\brief Clears all data associated with current song from the player.
    */
@@ -590,6 +622,7 @@ void player::clear() {
     set_state(player_state_stopped);
 }
 
+
 void player::clear_plugin(int id) {
     operation_copy_flags flags;
     flags.copy_plugins = true;
@@ -631,19 +664,23 @@ void player::clear_plugin(int id) {
     plugin_set_track_count(id, i->min_tracks);
 }
 
+
 void player::audio_enabled() {
     // tell undo manager to wait for audio thread to perform swapping
     swap_mode = true;
 }
+
 
 void player::audio_disabled() {
     // tell undo manager we should swap directly on the user thread
     swap_mode = false;
 }
 
+
 void player::samplerate_changed() {
     front.master_info.samples_per_second = work_rate;
 }
+
 
 void player::work_stereo(int sample_count) {
     using namespace std;
@@ -729,6 +766,7 @@ void player::play_plugin_note(int plugin_id, int note, int prevNote, int _veloci
     flush_operations(0, 0, 0);
 }
 
+
 void player::reset_keyjazz() {
     if (front.keyjazz.size() == 0)
         return ;
@@ -758,6 +796,7 @@ std::string player::plugin_get_new_name(std::string uri) {
     using namespace std;
     string baseName;
     std::vector<const zzub::info*>::iterator info = find_if(plugin_infos.begin(), plugin_infos.end(), find_info_by_uri(uri));
+    
     if (info == plugin_infos.end())
         baseName = uri; else
         baseName = (*info)->short_name;
@@ -775,6 +814,7 @@ std::string player::plugin_get_new_name(std::string uri) {
     return baseName;	// error
 }
 
+
 const zzub::info* player::plugin_get_info(std::string uri) {
     std::vector<const zzub::info*>::iterator i = find_if(plugin_infos.begin(), plugin_infos.end(), find_info_by_uri(uri));
     if (i == plugin_infos.end())
@@ -782,6 +822,7 @@ const zzub::info* player::plugin_get_info(std::string uri) {
     else
         return *i;
 }
+
 
 void player::begin_plugin_operation(int plugin_id) {
     operation_copy_flags flags;
@@ -794,6 +835,7 @@ void player::begin_plugin_operation(int plugin_id) {
         ignore_undo = true;
     }
 }
+
 
 void player::end_plugin_operation(int plugin_id) {
     int flags = back.plugins[plugin_id]->flags;
@@ -825,6 +867,7 @@ void player::process_user_event_queue() {
             front.user_event_queue_read++;
     }
 }
+
 
 void player::set_event_queue_state(int enable) {
     front.enable_event_queue = enable;
@@ -871,6 +914,7 @@ void player::plugin_set_parameter(int plugin_id, int group, int track, int colum
     }
 }
 
+
 void player::add_midimapping(int plugin_id, int group, int track, int param, int channel, int controller) {
     zzub::midimapping mapping;
     mapping.plugin_id = plugin_id;
@@ -884,6 +928,7 @@ void player::add_midimapping(int plugin_id, int group, int track, int param, int
     op_midimapping_remove* undo = new op_midimapping_remove(back.midi_mappings.size() - 1);
     prepare_operation_undo(undo);
 }
+
 
 void player::remove_midimapping(int plugin_id, int group, int track, int param) {
     operation_copy_flags flags;
@@ -900,6 +945,7 @@ void player::remove_midimapping(int plugin_id, int group, int track, int param) 
         }
     }
 }
+
 
 int player::create_plugin(std::vector<char>& bytes, string name, const zzub::info* loader, int pflags) {
     operation_copy_flags flags;
@@ -924,6 +970,7 @@ int player::create_plugin(std::vector<char>& bytes, string name, const zzub::inf
     return next_id;
 }
 
+
 void player::plugin_destroy(int id) {
     op_plugin_delete* redo = new op_plugin_delete(this, id);
     merge_backbuffer_flags(redo->copy_flags);
@@ -947,6 +994,7 @@ void player::plugin_destroy(int id) {
     end_plugin_operation(id);
 }
 
+
 void player::plugin_set_name(int id, std::string name) {
     zzub::metaplugin m;
     op_plugin_replace* redo = new op_plugin_replace(id, m);
@@ -959,6 +1007,7 @@ void player::plugin_set_name(int id, std::string name) {
     prepare_operation_undo(undo);
     end_plugin_operation(id);
 }
+
 
 void player::plugin_set_position(int id, float x, float y) {
     zzub::metaplugin m;
