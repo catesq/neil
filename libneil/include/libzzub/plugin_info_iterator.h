@@ -2,6 +2,7 @@
 #include <boost/filesystem.hpp>
 #include <string>
 #include <algorithm>
+#include <type_traits>
 
 #if defined(WINOS)
 #define strtok_r strtok_s
@@ -41,7 +42,11 @@ struct PluginInfoLoader {
  */
 
 
-template<typename PluginInfoType>
+template<
+    typename PluginInfoType, 
+    typename InfoLoader, 
+    typename = std::enable_if_t<std::is_base_of_v<PluginInfoLoader<PluginInfoType>, InfoLoader>>
+>
 struct PluginInfoIterator {
     /**
      * Example:
@@ -59,13 +64,18 @@ struct PluginInfoIterator {
      *     // and factory->register_info(plugin_info); is the only use
      * }
      */
-
     PluginInfoIterator(
-        PluginInfoLoader<PluginInfoType>& loader, 
+        // PluginInfoLoader<PluginInfoType>& loader, 
         std::string paths, 
         std::string separators=PATH_SEPARATOR
-    ) : loader(loader), paths(paths), separators(separators) {
+    ) : paths(paths), separators(separators) {
     }
+    // PluginInfoIterator(
+    //     PluginInfoLoader<PluginInfoType>& loader, 
+    //     std::string paths, 
+    //     std::string separators=PATH_SEPARATOR
+    // ) : loader(loader), paths(paths), separators(separators) {
+    // }
 
 
     std::vector<PluginInfoType*> get_plugin_infos() {
@@ -100,7 +110,8 @@ struct PluginInfoIterator {
 
 
 private:
-    PluginInfoLoader<PluginInfoType>& loader; 
+    // PluginInfoLoader<PluginInfoType> loader = InfoLoader(); 
+    InfoLoader loader {};
     std::string paths;
     std::string separators=PATH_SEPARATOR;
     std::vector<std::string> checked_paths;
