@@ -2,6 +2,3 @@
 	path = libneil/src/plugins/vst3adapter/vst3sdk
 	url = https://github.com/steinbergmedia/vst3sdk
 	ignore = untracked
-[submodule "loguru"]
-	path = loguru
-	url = https://github.com/emilk/loguru
