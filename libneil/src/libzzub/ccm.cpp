@@ -1292,8 +1292,9 @@ bool CcmReader::loadClasses(xml_node &classes, zzub::player &player) {
     for (xml_node::iterator i = classes.begin(); i != classes.end(); ++i) {
         if (!strcmp(i->name(), "pluginclass")) {
             std::string uri = i->attribute("id").value();
+
             const zzub::info* loader = player.plugin_get_info(uri);
-            if (!loader) { // no loader for this
+            if (!loader && uri != "@zzub.org/master") { // no loader for this
                 mem_archive arc;
                 // do we have some data saved?
                 for (xml_node::iterator data = i->begin(); data != i->end(); ++data) {
@@ -1419,6 +1420,7 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
             }
 
             const zzub::info *loader = player.plugin_get_info(i->attribute("ref").value());
+
             int plugin_id;
             if (!strcmp(i->attribute("ref").value(), "@zzub.org/master")) {
                 plugin_id = 0;//player.master;
@@ -1428,7 +1430,7 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
                 plugin_id = player.create_plugin(b, i->attribute("name").value(), loader, 0);
 
             } else {
-                std::cerr << "ccm: unable to find loader for uri " << i->attribute("ref").value() << std::endl;
+                std::cerr << "ccm: unable to find loader for uri '" << i->attribute("ref").value() << std::endl;
                 plugin_id = -1;
             }
 
