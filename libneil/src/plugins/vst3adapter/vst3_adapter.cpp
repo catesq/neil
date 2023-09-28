@@ -24,7 +24,7 @@ Vst3PluginAdapter::Vst3PluginAdapter(
     Steinberg::Vst::PlugProvider* provider 
 ) : info((const Vst3Info*) info),
     provider(provider), 
-    midi_track_manager(*this),
+    midi_track_manager(*this, info->max_tracks),
     window_resizer([this](int width, int height) { return ui_resize(width, height); })
 {
     printf("build vst3 plugin\n");
@@ -59,7 +59,7 @@ void Vst3PluginAdapter::init(zzub::archive* pi) {
     _host->set_event_handler(metaplugin, this);
 
     auto sample_size = Steinberg::Vst::kSample32;
-    auto meta_plugin = _host->get_metaplugin();
+    // auto meta_plugin = _host->get_metaplugin();
     auto max_block_size = zzub::buffer_size;
     auto realtime = true;
 

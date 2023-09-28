@@ -1,11 +1,20 @@
 #include "lv2_ports.h"
 
 #include <cmath>
+#include <string.h>
 
 #include "lv2/parameters/parameters.h"
 #include "lv2/port-groups/port-groups.h"
 #include "lv2/time/time.h"
 #include "lv2_utils.h"
+
+
+
+inline bool is_switch_port(lv2_port* port) {
+    return LV2_IS_PORT_TOGGLED(port->properties) || LV2_IS_PORT_TRIGGER(port->properties) || LV2_IS_PORT_DESIGNATION_ENABLED(port->designation);
+}
+
+
 
 lv2_port::lv2_port(const lv2_port& other)
     : flow(other.flow),
@@ -132,7 +141,7 @@ param_port::param_port(const LilvPort* lilvPort,
     LilvScalePoints* lilv_scale_points = lilv_port_get_scale_points(lilvPlugin, lilvPort);
     unsigned scale_points_size = scale_size(lilv_scale_points);
 
-    if (LV2_IS_PORT_TOGGLED(properties) || LV2_IS_PORT_TRIGGER(properties)) {
+    if (is_switch_port(this)) {
         zzubParam.set_switch();
         zzubParam.value_default = zzub::switch_value_off;
     } else if (LV2_IS_PORT_ENUMERATION(properties)) {
@@ -297,9 +306,6 @@ uint32_t
 get_port_designation(const lv2_lilv_world* cache, const LilvPlugin* lilvPlugin, const LilvPort* lilvPort) {
     uint32_t designation = 0;
 
-    if (lilv_port_has_property(lilvPlugin, lilvPort, cache->nodes.reportsLatency))
-        designation |= LV2_PORT_DESIGNATION_LATENCY;
-
     LilvNode* const designationNode = lilv_port_get(lilvPlugin, lilvPort, cache->nodes.designation);
 
     if (designationNode) {
@@ -308,6 +314,9 @@ get_port_designation(const lv2_lilv_world* cache, const LilvPlugin* lilvPlugin, 
         if (designationStr.length() > 0) {
             if (std::strcmp(designationStr.c_str(), LV2_CORE__control) == 0)
                 designation |= LV2_PORT_DESIGNATION_CONTROL;
+
+            else if (std::strcmp(designationStr.c_str(), LV2_CORE__enabled) == 0)
+                designation |= LV2_PORT_DESIGNATION_ENABLED;
 
             else if (std::strcmp(designationStr.c_str(), LV2_CORE__freeWheeling) == 0)
                 designation |= LV2_PORT_DESIGNATION_FREEWHEELING;
@@ -350,7 +359,7 @@ get_port_designation(const lv2_lilv_world* cache, const LilvPlugin* lilvPlugin, 
 
             else if (std::strncmp(designationStr.c_str(), LV2_PARAMETERS_PREFIX, std::strlen(LV2_PARAMETERS_PREFIX)) != 0 &&
                      std::strncmp(designationStr.c_str(), LV2_PORT_GROUPS_PREFIX, std::strlen(LV2_PORT_GROUPS_PREFIX)) != 0) {
-                fprintf(stderr, "lv2_port_designation(\"%s, %s\") - got unknown port designation '%s'",
+                fprintf(stderr, "lv2_port_designation(\"%s, %s\") - got unknown port designation '%s'\n",
                         as_string(lilv_plugin_get_name(lilvPlugin), true).c_str(),
                         as_string(lilv_port_get_name(lilvPlugin, lilvPort), true).c_str(),
                         designationStr.c_str());
@@ -358,6 +367,8 @@ get_port_designation(const lv2_lilv_world* cache, const LilvPlugin* lilvPlugin, 
         }
 
         lilv_node_free(designationNode);
+    } else if (lilv_port_has_property(lilvPlugin, lilvPort, cache->nodes.reportsLatency)) {
+        designation |= LV2_PORT_DESIGNATION_LATENCY;
     }
 
     return designation;

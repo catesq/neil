@@ -280,6 +280,9 @@ midi_note_len midi_track_manager::get_note_length(const midi_note_track *prev, c
 
 
 void midi_track_manager::add_midi_track_info(zzub::info* info) {
+        info->min_tracks = 1;
+        info->max_tracks = midi_track_manager::default_max_tracks;
+
         info->add_track_parameter()
              .set_note();
 

@@ -6,7 +6,7 @@
 
 #include "boost/filesystem.hpp"
 
-#include "plugin_info_iterator.h"
+#include "libzzub/plugin_info_iterator.h"
 
 #include "vst3_plugins.h"
 #include "vst3_info.h"

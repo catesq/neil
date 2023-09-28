@@ -65,6 +65,7 @@ Vst3Info::Vst3Info(
             break;
 
         case Vst3Category::Unknown:
+            printf("plugin %s category is unknown\n", name.c_str());
             break;
     }
 

@@ -9,6 +9,8 @@
 #include "zzub/plugin.h"
 #include "zzub/signature.h"
 
+#include "libzzub/plugin_info_iterator.h"
+
 #if defined(WINOS)
 #define strtok_r strtok_s
 #endif
@@ -23,80 +25,36 @@
 #define VST_EXT ".???"  // ide does not pick up on the platform constants defined in scons, this is a kludge to silence some warnings about unknown constant
 #endif
 
-struct vst_plugin_file_finder {
-    vst_plugin_file_finder(const char* path_str) {
-        read_vsts(path_str);
+struct vst_info_loader: public PluginInfoLoader<struct vst_zzub_info> {
+
+    virtual bool is_plugin(boost::filesystem::path path) override {
+        return boost::filesystem::is_regular_file(path) && path.extension().string() == VST_EXT;
     }
 
-    std::vector<vst_zzub_info*>::iterator begin() {
-        return vsts.begin();
-    }
-
-    std::vector<vst_zzub_info*>::iterator end() {
-        return vsts.end();
-    }
-
-   private:
-    void read_vsts(const char* path_str) {
-        if (boost::filesystem::is_directory(path_str)) {
-            for (auto& dir : get_dirs((char*)path_str))
-                read_vst_dir(dir);
-        } else {
-            printf("vst adapter vst search dir '%s' was not found\n", path_str);
-        }
-    }
-
-    std::vector<std::string> get_dirs(char* path_str) {
-        std::vector<std::string> dirs;
-
-        char* path_str_curr_p = NULL;
-        const char* separators = ":";
-        char* dir;
-
-        for (dir = strtok_r(path_str, separators, &path_str_curr_p);
-             dir != NULL;
-             dir = strtok_r(NULL, separators, &path_str_curr_p)) {
-            dirs.push_back(std::string(dir));
-        }
-
-        return dirs;
-    }
-
-    void read_vst_dir(std::string dir) {
-        for (auto& entry : boost::filesystem::recursive_directory_iterator(dir)) {
-            try_vst_load(entry.path());
-        }
-    }
-
-    void try_vst_load(boost::filesystem::path path) {
-        if (!boost::filesystem::is_regular_file(path))
-            return;
-
-        if (path.extension().string() != VST_EXT)
-            return;
+    virtual std::vector<struct vst_zzub_info*> get_plugin_infos(boost::filesystem::path path) override {
+        auto infos = std::vector<struct vst_zzub_info*>{};
 
         boost::dll::shared_library lib{};
         AEffect* plugin = load_vst(lib, path.string(), dummyHostCallback, nullptr);
 
         if (plugin == nullptr)
-            return;
+            return infos;
 
         VstPlugCategory category = (VstPlugCategory)dispatch(plugin, effGetPlugCategory);
 
-        if (category == kPlugCategOfflineProcess || category == kPlugCategUnknown)
-            return;
+        // if(category == kPlugCategShell) {
+        //     add_next_plugin(infos, lib, plugin);
+        // } else 
+        if (category != kPlugCategOfflineProcess && category != kPlugCategUnknown) {
+            infos.push_back(new vst_zzub_info(plugin, path.string(), category));
+        }
 
-        if (category == kPlugCategShell)
-            add_next_plugin(lib, plugin);
-        else
-            vsts.push_back(new vst_zzub_info(plugin, path.string(), category));
+        return infos;
     }
-
-    void add_next_plugin(boost::dll::shared_library& lib, AEffect* plugin) {
-    }
-
-    std::vector<vst_zzub_info*> vsts;
 };
+
+
+
 
 struct vst_plugins : zzub::plugincollection {
     vst_plugins(const char* vst_path);

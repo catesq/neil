@@ -25,8 +25,8 @@ Vst3PluginCollection::Vst3PluginCollection(const char* vst_path)
 
 
 void Vst3PluginCollection::initialize(zzub::pluginfactory *factory) {
-    auto info_loader = Vst3InfoLoader();
-    auto info_collector = PluginInfoIterator<struct Vst3Info>(info_loader, vst_path);
+    // auto info_loader = Vst3InfoLoader();
+    auto info_collector = PluginInfoIterator<struct Vst3Info, struct Vst3InfoLoader>(vst_path);
 
     for(auto plugin_info: info_collector.get_plugin_infos()) {
         printf("registered vst3 plugin: %s\n", plugin_info->name.c_str());

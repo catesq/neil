@@ -11,6 +11,9 @@
 
 struct lv2_adapter;
 
+
+
+
 // when the ports are being built the builder function in PluginInfo needs to track the number of control ports, parameter ports and total number of ports
 // the data counter is only used by param_ports and is the offset in bytes into the zzub::plugin::global_values
 struct PortCounter {
