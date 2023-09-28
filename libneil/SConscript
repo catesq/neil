@@ -49,6 +49,13 @@ class ExecNotFound:
     def __str__(self):
         return "error: unable to find executable file for '%s'" % self.prog
 
+class SubModuleNotFound:
+    def __init__(self, name, url):
+        self.name = prog
+        self.url = url
+    def __str__(self):
+        return "error: missing git submodule for %s (%s). try 'git submodule --init --update' in the root dir" % (self.prog, self.url)
+
 class PkgVersionErr:
     def __init__(self, lib, version):
         self.lib = lib
@@ -304,9 +311,11 @@ env['PLUGINS_SRC_PATH'] = '${SRC_PATH}/libneil/src/plugins'
 env['PYZZUB_SRC_PATH'] = '${SRC_PATH}/libneil/src/pyzzub'
 env['LANTERNFISH_SRC_PATH'] = '${SRC_PATH}/libneil/src/lanternfish'
 env['KISSFFT_SRC_PATH'] = '${SRC_PATH}/libneil/src/kiss_fft'
-env['UTILS_SRC_PATH'] = '${SRC_PATH}/libneil/src/utils'
+env['LOGGER_SRC_PATH'] = env['SRC_PATH'] + '/libneil/src/loguru'
+env['LOGGER_INCLUDE_PATH'] = env['LOGGER_SRC_PATH']
+env['LOGGER_BUILD_PATH'] = env['LOGGER_SRC_PATH'] + '/build/' + ('Debug' if env['DEBUG'] else 'Release')
 
-env['LIB_BUILD_PATH'] = '${BUILD_PATH}/lib'
+env['LIB_BUILD_PATH'] = '${BUILD_PATH}/lib:${LOGGER_BUILD_PATH}'
 env['BIN_BUILD_PATH'] = '${BUILD_PATH}/bin'
 
 ######################################
@@ -315,7 +324,7 @@ env['BIN_BUILD_PATH'] = '${BUILD_PATH}/bin'
 #
 ######################################
 
-env.Append(CPPPATH=['${BUILD_PATH}/libneil/include'])
+env.Append(CPPPATH=['${BUILD_PATH}/libneil/include', '${LOGGER_INCLUDE_PATH}'])
 
 ######################################
 #
@@ -405,6 +414,9 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     # make sure all the development libraries are installed
 
     lib_errors = []
+
+    if not conf.CheckCXXHeader('loguru.cpp'):
+        lib_errors += SubModuleNotFound('loguru', 'https://github.com/martinmoene/clue')
 
     if not conf.CheckCHeader('zlib.h'):
         lib_errors += LibraryNotFound("zlib")
@@ -530,6 +542,23 @@ if (not is_cleaning()) and (env['CONFIGURED'] != VERSION):
     sys.exit(1)
 
 
+
+######################################
+# build loguru logging library 
+######################################
+
+if not os.path.exists(env['LOGGER_BUILD_PATH']):
+    os.makedirs(env['LOGGER_BUILD_PATH'])
+
+if not os.path.exists(os.path.join(env['LOGGER_BUILD_PATH'], 'libloguru.a')) and not os.path.exists(os.path.join(env['LOGGER_BUILD_PATH'], 'libloguru.lib')):
+    prev_dir = os.getcwd()
+    build_type = 'Debug' if env['DEBUG'] else 'Release'
+    os.chdir(env['LOGGER_BUILD_PATH'])
+    env.Execute('cmake -DCMAKE_POSITION_INDEPENDENT_CODE=On -DBUILD_SHARED_LIBS=Off -DCMAKE_BUILD_TYPE=' + build_type + ' ../..')
+    env.Execute('cmake --build .')
+    os.chdir(prev_dir)
+
+env.Append(LIBPATH=[env['LOGGER_BUILD_PATH']], LIBS=['loguru'])
 #######################################
 #
 # custom builders
@@ -604,7 +633,6 @@ env.SConscript('${KISSFFT_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libn
 env.SConscript('${LIBZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/libzzub', duplicate=0)
 env.SConscript('${PLUGINS_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/plugins', duplicate=0)
 env.SConscript('${PYZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/pyzzub', duplicate=0)
-env.SConscript('${UTILS_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/utils', duplicate=0)
 
 #######################################
 #
