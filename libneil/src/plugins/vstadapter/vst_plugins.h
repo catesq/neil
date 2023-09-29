@@ -25,7 +25,7 @@
 #define VST_EXT ".???"  // ide does not pick up on the platform constants defined in scons, this is a kludge to silence some warnings about unknown constant
 #endif
 
-struct vst_info_loader: public PluginInfoLoader<struct vst_zzub_info> {
+struct vst_info_loader: public zzub::plugin_info_loader<struct vst_zzub_info> {
 
     virtual bool is_plugin(boost::filesystem::path path) override {
         return boost::filesystem::is_regular_file(path) && path.extension().string() == VST_EXT;

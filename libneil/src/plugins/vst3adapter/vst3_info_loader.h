@@ -12,7 +12,7 @@
 #include "vst3_info.h"
 
 
-struct Vst3InfoLoader: public PluginInfoLoader<struct Vst3Info> {
+struct Vst3InfoLoader: public zzub::plugin_info_loader<struct Vst3Info> {
     virtual bool is_plugin(boost::filesystem::path path) override {
         return boost::filesystem::is_directory(path) && path.extension().string() == ".vst3";
     }

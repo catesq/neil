@@ -14,7 +14,7 @@ vst_plugins::vst_plugins(const char *vst_path) :
 
 void vst_plugins::initialize(zzub::pluginfactory *factory) 
 {
-    for(auto plugin_info: PluginInfoIterator<vst_zzub_info, vst_info_loader>(vst_path).get_plugin_infos()) {
+    for(auto plugin_info: zzub::plugin_info_iterator<vst_zzub_info, vst_info_loader>(vst_path).get_plugin_infos()) {
         factory->register_info(plugin_info);
     }
 }
