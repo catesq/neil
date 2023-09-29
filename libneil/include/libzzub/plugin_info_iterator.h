@@ -17,14 +17,13 @@
 #endif
 
 
+namespace zzub {
+// the vst and vst3 adapters use this to create a zzub::info from a vst
+// it is used by the plugin_info_iterator to check a file/directory is a plugin then read all plugins in that file/dir
 
-// T will be a subclass of zzub::info used as an adapter between lv2/vst plugins and zzub plugins 
-// eg Vst3Info from libneils/src/plugins/vst3adapter/Info.h
-
-// a PluginInfoLoader is used by the PluginInfoIterator
 
 template<typename T>
-struct PluginInfoLoader {
+struct plugin_info_loader {
     // tests a file/directory to see if it's a plugin (just using file ending for now)  
     virtual bool is_plugin(boost::filesystem::path path) = 0;
 
@@ -33,53 +32,31 @@ struct PluginInfoLoader {
 };
 
 
+
 /**
- * @brief The PluginInfoIterator class
+ * @brief The plugin_info_iterator class
  *
- * Iterate over all files in a list of directories, check if each file is a vst/lv2/lv2 plugin
- * and build zzub::info a object for every plugin found 
- * 
+ * Rcursively iterate some directories and build zzub::info for every plugin found 
  */
 
+// info_type is a subclass of zzub::info
+// info_loader is a subclass of zzub::plugin_info_loader
 
 template<
-    typename PluginInfoType, 
-    typename InfoLoader, 
-    typename = std::enable_if_t<std::is_base_of_v<PluginInfoLoader<PluginInfoType>, InfoLoader>>
+    typename InfoType, 
+    typename LoaderType, 
+    typename = std::enable_if_t<std::is_base_of_v<plugin_info_loader<InfoType>, LoaderType>>
 >
-struct PluginInfoIterator {
-    /**
-     * Example:
-     *
-     * struct PluginInfo {};
-     *
-     * void add_plugin(PluginInfoIterator<PluginInfo>& infos, boost::filesystem::path filename) {
-     *     if(is_valid_plugin(filename)) {
-     *         infos.add_info(new Vst3PluginInfo{});
-     *     }
-     * }
-     *
-     * for(PluginInfo* plugin_info: PluginInfoIterator("/path/to/vst/:/separated/by/")) {
-     *     // this is used in zzub::plugincollection::initialize(zzub::pluginfactory* factory)
-     *     // and factory->register_info(plugin_info); is the only use
-     * }
-     */
-    PluginInfoIterator(
-        // PluginInfoLoader<PluginInfoType>& loader, 
+struct plugin_info_iterator {
+    plugin_info_iterator(
         std::string paths, 
         std::string separators=PATH_SEPARATOR
     ) : paths(paths), separators(separators) {
     }
-    // PluginInfoIterator(
-    //     PluginInfoLoader<PluginInfoType>& loader, 
-    //     std::string paths, 
-    //     std::string separators=PATH_SEPARATOR
-    // ) : loader(loader), paths(paths), separators(separators) {
-    // }
 
 
-    std::vector<PluginInfoType*> get_plugin_infos() {
-        std::vector<PluginInfoType*> plugin_infos {};
+    std::vector<InfoType*> get_plugin_infos() {
+        std::vector<InfoType*> plugin_infos {};
 
         auto directory_names = get_directory_names((char*)paths.c_str(), separators.c_str());
 
@@ -111,9 +88,9 @@ struct PluginInfoIterator {
 
 private:
     // PluginInfoLoader<PluginInfoType> loader = InfoLoader(); 
-    InfoLoader loader {};
+    LoaderType loader {};
     std::string paths;
-    std::string separators=PATH_SEPARATOR;
+    std::string separators = PATH_SEPARATOR;
     std::vector<std::string> checked_paths;
     
 
@@ -135,3 +112,5 @@ private:
     }
 
 };
+
+}
