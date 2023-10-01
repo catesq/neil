@@ -14,6 +14,8 @@
 #include "vst_plugin_info.h"
 #include "vstfxstore.h"
 
+#include "loguru.hpp"
+
 
 //
 
@@ -93,6 +95,14 @@ VSTCALLBACK hostCallback(
             break;
         }
 
+        case audioMasterGetSampleRate:
+        LOG_F(INFO, "hostCallback: audioMasterGetSampleRate %d", adapter->_master_info->samples_per_second);
+            return adapter->_master_info->samples_per_second;
+
+        case audioMasterGetBlockSize:
+        LOG_F(INFO, "hostCallback: audioMasterGetBlockSize %d", zzub_buffer_size);
+            return zzub_buffer_size;
+
         case audioMasterIdle:
             dispatch(effect, effEditIdle);
             break;
@@ -115,7 +125,7 @@ VSTCALLBACK hostCallback(
             return 0;
 
         default:
-            printf("vst hostCallback: missing opcode %d index %d\n", opcode, index);
+            LOG_F(WARNING, "vst hostCallback: missing opcode %d index %d\n", opcode, index);
             break;
     }
 
@@ -212,8 +222,8 @@ vst_adapter::init(zzub::archive* arc) {
     }
 
     dispatch(plugin, effOpen);
-    dispatch(plugin, effSetSampleRate, 0, 0, nullptr, (float)_master_info->samples_per_second);
-    dispatch(plugin, effSetBlockSize, 0, (VstIntPtr)256, nullptr, 0);
+    dispatch(plugin, effSetSampleRate, 0, 0, nullptr, (float) _master_info->samples_per_second);
+    dispatch(plugin, effSetBlockSize, 0, (VstIntPtr) zzub_buffer_size, nullptr, 0);
 
     if (plugin->numInputs != 2 && plugin->numInputs > 0)
         audioIn = (float**)malloc(sizeof(float*) * plugin->numInputs);
@@ -309,14 +319,19 @@ vst_adapter::ui_open() {
     auto win_id = WIN_ID_FUNC(window);
 
     dispatch(plugin, effEditOpen, 0, 0, (void*)win_id, 0);
-
+    gtk_widget_show_all(window);
+    
     ERect* gui_size = nullptr;
     dispatch(plugin, effEditGetRect, 0, 0, (void*)&gui_size, 0);
     dispatch(plugin, effGetProgram, 0, 0, nullptr, 0);
 
     if (gui_size) {
         ui_resize(gui_size->right, gui_size->bottom);
+        LOG_F(INFO, "vst_adapter: open gui %d %d %d %d", gui_size->left, gui_size->right, gui_size->top, gui_size->bottom);
+        gtk_widget_queue_draw(window);
     }
+
+    dispatch(plugin, effEditIdle);
 
     is_editor_open = true;
 }
@@ -424,8 +439,11 @@ vst_adapter::process_stereo(float** pin, float** pout, int numsamples, int mode)
     if (mode == zzub::process_mode_no_io)
         return 1;
 
+    // audioIn & audioOut are only allocated if they're not stereo
+    // they're usually stereo and we can use pin/pout to avoid pointless memcpy
     float** inputs = audioIn ? audioIn : pin;
     float** outputs = audioOut ? audioOut : pout;
+    LOG_F(INFO, "number of inputs %d %d", plugin->numInputs, plugin->numOutputs);
 
     if (audioIn) {
         for (int j = 0; j < plugin->numInputs; j++) {
