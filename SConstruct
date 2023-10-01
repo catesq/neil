@@ -36,9 +36,10 @@ def tools_converter(value):
     return value.split(',')
 
 def bool_converter(value):
-    if value == 'True':
+    value = value.lower()
+    if value in ('true','enabled','on','yes','1'):
         return True
-    elif value == 'False':
+    elif value in ('false','disabled','off','no','0'):
         return False
     return bool(value)
 
@@ -47,6 +48,7 @@ opts = Variables('options.conf', ARGUMENTS )
 opts.Add("PREFIX", 'Set the install "prefix" ( /path/to/PREFIX )', "/usr/local")
 opts.Add("DESTDIR", 'Set the root directory to install into ( /path/to/DESTDIR )', "")
 opts.Add("ETCDIR", 'Set the configuration dir "prefix" ( /path/to/ETC )', "/etc")
+opts.Add("DEBUG", "Compile everything in debug mode if true", False, None, bool_converter)
 
 if posix:
     opts.Add("COMPILER", "Either clang or gcc", "clang")
@@ -187,6 +189,7 @@ Export(
     'get_settings_dir',
     'pip',
     'win32', 'mac', 'posix', 
+    'tools_converter', 'bool_converter'
 )
 
 env.SConscript('applications/SConscript', variant_dir = os.path.join(env['BUILD_PATH'], 'applications'), duplicate = 0)
