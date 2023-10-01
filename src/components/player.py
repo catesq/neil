@@ -154,7 +154,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
 
         else:
             pluginpaths = []
-            paths = os.environ.get('LD_LIBRARY_PATH', None)  # todo or PATH on mswindows
+            paths = os.environ.get('ZZUB_LIBRARY_PATH', None)  
             print(paths)
             if paths:
                 paths = paths.split(os.pathsep)

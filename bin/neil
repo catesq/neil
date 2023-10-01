@@ -55,13 +55,9 @@ if sys.platform.startswith('linux'):
             paths = path.format(DEST=dest, HOME=home)
             os.environ[key] = remove_symlinks(path.format(DEST=dest, HOME=home))
 
-    if "LD_LIBRARY_PATH" not in os.environ or "zzub" not in os.environ["LD_LIBRARY_PATH"]:
-        updated_env = True
-        os.environ["LD_LIBRARY_PATH"] = "{DEST}/lib:{DEST}/lib/zzub".format(DEST=dest)
-
-    if updated_env:
-        os.execv(sys.argv[0], sys.argv)
-
+if "ZZUB_LIBRARY_PATH" not in os.environ or "zzub" not in os.environ["ZZUB_LIBRARY_PATH"]:
+    updated_env = True
+    os.environ["ZZUB_LIBRARY_PATH"] = "{DEST}/lib:{DEST}/lib/zzub".format(DEST=dest)
 
 
 if '--debug' in sys.argv:
