@@ -38,7 +38,9 @@
 #include "lv2_defines.h"
 #include "lv2_utils.h"
 #include "lv2_zzub_info.h"
+
 #include "zzub/plugin.h"
+#include "libzzub/tools.h"
 
 lv2_adapter::lv2_adapter(lv2_zzub_info *info)
     : info(info),
@@ -81,12 +83,31 @@ lv2_adapter::~lv2_adapter() {
     for (auto port : ports)
         delete port;
 
+    if(in_buffers)
+        free(in_buffers);
+
+    if(out_buffers)
+        free(out_buffers);
+
     if (lilvInstance != nullptr)
         lilv_instance_free(lilvInstance);
 
     lilv_uis_free(uis);
 
     free(global_values);
+}
+
+inline float ** collect_buffers(std::vector<audio_buf_port*>& audio_ports) {
+    if(audio_ports.size() == 0)
+        return nullptr;
+
+    float **buffers = (float**) malloc(sizeof(float*) * audio_ports.size());
+    float **bufs = buffers;
+
+    for(auto audio_port: audio_ports)
+        *bufs++ = audio_port->get_buffer();
+
+    return buffers;
 }
 
 void lv2_adapter::init_ports() {
@@ -167,6 +188,9 @@ void lv2_adapter::init_ports() {
             }
         }
     }
+
+    in_buffers = collect_buffers(audioInPorts);
+    out_buffers = collect_buffers(audioOutPorts);
 }
 
 void lv2_adapter::add_note_on(uint8_t note, uint8_t volume) {
@@ -312,13 +336,8 @@ void lv2_adapter::init(zzub::archive *arc) {
 
 void lv2_adapter::created() {
     initialized = true;
-    printf("Initialised lv2 adapter\n");
-    // if(!init_from_params)
-    // return false;
-
     for (param_port *port : paramPorts) {
         _host->set_parameter(metaPlugin, 1, 0, port->paramIndex, port->lilv_to_zzub_value(port->value));
-        // DEBUG_INFO("Helm", "\nSet param %d(%s). lilv val: %f, zzub val: %d\n", port->paramIndex, port->name.c_str(), port->value, port->lilv_to_zzub_value(port->value))
     }
 }
 
@@ -563,6 +582,7 @@ bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int 
     if (halting || mode == zzub::process_mode_no_io)
         return false;
 
+
     if (info->flags & zzub_plugin_flag_is_instrument) {
         midi_track_manager.process_samples(numsamples, mode);
 
@@ -570,37 +590,57 @@ bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int 
             send_midi_events();
     }
 
+
     samp_count += numsamples;
 
-    for (event_buf_port *eventPort : eventPorts)
+
+    for (event_buf_port *eventPort : eventPorts) {
         if (eventPort->flow == PortFlow::Output)
             lv2_evbuf_reset(eventPort->get_lv2_evbuf(), false);
+    }
+
 
     if (samp_count - last_update > update_every) {
         ui_event_import();
         ui_event_dispatch();
         last_update = samp_count;
     }
-
+    
+    
     switch (audioInPorts.size()) {
         case 0:  // No audio inputs
             break;
 
-        case 1: {
-            float *sample = audioInPorts[0]->get_buffer();
-            for (int i = 0; i < numsamples; i++)
-                *sample++ = (pin[0][i] + pin[1][i]) * 0.5f;
-            break;
-        }
+        case 1:
+            stereo_to_mono(pin, in_buffers, numsamples);
 
         case 2:
         default:  // FIXME if it's greater than 2, should mix some of them.
-            memcpy(audioInPorts[0]->get_buffer(), pin[0], sizeof(float) * numsamples);
-            memcpy(audioInPorts[1]->get_buffer(), pin[1], sizeof(float) * numsamples);
+            stereo_to_stereo(pin, in_buffers, numsamples);
             break;
     }
+    
+    // switch (audioInPorts.size()) {
+    //     case 0:  // No audio inputs
+    //         break;
+
+    //     case 1: {
+    //         float *sample = audioInPorts[0]->get_buffer();
+    //         for (int i = 0; i < numsamples; i++)
+    //             *sample++ = (pin[0][i] + pin[1][i]) * 0.5f;
+    //         break;
+    //     }
+
+    //     case 2:
+    //     default:  // FIXME if it's greater than 2, should mix some of them.
+    //         memcpy(audioInPorts[0]->get_buffer(), pin[0], sizeof(float) * numsamples);
+    //         memcpy(audioInPorts[1]->get_buffer(), pin[1], sizeof(float) * numsamples);
+    //         break;
+    // }
+
 
     lilv_instance_run(lilvInstance, numsamples);
+
 
     /* Process any worker replies. */
     if (worker.enable) {
@@ -621,14 +661,16 @@ bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int 
             return true;
 
         case 1:
-            memcpy(pout[0], audioOutPorts[0]->get_buffer(), sizeof(float) * numsamples);
-            memcpy(pout[1], audioOutPorts[0]->get_buffer(), sizeof(float) * numsamples);
+            mono_to_stereo(out_buffers, pout, numsamples);
+            // memcpy(pout[0], audioOutPorts[0]->get_buffer(), sizeof(float) * numsamples);
+            // memcpy(pout[1], audioOutPorts[0]->get_buffer(), sizeof(float) * numsamples);
             return true;
 
         case 2:
         default:
-            memcpy(pout[0], audioOutPorts[0]->get_buffer(), sizeof(float) * numsamples);
-            memcpy(pout[1], audioOutPorts[1]->get_buffer(), sizeof(float) * numsamples);
+            stereo_to_stereo(out_buffers, pout, numsamples);
+            // memcpy(pout[0], audioOutPorts[0]->get_buffer(), sizeof(float) * numsamples);
+            // memcpy(pout[1], audioOutPorts[1]->get_buffer(), sizeof(float) * numsamples);
             return true;
     }
 }

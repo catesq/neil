@@ -103,7 +103,7 @@ param_port::param_port(param_port&& other)
       paramIndex(other.paramIndex),
       zzubValOffset(other.zzubValOffset),
       zzubValSize(other.zzubValSize) {
-    printf("zzub param %d min %d max %d default %d none %d\n", paramIndex, zzubParam.value_min, zzubParam.value_max, zzubParam.value_default, zzubParam.value_none);
+    // printf("zzub param %d min %d max %d default %d none %d\n", paramIndex, zzubParam.value_min, zzubParam.value_max, zzubParam.value_default, zzubParam.value_none);
 
     memcpy(&zzubParam, &other.zzubParam, sizeof(zzub::parameter));
 
@@ -111,17 +111,12 @@ param_port::param_port(param_port&& other)
         scalePoints.push_back(scalePoint);
 }
 
+// this constructor is used in the lv2_adapter constructor when cloning the reference parameter from zzub::info to an instance of the plugin
 param_port::param_port(const param_port& other)
     : value_port(other),
       paramIndex(other.paramIndex),
       zzubValOffset(other.zzubValOffset),
       zzubValSize(other.zzubValSize) {
-    // each copy of the param_port needs it own copy of the zzub param
-    // the zzub::info kinda holds a reference copy of the param_port/zzub::param
-    // and each instance of the zzub::plugin has it's own copy of both
-    // other plugins can use a central reference copy and not use local copies
-    // but zzub::plugin::load(from save file) has to overwrite the param::value_default field
-    // so each parameter is re-initiliased correctly.
     memcpy(&zzubParam, &other.zzubParam, sizeof(zzub::parameter));
 
     for (auto& scalePoint : other.scalePoints)
@@ -150,9 +145,9 @@ param_port::param_port(const LilvPort* lilvPort,
         zzubParam.value_max = scale_points_size;
     } else if (LV2_IS_PORT_INTEGER(properties)) {
         (maximumValue - minimumValue <= 128) ? zzubParam.set_byte() : zzubParam.set_word();
-        zzubParam.value_default = (int)defaultValue;
         zzubParam.value_min = 0;
         zzubParam.value_max = std::min((int)(maximumValue - minimumValue), 32768);
+        zzubParam.value_default = lilv_to_zzub_value(defaultValue);;
     } else {
         zzubParam.set_word();
         zzubParam.value_min = 0;
@@ -160,10 +155,7 @@ param_port::param_port(const LilvPort* lilvPort,
         zzubParam.value_default = lilv_to_zzub_value(defaultValue);
     }
 
-    // if(name == "VoiceCount") {
-    //     printf("voicecount properties: %d\n", properties);
-    // }
-
+    
     zzubParam.name = name.c_str();
     zzubParam.description = zzubParam.name;
     zzubValSize = zzubParam.get_bytesize();

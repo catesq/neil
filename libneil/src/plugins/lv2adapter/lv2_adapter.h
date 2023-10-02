@@ -63,13 +63,16 @@ struct lv2_zzub_info;
 struct ParamPort;
 struct SharedCache;
 
+
 extern "C" {
 void ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data);
 }
 
+
 struct lv2_adapter : zzub::plugin,
                      zzub::event_handler,
-                     zzub::midi_plugin_interface {
+                     zzub::midi_plugin_interface 
+{
     std::vector<lv2_port*> ports;
 
     std::vector<audio_buf_port*> audioInPorts;
@@ -82,6 +85,9 @@ struct lv2_adapter : zzub::plugin,
     std::vector<control_port*> controlPorts;
     std::vector<param_port*> paramPorts;
     zzub::midi_track_manager midi_track_manager;
+
+    float **in_buffers = nullptr;
+    float **out_buffers = nullptr;
 
     // zzub engine boilerplate - trak_states are the previous plugin port values, trak_values are the new port values.
     //     trackvals       trak_values[NUJM_TRACKS]{};

@@ -28,6 +28,13 @@ double square(double v);
 double sawtooth(double v);
 double triangle(double v);
 
+
+
+void stereo_to_mono(float **src, float **dest, int numsamples);
+void mono_to_stereo(float **src, float **dest, int numsamples);
+void stereo_to_stereo(float **src, float **dest, int numsamples);
+
+
 // buffer tools
 void AddS2SPanMC(float** output, float** input, int numSamples, float inAmp, float inPan);
 void CopyM2S(float *pout, float *pin, int numsamples, float amp);
@@ -37,8 +44,8 @@ void AddStereoToMono(float *pout, float *pin, int numsamples, float amp, int ch)
 void CopyStereoToMono(float *pout, float *pin, int numsamples, float amp);
 void Amp(float *pout, int numsamples, float amp);
 
-// disse trenger vi for lavnivå redigering på flere typer bitformater, waveFormat er buzz-style
-// det er kanskje mulig å oppgradere copy-metodene med en interleave på hver buffer for å gjøre konvertering mellom stereo/mono integrert
+// disse trenger vi for lavnivï¿½ redigering pï¿½ flere typer bitformater, waveFormat er buzz-style
+// det er kanskje mulig ï¿½ oppgradere copy-metodene med en interleave pï¿½ hver buffer for ï¿½ gjï¿½re konvertering mellom stereo/mono integrert
 void CopyMonoToStereoEx(void* srcbuf, void* targetbuf, size_t numSamples, int waveFormat);
 void CopyStereoToMonoEx(void* srcbuf, void* targetbuf, size_t numSamples, int waveFormat);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+
 static int verbose = 0; 
 
 #include <string>
@@ -16,12 +17,17 @@ static int verbose = 0;
 
 #define ZZUB_BUFLEN zzub_buffer_size
 #define EVENT_BUF_SIZE 4096
-// #define TRACKVAL_VOLUME_UNDEFINED 0x0FF
-#define TRACKVAL_NO_MIDI_CMD 0x00
-#define TRACKVAL_NO_MIDI_DATA 0xFFFF
+// #define TRACKVAL_NO_MIDI_CMD 0x00
+// #define TRACKVAL_NO_MIDI_DATA 0xFFFF
 
+#ifndef MAX 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
+#ifndef MIN
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
 #define F_THRESHOLD 0.00001
 #define SIMILAR(a, b) (a > b - F_THRESHOLD && a < b + F_THRESHOLD)
 #define GTK3_URI "http://lv2plug.in/ns/extensions/ui#Gtk3UI"

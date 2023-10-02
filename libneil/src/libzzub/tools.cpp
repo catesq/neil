@@ -24,6 +24,28 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 char backslashToSlash(char c) { if (c=='\\') return '/'; return c; }
 
+
+void stereo_to_mono(float **src, float **dest, int num_samples) {
+    float *in_l = src[0], 
+          *in_r = src[1],
+          *out = dest[0];
+
+    for (int i = 0; i < num_samples; i++)
+        *out++ = (*in_l++ + *in_r++) * 0.5f;
+}
+
+
+void mono_to_stereo(float **src, float **dest, int num_samples) {
+    memcpy(dest[0], src[0], sizeof(float) * num_samples);
+    memcpy(dest[1], src[0], sizeof(float) * num_samples);
+}
+
+void stereo_to_stereo(float **src, float **dest, int num_samples) {
+    memcpy(dest[0], src[0], sizeof(float) * num_samples);
+    memcpy(dest[1], src[1], sizeof(float) * num_samples);
+}
+
+
 void AddM2SPan(float* output, float* input, int numSamples, float inAmp, float inPan) {
     float panR=1.0f, panL=1.0f;
     if (inPan<1) {
@@ -173,8 +195,8 @@ size_t sizeFromWaveFormat(int waveFormat) {
     }
 }
 
-// disse trenger vi for lavnivå redigering på flere typer bitformater, waveFormat er buzz-style
-// det er kanskje mulig å oppgradere copy-metodene med en interleave på hver buffer for å gjøre konvertering mellom stereo/mono integrert
+// disse trenger vi for lavnivï¿½ redigering pï¿½ flere typer bitformater, waveFormat er buzz-style
+// det er kanskje mulig ï¿½ oppgradere copy-metodene med en interleave pï¿½ hver buffer for ï¿½ gjï¿½re konvertering mellom stereo/mono integrert
 void CopyMonoToStereoEx(void* srcbuf, void* targetbuf, size_t numSamples, int waveFormat) {
 
     int sampleSize=sizeFromWaveFormat(waveFormat);
