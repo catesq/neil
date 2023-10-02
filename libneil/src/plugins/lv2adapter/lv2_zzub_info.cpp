@@ -22,10 +22,8 @@ lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin* lilvPlugin
       lilvWorld(cache->lilvWorld),
       lilvPlugin(lilvPlugin),
       cache(cache) {
-    // gui's are created in invoke() after a double click
-    // it's possible that the custom gui is not supported on gtk3
-    LilvUIs* uis = lilv_plugin_get_uis(lilvPlugin);
 
+    LilvUIs* uis = lilv_plugin_get_uis(lilvPlugin);
     if (uis) {
         flags |= zzub_plugin_flag_has_custom_gui;
         lilv_uis_free(uis);
@@ -147,49 +145,3 @@ lv2_zzub_info::build_port(const LilvPort* lilvPort, PortFlow flow, PortType type
             return new lv2_port(lilvPort, lilvPlugin, cache, type, flow, counter);
     }
 }
-
-// void
-// lv2_zzub_info::add_generator_params()
-// {
-//     add_track_parameter().set_note();
-
-//     add_track_parameter().set_byte()
-//                          .set_name("Track volume")
-//                          .set_description("Volume (00-7f)")
-//                          .set_value_min(zzub_volume_value_min)
-//                          .set_value_max(zzub_volume_value_max)
-//                          .set_value_none(zzub_volume_value_none)
-//                          .set_value_default(0x40);
-
-//     add_track_parameter().set_byte()
-//                          .set_name("Midi command 1")
-//                          .set_description("cmd(0xf0) chan(0x0f)")
-//                          .set_value_min(0x80)
-//                          .set_value_max(0xfe)
-//                          .set_value_none(TRACKVAL_NO_MIDI_CMD)
-//                          .set_value_default(TRACKVAL_NO_MIDI_CMD);
-
-//     add_track_parameter().set_word()
-//                          .set_name("Midi data 1")
-//                          .set_description("byte1(0x7f00) byte2(0x007f)")
-//                          .set_value_min(0)
-//                          .set_value_max(0xfffe)
-//                          .set_value_none(0xffff)
-//                          .set_value_default(0);
-
-//     add_track_parameter().set_byte()
-//                          .set_name("Midi command 2")
-//                          .set_description("status(0xf0) chan(0x0f)")
-//                          .set_value_min(0x80)
-//                          .set_value_max(0xfe)
-//                          .set_value_none(TRACKVAL_NO_MIDI_CMD)
-//                          .set_value_default(TRACKVAL_NO_MIDI_CMD);
-
-//     add_track_parameter().set_word()
-//                          .set_name("Midi data 2")
-//                          .set_description("byte1(0x7f00) byte2(0x007f)")
-//                          .set_value_min(0)
-//                          .set_value_max(0xfffe)
-//                          .set_value_none(0xffff)
-//                          .set_value_default(0);
-// }
