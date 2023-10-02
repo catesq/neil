@@ -350,7 +350,6 @@ public:
     int SampleFrequency;
 
     C6thOrderFilter() {
-        //SampleFrequency = 44100;
         ResetFilter();
     }
 

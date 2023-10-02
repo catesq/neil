@@ -138,6 +138,7 @@ void DrumKits::readEnvelope(DrumPreset *ps, const int parameterOffset, std::stri
         nextPos = envelope.find(" ", currentPos);
         std::string gainValue = envelope.substr(currentPos, nextPos == std::string::npos ? envelope.length() - currentPos: nextPos - currentPos);
 
+        // time values were orignally in samples using a 44100 sample rate - here they are normalised to seconds
         ps->params[currentParameter++] = std::stof(timeValue) / 44100.f;
         ps->params[currentParameter++] = std::stof(gainValue);
 

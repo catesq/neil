@@ -4,6 +4,7 @@
 #include "ISample.h"
 #include "IInstrument.h"
 #include "Svf.hpp"
+#include "zzub/zzub.h"
 
 class CTrack;
 class CMatildeTrackerMachine;
@@ -11,6 +12,7 @@ class CMatildeTrackerMachine;
 class CChannel {
 private:
   static const int NFILTERS = 3;
+  int sample_rate = zzub_default_rate;
 public:
   CChannel();
   virtual ~CChannel();
@@ -48,6 +50,7 @@ public:
   }
 
   void set_filter_sampling_rate(int sampling_rate) {
+    sample_rate = sampling_rate;
     for (int i = 0; i < NFILTERS; i++) {
       this->filters[i].set_sampling_rate(sampling_rate);
     }

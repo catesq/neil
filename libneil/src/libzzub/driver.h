@@ -21,6 +21,7 @@
 
 #include <string>
 #include <vector>
+#include "zzub/zzub.h"
 
 namespace zzub {
 
@@ -57,7 +58,7 @@ struct audiodriver
     int getApiDevices(int apiId);
 
     audiodriver() {
-        samplerate = 48000;
+        samplerate = zzub_default_rate;
         buffersize = 512;
         master_channel = 0;
     }
@@ -94,7 +95,7 @@ struct audioworker {
 
     audioworker() {
         work_master_channel = 0;
-        work_rate = 48000;
+        work_rate = zzub_default_rate;
         work_buffersize = 512;
         work_in_device = 0;
         work_in_first_channel = 0;

@@ -3,9 +3,10 @@
 #include <iostream>
 
 #include "Delay.hpp"
+#include "zzub/zzub.h"
 
 Svf::Svf() {
-    fs = 44100;
+    fs = zzub_default_rate;
     fc = 523;
     res = 0;
     drive = 0;

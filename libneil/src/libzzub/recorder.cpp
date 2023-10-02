@@ -74,7 +74,7 @@ struct recorder_wavetable_plugin : plugin {
         waveIndex = -1;
         samples_written = 0;
         format = wave_buffer_type_si16;
-        reset_buffers(44100);	// TODO: do this in init() and use masters samplerate
+        reset_buffers(zzub_default_rate);	// TODO: do this in init() and use masters samplerate
 
         global_values = &g;
         attributes = a;

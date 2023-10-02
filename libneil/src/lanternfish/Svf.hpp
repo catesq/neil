@@ -15,7 +15,6 @@ namespace lanternfish {
   public:
     Svf();
     ~Svf();
-    void reset();
     void set_bypass(bool on);
     void set_sampling_rate(int rate);
     void set_resonance(float reso);

@@ -210,7 +210,7 @@ private:
 
     uint64_t prev_play_pos = 0;
 
-    uint32_t sample_rate = 48000;
+    uint32_t sample_rate = zzub_default_rate;
 
     float bpm = 126.0f;
 

@@ -5,6 +5,8 @@
 
 #include "mdaDubDelay.hpp"
 
+#include "zzub/zzub.h"
+
 mdaDubDelay::mdaDubDelay() 
 {
   global_values = &gval;
@@ -51,7 +53,7 @@ void mdaDubDelay::destroy() {
 void mdaDubDelay::process_events() {
   float fs = _master_info->samples_per_second;
   if (fs < 8000.0f) 
-    fs = 44100.0f; //??? bug somewhere!
+    fs = zzub_default_rate; //??? bug somewhere!
   if (gval.paraDelay != 0xff) {
     fParam0 = gval.paraDelay / 254.0;
   }

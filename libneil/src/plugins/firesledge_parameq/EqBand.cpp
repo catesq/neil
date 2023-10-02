@@ -44,6 +44,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include	<cassert>
 #include	<cmath>
 
+#include "zzub/zzub.h"
+
 namespace std { }
 
 
@@ -53,7 +55,7 @@ namespace std { }
 
 
 EqBand::EqBand ()
-:	_sample_freq (44100)
+:	_sample_freq (zzub_default_rate)
 ,	_type (Type_PEAK)
 ,	_freq (1000)
 ,	_gain (1)

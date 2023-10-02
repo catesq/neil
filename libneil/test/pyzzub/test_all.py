@@ -4,7 +4,7 @@ Test Suite for PyZZUB
 """
 
 import os
-os.environ['LD_LIBRARY_PATH'] = '../../lib'
+os.environ['ZZUB_LIBRARY_PATH'] = '../../lib'
 import sys
 sys.path = ['../../src/pyzzub'] + sys.path
 
@@ -92,7 +92,7 @@ class Test(TestCase):
 		self.driver.destroy()
 		self.player.destroy()
 		del self.player
-		print "=============================================="
+		print ("==============================================")
 		
 	def _handle_events(self):
 		self.player.handle_events()
@@ -112,7 +112,7 @@ class Test(TestCase):
 					elif 'contents' in dir(value):
 						value = None
 					args.append(value)
-			print "[%s](%s)" % (eventname,','.join([('%s=%r' % (a,b)) for a,b in zip(argnames,args)]))
+			print ("[%s](%s)" % (eventname,','.join([('%s=%r' % (a,b)) for a,b in zip(argnames,args)])))
 			events.append(event)
 			event = self.player.get_next_event()
 		self.events = events
@@ -272,7 +272,7 @@ class Test(TestCase):
 		pattern.set_name('00')
 		plugin.add_pattern(pattern)
 		t=self.player.create_sequence(plugin)
-		print t
+		print (t)
 		t.set_event(0,16)
 		master.add_input(plugin, zzub_connection_type_audio)
 		self.assertTrue(self.player.history_get_uncomitted_operations() == 5)

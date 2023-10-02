@@ -16,6 +16,7 @@
 
 #ifndef EMVERB_H
 #define EMVERB_H
+#include "zzub/zzub.h"
 
 //forward declaration
 template<typename T, int maxLength> class Allpass;
@@ -59,7 +60,7 @@ public:
   MVerb() {
     DampingFreq = 0.5;
     BandwidthFreq = 0.5;
-    SampleRate = 44100.;
+    SampleRate = zzub_default_rate;
     Decay = 0.5;
     Gain = 1.;
     Mix = 1.;
@@ -769,7 +770,7 @@ private:
 public:
   StateVariable()
   {
-    SetSampleRate(44100.);
+    SetSampleRate(zzub_default_rate);
     Frequency(1000.);
     Resonance(0);
     Type(LOWPASS);

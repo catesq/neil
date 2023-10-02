@@ -1,6 +1,8 @@
 #ifndef MATILDE_TRACKER_SVF_HPP
 #define MATILDE_TRACKER_SVF_HPP
 
+#include "zzub/zzub.h"
+
 class Svf {
 private:
   float low, high, band, notch;
@@ -20,7 +22,7 @@ public:
   };
 
   Svf() {
-    reset();
+    reset(zzub_default_rate);
     modes[0] = &low;
     modes[1] = &high;
     modes[2] = &band;
@@ -31,12 +33,12 @@ public:
 
   }
 
-  void reset() {
+  void reset(float sample_rate) {
     bypass = true;
     inertia = 1;
     counter = 0;
     cutoff = 2000.0;
-    sps = 44100.0;
+    sps = sample_rate;
     dcutoff = 0.0;
     low = high = band = notch = 0.0;
     mode = 0;

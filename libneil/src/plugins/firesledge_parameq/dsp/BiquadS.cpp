@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include	"BiquadS.h"
 
 #include	<cmath>
+#include "zzub/zzub.h"
 
 namespace std { }
 
@@ -57,7 +58,7 @@ namespace dsp
 
 
 BiquadS::BiquadS ()
-:	_sample_freq (44100)
+:	_sample_freq (zzub_default_rate)
 ,	_f0 (1000)
 {
 	_s_eq_a [0] = 1;

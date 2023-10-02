@@ -96,7 +96,7 @@ audiodriver_portaudio::~audiodriver_portaudio() {
 void audiodriver_portaudio::initialize(audioworker *worker) {
     this->worker = worker;
     int numDevices;
-    unsigned int rates[] = {96000, 4800, 44100, 22050};
+    unsigned int rates[] = {192000, 96000, 48000, 44100};
     std::vector<unsigned int> vrates;
     for (int i = 0; i < 4; i++) {
         vrates.push_back(rates[i]);

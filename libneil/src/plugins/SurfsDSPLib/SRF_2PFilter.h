@@ -8,6 +8,7 @@
 #endif
 
 #include <math.h>
+#include "zzub/zzub.h"
 
 namespace SurfDSPLib {
   class C2PFilter {
@@ -45,8 +46,8 @@ namespace SurfDSPLib {
       float b0, b1, b2;	/* denominator coefficients */
     };
 
-    float m_fSampleRate;
-    float m_fSampleRateSquared;
+    float m_fSampleRate = zzub_default_rate;
+    float m_fSampleRateSquared = ((float)zzub_default_rate * zzub_default_rate);
     void prewarp(float *r1, float *r2, const float &a1, const float &a2);
     void szxform(const C2PFilter::BIQUAD &Coef, 
 		  const float &b1, float *k, float *coef);

@@ -49,7 +49,7 @@ const zzub::parameter *paraSpread = 0;
 double const SilentEnough = log(1.0 / 32768);
 
 #define MAX_TAPS		1
-// 200 ms przy 44100 Hz
+// 200 ms przy _master_info->samples_per_second Hz
 #define MAX_DELAY    65536
 #define DELAY_MASK   65535
 #define GRANULE_SIZE 4096
@@ -338,8 +338,9 @@ bool sprayman::WorkMonoToStereo(float *pin, float *pout, int numsamples, int con
 	pin[i]=0.0;
       nEmptySamples+=numsamples;
     }
-  //Biquad.rbjBPF(1000,0.05,44100);
-  Biquad.SetLowShelf(100,1,0.1,44100);
+  //Biquad.rbjBPF(1000,0.05, _master_info->samples_per_second);
+
+  Biquad.SetLowShelf(100, 1, 0.1, _master_info->samples_per_second);
 
   int so=0, maxs=64;
 

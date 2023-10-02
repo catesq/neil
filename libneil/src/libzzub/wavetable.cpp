@@ -223,7 +223,7 @@ bool wave_info_ex::allocate_level(size_t level, size_t numSamples, zzub::wave_bu
     l->legacy_sample_count = samplesIn16bit;
     l->legacy_loop_start = allocExtended ? (4/waveChannels) : 0;
     l->legacy_loop_end = samplesIn16bit;
-    l->samples_per_second = 44100;
+    l->samples_per_second = zzub_default_rate;
     l->root_note = note_value_c4;
     l->format = waveFormat;
 
@@ -327,7 +327,7 @@ bool wave_info_ex::stretch_wave_range(size_t level, size_t fromSample, size_t nu
     size_t size = get_sample_count(level);
     size_t channels = get_stereo()?2:1;
     int format = get_wave_format(level);
-    // int samplerate = 44100; //get_level(level)->samples_per_second;
+    // int samplerate = zzub_default_rate; //get_level(level)->samples_per_second;
 
 
     int newsize = (int)size - (int)numSamples + (int)newSize;

@@ -4,23 +4,16 @@
 #include "Svf.hpp"
 #include "Utils.hpp"
 
+#include "zzub/zzub.h"
+
 namespace lanternfish {
-  Svf::Svf() 
+  Svf::Svf() : bypass(false), sps(zzub_default_rate), low(0), high(0), band(0), notch(0), q(0)
   {
-    reset();
   }
   
   Svf::~Svf() 
   {
 
-  }
-  
-  void Svf::reset() 
-  {
-    bypass = false;
-    sps = 44100.0;
-    low = high = band = notch = 0.0;
-    q = 0.0;
   }
   
   void Svf::set_bypass(bool on) 

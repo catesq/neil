@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <math.h>
 #include <algorithm>
+#include "zzub/zzub.h"
 
 struct ladspa_param
 {
@@ -93,10 +94,10 @@ void setup_ladspa_parameter(zzub::parameter *param, LADSPA_PortRangeHint hint, l
 	}
 	
 	float d = 0.0f;
-	getLADSPADefault(&hint, 44100, &d);
+	getLADSPADefault(&hint, zzub_default_rate, &d);
 	if (mp.sr) {
-		ub *= 44100;
-		lb *= 44100;
+		ub *= zzub_default_rate;
+		lb *= zzub_default_rate;
 	}
 	float x = std::min(std::max((d - lb) / (ub - lb),0.0f),1.0f);
 	param->value_default = (int)((float)param->value_min + (float)(param->value_max - param->value_min) * x + 0.5f);

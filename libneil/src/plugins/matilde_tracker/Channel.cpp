@@ -59,7 +59,7 @@ void CChannel::Reset() {
   m_pSample=0;
   // Reset the filters.
   for (int i = 0; i < 3; i++) {
-    filters[i].reset();
+    filters[i].reset(sample_rate);
   }
   Free();
 }
@@ -88,7 +88,7 @@ bool CChannel::Generate_Add(float **psamples, int numsamples) {
 	pan = (m_PanningEnvelope.GetCurrentLevel(numsamples) * 2.0f - 1.0f) + 
 	  m_fPan;
 	if (pan < -1.0f)
-	  pan =- 1.0f;
+	  pan = -1.0f;
 	else if (pan > 1.0f)
 	  pan = 1.0f;
       }

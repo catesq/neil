@@ -558,9 +558,8 @@ if not os.path.exists(log_build_path):
     os.makedirs(log_build_path)
 
 
-
-if ( not os.path.exists(os.path.join(log_build_path, env['LOGGER_LIB_NAME'] + '.a')) and 
-     not os.path.exists(os.path.join(log_build_path, env['LOGGER_LIB_NAME'] + '.lib'))
+if ( not os.path.exists(os.path.join(log_build_path, 'lib' + env['LOGGER_LIB_NAME'] + '.a')) and 
+     not os.path.exists(os.path.join(log_build_path, 'lib' + env['LOGGER_LIB_NAME'] + '.lib'))
     ):
     prev_dir = os.getcwd()
     build_type = 'Debug' if env['DEBUG'] else 'Release'

@@ -42,8 +42,8 @@ void C2PFilter::Reset() {
   CutoffAdd = 0;
   Force = true;	 // make sure filter gets set up first time
   m_oBypass = true;
-  m_fSampleRate = 44100;
-  m_fSampleRateSquared = m_fSampleRate * m_fSampleRate;
+  // m_fSampleRate = zzub_default_rate;
+  // m_fSampleRateSquared = m_fSampleRate * m_fSampleRate;
   RecalcWP();
 }
 

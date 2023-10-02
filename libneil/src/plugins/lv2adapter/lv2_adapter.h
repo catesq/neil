@@ -113,7 +113,7 @@ struct lv2_adapter : zzub::plugin,
     uint32_t update_every = 767;  // update from ui after every x samples
     int32_t trackCount = 0;
     float ui_scale = 2.0;  // for displaying ui of plugins on high density displays. only updated when the ui_window is created in PluginAdapter::invoke
-    float sample_rate = 44100;
+    float sample_rate = zzub_default_rate;
     float update_rate = 10;
     MidiEvents midiEvents{};
 

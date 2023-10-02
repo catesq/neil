@@ -817,8 +817,8 @@ namespace fsm {
 	  CurResonance+=(CurLFO2Dest2-120)*trk->CurLFO2;
 	  if (CurResonance<0) CurResonance=0;
 	  if (CurResonance>240) CurResonance=240;
-
-	  chn->Filter.CalcCoeffs(pmi->gvalAct.vFilterType,Cutoff,CurResonance,float(pmi->aval.theviderness/50.0f));
+  
+	  chn->Filter.CalcCoeffs(pmi->gvalAct.vFilterType,Cutoff,CurResonance,float(pmi->aval.theviderness/50.0f), pmi->_master_info->samples_per_second);
 
 	  float amp;
 

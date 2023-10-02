@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "fourier.h"
+#include "zzub/zzub.h"
 
 namespace fsm {
 typedef float SIG;
@@ -333,7 +334,7 @@ class CBiquad {
 	void SetResonantLP(float dCutoff, float Q, float dSampleRate)
 	{
 		float a=(float)PreWarp2(dCutoff, dSampleRate);
-		// wspó³czynniki filtru analogowego
+		// wspï¿½czynniki filtru analogowego
 		float B=(float)(sqrt(Q*Q-1)/Q);
 		float A=(float)(2*B*(1-B));
 		SetBilinear(1, 0, 0, 1, A*a, B*a*a);
@@ -341,7 +342,7 @@ class CBiquad {
 	void SetResonantHP(float dCutoff, float Q, float dSampleRate) // DOESN'T WORK !!!!!!!!
 	{
 		float a=(float)PreWarp2((dSampleRate/2)/dCutoff, dSampleRate);
-		// wspó³czynniki filtru analogowego
+		// wspï¿½czynniki filtru analogowego
 		float B=(float)(sqrt(Q*Q-1)/Q);
 		float A=(float)(2*B*(1-B));
 		SetBilinear(0, 0, 1, B*a*a, A*a, 1);
@@ -683,7 +684,7 @@ public:
 	{
     float fValue=(float)((m_nState<=0)?(m_fStart+m_nTime*m_fSeries):(m_fStart*pow(m_fSeries,m_nTime)));
 		m_nTime+=nDeltaTime;
-		if (m_nState==-1 && m_nTime>=m_nStageTime) // skoñczy³ siê release
+		if (m_nState==-1 && m_nTime>=m_nStageTime) // skoï¿½czyï¿½ siï¿½ release
 		{
 			m_nState=4;
 			m_fStart=0;
@@ -691,7 +692,7 @@ public:
 			m_nTime=0;
 			m_nStageTime=1000000;
 		}
-		if (m_nState==0 && m_nTime>=m_nStageTime) // skoñczy³ siê attack
+		if (m_nState==0 && m_nTime>=m_nStageTime) // skoï¿½czyï¿½ siï¿½ attack
     {
 			m_nTime-=m_nStageTime;
 			m_nState=1;
@@ -700,7 +701,7 @@ public:
 			m_fSeries=pow((m_fSustLevel)/1.0,1.0/m_nDecayTime);
 			// if (m_fSeries>0.9999) m_fSeries=0.9999;
     }
-    if (m_nState==1 && m_nTime>=m_nStageTime) // skoñczy³ siê decay zaczyna siê sustain
+    if (m_nState==1 && m_nTime>=m_nStageTime) // skoï¿½czyï¿½ siï¿½ decay zaczyna siï¿½ sustain
     {
       m_nTime-=m_nStageTime;
       m_nState=2;
@@ -708,7 +709,7 @@ public:
       m_fSeries=1.0;
       m_nStageTime=m_nSustainTime;
     }
-    if (m_nState==2 && m_nTime>=m_nStageTime) // skoñczy³ siê sustain zaczyna siê release
+    if (m_nState==2 && m_nTime>=m_nStageTime) // skoï¿½czyï¿½ siï¿½ sustain zaczyna siï¿½ release
     {
 			m_nTime-=m_nStageTime;
 			m_nState=3;
@@ -801,7 +802,7 @@ inline int DelayLenToSamples(int DelayUnit, int DelayLen, int SamplesPerTick, in
   if (DelayUnit==1) return (int)(DelayLen*SamplesPerTick/256);
   if (DelayUnit==2) return (int)(DelayLen);
   if (DelayUnit==3) return (int)(DelayLen*SamplesPerSec/1000);
-  return 44100;
+  return SamplesPerSec;
 }
 
 inline int DelayLenToSamplesBuzzFX(int DelayUnit, int DelayLen, int SamplesPerTick, int SamplesPerSec)
@@ -810,7 +811,7 @@ inline int DelayLenToSamplesBuzzFX(int DelayUnit, int DelayLen, int SamplesPerTi
   if (DelayUnit==1) return (int)(DelayLen*SamplesPerTick*4/256);
   if (DelayUnit==2) return (int)(DelayLen);
   if (DelayUnit==3) return (int)(DelayLen*SamplesPerSec/1000);
-  return 44100;
+  return SamplesPerSec;
 }
 
 class CUglyLimiter
@@ -850,6 +851,7 @@ public:
   float CurCutoff;
   float Resonance;
   float ThevFactor;
+  int sample_rate = zzub_default_rate;
 
   inline float ProcessSample(float fSmp) { return m_filter3.ProcessSample(m_filter2.ProcessSample(m_filter.ProcessSample(fSmp))); }
   
@@ -893,7 +895,7 @@ public:
     m_filter3.AvoidExceptions();
   }
 
-  void CalcCoeffs(int nType, float _CurCutoff, float _Resonance, float _ThevFactor=0.0f);
+  void CalcCoeffs(int nType, float _CurCutoff, float _Resonance, float _ThevFactor, int sample_rate);
 
   void CalcCoeffs1();
   void CalcCoeffs2();
@@ -1088,7 +1090,7 @@ public:
   int m_nBufSize;
 
   CBandlimitedTable();
-  CAnyWaveLevel *GetTable(float fScanRate);// fScanRate = 1.0f dla czêstotliwooeci jeden okres/próbkê
+  CAnyWaveLevel *GetTable(float fScanRate);// fScanRate = 1.0f dla czï¿½stotliwooeci jeden okres/prï¿½bkï¿½
   void Make(float fMultiplyFactor, float fMaxScanRate, float fCrispFactor=-1);
 
 protected:

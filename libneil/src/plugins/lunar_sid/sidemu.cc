@@ -54,8 +54,6 @@ SID::SID()
   voice[1].set_sync_source(&voice[0]);
   voice[2].set_sync_source(&voice[1]);
 
-  //set_sampling_parameters(985248, SAMPLE_FAST, 44100);
-
   bus_value = 0;
   bus_value_ttl = 0;
 
