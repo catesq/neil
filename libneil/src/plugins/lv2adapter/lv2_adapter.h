@@ -22,6 +22,8 @@
 #include "zzub/zzub.h"
 
 #include "libzzub/midi_track.h"
+#include "libzzub/tools.h"
+
 
 #ifndef _WIN32
 #define HAVE_MLOCK 1  // zix checks for HAVE_MLOCK before using mlock - in sys/mman.h - for memory locking
@@ -65,7 +67,7 @@ struct SharedCache;
 
 
 extern "C" {
-void ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data);
+    void ui_close(GtkWidget* widget, GdkEventButton* event, gpointer data);
 }
 
 
@@ -86,8 +88,10 @@ struct lv2_adapter : zzub::plugin,
     std::vector<param_port*> paramPorts;
     zzub::midi_track_manager midi_track_manager;
 
-    float **in_buffers = nullptr;
-    float **out_buffers = nullptr;
+    std::vector<float*> in_buffers {};
+    std::vector<float*> out_buffers {};
+    CopyChannels* copy_in = nullptr;
+    CopyChannels* copy_out = nullptr;
 
     // zzub engine boilerplate - trak_states are the previous plugin port values, trak_values are the new port values.
     //     trackvals       trak_values[NUJM_TRACKS]{};
@@ -155,7 +159,7 @@ struct lv2_adapter : zzub::plugin,
     virtual void add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) override;
     virtual zzub::midi_note_track* get_track_data_pointer(uint16_t track_num) const override;
 
-   private:
+private:
     GtkWidget* ui_open_window(GtkWidget** root_container, GtkWidget** parent_container);
     const bool ui_select(const char* native_ui_type, const LilvUI** ui_type_ui, const LilvNode** ui_type_node);
     void ui_open();

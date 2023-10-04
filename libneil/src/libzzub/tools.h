@@ -17,6 +17,7 @@
 */
 #pragma once
 #include <string>
+
 #include "zzub/plugin.h"
 
 float linear_to_dB(float val);
@@ -28,12 +29,46 @@ double square(double v);
 double sawtooth(double v);
 double triangle(double v);
 
+// namespace zzub {
+// namespace tools{
+// used in process_stereo of lv2/vst adapters
+// duplicate a output of mono plugin to zzub's stereo or mix down zzub's stereo channel to the input of a mono plugin 
+struct CopyChannels {
+    virtual void copy(float **src, float **dest, int num_samples) = 0;
+    static CopyChannels* build(int num_in, int num_out);
+};
 
+// Synth effects 
+struct NullChannels: CopyChannels {
+    virtual void copy(float **src, float **dest, int num_samples);
+};
 
-void stereo_to_mono(float **src, float **dest, int numsamples);
-void mono_to_stereo(float **src, float **dest, int numsamples);
-void stereo_to_stereo(float **src, float **dest, int numsamples);
+struct StereoToMono: CopyChannels {
+    virtual void copy(float **src, float **dest, int num_samples);
+};
 
+struct MonoToStereo: CopyChannels {
+    virtual void copy(float **src, float **dest, int num_samples);
+};
+
+struct StereoToStereo: CopyChannels {
+    virtual void copy(float **src, float **dest, int num_samples);
+};
+
+struct MultiToStereo: CopyChannels {
+    int num_src_channels{};
+    MultiToStereo(int num_src) : num_src_channels(num_src) {};
+    virtual void copy(float **src, float **dest, int num_samples);
+};
+
+struct StereoToMulti: CopyChannels {
+    int num_dest_channels{};
+    StereoToMulti(int num_dest) : num_dest_channels(num_dest) {};
+    virtual void copy(float **src, float **dest, int num_samples);
+};
+
+// }
+// }
 
 // buffer tools
 void AddS2SPanMC(float** output, float** input, int numSamples, float inAmp, float inPan);

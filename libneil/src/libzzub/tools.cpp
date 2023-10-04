@@ -19,31 +19,103 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <string>
 #include <dlfcn.h>
 
-#include "common.h"
+#include <cstring>
+#include <cmath>
+
+#include <format>
+
 #include "tools.h"
+// #include "common.h"
 
 char backslashToSlash(char c) { if (c=='\\') return '/'; return c; }
 
+// namespace zzub {
+// namespace tools {
 
-void stereo_to_mono(float **src, float **dest, int num_samples) {
+// the copychannels typeinfo may be wrong, please write the correct typeinfo for the build function on copychannels here
+
+class UnsupportedNumberOfChannels : public std::runtime_error {
+public:
+    UnsupportedNumberOfChannels(int in, int out) : std::runtime_error(std::format("Unsupported number of channels: in: {}, out: {}", in, out)) {}
+};
+
+
+CopyChannels* CopyChannels::build(int num_in, int num_out) {
+    if(num_in == 2) {
+        switch(num_out) {
+            case 0:                         
+                return new NullChannels();  // synth instruments usually have no audio input 
+            case 1:
+                return new StereoToMono();
+            case 2:
+                return new StereoToStereo();
+            default:
+                return new StereoToMulti(num_out);
+        }
+    } else if(num_out == 2) {
+        switch(num_in) {
+            case 0: 
+                throw UnsupportedNumberOfChannels(num_in, num_out);
+            case 1:
+                return new MonoToStereo();
+            case 2:
+                return new StereoToStereo();
+            default:
+                return new MultiToStereo(num_in);
+        }
+    } else {
+        throw UnsupportedNumberOfChannels(num_in, num_out);
+    }
+}
+
+void NullChannels::copy(float **src, float **dest, int num_samples) {
+}
+
+
+void MonoToStereo::copy(float **src, float **dest, int num_samples) {
+    memcpy(dest[0], src[0], sizeof(float) * num_samples);
+    memcpy(dest[1], src[0], sizeof(float) * num_samples);
+}
+
+
+void StereoToStereo::copy(float **src, float **dest, int num_samples) {
+    memcpy(dest[0], src[0], sizeof(float) * num_samples);
+    memcpy(dest[1], src[1], sizeof(float) * num_samples);
+}
+
+
+void StereoToMono::copy(float **src, float **dest, int num_samples) {
     float *in_l = src[0], 
-          *in_r = src[1],
-          *out = dest[0];
+            *in_r = src[1],
+            *out = dest[0];
 
     for (int i = 0; i < num_samples; i++)
         *out++ = (*in_l++ + *in_r++) * 0.5f;
 }
 
 
-void mono_to_stereo(float **src, float **dest, int num_samples) {
-    memcpy(dest[0], src[0], sizeof(float) * num_samples);
-    memcpy(dest[1], src[0], sizeof(float) * num_samples);
+void MultiToStereo::copy(float **src, float **dest, int num_samples) {
+    float multiple = 1.0f / num_src_channels;
+
+    for (int i = 0; i < num_samples; i++) {
+        float sum = 0.0f;
+        for (int j = 0; j < num_src_channels; j++)
+            sum += src[j][i];
+        dest[0][i] = dest[1][i] = sum * multiple;
+    }
 }
 
-void stereo_to_stereo(float **src, float **dest, int num_samples) {
-    memcpy(dest[0], src[0], sizeof(float) * num_samples);
-    memcpy(dest[1], src[1], sizeof(float) * num_samples);
+
+void StereoToMulti::copy(float **src, float **dest, int num_samples) {
+    for (int i = 0; i < num_samples; i++) {
+        float sum = (src[0][i] + src[1][i]) * 0.5f;
+        for (int j = 0; j < num_dest_channels; j++)
+            dest[j][i] = sum;
+    }
 }
+
+// }
+// }
 
 
 void AddM2SPan(float* output, float* input, int numSamples, float inAmp, float inPan) {
