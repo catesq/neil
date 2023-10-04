@@ -112,6 +112,7 @@ inline std::vector<float*> collect_buffer_pointers(std::vector<audio_buf_port*>&
     return bufs;
 }
 
+
 void lv2_adapter::init_ports()   {
     // build buffers for audio samples, midi events, control value samples etc.
     // also store each port in a vector for that port type, mainly so it's easier to use them in the process_stereo()
