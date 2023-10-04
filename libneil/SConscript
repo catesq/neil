@@ -165,7 +165,7 @@ gcc = True
 
 if gcc:
     #env['CXXFLAGS'] += ['--no-rtti']
-    env['CXXFLAGS'] += ['-std=c++17']
+    env['CXXFLAGS'] += ['-std=c++20']
     if env['DEBUG'] == False:
         env.Append(CCFLAGS=[
                 '-Wall',
