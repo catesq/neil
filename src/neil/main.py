@@ -21,15 +21,13 @@
 """
 Provides application class and controls used in the neil main window.
 """
-import sys, os
+import sys
 
-from . import pathconfig
-from gi.repository import GObject
-
+# from . import pathconfig
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, GObject
 
 
 import neil.contextlog as contextlog
@@ -37,9 +35,9 @@ import neil.errordlg as errordlg
 
 import neil.com as com
 
-
 def shutdown():
     Gtk.main_quit()
+    
 
 def init_neil(argv):
     """
@@ -66,24 +64,18 @@ def run(argv, initfunc = init_neil):
     contextlog.init()
     errordlg.install()
     com.init()
-    # init_neil()
+
     initfunc(argv)
 
     for i in ['--sync', '--gdk-debug', '--gtk-debug']:
         if i in argv:
             argv.remove(i)
 
-    print(argv)
-
-
-
     options = com.get('neil.core.options')
     options.parse_args(argv)
 
     eventbus = com.get('neil.core.eventbus')
     eventbus.shutdown += shutdown
-
-
 
     options = com.get('neil.core.options')
     app_options, app_args = options.get_options_args()
