@@ -16,7 +16,9 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #pragma once
+
 #include <string>
+#include <format>
 
 #include "zzub/plugin.h"
 
@@ -29,8 +31,16 @@ double square(double v);
 double sawtooth(double v);
 double triangle(double v);
 
-// namespace zzub {
-// namespace tools{
+namespace zzub {
+namespace tools {
+
+
+class UnsupportedNumberOfChannels : public std::runtime_error {
+public:
+    UnsupportedNumberOfChannels(int in, int out) : std::runtime_error(std::format("Unsupported number of channels: in: {}, out: {}", in, out)) {}
+};
+
+
 // used in process_stereo of lv2/vst adapters
 // duplicate a output of mono plugin to zzub's stereo or mix down zzub's stereo channel to the input of a mono plugin 
 struct CopyChannels {
@@ -38,22 +48,26 @@ struct CopyChannels {
     static CopyChannels* build(int num_in, int num_out);
 };
 
-// Synth effects 
+
 struct NullChannels: CopyChannels {
     virtual void copy(float **src, float **dest, int num_samples);
 };
+
 
 struct StereoToMono: CopyChannels {
     virtual void copy(float **src, float **dest, int num_samples);
 };
 
+
 struct MonoToStereo: CopyChannels {
     virtual void copy(float **src, float **dest, int num_samples);
 };
 
+
 struct StereoToStereo: CopyChannels {
     virtual void copy(float **src, float **dest, int num_samples);
 };
+
 
 struct MultiToStereo: CopyChannels {
     int num_src_channels{};
@@ -61,14 +75,15 @@ struct MultiToStereo: CopyChannels {
     virtual void copy(float **src, float **dest, int num_samples);
 };
 
+
 struct StereoToMulti: CopyChannels {
     int num_dest_channels{};
     StereoToMulti(int num_dest) : num_dest_channels(num_dest) {};
     virtual void copy(float **src, float **dest, int num_samples);
 };
 
-// }
-// }
+}
+}
 
 // buffer tools
 void AddS2SPanMC(float** output, float** input, int numSamples, float inAmp, float inPan);

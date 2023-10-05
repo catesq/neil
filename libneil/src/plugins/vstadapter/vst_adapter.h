@@ -9,6 +9,7 @@
 
 #include "zzub/plugin.h"
 #include "libzzub/midi_track.h"
+#include "libzzub/tools.h"
 
 
 struct vst_zzub_info;
@@ -70,8 +71,6 @@ private:
                             // the octasine plugin - or the vst-rs module - sends a burst of spurious EndEdit messages -
                             // with inaccurate indexes - *after* the EndEdit with the correct index has been sent
                             // active_index is used to filter these out. -1 indicates no parameter being changed
-    float** audioIn;
-    float** audioOut;
     unsigned num_tracks = 0;
 
     attrvals attr_values{0, 0};
@@ -88,4 +87,13 @@ private:
     VstEvents* vst_events;
     VstTimeInfo vst_time_info{};
     zzub_plugin_t* metaplugin = nullptr;
+
+
+    zzub::tools::CopyChannels* copy_in = nullptr;
+    zzub::tools::CopyChannels* copy_out = nullptr;
+
+    float** audioIn = nullptr;
+    float** audioOut = nullptr;
+
+    float** init_audio_buffers(int count);
 };

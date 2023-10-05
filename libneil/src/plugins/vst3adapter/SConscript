@@ -41,10 +41,12 @@ vst3_pluginenv.Append(
     CCFLAGS='''
     -pthread `pkg-config gtk+-3.0 --cflags` 
     --include=stdint.h
-    -Ilibneil/src/libzzub -Ilibneil/src/plugins/vst3adapter/ 
+    -Ilibneil/src
+    -Ilibneil/src/plugins/vst3adapter/ 
     -Ilibneil/src/plugins/vst3adapter/vst3sdk -Ilibneil/src/plugins/vst3adapter/pluginterfaces 
     -Ilibneil/src/plugins/vst3adapter/public.sdk -Ilibneil/src/plugins/vst3adapter/base 
-    -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui''',
+    -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui
+    ''',
     LIBS=['boost_system', 'boost_filesystem', 'stdc++fs', 'zzub'] + vst_static_libs, 
     LIBPATH=os.path.join(vst3sdk_build_dir, 'lib'),
 )

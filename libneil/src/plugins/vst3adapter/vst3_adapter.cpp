@@ -51,6 +51,9 @@ Vst3PluginAdapter::~Vst3PluginAdapter() {
 
     free(process_data.inputs);
     free(process_data.outputs);
+    
+    free(copy_in);
+    free(copy_out);
 }
 
 
@@ -86,6 +89,9 @@ void Vst3PluginAdapter::init(zzub::archive* pi) {
     
     process_context.sampleRate = _master_info->samples_per_second;
     process_context.projectTimeSamples = 0;
+
+    copy_in = zzub::tools::CopyChannels::build(2, audio_buses.in.main_channel_count);
+    copy_out = zzub::tools::CopyChannels::build(audio_buses.out.main_channel_count, 2);
 }
 
 inline void print_arrangements(Steinberg::Vst::SpeakerArrangement* data, uint8_t num) {
@@ -414,41 +420,12 @@ bool Vst3PluginAdapter::process_stereo(float **pin, float **pout, int numsamples
     if (mode == zzub::process_mode_no_io)
         return 1;
 
-    switch(audio_buses.in.main_channel_count) {
-        case 0:
-            break;
-
-        case 1:
-            memcpy(process_data.inputs[0].channelBuffers32[0], pin[0], numsamples * sizeof(float));
-            break;
-
-        case 2:
-        default:
-            memcpy(process_data.inputs[0].channelBuffers32[0], pin[0], numsamples * sizeof(float));
-            memcpy(process_data.inputs[0].channelBuffers32[1], pin[1], numsamples * sizeof(float));
-            break;
-    }
+    copy_in->copy(pin, process_data.inputs[0].channelBuffers32, numsamples);
 
     process_data.numSamples = numsamples;
     auto res = processor->process(process_data);
 
-    switch(audio_buses.out.main_channel_count) {
-        case 0:
-        break;
-
-        case 1:
-            memcpy(pout[0], process_data.outputs[0].channelBuffers32[0], numsamples * sizeof(float));
-            memcpy(pout[1], process_data.outputs[0].channelBuffers32[0], numsamples * sizeof(float));
-        break;
-
-        case 2:
-        default:
-            memcpy(pout[0], process_data.outputs[0].channelBuffers32[0], numsamples * sizeof(float));
-            memcpy(pout[1], process_data.outputs[0].channelBuffers32[1], numsamples * sizeof(float));
-
-
-        break;
-    }
+    copy_out->copy(process_data.outputs[0].channelBuffers32, pout, numsamples);
 
     ((Steinberg::Vst::ParameterChanges*) process_data.inputParameterChanges)->clearQueue();
     ((Steinberg::Vst::EventList*) process_data.inputEvents)->clear();

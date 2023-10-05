@@ -90,8 +90,8 @@ struct lv2_adapter : zzub::plugin,
 
     std::vector<float*> in_buffers {};
     std::vector<float*> out_buffers {};
-    CopyChannels* copy_in = nullptr;
-    CopyChannels* copy_out = nullptr;
+    zzub::tools::CopyChannels* copy_in = nullptr;
+    zzub::tools::CopyChannels* copy_out = nullptr;
 
     // zzub engine boilerplate - trak_states are the previous plugin port values, trak_values are the new port values.
     //     trackvals       trak_values[NUJM_TRACKS]{};
@@ -181,14 +181,9 @@ private:
 
     bool prefer_state_save() { return true; }
 
-    //
     void ui_event_import();
     // sends events to the ui - eg when a new patch has been loaded and all the controls have been changed
     void ui_event_dispatch();
 
     void init_static_features();
-
-    //    const LV2UI_Idle_Interface* idle_interface = nullptr;
-    //    const LV2UI_Show_Interface* show_interface = nullptr;
-    //    bool showing_interface                     = false;
 };

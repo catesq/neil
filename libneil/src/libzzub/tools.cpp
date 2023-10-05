@@ -22,23 +22,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <cstring>
 #include <cmath>
 
-#include <format>
 
 #include "tools.h"
-// #include "common.h"
 
 char backslashToSlash(char c) { if (c=='\\') return '/'; return c; }
 
-// namespace zzub {
-// namespace tools {
+namespace zzub {
 
-// the copychannels typeinfo may be wrong, please write the correct typeinfo for the build function on copychannels here
-
-class UnsupportedNumberOfChannels : public std::runtime_error {
-public:
-    UnsupportedNumberOfChannels(int in, int out) : std::runtime_error(std::format("Unsupported number of channels: in: {}, out: {}", in, out)) {}
-};
-
+namespace tools {
 
 CopyChannels* CopyChannels::build(int num_in, int num_out) {
     if(num_in == 2) {
@@ -114,8 +105,8 @@ void StereoToMulti::copy(float **src, float **dest, int num_samples) {
     }
 }
 
-// }
-// }
+}
+}
 
 
 void AddM2SPan(float* output, float* input, int numSamples, float inAmp, float inPan) {

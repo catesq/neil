@@ -153,6 +153,7 @@ vst_adapter::vst_adapter(const vst_zzub_info* info)
     vst_events = (VstEvents*)malloc(sizeof(VstEvents) + sizeof(VstEvent*) * (MAX_EVENTS - 2));
     vst_events->numEvents = 0;
     vst_time_info.flags = kVstTempoValid | kVstTransportPlaying;
+
 }
 
 
@@ -169,6 +170,9 @@ vst_adapter::~vst_adapter() {
     clear_vst_events();
     free(globalvals);
     free(vst_events);
+
+    free(copy_in);
+    free(copy_out);
 }
 
 
@@ -225,15 +229,10 @@ vst_adapter::init(zzub::archive* arc) {
     dispatch(plugin, effSetSampleRate, 0, 0, nullptr, (float) _master_info->samples_per_second);
     dispatch(plugin, effSetBlockSize, 0, (VstIntPtr) zzub_buffer_size, nullptr, 0);
 
-    if (plugin->numInputs != 2 && plugin->numInputs > 0)
-        audioIn = (float**)malloc(sizeof(float*) * plugin->numInputs);
-    else
-        audioIn = nullptr;
-
-    if (plugin->numOutputs != 2 && plugin->numOutputs > 0)
-        audioOut = (float**)malloc(sizeof(float*) * plugin->numOutputs);
-    else
-        audioOut = nullptr;
+    audioIn = init_audio_buffers(plugin->numInputs);
+    audioOut = init_audio_buffers(plugin->numOutputs);
+    copy_in = zzub::tools::CopyChannels::build(2, plugin->numInputs);
+    copy_out = zzub::tools::CopyChannels::build(plugin->numOutputs, 2);
 
     dispatch(plugin, effMainsChanged, 0, 1, NULL, 0.0f);
 
@@ -241,6 +240,19 @@ vst_adapter::init(zzub::archive* arc) {
         init_from_archive(arc);
 }
 
+float** 
+vst_adapter::init_audio_buffers(int count) {
+    if (count == 0)
+        return nullptr;
+
+    float** buffers = (float**) malloc(sizeof(float*) * count);
+
+    for(int idx = 0; idx < count; idx++) {
+        buffers[idx] = (float*) malloc(sizeof(float) * zzub_buffer_size);
+    }
+
+    return buffers;
+}
 
 // reset vst parameters when loading from a save file
 void 
@@ -439,31 +451,11 @@ vst_adapter::process_stereo(float** pin, float** pout, int numsamples, int mode)
     if (mode == zzub::process_mode_no_io)
         return 1;
 
-    // audioIn & audioOut are only allocated if they're not stereo
-    // they're usually stereo and we can use pin/pout to avoid pointless memcpy
-    float** inputs = audioIn ? audioIn : pin;
-    float** outputs = audioOut ? audioOut : pout;
-    LOG_F(INFO, "number of inputs %d %d", plugin->numInputs, plugin->numOutputs);
+    copy_in->copy(pin, audioIn, numsamples);
 
-    if (audioIn) {
-        for (int j = 0; j < plugin->numInputs; j++) {
-            float* sample = audioIn[0];
-            for (int i = 0; i < numsamples; i++)
-                *sample++ = (pin[0][i] + pin[1][i]) * 0.5f;
-        }
-    }
+    plugin->processReplacing(plugin, audioIn, audioOut, numsamples);
 
-    plugin->processReplacing(plugin, inputs, outputs, numsamples);
-
-    if (audioOut) {
-        if (plugin->numOutputs == 1) {
-            memcpy(pout[0], audioOut[0], sizeof(float) * numsamples);
-            memcpy(pout[1], audioOut[0], sizeof(float) * numsamples);
-        } else {
-            memcpy(pout[0], audioOut[0], sizeof(float) * numsamples);
-            memcpy(pout[1], audioOut[1], sizeof(float) * numsamples);
-        }
-    }
+    copy_out->copy(audioOut, pout, numsamples);
 
     return 1;
 }
@@ -498,7 +490,7 @@ vst_adapter::save_preset_file(const char* filename) {
         chunk_data = nullptr;
     }
 
-    // at this point we know for sure if chunk_data is valid
+    // at this poinFt we know for sure if chunk_data is valid
     // if so then save it, if not then write each param to save file
     if (save_chunk) {
         // TODO very important save preset stuff

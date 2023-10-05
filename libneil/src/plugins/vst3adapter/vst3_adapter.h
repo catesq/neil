@@ -14,6 +14,7 @@
 #include "zzub/plugin.h"
 
 #include "libzzub/midi_track.h"
+#include "libzzub/tools.h"
 
 #include "vst3_info.h"
 #include "vst3_defines.h"
@@ -61,6 +62,7 @@ struct WindowResizer: Steinberg::IPlugFrame {
     virtual Steinberg::uint32 PLUGIN_API release() { return 1; };
 
 private:
+
     std::function<bool(int, int)> resizer;
 };
 
@@ -149,4 +151,7 @@ private:
     uint16_t num_tracks = 0;
     zzub_plugin_t* metaplugin = nullptr;
     float ui_content_scale = 1.0f;
+
+    zzub::tools::CopyChannels* copy_in;
+    zzub::tools::CopyChannels* copy_out;
 };

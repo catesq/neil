@@ -195,8 +195,8 @@ void lv2_adapter::init_ports()   {
     in_buffers = collect_buffer_pointers(audioInPorts, false);
     out_buffers = collect_buffer_pointers(audioOutPorts, false);
 
-    copy_in = CopyChannels::build(2, in_buffers.size());
-    copy_out = CopyChannels::build(out_buffers.size(), 2);
+    copy_in = zzub::tools::CopyChannels::build(2, in_buffers.size());
+    copy_out = zzub::tools::CopyChannels::build(out_buffers.size(), 2);
 }
 
 void lv2_adapter::add_note_on(uint8_t note, uint8_t volume) {
