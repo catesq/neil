@@ -38,7 +38,7 @@ using namespace std;
 
 extern size_t sizeFromWaveFormat(int waveFormat);
 
-struct find_info_by_uri : public std::unary_function<const zzub::info*, bool> {
+struct find_info_by_uri {
     std::string uri;
     bool is_versioned = false;
     std::string unversioned_uri{};
