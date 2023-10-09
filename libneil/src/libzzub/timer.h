@@ -18,10 +18,11 @@
 
 #pragma once
 
-namespace zzub {
-
+    
 #include <sys/time.h>
 #include <time.h>
+
+namespace zzub {
 
 struct timer {
     timeval vStart;
@@ -43,4 +44,4 @@ struct timer {
 
 };
 
-} // namespace zzub
+}
