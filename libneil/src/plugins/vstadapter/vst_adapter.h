@@ -65,7 +65,7 @@ struct vst_adapter : zzub::plugin, zzub::event_handler, zzub::midi_plugin_interf
 
 private:
     bool initialized = false;
-
+    uint64_t sample_count_last_idle = 0;
     zzub::midi_track_manager midi_track_manager;
     int active_index = -1;  // keep track of which parameter index is being adjusted (see audioMasterBeginEdit audioMasterEndEdit)
                             // the octasine plugin - or the vst-rs module - sends a burst of spurious EndEdit messages -
@@ -88,6 +88,7 @@ private:
     VstTimeInfo vst_time_info{};
     zzub_plugin_t* metaplugin = nullptr;
 
+    uint64_t idle_task_id = 0;
 
     zzub::tools::CopyChannels* copy_in = nullptr;
     zzub::tools::CopyChannels* copy_out = nullptr;

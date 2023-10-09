@@ -16,6 +16,7 @@
 
 #include "loguru.hpp"
 
+#include "libzzub/timer.h"
 
 //
 
@@ -96,11 +97,9 @@ VSTCALLBACK hostCallback(
         }
 
         case audioMasterGetSampleRate:
-        LOG_F(INFO, "hostCallback: audioMasterGetSampleRate %d", adapter->_master_info->samples_per_second);
             return adapter->_master_info->samples_per_second;
 
         case audioMasterGetBlockSize:
-        LOG_F(INFO, "hostCallback: audioMasterGetBlockSize %d", zzub_buffer_size);
             return zzub_buffer_size;
 
         case audioMasterIdle:
@@ -139,7 +138,6 @@ vst_adapter::vst_adapter(const vst_zzub_info* info)
     globalvals = (uint16_t*)malloc(sizeof(uint16_t) * info->get_param_count());
     attributes = (int*)&attr_values;
     global_values = globalvals;
-    LOG_F(INFO, "init adapter");
 
     if (info->flags & zzub_plugin_flag_has_midi_input) {
         LOG_F(INFO, "init midi input");
@@ -153,7 +151,6 @@ vst_adapter::vst_adapter(const vst_zzub_info* info)
     vst_events = (VstEvents*)malloc(sizeof(VstEvents) + sizeof(VstEvent*) * (MAX_EVENTS - 2));
     vst_events->numEvents = 0;
     vst_time_info.flags = kVstTempoValid | kVstTransportPlaying;
-
 }
 
 
@@ -279,7 +276,6 @@ vst_adapter::init_from_archive(zzub::archive* arc) {
 void 
 vst_adapter::created() {
     initialized = true;
-    printf("initialized\n");
 
     for (vst_parameter* param : info->get_vst_params()) {
         float vst_val = plugin->getParameter(plugin, param->index);
@@ -338,14 +334,15 @@ vst_adapter::ui_open() {
     dispatch(plugin, effGetProgram, 0, 0, nullptr, 0);
 
     if (gui_size) {
-        ui_resize(gui_size->right, gui_size->bottom);
         LOG_F(INFO, "vst_adapter: open gui %d %d %d %d", gui_size->left, gui_size->right, gui_size->top, gui_size->bottom);
-        gtk_widget_queue_draw(window);
+        ui_resize(gui_size->right, gui_size->bottom);
     }
 
+    dispatch(plugin, __effIdleDeprecated);
     dispatch(plugin, effEditIdle);
 
     is_editor_open = true;
+    idle_task_id = g_timeout_add(100, [](void* data) -> gboolean { dispatch((AEffect*) data, __effIdleDeprecated); return true; }, plugin);
 }
 
 
@@ -353,6 +350,7 @@ void
 vst_adapter::ui_destroy() {
     dispatch(plugin, effEditClose);
     is_editor_open = false;
+    g_source_remove (idle_task_id);
 }
 
 
@@ -386,14 +384,9 @@ vst_adapter::process_events() {
 
 
 
-
-inline std::string describe_time(std::string tag, zzub::master_info* master_info, uint64_t sampl_pos) {
-    return tag + " at beat pos: " + std::to_string(SAMPLES_TO_BEATS(sampl_pos, master_info->samples_per_second, master_info->beats_per_minute)) + "\n";
-}
-
 void 
 vst_adapter::add_note_on(uint8_t note, uint8_t volume) {
-    printf(describe_time("vst_adapter add_note_on", _master_info, sample_pos).c_str());
+    LOG_BEAT("vst_adapter add_note_on", _master_info, sample_pos);
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_note_on(note, volume));
@@ -401,7 +394,7 @@ vst_adapter::add_note_on(uint8_t note, uint8_t volume) {
 
 void 
 vst_adapter::add_note_off(uint8_t note) {
-    printf(describe_time("vst_adapter add_note_off", _master_info, sample_pos).c_str());
+    LOG_BEAT("vst_adapter add_note_off", _master_info, sample_pos);
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.insert(midi_events.begin(), midi_note_off(note));
@@ -410,7 +403,7 @@ vst_adapter::add_note_off(uint8_t note) {
 
 void 
 vst_adapter::add_aftertouch(uint8_t note, uint8_t volume) {
-    printf(describe_time("vst_adapter add_aftertouch", _master_info, sample_pos).c_str());
+    LOG_BEAT("vst_adapter add_aftertouch", _master_info, sample_pos);
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_note_aftertouch(note, volume));
@@ -419,7 +412,7 @@ vst_adapter::add_aftertouch(uint8_t note, uint8_t volume) {
 
 void 
 vst_adapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
-    printf(describe_time("vst_adapter add_midi_command", _master_info, sample_pos).c_str());
+    LOG_BEAT("vst_adapter add_midi_command", _master_info, sample_pos);
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_message(cmd, data1, data2));
@@ -435,6 +428,12 @@ vst_adapter::get_track_data_pointer(uint16_t track_num) const {
 bool 
 vst_adapter::process_stereo(float** pin, float** pout, int numsamples, int mode) {
     sample_pos += numsamples;
+
+    if(sample_pos - sample_count_last_idle > 5000) {
+        dispatch(plugin, __effIdleDeprecated);
+        dispatch(plugin, effEditIdle);
+        sample_count_last_idle = sample_pos;
+    }
 
     if (info->flags & zzub_plugin_flag_has_midi_input) {
         midi_track_manager.process_samples(numsamples, mode);
