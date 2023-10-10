@@ -341,6 +341,7 @@ namespace zzub:
 		set connection = 0
 		set global = 1
 		set track = 2
+		set controller = 3
 
 	enum SequenceType:
 		set pattern = 0
@@ -693,9 +694,9 @@ namespace zzub:
 
 		def save_preset_file(string file_name): bool
 
-		"Copies columns from an offline pattern to a live pattern. Source and target columns are set up in"
-		"the mappings array, which has 6 ints for each mapping: group, track and column for source and target"
-		"plugins."
+		#"Copies columns from an offline pattern to a live pattern. Source and target columns are set up in"
+		#"the mappings array, which has 6 ints for each mapping: group, track and column for source and target"
+		#"plugins."
 		# 0.3: DEAD # def set_pattern_values(zzub_player_t* player, int plugin, int pattern, int target_row, zzub_pattern_t* src_pattern, int* mappings, int mappings_count)
 
 		#/*@}*/
