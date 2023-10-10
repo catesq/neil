@@ -31,6 +31,22 @@ namespace zzub {
 
 namespace tools {
 
+
+std::string describe_zzub_note(uint8_t value) {
+    static const char* notes[] = {
+        "C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"
+    };
+
+    uint8_t octave = (value & 0xf0) >> 4;
+    uint8_t note = value & 0x0f;
+
+    if(note >=1 && note < 12)
+        return std::format("{}{}", notes[note-1], octave);
+    else
+        return std::format("{}", value); 
+}
+
+
 CopyChannels* CopyChannels::build(int num_in, int num_out) {
     if(num_in == 2) {
         switch(num_out) {

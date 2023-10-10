@@ -4,6 +4,8 @@
 #include "lv2_ports.h"
 #include "zzub/plugin.h"
 
+#include "libzzub/midi_track.h"
+
 using boost::algorithm::trim;
 
 extern "C" {
@@ -172,21 +174,22 @@ describe_midi_sys(uint8_t* data) {
     }
 }
 
+
 std::string
 describe_midi_voice(uint8_t* data, uint8_t size) {
     switch (data[0] & 0xf0) {
         case 0x80:
-            return "note off(" + DESCRIBE_CHAN(data) + ") " + DESCRIBE_NOTE_AND_VOL(data, size);
+            return "note off(" + zzub::midi_chan(data[0]) + ") " + zzub::midi_note(data, size);
         case 0x90:
-            return "note on(" + DESCRIBE_CHAN(data) + ") " + DESCRIBE_NOTE_AND_VOL(data, size);
+            return "note on(" + zzub::midi_chan(data[0]) + ") " + zzub::midi_note(data, size);
         case 0xa0:
-            return "aftertouch(" + DESCRIBE_CHAN(data) + ") " + DESCRIBE_NOTE_AND_VOL(data, size);
+            return "aftertouch(" + zzub::midi_chan(data[0]) + ") " + zzub::midi_note(data, size);
         case 0xb0:
             return "controller";
         case 0xc0:
             return "program change";
         case 0xd0:
-            return "channel pressure" + DESCRIBE_CHAN(data) + DESCRIBE_NOTE_AND_VOL(data, size);
+            return "channel pressure(" + zzub::midi_chan(data[0]) + ")" + zzub::midi_note(data, size);
         case 0xe0:
             return "pitch bend";
         default:

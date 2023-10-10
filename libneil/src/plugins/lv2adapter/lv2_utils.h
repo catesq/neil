@@ -17,11 +17,6 @@ extern "C" {
 #include "ext/symap.h"
 }
 
-#define DESCRIBE_CHAN(data) std::to_string(data[0] & 0x0f)
-#define DESCRIBE_NOTE(byte) std::to_string(byte)
-#define DESCRIBE_VOL(byte) std::to_string(byte)
-#define DESCRIBE_NOTE_AND_VOL(data, size) ((size == 3) ? DESCRIBE_NOTE(data[1]) + "(" + DESCRIBE_VOL(data[2]) + ")" : DESCRIBE_NOTE(data[1]))
-
 #ifdef _WIN32
 #include <io.h> /* for _mktemp */
 #define FILE_SEPARATOR std::string("\\")

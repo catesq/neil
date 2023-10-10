@@ -34,6 +34,9 @@ double triangle(double v);
 namespace zzub {
 namespace tools {
 
+std::string describe_zzub_note(uint8_t value);
+
+
 
 class UnsupportedNumberOfChannels : public std::runtime_error {
 public:

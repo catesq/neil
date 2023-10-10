@@ -4,10 +4,33 @@
 
 #include "zzub/plugin.h"
 
+#include "loguru.hpp"
+
 #define SAMPLES_TO_BEATS(sample_pos, sample_rate, bpm) ((sample_pos * bpm) / (sample_rate * 60.f))
 
 
+
+inline void LOG_BEAT(std::string tag, zzub::master_info* master_info, uint64_t sampl_pos) {
+    LOG_F(INFO, "%s: at beat %.2f\n", tag.c_str(), SAMPLES_TO_BEATS(sampl_pos, master_info->samples_per_second, master_info->beats_per_minute));
+}
+
+
 namespace zzub {
+
+extern const std::string midi_note_names[12]; 
+
+inline std::string midi_chan(uint8_t byte) { return std::to_string(byte & 0x0f); }
+
+inline std::string midi_note(uint8_t byte) {
+    return std::string(midi_note_names[byte % 12]) + std::to_string(byte / 12 - 1);
+}
+
+inline std::string midi_note(uint8_t* data, uint8_t size) {
+    if (size == 3) 
+        return midi_note(data[1]) + "(" + std::to_string(data[2]) + ")";
+    else
+        return midi_note(data[1]);
+}
 
 
 enum zzub_note_change {
@@ -187,36 +210,26 @@ struct midi_track_manager {
 private:
     midi_plugin_interface &plugin;
 
+    // the maximum number of tracks
+    uint16_t max_num_tracks;
+
     // these are pointers to a subset of the void *track_values in the zzub::plugin
     // the midi events to process are supplied by the zzub engine every 'tick'. Unsafe, written over.
     std::vector<midi_note_track *> curr_tracks{};
 
     // local data the track_manager creates and maintains, safe.
-    std::vector<midi_note_track> prev_tracks;
+    std::vector<midi_note_track> prev_tracks{};
 
     std::vector<active_note> active_notes{};
 
-    std::vector<int> note_len_types{};
-
-    // must be called by the plugin every time the number of tracks changes
-    uint32_t num_tracks = 1;
-
-    // the most recent note_len_type of each track
-    uint16_t max_num_tracks = 1;
+    uint32_t num_tracks = 0;
 
     // used a counter to send note length events
     uint64_t play_pos = 0;
 
-
-    uint64_t prev_play_pos = 0;
-
     uint32_t sample_rate = zzub_default_rate;
 
     float bpm = 126.0f;
-
-    int prev_mode = zzub_process_mode_no_io;
-
-
 
 public:
     midi_track_manager(midi_plugin_interface &plugin)
@@ -225,11 +238,7 @@ public:
     }
 
     midi_track_manager(midi_plugin_interface &plugin, uint16_t max_num_tracks)
-        : plugin(plugin),
-          prev_tracks(max_num_tracks),
-          active_notes(max_num_tracks),
-          note_len_types(max_num_tracks, zzub_note_unit_beats_16ths),
-          max_num_tracks(max_num_tracks) 
+        : plugin(plugin), max_num_tracks(max_num_tracks) 
     {
     }
 
@@ -243,7 +252,7 @@ public:
     static void add_midi_track_info(zzub::info *info);
 
 
-    void set_track_count(int num);
+    void set_track_count(int new_num_tracks);
 
 
     // called in the process_events method of a plugin
@@ -274,7 +283,6 @@ public:
     void set_bpm(uint32_t bpm) {
         this->bpm = bpm;
     }
-
 
     inline float get_beat_length() {
         return (60.0f * sample_rate) / bpm;
