@@ -169,6 +169,31 @@ void midi_track_manager::process_events()
     }
 }
 
+inline std::string describe_note_len_unit(int note_len_type) {
+    switch(note_len_type) {
+        case zzub_note_unit_beats:
+            return "beats";
+
+        case zzub_note_unit_beats_16ths:
+            return "beats/16";
+
+        case zzub_note_unit_beats_256ths:
+            return "beats/256";
+
+        case zzub_note_unit_secs:
+            return "secs";
+
+        case zzub_note_unit_secs_16ths:
+            return "secs/16";
+
+        case zzub_note_unit_secs_256ths:
+            return "secs/256";
+
+        default:
+            return "unknown";
+    }
+} 
+
 
 std::string midi_track_manager::describe_value(int track, int param, int value) 
 {
@@ -177,18 +202,25 @@ std::string midi_track_manager::describe_value(int track, int param, int value)
 
     switch(param) {
         case 0:
-            return "note: " + std::to_string(value);
+            return ""; // note descriptions are already handled 
 
         case 1:
-            return "volume: " + std::to_string(value);
+            return std::to_string(value);
 
         case 2:
-            return "length: " + std::to_string(value);
+            return describe_note_len_unit(value);
 
-        case 3:
-            return "command: " + std::to_string(value);
+        case 3: 
+            if(prev_tracks[track].unit == zzub_note_unit_none) {
+                return describe_note_len(prev_tracks[track].unit, value);
+            } else {
+                return describe_note_len(zzub_note_unit_default, value);
+            }
 
         case 4:
+            return "command: " + std::to_string(value);
+
+        case 5:
             return "data: " + std::to_string(value);
 
         default:
@@ -197,14 +229,17 @@ std::string midi_track_manager::describe_value(int track, int param, int value)
 }
 
 
-std::string midi_track_manager::describe_note_len(int note_len_type, int value) 
+std::string midi_track_manager::describe_note_len(int note_len_unit, int value) 
 {
-    switch(note_len_type) {
+    switch(note_len_unit) {
         case zzub_note_unit_beats:
             return std::to_string(value) + " beats";
 
         case zzub_note_unit_beats_16ths:
             return std::to_string((int)(value / 16)) + " " + std::to_string(value % 16) + "/16 beats";
+
+        case zzub_note_unit_beats_256ths:
+            return std::to_string((int)(value / 256)) + " " + std::to_string(value % 16) + "/256 beats";
 
         case zzub_note_unit_secs:
             return std::to_string(value) + " sec";
@@ -240,6 +275,9 @@ uint64_t midi_track_manager::get_note_len_in_samples(midi_note_len note_len)
         case zzub_note_unit_beats_16ths:
             return get_beat_length() * (note_len.length / 16.0f);
 
+        case zzub_note_unit_beats_256ths:
+            return get_beat_length() * (note_len.length / 256.0f);
+
         default:
             return sample_rate;
     }
@@ -258,13 +296,14 @@ const zzub_note_unit midi_track_manager::get_note_unit(const midi_note_track *pr
 
 midi_note_len midi_track_manager::get_note_length(const midi_note_track *prev, const midi_note_track *curr) const 
 {
-    if(curr->length == zzub_note_len_none)
+    if(curr->length == zzub_note_len_none) {
         return invalid_note_len;
-    else
+    } else {
         return midi_note_len {
             static_cast<uint8_t>(get_note_unit(prev, curr)), 
             curr->length
         };
+    }
 }
 
 
