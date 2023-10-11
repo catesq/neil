@@ -378,7 +378,7 @@ class PatternView(Gtk.DrawingArea):
         Initialization.
         """
         self.edit_step = 1
-        self.statuslabels = panel.statuslabels
+        # self.statuslabels = panel.statuslabels
         self.panel = panel
         self.needfocus = True
         self.hscroll = hscroll
@@ -2132,6 +2132,8 @@ class PatternView(Gtk.DrawingArea):
         self.update_plugin_info()
         if not self.plugin:
             return
+        
+        statusbar = self.panel.statusbar
         if self.parameter_count[self.group] and self.group_track_count[self.group]:
             # change status bar
             if self.group == 0:
@@ -2141,21 +2143,28 @@ class PatternView(Gtk.DrawingArea):
                     in_machine_name = in_plugin.get_name()
                 except:
                     in_machine_name = ""
-                self.statuslabels[0].set_label('Row %s, Incoming %s (%s)' %
-                                               (self.row, self.track, in_machine_name))
+                # self.statuslabels[0].set_label('Row %s, Incoming %s (%s)' % (self.row, self.track, in_machine_name))
+                statusbar.pattern_position('Row %s, Incoming %s (%s)' % (self.row, self.track, in_machine_name))
             elif self.group == 1:
-                self.statuslabels[0].set_label('Row %s, Globals' % (self.row,))
+                # self.statuslabels[0].set_label('Row %s, Globals' % (self.row,))
+                statusbar.pattern_position('Row %s, Globals' % (self.row,))
             else:
-                self.statuslabels[0].set_label('Row %s, Track %s' % (self.row, self.track))
+                # self.statuslabels[0].set_label('Row %s, Track %s' % (self.row, self.track))
+                statusbar.pattern_position('Row %s, Track %s' % (self.row, self.track))
+
             p = self.plugin.get_parameter(self.group, self.track, self.index)
-            self.statuslabels[2].set_label(prepstr(p.get_description() or ""))
+            # self.statuslabels[2].set_label(prepstr(p.get_description() or ""))
+            statusbar.parameter_description(prepstr(p.get_description() or ""))
+
             v = self.plugin.get_pattern_value(self.pattern, self.group, self.track, self.index, self.row)
             if v != p.get_value_none():
                 text = prepstr(self.get_plugin().describe_value(self.group, self.index, v))
                 s = get_str_from_param(p, self.plugin.get_pattern_value(self.pattern, self.group, self.track, self.index, self.row))
-                self.statuslabels[1].set_label("%s (%i) %s" % (s, v, text))
+                # self.statuslabels[1].set_label("%s (%i) %s" % (s, v, text))
+                statusbar.parameter_value("%s (%i) %s" % (s, v, text))
             else:
-                self.statuslabels[1].set_label("")
+                # self.statuslabels[1].set_label("")
+                statusbar.parameter_value("")
 
     def update_all(self):
         if self.is_visible():
@@ -2374,18 +2383,21 @@ class PatternView(Gtk.DrawingArea):
                     width = self.column_width
                     x2 = self.parameter_width[sel_g][sel_i] * width
                     draw_box(x, y1, x2, y2 - y1)
-                    self.statuslabels[3].set_label("Sel Column")
+                    # self.statuslabels[3].set_label("Sel Column")
+                    self.selection_status("Sel Column")
                 elif self.selection.mode == SEL_TRACK:
                     x2 = ((self.track_width[self.selection.group] - 1) *
                           self.column_width)
                     draw_box(x, y1, x2, y2 - y1)
-                    self.statuslabels[3].set_label("Sel Track")
+                    # self.statuslabels[3].set_label("Sel Track")
+                    self.selection_status("Sel Track")
                 elif self.selection.mode == SEL_GROUP:
                     track_count = self.group_track_count[self.selection.group]
                     x2 = ((self.track_width[self.selection.group] *
                            track_count - 1) * self.column_width)
                     draw_box(x, y1, x2, y2 - y1)
-                    self.statuslabels[3].set_label("Sel Group")
+                    # self.statuslabels[3].set_label("Sel Group")
+                    self.selection_status("Sel Group")
                 elif self.selection.mode == SEL_ALL:
                     x2 = 0
                     for group in range(3):
@@ -2395,9 +2407,11 @@ class PatternView(Gtk.DrawingArea):
                                    self.column_width)
                     x2 -= self.column_width
                     draw_box(x, y1, x2, y2 - y1)
-                    self.statuslabels[3].set_label("Sel All")
+                    # self.statuslabels[3].set_label("Sel All")
+                    self.selection_status("Sel All")
             else:
-                self.statuslabels[3].set_label("")
+                # self.statuslabels[3].set_label("")
+                self.selection_status("")
 
     def draw_background(self, ctx):
         w, h = self.get_client_size()

@@ -5,6 +5,7 @@ from gi.repository import Gtk
 from .toolbar import PatternToolBar
 from .page import NeilNotebookPage
 from .views import PatternView
+from .statusbar import PatternStatusBar
 
 import neil.common as common
 import neil.com as com
@@ -34,34 +35,36 @@ class PatternPanel(NeilNotebookPage):
         Initialization.
         """
         Gtk.VBox.__init__(self)
-        self.statusbar = Gtk.HBox(False, common.MARGIN)
-        self.statusbar.set_border_width(common.MARGIN0)
+        self.statusbar = PatternStatusBar()
+        # self.statusbar = Gtk.HBox(False, common.MARGIN)
+        # self.statusbar.set_border_width(common.MARGIN0)
+
+        # self.statuslabels = []
+
+        # label = Gtk.Label()
+        # vsep = Gtk.VSeparator()
+        # self.statuslabels.append(label)
+        # self.statusbar.pack_start(label, False, True, 0)
+        # self.statusbar.pack_start(vsep, False, True, 0)
+
+        # label = Gtk.Label()
+        # vsep = Gtk.VSeparator()
+        # self.statuslabels.append(label)
+        # self.statusbar.pack_start(label, False, True, 0)
+        # self.statusbar.pack_start(vsep, False, True, 0)
+
+        # label = Gtk.Label()
+        # vsep = Gtk.VSeparator()
+        # self.statuslabels.append(label)
+        # self.statusbar.pack_start(label, False, True, 0)
+        # self.statusbar.pack_start(vsep, False, True, 0)
+
+        # label = Gtk.Label()
+        # self.statuslabels.append(label)
+        # self.statusbar.pack_end(label, False, True, 0)
+
         vscroll = Gtk.VScrollbar()
         hscroll = Gtk.HScrollbar()
-        self.statuslabels = []
-
-        label = Gtk.Label()
-        vsep = Gtk.VSeparator()
-        self.statuslabels.append(label)
-        self.statusbar.pack_start(label, False, True, 0)
-        self.statusbar.pack_start(vsep, False, True, 0)
-
-        label = Gtk.Label()
-        vsep = Gtk.VSeparator()
-        self.statuslabels.append(label)
-        self.statusbar.pack_start(label, False, True, 0)
-        self.statusbar.pack_start(vsep, False, True, 0)
-
-        label = Gtk.Label()
-        vsep = Gtk.VSeparator()
-        self.statuslabels.append(label)
-        self.statusbar.pack_start(label, False, True, 0)
-        self.statusbar.pack_start(vsep, False, True, 0)
-
-        label = Gtk.Label()
-        self.statuslabels.append(label)
-        self.statusbar.pack_end(label, False, True, 0)
-
         self.view = PatternView(self, hscroll, vscroll)
         self.viewport = Gtk.Viewport()
         self.viewport.add(self.view)
