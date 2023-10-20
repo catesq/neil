@@ -10,7 +10,4 @@ class NeilNotebookPage(Gtk.VBox):
     _notebook = None # notebook and index assigned in the notebook framepanel in mainwindow.py
     _index = None
     def is_current_page(self):
-        if not self._notebook:
-            return False
-
-        return self._notebook.get_current_page() == self._index
+        return self._notebook and self._notebook.get_current_page() == self._index

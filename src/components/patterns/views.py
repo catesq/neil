@@ -19,6 +19,8 @@ from .utils import \
             get_str_from_param, get_length_from_param, \
             get_subindexcount_from_param, get_subindexoffsets_from_param
 
+from .patternstatus import PatternStatus
+
 import config
 import zzub
 
@@ -27,19 +29,106 @@ CONN = 0
 GLOBAL = 1
 TRACK = 2
 
+
 patternsizes = [
     1, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512
 ]
 
+
+class SelectionPainter:
+    def __init__(self, pattern_view):
+        pattern_view.add_update_listener(self)
+        self.prepared = False
+        
+    def notify(self, pattern_view):
+        self.selection = pattern_view.selection
+        self.pattern_to_pos = pattern_view.pattern_to_pos
+        self.row_height = pattern_view.row_height
+        self.row_count = pattern_view.row_count
+        self.start_row = pattern_view.start_row
+        self.column_width = pattern_view.column_width
+        self.parameter_width = pattern_view.parameter_width
+        self.track_width = pattern_view.track_width
+        self.group_track_count = pattern_view.group_track_count
+        self.pattern_status = pattern_view.pattern_status
+        self.prepared = True
+
+    def draw_box(self, ctx, x, y, width, height):
+        ctx.rectangle(x + 0.5, y + 0.5, width, height)
+        ctx.set_source_rgba(0.0, 1.0, 0.0, 1.0)
+        ctx.set_line_width(1)
+        ctx.stroke_preserve()
+        ctx.set_source_rgba(0.0, 1.0, 0.0, 0.3)
+        ctx.fill()
+
+    def draw(self, ctx):
+        if self.selection and self.prepared:
+            x, y1 = self.pattern_to_pos(self.selection.begin,
+                                        self.selection.group,
+                                        self.selection.track,
+                                        self.selection.index)
+            x, y2 = self.pattern_to_pos(self.selection.end,
+                                        self.selection.group,
+                                        self.selection.track,
+                                        self.selection.index)
+            clip_y = (self.row_height + ((self.row_count - self.start_row) * self.row_height))
+            y1 = max(self.row_height, y1)
+            y2 = min(clip_y, y2)
+            if y2 > y1:
+                if self.selection.mode == SEL_COLUMN:
+                    sel_g = self.selection.group
+                    sel_i = self.selection.index
+                    width = self.column_width
+                    x2 = self.parameter_width[sel_g][sel_i] * width
+                    self.draw_box(ctx, x, y1, x2, y2 - y1)
+                    self.pattern_status.update_selection_status("Sel Column")
+                elif self.selection.mode == SEL_TRACK:
+                    x2 = ((self.track_width[self.selection.group] - 1) *
+                          self.column_width)
+                    self.draw_box(ctx, x, y1, x2, y2 - y1)
+                    self.pattern_status.update_selection_status("Sel Track")
+                elif self.selection.mode == SEL_GROUP:
+                    track_count = self.group_track_count[self.selection.group]
+                    x2 = ((self.track_width[self.selection.group] *
+                           track_count - 1) * self.column_width)
+                    self.draw_box(ctx, x, y1, x2, y2 - y1)
+                    self.pattern_status.update_selection_status("Sel Group")
+                elif self.selection.mode == SEL_ALL:
+                    x2 = 0
+                    for group in range(3):
+                        track_count = self.group_track_count[group]
+                        if self.track_width[group]:
+                            x2 += ((self.track_width[group] * track_count) *
+                                   self.column_width)
+                    x2 -= self.column_width
+                    self.draw_box(ctx, x, y1, x2, y2 - y1)
+                    self.pattern_status.update_selection_status("Sel All")
+            else:
+                self.pattern_status.update_selection_status("")
+
+
+
 class BarMarksPainter():
     def __init__(self, widget):
         self.widget = widget
+        widget.add_update_listener(self)
+
+    def notify(self, pattern_view):
+        self.row_height = pattern_view.row_height
+        self.column_width = self.widget.column_width
+        self.start_row = self.widget.start_row
+        self.row_count = self.widget.row_count
+        self.group_track_count = self.widget.group_track_count
+        self.lines = self.widget.lines
+
 
     def draw(self, ctx):
         "Draw the horizontal bars every each fourth and eighth bar."
         w, h = self.widget.get_client_size()
-        row_height = self.widget.row_height
-        column_width = self.widget.column_width
+        row_height = self.row_height
+        column_width = self.column_width
+        start_row = self.start_row
+        row_count = self.row_count
 
         def draw_bar(row, group, track, color):
             """Draw a horizontal bar for a specified row in a
@@ -67,22 +156,20 @@ class BarMarksPainter():
             else:
                 return None
 
-        start_row = self.widget.start_row
-        row_count = self.widget.row_count
         num_rows = min(row_count - start_row, int((h - row_height) / row_height) + 1)
-        if self.widget.lines and self.widget.lines[CONN]:
-            for track in range(self.widget.group_track_count[CONN]):
+        if self.lines and self.lines[CONN]:
+            for track in range(self.group_track_count[CONN]):
                 for row in range(start_row, num_rows + start_row):
                     color = get_color(row)
                     if color != None:
                         draw_bar(row, CONN, track, color)
-        if self.widget.lines and self.widget.lines[GLOBAL]:
+        if self.lines and self.lines[GLOBAL]:
             for row in range(start_row, num_rows + start_row):
                 color = get_color(row)
                 if color != None:
                     draw_bar(row, GLOBAL, 0, color)
-        if self.widget.lines and self.widget.lines[TRACK]:
-            for track in range(self.widget.group_track_count[TRACK]):
+        if self.lines and self.lines[TRACK]:
+            for track in range(self.group_track_count[TRACK]):
                 for row in range(start_row, num_rows + start_row):
                     color = get_color(row)
                     if color != None:
@@ -378,7 +465,7 @@ class PatternView(Gtk.DrawingArea):
         Initialization.
         """
         self.edit_step = 1
-        # self.statuslabels = panel.statuslabels
+        self.pattern_status = PatternStatus()
         self.panel = panel
         self.needfocus = True
         self.hscroll = hscroll
@@ -411,9 +498,14 @@ class PatternView(Gtk.DrawingArea):
         Gtk.DrawingArea.__init__(self)
         # "Bitstream Vera Sans Mono"
         self.update_font()
+
+        ## the painters can add themself to update_listeners so that their prepare() method
+        # is called in init_values when a pattern is changed
+        self.updater_listeners = []
         self.playpos_painter = PlayPosPainter(self)
         self.pattern_bg_painter = PatternBackgroundPainter(self)
         self.bar_mark_painter = BarMarksPainter(self)
+        self.selection_painter = SelectionPainter(self)
 
         # implements horizontal scrolling
         self.start_col = 0
@@ -482,6 +574,10 @@ class PatternView(Gtk.DrawingArea):
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         eventbus.document_loaded += self.update_all
         self.pattern_changed()
+
+    ## each function in updater_listeners is called when a pattern is changed
+    def add_update_listener(self, update_func):
+        self.updater_listeners.append(update_func)
 
     def on_zzub_parameter_changed(self, plugin, group, track, param, value):
         """
@@ -764,6 +860,8 @@ class PatternView(Gtk.DrawingArea):
         self.set_track(self.track)
         self.set_index(self.index)
         self.set_subindex(self.subindex)
+        for updater in self.updater_listeners:
+            updater.notify(self)
         self.refresh_view()
 
     def get_client_size(self):
@@ -884,13 +982,21 @@ class PatternView(Gtk.DrawingArea):
         self.subindex = min(max(si, 0), self.subindex_count[self.group][self.index] - 1)
 
     def redraw(self, *args):
+        print("redraw")
         if self.get_window() and self.is_visible():
             w, h = self.get_client_size()
-            self.get_window().invalidate_rect(Gdk.Rectangle(0, 0, w, h), False)
+            self.queue_draw()
+            # self.get_window().invalidate_rect(Gdk.Rectangle(0, 0, w, h), False)
 
     def on_active_patterns_changed(self, selpatterns):
         if self.is_visible():
             self.pattern_changed()
+
+    def focused(self):
+        statusbar = com.get('neil.core.statusbar')
+        statusbar.set_left(self.pattern_status.get_parameter_value(), self.pattern_status.get_parameter_description())
+        statusbar.set_right(self.pattern_status.get_pattern_position(), self.pattern_status.get_selection_status())
+
 
     def pattern_changed(self, *args):
         """
@@ -2129,11 +2235,12 @@ class PatternView(Gtk.DrawingArea):
 
     def update_statusbar(self):
         # update plugin info
+        
         self.update_plugin_info()
+        
         if not self.plugin:
             return
         
-        statusbar = self.panel.statusbar
         if self.parameter_count[self.group] and self.group_track_count[self.group]:
             # change status bar
             if self.group == 0:
@@ -2143,28 +2250,22 @@ class PatternView(Gtk.DrawingArea):
                     in_machine_name = in_plugin.get_name()
                 except:
                     in_machine_name = ""
-                # self.statuslabels[0].set_label('Row %s, Incoming %s (%s)' % (self.row, self.track, in_machine_name))
-                statusbar.pattern_position('Row %s, Incoming %s (%s)' % (self.row, self.track, in_machine_name))
+                self.pattern_status.update_pattern_position('Row %s, Incoming %s (%s)' % (self.row, self.track, in_machine_name))
             elif self.group == 1:
-                # self.statuslabels[0].set_label('Row %s, Globals' % (self.row,))
-                statusbar.pattern_position('Row %s, Globals' % (self.row,))
+                self.pattern_status.update_pattern_position('Row %s, Globals' % (self.row,))
             else:
-                # self.statuslabels[0].set_label('Row %s, Track %s' % (self.row, self.track))
-                statusbar.pattern_position('Row %s, Track %s' % (self.row, self.track))
+                self.pattern_status.update_pattern_position('Row %s, Track %s' % (self.row, self.track))
 
             p = self.plugin.get_parameter(self.group, self.track, self.index)
-            # self.statuslabels[2].set_label(prepstr(p.get_description() or ""))
-            statusbar.parameter_description(prepstr(p.get_description() or ""))
+            self.pattern_status.update_parameter_description(prepstr(p.get_description() or ""))
 
             v = self.plugin.get_pattern_value(self.pattern, self.group, self.track, self.index, self.row)
             if v != p.get_value_none():
                 text = prepstr(self.get_plugin().describe_value(self.group, self.index, v))
                 s = get_str_from_param(p, self.plugin.get_pattern_value(self.pattern, self.group, self.track, self.index, self.row))
-                # self.statuslabels[1].set_label("%s (%i) %s" % (s, v, text))
-                statusbar.parameter_value("%s (%i) %s" % (s, v, text))
+                self.pattern_status.update_parameter_value("%s (%i) %s" % (s, v, text))
             else:
-                # self.statuslabels[1].set_label("")
-                statusbar.parameter_value("")
+                self.pattern_status.update_parameter_value("")
 
     def update_all(self):
         if self.is_visible():
@@ -2174,6 +2275,7 @@ class PatternView(Gtk.DrawingArea):
     def refresh_view(self):
         if not self.plugin:
             return
+        print("refresh view")
         self.update_statusbar()
         self.redraw()
         self.adjust_scrollbars()
@@ -2282,8 +2384,6 @@ class PatternView(Gtk.DrawingArea):
             return
         cx, cy = self.pattern_to_pos(self.row, self.group, self.track, self.index, self.subindex)
         if (cx >= (PATLEFTMARGIN + 4)) and (cy >= self.top_margin):
-            # Note that you have to add 0.5 to coordinates for cairo to properly
-            # display lines of width 1.
             ctx.rectangle(cx + 0.5, cy + 0.5, self.column_width, self.row_height)
             ctx.set_source_rgba(1.0, 0.0, 0.0, 1.0)
             ctx.set_line_width(1)
@@ -2354,70 +2454,10 @@ class PatternView(Gtk.DrawingArea):
                             break
 
     def draw_selection(self, ctx):
-        """ Draw selection box."""
-
-        def draw_box(x, y, width, height):
-            ctx.rectangle(x + 0.5, y + 0.5, width, height)
-            ctx.set_source_rgba(0.0, 1.0, 0.0, 1.0)
-            ctx.set_line_width(1)
-            ctx.stroke_preserve()
-            ctx.set_source_rgba(0.0, 1.0, 0.0, 0.3)
-            ctx.fill()
-
-        if self.selection:
-            x, y1 = self.pattern_to_pos(self.selection.begin,
-                                        self.selection.group,
-                                        self.selection.track,
-                                        self.selection.index)
-            x, y2 = self.pattern_to_pos(self.selection.end,
-                                        self.selection.group,
-                                        self.selection.track,
-                                        self.selection.index)
-            clip_y = (self.row_height + ((self.row_count - self.start_row) * self.row_height))
-            y1 = max(self.row_height, y1)
-            y2 = min(clip_y, y2)
-            if y2 > y1:
-                if self.selection.mode == SEL_COLUMN:
-                    sel_g = self.selection.group
-                    sel_i = self.selection.index
-                    width = self.column_width
-                    x2 = self.parameter_width[sel_g][sel_i] * width
-                    draw_box(x, y1, x2, y2 - y1)
-                    # self.statuslabels[3].set_label("Sel Column")
-                    self.selection_status("Sel Column")
-                elif self.selection.mode == SEL_TRACK:
-                    x2 = ((self.track_width[self.selection.group] - 1) *
-                          self.column_width)
-                    draw_box(x, y1, x2, y2 - y1)
-                    # self.statuslabels[3].set_label("Sel Track")
-                    self.selection_status("Sel Track")
-                elif self.selection.mode == SEL_GROUP:
-                    track_count = self.group_track_count[self.selection.group]
-                    x2 = ((self.track_width[self.selection.group] *
-                           track_count - 1) * self.column_width)
-                    draw_box(x, y1, x2, y2 - y1)
-                    # self.statuslabels[3].set_label("Sel Group")
-                    self.selection_status("Sel Group")
-                elif self.selection.mode == SEL_ALL:
-                    x2 = 0
-                    for group in range(3):
-                        track_count = self.group_track_count[group]
-                        if self.track_width[group]:
-                            x2 += ((self.track_width[group] * track_count) *
-                                   self.column_width)
-                    x2 -= self.column_width
-                    draw_box(x, y1, x2, y2 - y1)
-                    # self.statuslabels[3].set_label("Sel All")
-                    self.selection_status("Sel All")
-            else:
-                # self.statuslabels[3].set_label("")
-                self.selection_status("")
+        self.selection_painter.draw(ctx)
 
     def draw_background(self, ctx):
         w, h = self.get_client_size()
-        # drawable = self.get_window()
-        # gc = drawable.new_gc()
-        # cm = gc.get_colormap()
         cfg = config.get_config()
         background = cfg.get_float_color('PE BG')
         ctx.set_source_rgb(*background)
@@ -2429,6 +2469,8 @@ class PatternView(Gtk.DrawingArea):
         """
         Draws the pattern view graphics.
         """
+        print("on draw")
+        
         if self.current_plugin != self.get_plugin():
             self.pattern_changed()
             self.current_plugin = self.get_plugin()
@@ -2446,6 +2488,7 @@ class PatternView(Gtk.DrawingArea):
         # pango_layout.set_font_description(self.fontdesc)
         pango_layout.set_height(-1)
         pango_layout.set_width(-1)
+        
         self.draw_background(ctx)
         self.draw_bar_marks(ctx)
         self.draw_parameter_values(ctx, pango_ctx, pango_layout)

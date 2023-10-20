@@ -35,33 +35,6 @@ class PatternPanel(NeilNotebookPage):
         Initialization.
         """
         Gtk.VBox.__init__(self)
-        self.statusbar = PatternStatusBar()
-        # self.statusbar = Gtk.HBox(False, common.MARGIN)
-        # self.statusbar.set_border_width(common.MARGIN0)
-
-        # self.statuslabels = []
-
-        # label = Gtk.Label()
-        # vsep = Gtk.VSeparator()
-        # self.statuslabels.append(label)
-        # self.statusbar.pack_start(label, False, True, 0)
-        # self.statusbar.pack_start(vsep, False, True, 0)
-
-        # label = Gtk.Label()
-        # vsep = Gtk.VSeparator()
-        # self.statuslabels.append(label)
-        # self.statusbar.pack_start(label, False, True, 0)
-        # self.statusbar.pack_start(vsep, False, True, 0)
-
-        # label = Gtk.Label()
-        # vsep = Gtk.VSeparator()
-        # self.statuslabels.append(label)
-        # self.statusbar.pack_start(label, False, True, 0)
-        # self.statusbar.pack_start(vsep, False, True, 0)
-
-        # label = Gtk.Label()
-        # self.statuslabels.append(label)
-        # self.statusbar.pack_end(label, False, True, 0)
 
         vscroll = Gtk.VScrollbar()
         hscroll = Gtk.HScrollbar()
@@ -69,15 +42,12 @@ class PatternPanel(NeilNotebookPage):
         self.viewport = Gtk.Viewport()
         self.viewport.add(self.view)
         self.toolbar = PatternToolBar(self.view)
-        self.view.statusbar = self.statusbar
         self.pack_start(self.toolbar, False, True, 0)
         scrollwin = Gtk.Table(2, 2)
         scrollwin.attach(self.viewport, 0, 1, 0, 1, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND)
         scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL)
         scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, 0)
         self.pack_start(scrollwin, True, True, 0)
-        self.pack_end(self.statusbar, False, True, 0)
-
 
         self.view.grab_focus()
         eventbus = com.get('neil.core.eventbus')
@@ -108,8 +78,11 @@ class PatternPanel(NeilNotebookPage):
         except AttributeError:  # no pattern in current machine
             pass
         self.view.needfocus = True
+        self.view.focused()
         self.view.redraw()
 
     def update_all(self):
-        self.view.update_font()
-        self.view.redraw()
+        
+        if self.is_current_page():
+            self.view.update_font()
+            self.view.redraw()

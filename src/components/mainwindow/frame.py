@@ -45,6 +45,7 @@ import zzub
 from preferences import show_preferences
 
 from .cmp import cmp_view
+from .statusbar import StatusBar
 
 
 class FramePanel(Gtk.Notebook):
@@ -63,6 +64,7 @@ class FramePanel(Gtk.Notebook):
         self.set_show_tabs(True)
         com.get("neil.core.icons") # make sure theme icons are loaded
         defaultpanel = None
+        self.statusbar = com.get('neil.core.statusbar')
         self.pages = sorted(com.get_from_category('neil.viewpanel'), key=cmp_to_key(cmp_view))
 
         for index, panel in enumerate(self.pages):
@@ -100,14 +102,27 @@ class FramePanel(Gtk.Notebook):
         self.show_all()
 
     def select_viewpanel(self, panel):
-        if hasattr(panel, '_index'):
-            self.set_current_page(panel._index)
+        if not hasattr(panel, '_index'):
+            return
+        
+        prev_index = self.get_current_page()
 
-            if hasattr(panel, 'can_hide'):
-                panel.hide()
+        if prev_index == panel._index:
+            return
+        
+        self.statusbar.clear_both_sides()
 
-            if hasattr(panel, 'handle_focus'):
-                panel.handle_focus()
+        if prev_index in self.pages and hasattr(self.pages[prev_index], 'remove_focus'):
+            self.pages[prev_index].remove_focus()
+
+        self.set_current_page(panel._index)
+
+        # if hasattr(panel, 'can_hide'):
+            # panel.hide()
+
+        if hasattr(panel, 'handle_focus'):
+            panel.handle_focus()
+
 
 class Accelerators(Gtk.AccelGroup):
     __neil__ = dict(
@@ -295,8 +310,12 @@ class NeilFrame(Gtk.Window):
         # Menu item that launches the about box
         tempmenu.append(make_stock_menu_item(Gtk.STOCK_ABOUT, self.on_about))
         self.neilframe_menubar.append(make_submenu_item(tempmenu, "_Help", True))
+
         self.master = com.get('neil.core.panel.master')
-        self.transport = com.get('neil.core.panel.transport')
+
+        self.statusbar = com.get('neil.core.statusbar')
+
+        self.transport = com.get('neil.core.transport')
         self.playback_info = com.get('neil.core.playback')
         self.framepanel = com.get('neil.core.framepanel')
 
@@ -305,7 +324,8 @@ class NeilFrame(Gtk.Window):
         hbox.pack_end(self.master, False, True, 0)
         vbox.add(hbox)
 
-        vbox.pack_start(self.transport, False, True, 0)
+        vbox.pack_end(self.statusbar, False, True, 0)
+        self.statusbar.set_size_request(1, 60)
 
         self.update_title()
         theme = Gtk.IconTheme.get_default()
@@ -329,7 +349,7 @@ class NeilFrame(Gtk.Window):
         #     GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("22x22/apps/neil.png")),
         #     GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("16x16/apps/neil.png"))
         # )
-        self.resize(750, 550)
+        self.resize(800, 600)
 
         self.connect('key-press-event', self.on_key_down)
         self.connect('destroy', self.on_destroy)
@@ -350,6 +370,7 @@ class NeilFrame(Gtk.Window):
         options, args = com.get('neil.core.options').get_options_args()
         if len(args) > 1:
             self.open_file(args[1])
+        
         for driver in com.get_from_category('driver'):
             if driver.init_failed:
                 GLib.timeout_add(50, show_preferences, self, 1)
@@ -527,7 +548,7 @@ class NeilFrame(Gtk.Window):
         cfg.load_window_pos("MainFrameWindow", self)
         #~cfg.load_window_pos("Toolbar", self.neilframe_toolbar)
         #cfg.load_window_pos("MasterToolbar", self.mastertoolbar)
-        cfg.load_window_pos("Transport", self.transport)
+        # cfg.load_window_pos("Transport", self.transport)
         cfg.load_window_pos("Playback", self.playback_info)
         #cfg.load_window_pos("StatusBar", self.neilframe_statusbar)
 
@@ -539,7 +560,7 @@ class NeilFrame(Gtk.Window):
         cfg.save_window_pos("MainFrameWindow", self)
         #~cfg.save_window_pos("Toolbar", self.neilframe_toolbar)
         #cfg.save_window_pos("MasterToolbar", self.mastertoolbar)
-        cfg.save_window_pos("Transport", self.transport)
+        # cfg.save_window_pos("Transport", self.transport)
         cfg.save_window_pos("Playback", self.playback_info)
         #cfg.save_window_pos("StatusBar", self.neilframe_statusbar)
 

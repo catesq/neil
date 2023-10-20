@@ -60,7 +60,6 @@ def rename_plugin(player, plugin):
     return name
 
 
-#
 def clone_plugin(player, src_plugin):
     new_plugin = player.create_plugin(src_plugin.get_pluginloader())
     new_plugin.set_name(rename_plugin(player, src_plugin));
@@ -97,6 +96,7 @@ def clone_plugin_patterns(plugin, new_plugin):
                         new_pattern.set_value(row, group, track, column, val)
 
         new_plugin.add_pattern(new_pattern)
+
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -841,7 +841,7 @@ def new_stock_image_toggle_button(stockid, tooltip=None, tooltips_object=None):
         button.set_tooltip_text(tooltip)
     return button
 
-def new_image_toggle_button(path, tooltip=None, width=20, height=20):
+def new_image_toggle_button(path, tooltip=None, width=24, height=24):
     """
     Creates a toggle button with a single image.
     """

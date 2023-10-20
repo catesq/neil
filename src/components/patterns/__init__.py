@@ -42,11 +42,6 @@ __all__ = [
     'DLGMODE_NEW',
     'DLGMODE_COPY',
     'DLGMODE_CHANGE',
-
-#    'get_str_from_param',
-#    'get_length_from_param',
-#    'get_subindexcount_from_param',
-#    'get_subindexoffsets_from_param',
 ]
 
 __neil__ = dict(

@@ -1,6 +1,7 @@
 
 from .frame import NeilFrame, Accelerators, FramePanel
 from .view_menu import ViewMenu
+from .statusbar import StatusBar
 
 
 __all__ = [
@@ -16,8 +17,7 @@ __neil__ = dict(
         ViewMenu,
         Accelerators,
         NeilFrame,
-        #NeilStatusbar,
-        #~NeilToolbar,
+        StatusBar,
     ],
 )
 
