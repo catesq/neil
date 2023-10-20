@@ -128,7 +128,8 @@ void lv2_adapter::ui_open() {
     }
 
     if (features.ui_idle_feature.data) {
-        printf("Idle feature for %s in invoke\n", info->name.c_str());
+        LOG_F(INFO, "Idle feature for %s\n", info->name.c_str());
+        // ((LV2UI_Idle_Interface*)features.ui_idle_feature.data)->idle(features.ui_idle_feature.data);
     }
 
     ui_is_open = true;
