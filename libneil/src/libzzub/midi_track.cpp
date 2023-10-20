@@ -143,15 +143,6 @@ void midi_track_manager::process_events()
                     samp_len = get_beat_length();
                 }
 
-                // for(auto it = active_notes.begin(); it != active_notes.end(); ) {
-                //     if(it->note == curr->note) {
-                //         plugin.add_note_off(it->note);
-                //         it = active_notes.erase(it);
-                //     } else {
-                //         ++it;
-                //     }
-                // }
-
                 plugin.add_note_on(curr->note, volume);
                 active_notes.emplace_back(curr->note, track_num, play_pos, samp_len);
                 
@@ -211,7 +202,7 @@ std::string midi_track_manager::describe_value(int track, int param, int value)
             return describe_note_len_unit(value);
 
         case 3: 
-            if(prev_tracks[track].unit == zzub_note_unit_none) {
+            if(prev_tracks[track].unit != zzub_note_unit_none) {
                 return describe_note_len(prev_tracks[track].unit, value);
             } else {
                 return describe_note_len(zzub_note_unit_default, value);
@@ -327,7 +318,7 @@ void midi_track_manager::add_midi_track_info(zzub::info* info)
         info->add_track_parameter()
              .set_byte()
              .set_name("Note length unit")
-             .set_description("Options: beats, beats/16, secs, secs/16, secs/256")
+             .set_description("Note length options: 0=beats, 1=beats/16, 2=secs, 3=secs/16, 4=secs/256")
              .set_value_min(zzub_note_unit_min)
              .set_value_max(zzub_note_unit_max)
              .set_value_none(zzub_note_unit_none)

@@ -17,13 +17,17 @@ inline void LOG_BEAT(std::string tag, zzub::master_info* master_info, uint64_t s
 
 namespace zzub {
 
+
 extern const std::string midi_note_names[12]; 
 
+
 inline std::string midi_chan(uint8_t byte) { return std::to_string(byte & 0x0f); }
+
 
 inline std::string midi_note(uint8_t byte) {
     return std::string(midi_note_names[byte % 12]) + std::to_string(byte / 12 - 1);
 }
+
 
 inline std::string midi_note(uint8_t* data, uint8_t size) {
     if (size == 3) 
@@ -40,12 +44,14 @@ enum zzub_note_change {
 	zzub_note_change_volume = 3
 };
 
+
 enum zzub_note_len {
 	zzub_note_len_none = 0,
 	zzub_note_len_default = 256,
 	zzub_note_len_min = 1,
 	zzub_note_len_max = 65535
 };
+
 
 enum zzub_note_unit {
 	zzub_note_unit_none = 255,
@@ -60,6 +66,7 @@ enum zzub_note_unit {
 	zzub_note_unit_secs_256ths = 5
 };
 
+
 enum zzub_midi_command {
 	zzub_midi_command_none = 0,
 	zzub_midi_command_default = 0,
@@ -67,6 +74,7 @@ enum zzub_midi_command {
 	zzub_midi_command_max = 255,
 	zzub_midi_command_length = 1
 };
+
 
 enum zzub_midi_data {
 	zzub_midi_data_none = 65535,
@@ -120,9 +128,8 @@ struct active_note {
 static const midi_note_len invalid_note_len{zzub_note_unit_none, zzub_note_len_none};
 
 
-
-
 struct midi_note_track;
+
 
 // implemented by the zzub::plugin by the lv2 and vst adapters, they use different data structures to send midi messages to the lv2/vst plugin being hosted
 // but need the same midi data from the plugin  
