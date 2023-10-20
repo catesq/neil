@@ -593,10 +593,9 @@ load_preset_end_false:
     return false;
 }
 
+
 const char*
 vst_adapter::describe_value(int param, int value) {
-    printf("describe_value: %d %d\n", param, value);
-
     static char description_chars[32];
 
     if (param < 0) {
@@ -608,7 +607,6 @@ vst_adapter::describe_value(int param, int value) {
     if (param < info->get_param_count()) {
         description_str = std::to_string(value);
     } else {
-        printf("describe using midi track manager\n");
         int track_param = param - info->get_param_count();
         description_str = midi_track_manager.describe_value(track_param / 6, track_param % 6, value);
     }
