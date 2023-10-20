@@ -605,7 +605,6 @@ bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int 
             lv2_evbuf_reset(eventPort->get_lv2_evbuf(), false);
     }
 
-
     if (samp_count - last_update > update_every) {
         ui_event_import();
         ui_event_dispatch();
@@ -620,6 +619,7 @@ bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int 
 
     /* Process any worker replies. */
     if (worker.enable) {
+        LOG_F(INFO, "make the worker thread safe!");
         lv2_worker_emit_responses(&worker, lilvInstance);
 
         /* Notify the plugin the run() cycle is finished */
