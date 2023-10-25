@@ -500,18 +500,28 @@ bool op_plugin_connect::prepare(zzub::song& song) {
     //bool to_has_event = to_flags & plugin_flag_has_event_input;
     bool from_has_event = from_flags & plugin_flag_has_event_output;
 
-    if (type == connection_type_audio && !(to_has_audio && from_has_audio)) {
-        cerr << "plugins dont support audio connection, " << song.plugins[from_id]->name << " -> " << song.plugins[to_id]->name << endl;
-        return false;
-    } else
-        if (type == connection_type_midi && !(to_has_midi && from_has_midi)) {
+    switch (type) {
+    case connection_type_audio:
+        if (!(to_has_audio && from_has_audio)) {
+            cerr << "plugins dont support audio connection, " << song.plugins[from_id]->name << " -> " << song.plugins[to_id]->name << endl;
+            return false;
+        }
+        break;
+    case connection_type_midi:
+        if (!(to_has_midi && from_has_midi)) {
             cerr << "plugins dont support midi connection" << song.plugins[from_id]->name << " -> " << song.plugins[to_id]->name << endl;
             return false;
-        } else
-            if (type == connection_type_event && !(from_has_event)) {
-                cerr << "plugins dont support event connection" << song.plugins[from_id]->name << " -> " << song.plugins[to_id]->name << endl;
-                return false;
-            }
+        }
+        break;
+    case connection_type_event:
+        if (!(from_has_event)) {
+            cerr << "plugins dont support event connection" << song.plugins[from_id]->name << " -> " << song.plugins[to_id]->name << endl;
+            return false;
+        }
+        break;
+    default:
+        break;
+}
 
     metaplugin& to_mpl = *song.plugins[to_id];
     metaplugin& from_mpl = *song.plugins[from_id];
