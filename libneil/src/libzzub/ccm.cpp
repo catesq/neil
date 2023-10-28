@@ -1226,7 +1226,6 @@ bool encodeFLAC(zzub::outstream* writer, wave_info_ex& info, int level) {
                                              writer);
     // if this fails, we want it to crash hard - or else will cause dataloss
     assert(result == FLAC__STREAM_ENCODER_OK);
-    _unused(result);
     FLAC__int32 buffer[FLAC__MAX_CHANNELS][CHUNK_OF_SAMPLES];
     FLAC__int32* input_[FLAC__MAX_CHANNELS];
 

@@ -96,7 +96,6 @@ static sf_count_t instream_read (void *ptr, sf_count_t count, void *user_data){
 static sf_count_t instream_write (const void *ptr, sf_count_t count, void *user_data) {
     zzub::instream* strm = (zzub::instream*)user_data ;
     assert(false);
-    _unused(strm);
     return 0;
 }
 

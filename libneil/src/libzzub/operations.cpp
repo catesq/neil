@@ -476,8 +476,6 @@ bool op_plugin_connect::prepare(zzub::song& song) {
     plugin_descriptor from_plugin = song.plugins[from_id]->descriptor;
     assert(to_plugin != graph_traits<plugin_map>::null_vertex());
     assert(from_plugin != graph_traits<plugin_map>::null_vertex());
-    _unused(to_plugin);
-    _unused(from_plugin);
 
     // check for duplicate connection
     if (song.plugin_get_input_connection_index(to_id, from_id, type) != -1) {
@@ -632,8 +630,6 @@ bool op_plugin_disconnect::prepare(zzub::song& song) {
     plugin_descriptor from_plugin = from_mpl.descriptor;
     assert(to_plugin != graph_traits<plugin_map>::null_vertex());
     assert(from_plugin != graph_traits<plugin_map>::null_vertex());
-    _unused(to_plugin);
-    _unused(from_plugin);
 
     // invoke pre-event so hacked plugins can lock the player
     event_data.type = event_type_pre_disconnect;
@@ -1095,7 +1091,6 @@ bool op_pattern_edit::prepare(zzub::song& song) {
 
     const zzub::parameter* param = song.plugin_get_parameter_info(id, group, track, column);
     assert((value >= param->value_min && value <= param->value_max) || value == param->value_none  || (param->type == zzub::parameter_type_note && value == zzub::note_value_off));
-    _unused(param);
 
     song.plugins[id]->patterns[index]->groups[group][track][column][row] = value;
 
@@ -1259,7 +1254,6 @@ bool op_pattern_move::prepare(zzub::song& song) {
 
     plugin_descriptor plugin = m.descriptor;
     assert(plugin != graph_traits<plugin_map>::null_vertex());
-    _unused(plugin);
 
     std::vector<zzub::pattern*>& patterns = m.patterns;
 
@@ -2023,7 +2017,6 @@ bool op_wavetable_insert_sampledata::prepare(zzub::song& song) {
 
     bool allocw = w.allocate_level(level, newsamples, (wave_buffer_type)format, channels == 2 ? true : false);
     assert(allocw);
-    _unused(allocw);
 
     void* dst = w.get_sample_ptr(level);
     CopySamples(copybuffer, dst, pos, format, format, channels, channels, 0, 0);

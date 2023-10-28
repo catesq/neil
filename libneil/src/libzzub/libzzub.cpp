@@ -1076,7 +1076,6 @@ zzub_parameter_t* zzub_plugin_get_parameter(zzub_plugin_t *plugin, int group, in
 void zzub_plugin_set_pattern_value(zzub_plugin_t *plugin, int pattern, int group, int track, int column, int row, int value) {
     const zzub_parameter_t* param = zzub_plugin_get_parameter(plugin, group, track, column);
     assert((value >= param->value_min && value <= param->value_max) || value == param->value_none || (param->type == zzub::parameter_type_note && value == zzub::note_value_off));
-    _unused(param);
 
     plugin->_player->plugin_set_pattern_value(plugin->id, pattern, group, track, column, row, value);
 }

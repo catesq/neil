@@ -241,7 +241,6 @@ zzub::info* song::create_dummy_info(int flags, std::string pluginUri, int attrib
 
     for (int i = 0; i < attributes; ++i) {
         attribute& a = new_info->add_attribute();
-        _unused(a);
     }
 
     // copy incoming params because they wont be valid after loading ends
@@ -841,7 +840,6 @@ void song::plugin_delete_input(int to_id, int from_id, connection_type type) {
     plugin_descriptor from_plugin = from_mpl.descriptor;
     assert(to_plugin != graph_traits<plugin_map>::null_vertex());
     assert(from_plugin != graph_traits<plugin_map>::null_vertex());
-    _unused(from_plugin);
 
     // remove connection tracks in patterns
     int track = plugin_get_input_connection_index(to_id, from_id, type);
