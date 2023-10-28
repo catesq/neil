@@ -27,7 +27,7 @@ gi.require_version("Gtk", "3.0")
 from .toolbar import PatternToolBar
 from .panel import PatternPanel
 from .views import PatternView, PatternDialog, show_pattern_dialog, DLGMODE_NEW, DLGMODE_COPY, DLGMODE_CHANGE
-from .statusbar import PatternStatusBar
+from .patternstatus import PatternStatus
 from .utils import key_to_note #, get_str_from_param, get_subindexcount_from_param, get_subindexoffsets_from_param
 
 
@@ -50,7 +50,7 @@ __neil__ = dict(
         PatternToolBar,
         PatternPanel,
         PatternView,
-        PatternStatusBar,
+        PatternStatus,
     ],
 )
 

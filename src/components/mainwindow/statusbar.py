@@ -49,10 +49,12 @@ class StatusBar(Gtk.Grid):
         self.get_child_at(self.bpm_col, 0).set_halign(Gtk.Align.START)
         self.get_child_at(self.controls_col, 0).set_halign(Gtk.Align.CENTER)
         
-        self.get_child_at(self.detail_col, 0).set_halign(Gtk.Align.START)
-        self.get_child_at(self.status_col, 0).set_halign(Gtk.Align.START)
+        self.get_child_at(self.detail_col, 0).set_hexpand(True)
+        self.get_child_at(self.detail_col, 1).set_hexpand(True)
+        self.get_child_at(self.detail_col, 0).set_halign(Gtk.Align.FILL)
+        self.get_child_at(self.status_col, 0).set_halign(Gtk.Align.FILL)
         self.get_child_at(self.detail_col, 1).set_halign(Gtk.Align.START)
-        self.get_child_at(self.status_col, 1).set_halign(Gtk.Align.START)
+        self.get_child_at(self.status_col, 1).set_halign(Gtk.Align.FILL)
 
         self.set_column_spacing(MARGIN0)
         self.set_row_spacing(MARGIN0)
@@ -73,8 +75,8 @@ class StatusBar(Gtk.Grid):
         
 
     def set_left(self, widget_upper = None, widget_lower = None):
-        self.set_cell(widget_upper, self.detail_col, 0, False, self.sizes.min_left)
-        self.set_cell(widget_lower, self.detail_col, 1, False, self.sizes.min_left)
+        self.set_cell(widget_upper, self.detail_col, 0, True, self.sizes.min_left)
+        self.set_cell(widget_lower, self.detail_col, 1, True, self.sizes.min_left)
         
     def clear_cell_at(self, x, y) -> Gtk.HBox:
         cell = self.get_child_at(x, y)
@@ -99,8 +101,8 @@ class StatusBar(Gtk.Grid):
 
 
     def set_right(self, widget_upper = None, widget_lower = None):
-        self.set_cell(widget_upper, self.status_col, 0, False, self.sizes.min_right)
-        self.set_cell(widget_lower, self.status_col, 1, False, self.sizes.min_right)
+        self.set_cell(widget_upper, self.status_col, 0, True, self.sizes.min_right)
+        self.set_cell(widget_lower, self.status_col, 1, True, self.sizes.min_right)
 
 
 

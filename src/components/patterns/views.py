@@ -993,8 +993,8 @@ class PatternView(Gtk.DrawingArea):
 
     def focused(self):
         statusbar = com.get('neil.core.statusbar')
-        statusbar.set_left(self.pattern_status.get_parameter_value(), self.pattern_status.get_parameter_description())
-        statusbar.set_right(self.pattern_status.get_pattern_position(), self.pattern_status.get_selection_status())
+        statusbar.set_left(self.pattern_status.get_values_widget(), self.pattern_status.get_description_widget())
+        statusbar.set_right(self.pattern_status.get_position_widget(), self.pattern_status.get_selection_widget())
 
 
     def pattern_changed(self, *args):
@@ -2262,9 +2262,9 @@ class PatternView(Gtk.DrawingArea):
             if v != p.get_value_none():
                 text = prepstr(self.get_plugin().describe_value(self.group, self.index, v))
                 s = get_str_from_param(p, self.plugin.get_pattern_value(self.pattern, self.group, self.track, self.index, self.row))
-                self.pattern_status.update_parameter_value("%s (%i) %s" % (s, v, text))
+                self.pattern_status.update_parameter_values(text, "%s (%i)" % (s, v))
             else:
-                self.pattern_status.update_parameter_value("")
+                self.pattern_status.update_parameter_values("", "- (-)")
 
     def update_all(self):
         if self.is_visible():
