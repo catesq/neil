@@ -43,6 +43,7 @@ libneil/options.conf
 options.conf
 libneil/src/libzzub/libzzub.def
 libneil/include/zzub/zzub.h
+libneil/include/zzub/zzub*.h
 libneil/include/zzub/signature.h
 libneil/src/pyzzub/zzub/
 libneil/src/plugins/vstadapter/VST_SDK_2.4

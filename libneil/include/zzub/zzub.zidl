@@ -1,6 +1,3 @@
-
-include "zzub/types.h"
-
 namespace zzub:
 	dlname "zzub"
 

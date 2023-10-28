@@ -931,9 +931,11 @@ inline bool buffer_has_signals(const float *buffer, int ns) {
   zzub_get_signature
 */
 
-ZZUB_EXTERN_C const char *zzub_get_signature();
-ZZUB_EXTERN_C zzub::plugincollection *zzub_get_plugincollection();
+extern "C" const char *zzub_get_signature();
+
+extern "C" zzub::plugincollection *zzub_get_plugincollection();
 
 typedef zzub::plugincollection *(*zzub_get_plugincollection_function)();
 typedef const char *(*zzub_get_signature_function)();
+
 #endif  // __ZZUBPLUGIN_H

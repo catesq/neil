@@ -18,17 +18,17 @@
 #if !defined(__ZZUBTYPES_H)
 #define __ZZUBTYPES_H
 
-#if defined(__GNUC__)
-#ifdef cdecl
-#undef cdecl
-#endif
-#ifdef stdcall
-#undef stdcall
-#endif
-#define ZZUB_CALLING_CONVENTION __attribute__((cdecl))
-#else
-#define ZZUB_CALLING_CONVENTION __cdecl
-#endif
-#define ZZUB_EXTERN_C extern "C"
+// #if defined(__GNUC__)
+// #ifdef cdecl
+// #undef cdecl
+// #endif
+// #ifdef stdcall
+// #undef stdcall
+// #endif
+// #define ZZUB_CALLING_CONVENTION __attribute__((cdecl))
+// #else
+// #define ZZUB_CALLING_CONVENTION __cdecl
+// #endif
+// #define ZZUB_EXTERN_C extern "C"
 
 #endif  // __ZZUBTYPES_H
