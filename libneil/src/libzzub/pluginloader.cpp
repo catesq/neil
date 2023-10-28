@@ -19,10 +19,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <cstdio>
 #include <string>
 #include <algorithm>
-#include "common.h"
-#include "tools.h"
+#include "libzzub/common.h"
+#include "libzzub/tools.h"
 #include "zzub/signature.h"
-#include "player.h"
+#include "libzzub/player.h"
 
 #ifdef POSIX
 #include <dlfcn.h>

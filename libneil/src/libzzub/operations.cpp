@@ -1,11 +1,11 @@
-#include "common.h"
+#include "libzzub/common.h"
 #include <functional>
 #include <algorithm>
 #include <cctype>
 #include <ctime>
 #include <iostream>
-#include "archive.h"
-#include "tools.h"
+#include "libzzub/archive.h"
+#include "libzzub/tools.h"
 
 
 using std::cerr;

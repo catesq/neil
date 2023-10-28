@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <cmath>
 
 
-#include "tools.h"
+#include "libzzub/tools.h"
 
 char backslashToSlash(char c) { if (c=='\\') return '/'; return c; }
 

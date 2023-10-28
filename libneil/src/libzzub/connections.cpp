@@ -16,14 +16,14 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "common.h"
+#include "libzzub/common.h"
 #include <functional>
 #include <algorithm>
 #include <cctype>
 #include <ctime>
 #include <sstream>
-#include "timer.h"
-#include "tools.h"
+#include "libzzub/timer.h"
+#include "libzzub/tools.h"
 
 using namespace std;
 

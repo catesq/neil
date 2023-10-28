@@ -19,7 +19,7 @@
 
 #include <vector>
 #include <string>
-#include "driver.h"
+#include "libzzub/driver.h"
 
 namespace zzub {
 void i2s(float **s, float *i, int channels, int numsamples) {

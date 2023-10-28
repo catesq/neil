@@ -3,9 +3,9 @@
 #include <cstdio>
 #include <portaudio.h>
 #include <cassert>
-#include "timer.h"
+#include "libzzub/timer.h"
 
-#include "driver_portaudio.h"
+#include "libzzub/driver_portaudio.h"
 
 using namespace std;
 

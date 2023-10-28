@@ -17,8 +17,8 @@
 */
 
 #include <algorithm>
-#include "common.h"
-#include "tools.h"
+#include "libzzub/common.h"
+#include "libzzub/tools.h"
 
 namespace zzub {
 

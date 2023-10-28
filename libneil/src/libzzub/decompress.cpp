@@ -1,5 +1,5 @@
-#include "common.h"
-#include "decompress.h"
+#include "libzzub/common.h"
+#include "libzzub/decompress.h"
 
 
 
@@ -303,7 +303,7 @@ BOOL DecompressWave(WAVEUNPACK * unpackinfo,LPWORD lpwOutputBuffer,
 		while(dwCount > 0)
 		{
 
-			// denne testen ble også flyttet fra bunn til topp av whilen
+			// denne testen ble ogsï¿½ flyttet fra bunn til topp av whilen
 
 			//check to see if we are handling the last block
 			if((dwCount == 1) && (dwLastBlockSize != 0))
@@ -335,12 +335,12 @@ BOOL DecompressWave(WAVEUNPACK * unpackinfo,LPWORD lpwOutputBuffer,
 				
 				//if btSumChannels flag is set then the second channel is
 				//the sum of both channels
-				// jeg tror nemlig at det går til helvete her...
-				// så - enten skal simularity fixes, eller -
-				// det kommer litt hakk selv når vi har sumChannels til 0 på 32-bit-floatene...
+				// jeg tror nemlig at det gï¿½r til helvete her...
+				// sï¿½ - enten skal simularity fixes, eller -
+				// det kommer litt hakk selv nï¿½r vi har sumChannels til 0 pï¿½ 32-bit-floatene...
 				if(btSumChannels != 0)
 				{
-					// KAN DET VÆRE VI HAR EN SIGNED_BUG HER PÅ 32-BIT_TALL!??
+					// KAN DET Vï¿½RE VI HAR EN SIGNED_BUG HER Pï¿½ 32-BIT_TALL!??
 					lpwOutputBuffer[ixx] += cv1.lpwTempData[i];
 				}
 				

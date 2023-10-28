@@ -15,7 +15,7 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#include "common.h"
+#include "libzzub/common.h"
 #include <locale.h>
 #include <string>
 #include <algorithm>
@@ -25,8 +25,8 @@
 
 #include <FLAC/all.h>
 
-#include "ccm.h"
-#include "archive.h"
+#include "libzzub/ccm.h"
+#include "libzzub/archive.h"
 
 #if defined(_MAX_PATH)
 #define CCM_MAX_PATH MAX_PATH

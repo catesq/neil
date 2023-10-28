@@ -3,7 +3,7 @@
 #include "zzub/plugin.h"
 
 #include "loguru.hpp"
-#include "tools.h"
+#include "libzzub/tools.h"
 
 
 namespace zzub {

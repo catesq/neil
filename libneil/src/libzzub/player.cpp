@@ -16,19 +16,19 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "common.h"
+#include "libzzub/common.h"
 #include <functional>
 #include <algorithm>
 #include <cctype>
 #include <ctime>
 #include <sstream>
-#include "tools.h"
+#include "libzzub/tools.h"
 
 #include <sndfile.h>
 #include <mad.h>
 #include <mpg123.h>
 
-#include "import.h"
+#include "libzzub/import.h"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -1792,3 +1792,41 @@ void player::wave_set_envelopes(int wave, const vector<zzub::envelope_entry>& en
     prepare_operation_redo(redo);
 }
 } // namespace zzub
+
+
+
+
+zzub_event_data_t *zzub_flatapi_player::pop_event() {
+    if (read_event_queue == write_event_queue)
+        return NULL;
+    zzub_event_data_t *result = &event_queue[read_event_queue];
+    read_event_queue++;
+    if (read_event_queue == event_queue.size())
+        read_event_queue = 0;
+    return result;
+}
+
+void zzub_flatapi_player::push_event(zzub_event_data_t &data) {
+    event_queue[write_event_queue] = data;
+    write_event_queue++;
+    if (write_event_queue == event_queue.size())
+        write_event_queue = 0;
+    if (write_event_queue == read_event_queue) {
+        std::cout << "warning: event queue overflow. need more calls to zzub_player_get_next_event()!" << std::endl;
+        std::cout << "read event queue: " << event_queue.size() << std::endl;
+        for(int i=read_event_queue; (i%event_queue.size()) != write_event_queue; i++) {
+            std::cout  << "event " << i << " type: " << data.type << std::endl;
+        }
+    }
+}
+
+zzub_flatapi_player::zzub_flatapi_player() {
+    callback = 0;
+    callbackTag = 0;
+    event_queue.resize(4096);
+    read_event_queue = 0;
+    write_event_queue = 0;
+    //driver.initialize(this);
+    _midiDriver.initialize(this);
+}
+

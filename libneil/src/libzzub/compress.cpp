@@ -1,6 +1,6 @@
-#include "common.h"
-#include "decompress.h"
-#include "compress.h"
+#include "libzzub/common.h"
+#include "libzzub/decompress.h"
+#include "libzzub/compress.h"
 
 //=============================BIT PACKING=========================================
 BOOL InitWavePack(WAVEUNPACK * wavepackinfo, zzub::outstream* pOutStrm)
@@ -420,8 +420,8 @@ BOOL CompressWave(WAVEUNPACK * packinfo,LPWORD lpwWaveData,
     {	//COMPRESS STEREO WAVE
 
         //check simularity between both channels
-        // tvinger vi btSumChannels til 0, så klarer vi fint å loade 32bit float samples
-        // som indikerer vi har en bug på btSumChannels - eller ,
+        // tvinger vi btSumChannels til 0, sï¿½ klarer vi fint ï¿½ loade 32bit float samples
+        // som indikerer vi har en bug pï¿½ btSumChannels - eller ,
         btSumChannels = ScanForStereoSimularity(lpwWaveData,dwNumSamples) ? 1 : 0;
 
         //store channel sum flag

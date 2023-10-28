@@ -16,8 +16,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "common.h"
-#include "dummy.h"
+#include "libzzub/common.h"
+#include "libzzub/dummy.h"
 
 namespace zzub {
 

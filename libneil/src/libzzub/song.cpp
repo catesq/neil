@@ -16,22 +16,22 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "common.h"
+#include "libzzub/common.h"
 #include <deque>
 #include <functional>
 #include <algorithm>
 #include <cctype>
 #include <ctime>
 #include <sstream>
-#include "timer.h"
-#include "dummy.h"
+#include "libzzub/timer.h"
+#include "libzzub/dummy.h"
 
 #include <dirent.h>
 #include <sys/stat.h>
 
 #define strcmpi strcasecmp
 
-#include "sseoptimization.h"
+#include "libzzub/sseoptimization.h"
 
 using std::deque;
 using std::cerr;

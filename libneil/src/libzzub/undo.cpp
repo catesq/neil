@@ -1,4 +1,4 @@
-#include "common.h"
+#include "libzzub/common.h"
 
 namespace zzub {
 

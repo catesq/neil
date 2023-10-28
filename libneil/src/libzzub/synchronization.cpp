@@ -1,6 +1,6 @@
 #include <iostream>
 #include <pthread.h> 
-#include "synchronization.h"
+#include "libzzub/synchronization.h"
 
 #if !defined(PTHREAD_MUTEX_RECURSIVE_NP)
 #define PTHREAD_MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE
