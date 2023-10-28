@@ -982,7 +982,6 @@ class PatternView(Gtk.DrawingArea):
         self.subindex = min(max(si, 0), self.subindex_count[self.group][self.index] - 1)
 
     def redraw(self, *args):
-        print("redraw")
         if self.get_window() and self.is_visible():
             w, h = self.get_client_size()
             self.queue_draw()
@@ -2469,8 +2468,6 @@ class PatternView(Gtk.DrawingArea):
         """
         Draws the pattern view graphics.
         """
-        print("on draw")
-        
         if self.current_plugin != self.get_plugin():
             self.pattern_changed()
             self.current_plugin = self.get_plugin()
