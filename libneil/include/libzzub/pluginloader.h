@@ -22,23 +22,6 @@
 #include "tools.h"
 #include <list>
 
-#ifndef STATIC_BUILD
-
-#if !defined(__GNUC__)
-typedef zzub::info const *(__cdecl *GET_INFO)();
-typedef zzub::plugin *(__cdecl *CREATE_MACHINE)();
-
-#else
-#ifdef cdecl
-#undef cdecl
-#endif
-typedef zzub::info const *(__attribute__((cdecl)) *GET_INFO)();
-typedef zzub::plugin *(__attribute__((cdecl)) *CREATE_MACHINE)();
-
-#endif
-
-#endif
-
 
 namespace zzub {
 
