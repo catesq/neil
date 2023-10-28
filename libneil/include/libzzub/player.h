@@ -143,3 +143,19 @@ struct player : undo_manager, audioworker, midiworker {
 
 
 };
+
+
+struct zzub_flatapi_player : zzub::player {
+    //zzub::audiodriver_rtaudio driver;
+    zzub::mididriver _midiDriver;
+    zzub_callback_t callback;
+    void *callbackTag;
+
+    std::vector<zzub_event_data_t> event_queue;
+    unsigned int read_event_queue;
+    unsigned int write_event_queue;
+
+    zzub_flatapi_player();
+    zzub_event_data_t *pop_event();
+    void push_event(zzub_event_data_t &data);
+};
