@@ -333,6 +333,7 @@ namespace zzub:
 		set audio = 0
 		set event = 1
 		set midi = 2
+		set cv = 3
 		
 	enum ParameterGroup:
 		set connection = 0

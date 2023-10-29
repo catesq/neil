@@ -190,7 +190,9 @@ enum plugin_flag {
     plugin_flag_stream = zzub_plugin_flag_stream,
     plugin_flag_has_midi_input = zzub_plugin_flag_has_midi_input,
     plugin_flag_has_midi_output = zzub_plugin_flag_has_midi_output,
-    plugin_flag_has_custom_gui = zzub_plugin_flag_has_custom_gui
+    plugin_flag_has_custom_gui = zzub_plugin_flag_has_custom_gui,
+    plugin_flag_has_cv_input = zzub_plugin_flag_has_cv_input,
+    plugin_flag_has_cv_output = zzub_plugin_flag_has_cv_output
 };
 
 enum state_flag {
@@ -223,7 +225,8 @@ enum process_mode {
 enum connection_type {
     connection_type_audio = zzub_connection_type_audio,
     connection_type_event = zzub_connection_type_event,
-    connection_type_midi = zzub_connection_type_midi
+    connection_type_midi = zzub_connection_type_midi,
+    connection_type_cv = zzub_connection_type_cv
 };
 
 struct parameter {
