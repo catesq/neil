@@ -15,8 +15,12 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#if !defined(__ZZUBTYPES_H)
-#define __ZZUBTYPES_H
+#pragma once
+
+
+
+
+
 
 // #if defined(__GNUC__)
 // #ifdef cdecl
@@ -31,4 +35,3 @@
 // #endif
 // #define ZZUB_EXTERN_C extern "C"
 
-#endif  // __ZZUBTYPES_H

@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 namespace zzub {
 
+struct archive;
 struct master_metaplugin;
 
 struct master_values {

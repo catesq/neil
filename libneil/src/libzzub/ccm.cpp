@@ -301,6 +301,87 @@ void ArchiveReader::resetFileInArchive() {
     lastReadOfs = 0;
 }
 
+
+
+static FLAC__StreamEncoderWriteStatus flac_stream_encoder_write_callback(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[], size_t bytes, unsigned samples, unsigned current_frame, void *client_data) {
+    zzub::outstream* writer=(zzub::outstream*)client_data;
+
+    writer->write((void*)buffer, sizeof(FLAC__byte)*bytes);
+    return FLAC__STREAM_ENCODER_WRITE_STATUS_OK;
+    //return FLAC__STREAM_ENCODER_WRITE_STATUS_FATAL_ERROR;
+}
+
+void flac_stream_encoder_metadata_callback(const FLAC__StreamEncoder *encoder, const FLAC__StreamMetadata *metadata, void *client_data) {
+    /*
+     * Nothing to do; if we get here, we're decoding to stdout, in
+     * which case we can't seek backwards to write new metadata.
+     */
+    (void)encoder, (void)metadata, (void)client_data;
+}
+
+bool encodeFLAC(zzub::outstream* writer, zzub::wave_info_ex& info, int level) {
+    int channels = info.get_stereo() ? 2 : 1;
+    // flac is not going to encode anything that's not
+    // having a standard samplerate, and since that
+    // doesn't matter anyway, pick the default one.
+    int sample_rate = info.get_samples_per_sec(level);
+    int bps = info.get_bits_per_sample(level);
+    int num_samples = info.get_sample_count(level);
+
+
+    FLAC__StreamEncoder *stream = FLAC__stream_encoder_new();
+
+    FLAC__stream_encoder_set_channels(stream, channels);
+    FLAC__stream_encoder_set_bits_per_sample(stream, bps);
+    FLAC__stream_encoder_set_sample_rate(stream, sample_rate);
+    FLAC__stream_encoder_set_total_samples_estimate(stream, num_samples);
+    int result =
+            FLAC__stream_encoder_init_stream(stream,
+                                             flac_stream_encoder_write_callback,
+                                             NULL,
+                                             NULL,
+                                             flac_stream_encoder_metadata_callback,
+                                             writer);
+    // if this fails, we want it to crash hard - or else will cause dataloss
+    assert(result == FLAC__STREAM_ENCODER_OK);
+    FLAC__int32 buffer[FLAC__MAX_CHANNELS][CHUNK_OF_SAMPLES];
+    FLAC__int32* input_[FLAC__MAX_CHANNELS];
+
+    for(unsigned int i = 0; i < FLAC__MAX_CHANNELS; i++)
+        input_[i] = &(buffer[i][0]);
+
+    bool done=false;
+    //    unsigned int ofs=0;
+    
+    SampleEnumerator samples(info, level, -1);
+
+    while (!done) {
+        unsigned int len=0;
+        for (int i=0; i<CHUNK_OF_SAMPLES; i++) {
+            buffer[0][len]=samples.getInt(0);
+            if (channels>=2) buffer[1][len]=samples.getInt(1);
+            //            ofs++;
+            //std::cout << "0: " << samples.getInt(0) << ", 1: " << samples.getInt(1) << std::endl;
+            len++;
+
+            if (!samples.next()) {
+                done=true;
+                break;
+            }
+        }
+
+        FLAC__stream_encoder_process(stream, input_, len);
+        
+    }
+
+    FLAC__stream_encoder_finish(stream);
+    FLAC__stream_encoder_delete(stream);
+    return true;
+}
+
+
+
+
 namespace zzub {
 
 /*! \struct CcmWriter
@@ -1060,21 +1141,6 @@ bool CcmWriter::saveSelected(std::string filename, zzub::player* player, const i
 }
 
 
-static FLAC__StreamEncoderWriteStatus flac_stream_encoder_write_callback(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[], size_t bytes, unsigned samples, unsigned current_frame, void *client_data) {
-    zzub::outstream* writer=(zzub::outstream*)client_data;
-
-    writer->write((void*)buffer, sizeof(FLAC__byte)*bytes);
-    return FLAC__STREAM_ENCODER_WRITE_STATUS_OK;
-    //return FLAC__STREAM_ENCODER_WRITE_STATUS_FATAL_ERROR;
-}
-
-void flac_stream_encoder_metadata_callback(const FLAC__StreamEncoder *encoder, const FLAC__StreamMetadata *metadata, void *client_data) {
-    /*
-     * Nothing to do; if we get here, we're decoding to stdout, in
-     * which case we can't seek backwards to write new metadata.
-     */
-    (void)encoder, (void)metadata, (void)client_data;
-}
 
 
 struct DecodedFrame {
@@ -1198,66 +1264,6 @@ void decodeFLAC(zzub::instream* reader, zzub::player& player, int wave, int leve
     }
     // clean up
     FLAC__stream_decoder_delete(decoder);
-}
-
-bool encodeFLAC(zzub::outstream* writer, wave_info_ex& info, int level) {
-    int channels = info.get_stereo() ? 2 : 1;
-    // flac is not going to encode anything that's not
-    // having a standard samplerate, and since that
-    // doesn't matter anyway, pick the default one.
-    int sample_rate = info.get_samples_per_sec(level);
-    int bps = info.get_bits_per_sample(level);
-    int num_samples = info.get_sample_count(level);
-
-
-    FLAC__StreamEncoder *stream = FLAC__stream_encoder_new();
-
-    FLAC__stream_encoder_set_channels(stream, channels);
-    FLAC__stream_encoder_set_bits_per_sample(stream, bps);
-    FLAC__stream_encoder_set_sample_rate(stream, sample_rate);
-    FLAC__stream_encoder_set_total_samples_estimate(stream, num_samples);
-    int result =
-            FLAC__stream_encoder_init_stream(stream,
-                                             flac_stream_encoder_write_callback,
-                                             NULL,
-                                             NULL,
-                                             flac_stream_encoder_metadata_callback,
-                                             writer);
-    // if this fails, we want it to crash hard - or else will cause dataloss
-    assert(result == FLAC__STREAM_ENCODER_OK);
-    FLAC__int32 buffer[FLAC__MAX_CHANNELS][CHUNK_OF_SAMPLES];
-    FLAC__int32* input_[FLAC__MAX_CHANNELS];
-
-    for(unsigned int i = 0; i < FLAC__MAX_CHANNELS; i++)
-        input_[i] = &(buffer[i][0]);
-
-    bool done=false;
-    //    unsigned int ofs=0;
-    
-    SampleEnumerator samples(info, level, -1);
-
-    while (!done) {
-        unsigned int len=0;
-        for (int i=0; i<CHUNK_OF_SAMPLES; i++) {
-            buffer[0][len]=samples.getInt(0);
-            if (channels>=2) buffer[1][len]=samples.getInt(1);
-            //            ofs++;
-            //std::cout << "0: " << samples.getInt(0) << ", 1: " << samples.getInt(1) << std::endl;
-            len++;
-
-            if (!samples.next()) {
-                done=true;
-                break;
-            }
-        }
-
-        FLAC__stream_encoder_process(stream, input_, len);
-        
-    }
-
-    FLAC__stream_encoder_finish(stream);
-    FLAC__stream_encoder_delete(stream);
-    return true;
 }
 
 /***

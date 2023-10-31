@@ -18,6 +18,7 @@
 
 #include "libzzub/common.h"
 #include "libzzub/dummy.h"
+#include "libzzub/archive.h"
 
 namespace zzub {
 
