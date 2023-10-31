@@ -22,6 +22,10 @@
 
 #include "pugixml.hpp"
 
+
+bool encodeFLAC(zzub::outstream* writer, zzub::wave_info_ex& info, int level);
+
+
 class ArchiveWriter : public zzub::outstream {
     zipFile f;
     std::string currentFileInArchive;

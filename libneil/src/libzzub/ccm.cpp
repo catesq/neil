@@ -311,7 +311,6 @@ namespace zzub {
     \brief .CCM importer
   */
 
-bool encodeFLAC(zzub::outstream* writer, zzub::wave_info_ex& info, int level);
 
 using namespace std;
 
