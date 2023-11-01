@@ -32,8 +32,6 @@ localenv = env.Clone()
 
 
 files = [
-    'compress.cpp',
-    'decompress.cpp',
     'dummy.cpp',
     'host.cpp',
     'libzzub.cpp',
