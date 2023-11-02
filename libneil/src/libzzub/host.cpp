@@ -17,6 +17,7 @@
 */
 #include <cstdio>
 #include "libzzub/common.h"
+#include "libzzub/events.h"
 
 using namespace std;
 
@@ -427,6 +428,28 @@ void host::set_state_flags(int state) {
             _player->set_state_direct(player_state_stopped); else
             _player->set_state_direct(player_state_playing);
     }
+}
+
+void host::add_plugin_event_listener(int plugin_id, zzub::event_type type, event_handler* handler) {
+    assert(zzub::is_plugin_event(type));
+
+    auto event_filter = (zzub_master_event_filter*) plugin_player->plugins[0]->event_handlers.front();
+    event_filter->add_event_listener(_plugin->id, type, handler);
+}
+
+void host::add_plugin_event_listener(zzub::event_type type, event_handler* handler) {
+    add_plugin_event_listener(_plugin->id, type, handler);
+}
+
+void host::add_event_type_listener(zzub::event_type type, event_handler* handler) {
+    auto event_filter = (zzub_master_event_filter*) plugin_player->plugins[0]->event_handlers.front();
+    event_filter->add_event_listener(type, handler);
+}
+
+
+void host::remove_event_filter(event_handler* handler) {
+    auto event_filter = (zzub_master_event_filter*) plugin_player->plugins[0]->event_handlers.front();
+    event_filter->remove_event_listener(handler);
 }
 
 

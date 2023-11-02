@@ -33,6 +33,7 @@
 #include "libzzub/driver_portaudio.h"
 #include "libzzub/driver_rainout.h"
 #include "libzzub/driver_silent.h"
+#include "libzzub/events.h"
 
 #include "libzzub/recorder.h"
 #include "libzzub/archive.h"
@@ -49,47 +50,6 @@ extern "C"
       Player methods
 
   ***/
-
-struct zzub_player_callback_all_events : event_handler {
-    metaplugin_proxy* proxy;
-    zzub_flatapi_player* player;
-
-    std::map<int, event_handler*> handlers;
-
-    zzub_player_callback_all_events(zzub_flatapi_player* _player, metaplugin_proxy* _proxy) {
-        player = _player;
-        proxy = _proxy;
-    }
-
-    virtual bool invoke(zzub_event_data_t& data) {
-        // the master plugin checks for create/delete plugin events and maintains an
-        // array of handlers who forward all events to the player callback.
-        if (proxy->id == 0 && data.type == zzub_event_type_new_plugin) {
-            metaplugin_proxy* new_plugin = data.new_plugin.plugin;
-            zzub_player_callback_all_events *ev = new zzub_player_callback_all_events(player, new_plugin);
-            handlers[new_plugin->id] = ev;
-            player->front.plugins[new_plugin->id]->event_handlers.push_back(ev);
-        } else
-            if (proxy->id == 0 && data.type == zzub_event_type_pre_delete_plugin) {
-                metaplugin_proxy* del_plugin = data.delete_plugin.plugin;
-                map<int, event_handler*>::iterator i = handlers.find(del_plugin->id);
-                if (i != handlers.end()) {
-                    delete i->second;
-                    handlers.erase(i);
-                }
-            }
-
-        if (player->callback) {
-            //int plugin = player->front.plugins[plugin_id]->descriptor;
-            int res = player->callback(player, proxy, &data, player->callbackTag);
-            if (!res)
-                return true;
-        } else {
-            player->push_event(data);
-        }
-        return false;
-    }
-};
 
 
 zzub_player_t *zzub_player_create() {
@@ -116,7 +76,7 @@ int zzub_player_initialize(zzub_player_t *player, int samplesPerSec) {
         return -1;
 
     // NOTE: 0 == master
-    zzub_player_callback_all_events *ev = new zzub_player_callback_all_events(player, player->front.plugins[0]->proxy);
+    zzub_master_event_filter *ev = new zzub_master_event_filter(player, player->front.plugins[0]->proxy);
     player->front.plugins[0]->event_handlers.push_back(ev);
     player->reset();
     return 0;

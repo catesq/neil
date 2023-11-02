@@ -83,6 +83,16 @@ enum zzub_midi_data {
 	zzub_midi_data_max = 128
 };
 
+enum zzub_midi_track_param {
+    zzub_midi_track_param_note = 0,
+    zzub_midi_track_param_volume,
+    zzub_midi_track_param_note_len_unit,
+    zzub_midi_track_param_note_len,
+    zzub_midi_track_param_command,
+    zzub_midi_track_param_data
+};
+
+
 
 namespace {
 
@@ -156,6 +166,9 @@ inline std::string describe_note_len(int note_len_type) {
         case zzub_note_unit_beats_16ths:
             return "beats/16";
 
+        case zzub_note_unit_beats_256ths:
+            return "beats/256";
+
         case zzub_note_unit_secs:
             return "sec";
 
@@ -166,7 +179,7 @@ inline std::string describe_note_len(int note_len_type) {
             return "secs/256";
 
         default:
-            return "no notelen";
+            return "no note length";
     }
 }
 
@@ -265,6 +278,10 @@ public:
     // called in the process_events method of a plugin
     void process_events();
 
+    // when the plugin receives a event_type_edit_pattern event, then new value is forwarded here
+    // needed so the note length unit is kept up to date
+    void update_event(int track, int column, int row, int value);
+
 
     std::string describe_value(int track, int param, int value);
 
@@ -277,6 +294,7 @@ public:
 
     // will handle the note length messages
     void process_samples(uint16_t numsamples, int mode);
+
 
 
     void init(uint32_t rate) ;

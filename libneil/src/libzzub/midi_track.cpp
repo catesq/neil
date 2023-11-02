@@ -92,6 +92,13 @@ void midi_track_manager::process_samples(uint16_t numsamples, int mode)
     }
 }
 
+void midi_track_manager::update_event(int track, int column, int row, int value) {
+    auto &prev = prev_tracks[track];
+
+    if(column == zzub_midi_track_param_note_len_unit) {
+        prev.unit = value;
+    }
+}
 
 // called in the process_events method of a plugin
 void midi_track_manager::process_events() 
@@ -102,8 +109,13 @@ void midi_track_manager::process_events()
 
         uint8_t volume;
         uint64_t samp_len;
+        auto note_change = curr->note_change_from(*prev);
 
-        switch (curr->note_change_from(*prev)) {
+        if(curr->unit != zzub_note_unit_none) {
+            prev->unit = curr->unit;
+        }
+
+        switch (note_change) {
             case zzub_note_change_none:
                 break;
 
@@ -192,26 +204,28 @@ std::string midi_track_manager::describe_value(int track, int param, int value)
     auto& state = prev_tracks[track];
 
     switch(param) {
-        case 0:
+        case zzub_midi_track_param_note:
             return ""; // note descriptions are already handled 
 
-        case 1:
+        case zzub_midi_track_param_volume:
             return std::to_string(value);
 
-        case 2:
+        case zzub_midi_track_param_note_len_unit:
             return describe_note_len_unit(value);
 
-        case 3: 
+        case zzub_midi_track_param_note_len: 
             if(prev_tracks[track].unit != zzub_note_unit_none) {
+                    printf("valid note length unit: %d\n", prev_tracks[track].unit);
                 return describe_note_len(prev_tracks[track].unit, value);
             } else {
+                printf("unset note length unit\n");
                 return describe_note_len(zzub_note_unit_default, value);
             }
 
-        case 4:
+        case zzub_midi_track_param_command:
             return "command: " + std::to_string(value);
 
-        case 5:
+        case zzub_midi_track_param_data:
             return "data: " + std::to_string(value);
 
         default:
@@ -261,7 +275,7 @@ uint64_t midi_track_manager::get_note_len_in_samples(midi_note_len note_len)
             return sample_rate * (note_len.length / 256.0f);
 
         case zzub_note_unit_beats:
-            return get_beat_length() * note_len.length;
+            return get_beat_length() * note_len.length; 
 
         case zzub_note_unit_beats_16ths:
             return get_beat_length() * (note_len.length / 16.0f);
@@ -277,10 +291,14 @@ uint64_t midi_track_manager::get_note_len_in_samples(midi_note_len note_len)
 const zzub_note_unit midi_track_manager::get_note_unit(const midi_note_track *prev, const midi_note_track *curr) const 
 {
     if (curr->unit != zzub_note_unit_none) {
+        printf("curr->unit: %d\n", curr->unit);
         return static_cast<zzub_note_unit>(curr->unit);
     } else if (prev->unit != zzub_note_unit_none) {
+        printf("prev->unit: %d\n", curr->unit);
         return static_cast<zzub_note_unit>(prev->unit);
     } else {
+        printf("no note unit\n");
+
         return static_cast<zzub_note_unit>(zzub_note_len_none);
     }
 }
@@ -318,7 +336,7 @@ void midi_track_manager::add_midi_track_info(zzub::info* info)
         info->add_track_parameter()
              .set_byte()
              .set_name("Note length unit")
-             .set_description("Note length options: 0=beats, 1=beats/16, 2=secs, 3=secs/16, 4=secs/256")
+             .set_description("0:beats | 1:beats/16 | 2:beats/256 | 4:secs | 5:secs/16 | 6:secs/256")
              .set_value_min(zzub_note_unit_min)
              .set_value_max(zzub_note_unit_max)
              .set_value_none(zzub_note_unit_none)

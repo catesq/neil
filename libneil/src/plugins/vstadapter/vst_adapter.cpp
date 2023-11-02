@@ -216,6 +216,8 @@ vst_adapter::init(zzub::archive* arc) {
 
     metaplugin = _host->get_metaplugin();
     _host->set_event_handler(metaplugin, this);
+    _host->add_plugin_event_listener(zzub::event_type_edit_pattern, this);
+
     ui_scale = gtk_widget_get_scale_factor((GtkWidget*)_host->get_host_info()->host_ptr);
 
     if (info->flags & zzub_plugin_flag_has_midi_input) {
@@ -308,11 +310,16 @@ vst_adapter::ui_resize(int width, int height) {
 
 bool 
 vst_adapter::invoke(zzub_event_data_t& data) {
-    if(plugin && data.type == zzub::event_type_double_click && !is_editor_open && (info->flags & zzub_plugin_flag_has_custom_gui)) {
+    if(!plugin)
+        return false;
+
+    if(data.type == zzub::event_type_edit_pattern) {
+        if(data.edit_pattern.group == zzub_parameter_group_track)
+            midi_track_manager.update_event(data.edit_pattern.track, data.edit_pattern.column, data.edit_pattern.row, data.edit_pattern.value);
+    } else if (data.type == zzub::event_type_double_click && !is_editor_open  && (info->flags & zzub_plugin_flag_has_custom_gui)) {
         ui_open();
     }
 
-    // if (!plugin || data.type != zzub::event_type_double_click || is_editor_open || !(info->flags & zzub_plugin_flag_has_custom_gui)) {
     return true;
 }
 

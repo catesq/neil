@@ -1557,6 +1557,9 @@ op_sequencer_create_track::op_sequencer_create_track(zzub::player* _player, int 
 }
 
 bool op_sequencer_create_track::prepare(zzub::song& song) {
+    assert(id < song.plugins.size());
+    assert(song.plugins[id] != 0);
+
     zzub::sequencer_track t;
     t.plugin_id = id;
     t.type = type;
@@ -1570,8 +1573,15 @@ bool op_sequencer_create_track::operate(zzub::song& song) {
 }
 
 void op_sequencer_create_track::finish(zzub::song& song, bool send_events) {
-    event_data.type = event_type_set_sequence_tracks;
-    if (send_events) song.plugin_invoke_event(0, event_data, true);
+    if (send_events) {  
+        metaplugin& m = *song.plugins[id];
+        
+        event_data.pattern_remove_rows.plugin = m.proxy;
+        event_data.type = event_type_set_sequence_tracks;
+        event_data.set_sequence_tracks.plugin = 0;
+
+        song.plugin_invoke_event(0, event_data, true);
+    }
 }
 
 

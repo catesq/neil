@@ -66,6 +66,13 @@ struct host {
     virtual void set_state_flags(int state);
     virtual void set_event_handler(zzub_plugin_t *_metaplugin, event_handler *handler);
     virtual void remove_event_handler(zzub_plugin_t *_metaplugin, event_handler *handler);
+
+    virtual void add_event_type_listener(zzub::event_type type, event_handler* handler);
+    virtual void add_plugin_event_listener(zzub::event_type type, event_handler* handler);
+    virtual void add_plugin_event_listener(int plugin_id, zzub::event_type type, event_handler* handler);
+
+    virtual void remove_event_filter(event_handler* handler);
+
     virtual const char *get_wave_name(int index);
     virtual void set_internal_wave_name(zzub_plugin_t *_metaplugin, int index, const char *name);
     virtual void get_plugin_names(outstream *os);
