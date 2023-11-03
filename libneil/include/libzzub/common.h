@@ -27,7 +27,6 @@
 #define ZZUB_BIG_ENDIAN
 #endif
 
-#define strcmpi strcasecmp
 
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -62,3 +61,4 @@
 #include "thread_id.h"
 #include "player.h"
 #include "connections.h"
+#include "tools.h"

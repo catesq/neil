@@ -35,46 +35,8 @@ using namespace std;
 
 extern size_t sizeFromWaveFormat(int waveFormat);
 
-struct find_info_by_uri {
-    std::string uri;
-    bool is_versioned = false;
-    std::string unversioned_uri{};
-
-    find_info_by_uri(std::string u) {
-        uri = u;
-        is_versioned = is_versioned_uri(uri);
-
-        if(is_versioned) {
-            unversioned_uri = get_deversioned_uri(uri);
-        }
-    }
-
-    bool is_versioned_uri(std::string uri) {
-        return uri.find_first_not_of("0123456789", uri.find_last_of('/') + 1) == std::string::npos;
-    }
-
-    std::string get_deversioned_uri(std::string uri) {
-        return uri.substr(0, uri.find_last_of('/'));
-    }
-
-    bool operator()(const zzub::info* info) {
-        if (strcmpi(uri.c_str(), info->uri.c_str()) == 0)
-            return true;
-
-        if(is_versioned && is_versioned_uri(info->uri) && strcmpi(unversioned_uri.c_str(), get_deversioned_uri(info->uri).c_str()) == 0)
-            return true;
-
-        return false;
-    }
-};
 
 namespace zzub {
-
-/***
-
-      player
-
-  ***/
 
 
 player::player() {
@@ -453,7 +415,7 @@ std::string player::plugin_get_new_name(std::string uri) {
     merge_backbuffer_flags(flags);
     using namespace std;
     string baseName;
-    std::vector<const zzub::info*>::iterator info = find_if(plugin_infos.begin(), plugin_infos.end(), find_info_by_uri(uri));
+    std::vector<const zzub::info*>::iterator info = find_if(plugin_infos.begin(), plugin_infos.end(), zzub::tools::find_info_by_uri(uri));
     
     if (info == plugin_infos.end())
         baseName = uri; else
@@ -474,7 +436,7 @@ std::string player::plugin_get_new_name(std::string uri) {
 
 
 const zzub::info* player::plugin_get_info(std::string uri) {
-    std::vector<const zzub::info*>::iterator i = find_if(plugin_infos.begin(), plugin_infos.end(), find_info_by_uri(uri));
+    std::vector<const zzub::info*>::iterator i = find_if(plugin_infos.begin(), plugin_infos.end(), zzub::tools::find_info_by_uri(uri));
     if (i == plugin_infos.end())
         return 0;
     else
