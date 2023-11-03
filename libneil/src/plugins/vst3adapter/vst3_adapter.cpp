@@ -30,7 +30,7 @@ Vst3PluginAdapter::Vst3PluginAdapter(
     printf("build vst3 plugin\n");
 
     if(info->flags & zzub_plugin_flag_has_midi_input) {
-        track_values = malloc(sizeof(struct zzub::midi_note_track) * midi_track_manager.get_max_num_tracks());
+        track_values = midi_track_manager.get_track_data();
         num_tracks = 1;
         set_track_count(num_tracks);
     }
@@ -396,11 +396,6 @@ void Vst3PluginAdapter::add_aftertouch(uint8_t note, uint8_t volume) {
 
 void Vst3PluginAdapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
     
-}
-
-
-zzub::midi_note_track* Vst3PluginAdapter::get_track_data_pointer(uint16_t track_num) const {
-    return &((zzub::midi_note_track*) track_values)[track_num];
 }
 
 

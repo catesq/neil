@@ -45,7 +45,7 @@
 lv2_adapter::lv2_adapter(lv2_zzub_info *info)
     : info(info),
       cache(info->cache),
-      midi_track_manager(*this, NUM_TRACKS) {
+      midi_track_manager(*this) {
         
     if (info->zzubTotalDataSize) {
         global_values = malloc(info->zzubTotalDataSize);
@@ -58,7 +58,7 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info)
     attributes = (int *)&attr_values;
 
     if (info->flags & zzub_plugin_flag_is_instrument) {
-        track_values = malloc(sizeof(struct zzub::midi_note_track) * NUM_TRACKS);
+        track_values = midi_track_manager.get_track_data();
         trackCount = 1;
         set_track_count(trackCount);
     }
@@ -217,10 +217,6 @@ void lv2_adapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
     midiEvents.add(0, cmd, data1, data2);
 }
 
-zzub::midi_note_track *
-lv2_adapter::get_track_data_pointer(uint16_t track_num) const {
-    return &((zzub::midi_note_track *)track_values)[track_num];
-}
 
 void lv2_adapter::init(zzub::archive *arc) {
     sample_rate = _master_info->samples_per_second;

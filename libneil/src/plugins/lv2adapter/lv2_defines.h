@@ -34,7 +34,6 @@ static int verbose = 0;
 
 #define MAX_PATHLEN 1024
 
-#define NUM_TRACKS 16
 
 // -----------------------------------------------------------------------
 

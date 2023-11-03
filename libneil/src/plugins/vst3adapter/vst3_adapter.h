@@ -89,7 +89,6 @@ struct Vst3PluginAdapter: zzub::plugin, zzub::midi_plugin_interface, zzub::event
     virtual void add_note_off(uint8_t note) override;
     virtual void add_aftertouch(uint8_t note, uint8_t volume) override;
     virtual void add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) override;
-    virtual zzub::midi_note_track *get_track_data_pointer(uint16_t track_num) const override;
 
     void ui_open();
     void ui_close();

@@ -140,9 +140,7 @@ vst_adapter::vst_adapter(const vst_zzub_info* info)
     global_values = globalvals;
 
     if (info->flags & zzub_plugin_flag_has_midi_input) {
-        LOG_F(INFO, "init midi input");
-        printf("Init vst adapter midi input\n");
-        track_values = malloc(sizeof(struct zzub::midi_note_track) * midi_track_manager.get_max_num_tracks());
+        track_values = midi_track_manager.get_track_data();
         num_tracks = 1;
         set_track_count(num_tracks);
     }
@@ -160,9 +158,6 @@ vst_adapter::~vst_adapter() {
 
     if (is_editor_open)
         ui_destroy();
-
-    if (track_values)
-        free(track_values);
 
     clear_vst_events();
     free(globalvals);
@@ -313,15 +308,24 @@ vst_adapter::invoke(zzub_event_data_t& data) {
     if(!plugin)
         return false;
 
-    if(data.type == zzub::event_type_edit_pattern) {
-        if(data.edit_pattern.group == zzub_parameter_group_track)
-            midi_track_manager.update_event(data.edit_pattern.track, data.edit_pattern.column, data.edit_pattern.row, data.edit_pattern.value);
-    } else if (data.type == zzub::event_type_double_click && !is_editor_open  && (info->flags & zzub_plugin_flag_has_custom_gui)) {
-        ui_open();
+    switch (data.type) {
+        case zzub::event_type_edit_pattern:
+        printf("parameter update group %d\n", data.edit_pattern.group);
+            if (data.edit_pattern.group == zzub_parameter_group_track) {
+                midi_track_manager.parameter_update(data.edit_pattern.track, data.edit_pattern.column, data.edit_pattern.row, data.edit_pattern.value);
+            }
+            break;
+
+        case zzub::event_type_double_click:
+            if (!is_editor_open && (info->flags & zzub_plugin_flag_has_custom_gui)) {
+                ui_open();
+            }
+            break;
     }
 
     return true;
 }
+
 
 void 
 vst_adapter::ui_open() {
@@ -423,12 +427,6 @@ vst_adapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_message(cmd, data1, data2));
-}
-
-
-zzub::midi_note_track*
-vst_adapter::get_track_data_pointer(uint16_t track_num) const {
-    return &((zzub::midi_note_track*)track_values)[track_num];
 }
 
 

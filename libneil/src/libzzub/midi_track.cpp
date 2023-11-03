@@ -8,7 +8,46 @@
 
 namespace zzub {
 
+
+
 const std::string midi_note_names[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+
+
+
+uint8_t midi_note_track::get_note() 
+{ 
+    return note; 
+}
+
+
+
+int midi_note_track::get_volume() 
+{ 
+    return volume != zzub_volume_value_none ? volume : zzub_volume_value_default; 
+}
+
+
+
+bool midi_note_track::is_note_on() 
+{ 
+    return note != zzub_note_value_none && note != zzub_note_value_off; 
+}
+
+
+
+void midi_note_track::set_note_off() 
+{
+    note = zzub_note_value_off;
+}
+
+
+
+bool midi_note_track::is_volume_on() 
+{ 
+    return volume != zzub_volume_value_none; 
+}
+
+
 
 int midi_note_track::note_change_from(midi_note_track &prev) 
 {                                                               
@@ -17,42 +56,21 @@ int midi_note_track::note_change_from(midi_note_track &prev)
             return zzub_note_change_volume;                                                            
         } else {                                                                                       
             return zzub_note_change_none;                                                              
-        }                                                                                              
-    }                                                                                                  
+        }                                                                                            
+    }
 
     if (note == zzub::note_value_off) {                                                                
         return zzub_note_change_noteoff;                                                               
     } else {                                                                                           
         return zzub_note_change_noteon;                                                                
-    }                                                                                                  
+    }
 }
-
-
 
 
 void midi_track_manager::init(uint32_t rate) 
 {
     set_sample_rate(rate);
-
-    for (auto idx = 0; idx < max_num_tracks; ++idx) {
-        auto curr_ptr = plugin.get_track_data_pointer(idx);
-
-        if (!curr_ptr) {
-            throw std::runtime_error("midi_track_manager::init - plugin.get_track_data_pointer returned null for track " + std::to_string(idx));
-        }
-
-        // clear the midi note track data in curr[idx]
-        curr_ptr->note = zzub_note_value_none;
-        curr_ptr->volume = zzub_volume_value_none;
-        curr_ptr->unit = zzub_note_unit_none;
-        curr_ptr->length = zzub_note_len_none;
-        curr_ptr->command = zzub_midi_command_none;
-        curr_ptr->data = zzub_midi_data_none;
-
-        curr_tracks.push_back(curr_ptr);
-    }
 }
-
 
 
 
@@ -65,6 +83,7 @@ void midi_track_manager::set_track_count(int new_num_tracks)
 
     num_tracks = new_num_tracks;
 }
+
 
 
 // will handle the note length messages
@@ -92,20 +111,24 @@ void midi_track_manager::process_samples(uint16_t numsamples, int mode)
     }
 }
 
-void midi_track_manager::update_event(int track, int column, int row, int value) {
+
+
+void midi_track_manager::parameter_update(int track, int column, int row, int value) {
     auto &prev = prev_tracks[track];
 
-    if(column == zzub_midi_track_param_note_len_unit) {
+    if(column == zzub_midi_track_param_note_unit && value != zzub_note_unit_none) {
         prev.unit = value;
     }
 }
+
+
 
 // called in the process_events method of a plugin
 void midi_track_manager::process_events() 
 {
     for (uint16_t track_num = 0; track_num < num_tracks; track_num++) {
         auto prev = &prev_tracks[track_num];
-        auto curr = curr_tracks[track_num];
+        auto curr = &curr_tracks[track_num];
 
         uint8_t volume;
         uint64_t samp_len;
@@ -172,6 +195,8 @@ void midi_track_manager::process_events()
     }
 }
 
+
+
 inline std::string describe_note_len_unit(int note_len_type) {
     switch(note_len_type) {
         case zzub_note_unit_beats:
@@ -198,6 +223,7 @@ inline std::string describe_note_len_unit(int note_len_type) {
 } 
 
 
+
 std::string midi_track_manager::describe_value(int track, int param, int value) 
 {
     param = param % 5;
@@ -210,15 +236,13 @@ std::string midi_track_manager::describe_value(int track, int param, int value)
         case zzub_midi_track_param_volume:
             return std::to_string(value);
 
-        case zzub_midi_track_param_note_len_unit:
+        case zzub_midi_track_param_note_unit:
             return describe_note_len_unit(value);
 
         case zzub_midi_track_param_note_len: 
             if(prev_tracks[track].unit != zzub_note_unit_none) {
-                    printf("valid note length unit: %d\n", prev_tracks[track].unit);
                 return describe_note_len(prev_tracks[track].unit, value);
             } else {
-                printf("unset note length unit\n");
                 return describe_note_len(zzub_note_unit_default, value);
             }
 
@@ -232,6 +256,7 @@ std::string midi_track_manager::describe_value(int track, int param, int value)
             return "unknown param: " + std::to_string(value);
     }
 }
+
 
 
 std::string midi_track_manager::describe_note_len(int note_len_unit, int value) 
@@ -288,20 +313,20 @@ uint64_t midi_track_manager::get_note_len_in_samples(midi_note_len note_len)
     }
 }
 
+
+
 const zzub_note_unit midi_track_manager::get_note_unit(const midi_note_track *prev, const midi_note_track *curr) const 
 {
     if (curr->unit != zzub_note_unit_none) {
-        printf("curr->unit: %d\n", curr->unit);
         return static_cast<zzub_note_unit>(curr->unit);
     } else if (prev->unit != zzub_note_unit_none) {
-        printf("prev->unit: %d\n", curr->unit);
         return static_cast<zzub_note_unit>(prev->unit);
     } else {
-        printf("no note unit\n");
-
         return static_cast<zzub_note_unit>(zzub_note_len_none);
     }
 }
+
+
 
 midi_note_len midi_track_manager::get_note_length(const midi_note_track *prev, const midi_note_track *curr) const 
 {
@@ -316,6 +341,7 @@ midi_note_len midi_track_manager::get_note_length(const midi_note_track *prev, c
 }
 
 
+
 void midi_track_manager::add_midi_track_info(zzub::info* info) 
 {
         info->min_tracks = 1;
@@ -327,7 +353,7 @@ void midi_track_manager::add_midi_track_info(zzub::info* info)
         info->add_track_parameter()
              .set_byte()
              .set_name("Volume")
-             .set_description("Volume (00-7f)")
+             .set_description("Volume (00-80)")
              .set_value_min(zzub_volume_value_min)
              .set_value_max(zzub_volume_value_max)
              .set_value_none(zzub_volume_value_none)
