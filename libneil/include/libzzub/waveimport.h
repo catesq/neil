@@ -1,5 +1,13 @@
 #pragma once
 
+#include "zzub/consts.h"
+
+#include <sndfile.h>
+#include <mad.h>
+#include <mpg123.h>
+#include <vector>
+#include <string>
+
 namespace zzub {
 
 struct importwave_info {
