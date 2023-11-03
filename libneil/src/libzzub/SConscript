@@ -53,6 +53,7 @@ files = [
     'output.cpp',
     'song.cpp',
     'synchronization.cpp',
+    'waveimport.cpp',
     'undo.cpp',
     'thread_id.cpp',
     'driver_portaudio.cpp',
