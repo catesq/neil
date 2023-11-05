@@ -5,6 +5,7 @@
 #include "zzub/plugin.h"
 
 #include "loguru.hpp"
+#include <functional>
 
 #define SAMPLES_TO_BEATS(sample_pos, sample_rate, bpm) ((sample_pos * bpm) / (sample_rate * 60.f))
 
@@ -74,8 +75,6 @@ enum zzub_midi_track_param {
 
 
 
-namespace {
-
 #pragma pack(1)
 
 // used to send midi command data sent to the plugin
@@ -119,6 +118,8 @@ struct midi_note_track {
 
 #pragma pack()
 
+namespace {
+    
 // the track_manager keeps a list of these active notes
 struct active_note {
     uint16_t note;
@@ -270,21 +271,27 @@ public:
     }
 private:
 
-
-
-
-
     std::string describe_note_len(int note_len_type, int value);
+
+
+    // is this note measured in beats/samples/seconds
+    const zzub_note_unit get_curr_unit(const midi_note_track *curr, const midi_note_track *prev) const;
+
+    // how many beats/sample/seconds
+    uint16_t get_curr_len(const midi_note_track *curr, const midi_note_track *prev) const;
     
-    uint64_t get_note_len_in_samples(midi_note_len note_len);
+    // how many beats/sample/seconds and which
+    midi_note_len get_midi_note_len(const midi_note_track *curr, const midi_note_track *prev) const;
 
-    const zzub_note_unit get_note_unit(const midi_note_track *curr, const midi_note_track *prev) const;
-
-    midi_note_len get_note_length(const midi_note_track *curr, const midi_note_track *prev) const;
-
-    inline float get_beat_length() {
+    // beats per minute converted to samples per second
+    inline float get_beat_len() {
         return (60.0f * sample_rate) / bpm;
     }
+
+
+    uint64_t get_note_len_in_samples(midi_note_len note_len);
+
+    bool remove_matching_notes(std::function<bool(const active_note&)> matcher);
 };
 
 

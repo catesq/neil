@@ -1,13 +1,10 @@
 
-#include "libzzub/midi_track.h"
 #include "zzub/plugin.h"
-
-#include "loguru.hpp"
+#include "libzzub/midi_track.h"
 #include "libzzub/tools.h"
 
 
 namespace zzub {
-
 
 
 const std::string midi_note_names[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
@@ -94,21 +91,10 @@ void midi_track_manager::process_samples(uint16_t numsamples, int mode)
     }
 
     play_pos += numsamples;
-    auto it = active_notes.begin();
 
-    // iterate over active notes and remove any note's which have ended
-    while(it != active_notes.end()) {
-        auto &active = *it;
-
-        if ( active.has_ended_at(play_pos) ) {
-            auto track = &prev_tracks[active.track_num];
-            plugin.add_note_off(track->note);
-            track->set_note_off();
-            it = active_notes.erase(it);
-        } else {
-            ++it;
-        }
-    }
+    remove_matching_notes([this](const active_note &active) {
+        return active.has_ended_at(play_pos);
+    });
 }
 
 
@@ -127,39 +113,33 @@ void midi_track_manager::parameter_update(int track, int column, int row, int va
 void midi_track_manager::process_events() 
 {
     for (uint16_t track_num = 0; track_num < num_tracks; track_num++) {
+        
         auto prev = &prev_tracks[track_num];
         auto curr = &curr_tracks[track_num];
 
         uint8_t volume;
         uint64_t samp_len;
-        auto note_change = curr->note_change_from(*prev);
 
-        if(curr->unit != zzub_note_unit_none) {
-            prev->unit = curr->unit;
-        }
-
-        switch (note_change) {
+        switch (curr->note_change_from(*prev)) {
             case zzub_note_change_none:
                 break;
 
             case zzub_note_change_noteoff: {
                 if (!prev->is_note_on())
                     break;
-
-                auto it = std::find_if(active_notes.begin(), active_notes.end(), [track_num, prev](const active_note &active) {
+                
+                remove_matching_notes([track_num](const active_note &active) {
                     return active.track_num == track_num;
                 });
-
-                if (it != active_notes.end()) {
-                    active_notes.erase(it);
-                    plugin.add_note_off(prev->note);
-                    prev->set_note_off();
-                }
 
                 break;
             }
             
             case zzub_note_change_noteon: {
+                remove_matching_notes([curr](const active_note &active) {
+                    return active.note == curr->note;
+                });
+
                 if (curr->is_volume_on())
                     prev->volume = curr->volume;
 
@@ -170,17 +150,16 @@ void midi_track_manager::process_events()
                 else
                     volume = zzub_volume_value_default;
 
-                auto note_len = get_note_length(prev, curr);
+                auto note_len = get_midi_note_len(prev, curr);
 
                 if(note_len.is_valid()) {
                     samp_len = get_note_len_in_samples(note_len);
                 } else {
-                    samp_len = get_beat_length();
+                    samp_len = get_beat_len();
                 }
 
                 plugin.add_note_on(curr->note, volume);
                 active_notes.emplace_back(curr->note, track_num, play_pos, samp_len);
-                
                 break;
             }
 
@@ -191,6 +170,14 @@ void midi_track_manager::process_events()
                     plugin.add_aftertouch(curr->note, prev->volume);
 
                 break;
+        }
+
+        if(curr->unit != zzub_note_unit_none) {
+            prev->unit = curr->unit;
+        }
+
+        if(curr->length != zzub_note_len_none) {
+            prev->length = curr->length;
         }
     }
 }
@@ -300,13 +287,13 @@ uint64_t midi_track_manager::get_note_len_in_samples(midi_note_len note_len)
             return sample_rate * (note_len.length / 256.0f);
 
         case zzub_note_unit_beats:
-            return get_beat_length() * note_len.length; 
+            return get_beat_len() * note_len.length; 
 
         case zzub_note_unit_beats_16ths:
-            return get_beat_length() * (note_len.length / 16.0f);
+            return get_beat_len() * (note_len.length / 16.0f);
 
         case zzub_note_unit_beats_256ths:
-            return get_beat_length() * (note_len.length / 256.0f);
+            return get_beat_len() * (note_len.length / 256.0f);
 
         default:
             return sample_rate;
@@ -315,85 +302,117 @@ uint64_t midi_track_manager::get_note_len_in_samples(midi_note_len note_len)
 
 
 
-const zzub_note_unit midi_track_manager::get_note_unit(const midi_note_track *prev, const midi_note_track *curr) const 
+const zzub_note_unit midi_track_manager::get_curr_unit(const midi_note_track *prev, const midi_note_track *curr) const 
 {
     if (curr->unit != zzub_note_unit_none) {
         return static_cast<zzub_note_unit>(curr->unit);
     } else if (prev->unit != zzub_note_unit_none) {
         return static_cast<zzub_note_unit>(prev->unit);
     } else {
-        return static_cast<zzub_note_unit>(zzub_note_len_none);
+        return static_cast<zzub_note_unit>(zzub_note_unit_default);
+    }
+}
+
+uint16_t midi_track_manager::get_curr_len(const midi_note_track *prev, const midi_note_track *curr) const
+{
+    if (curr->length != zzub_note_len_none) {
+        return curr->length;
+    } else if (prev->length != zzub_note_len_none) {
+        return prev->length;
+    } else {
+        return zzub_note_len_default;
     }
 }
 
 
-
-midi_note_len midi_track_manager::get_note_length(const midi_note_track *prev, const midi_note_track *curr) const 
+midi_note_len midi_track_manager::get_midi_note_len(const midi_note_track *prev, const midi_note_track *curr) const 
 {
-    if(curr->length == zzub_note_len_none) {
-        return invalid_note_len;
-    } else {
-        return midi_note_len {
-            static_cast<uint8_t>(get_note_unit(prev, curr)), 
-            curr->length
-        };
-    }
+    auto unit = get_curr_unit(prev, curr);
+    auto length = get_curr_len(prev, curr);
+
+    return midi_note_len { static_cast<uint8_t>(unit), length };
 }
 
 
 
 void midi_track_manager::add_midi_track_info(zzub::info* info) 
 {
-        info->min_tracks = 1;
-        info->max_tracks = midi_track_manager::default_max_tracks;
+    info->min_tracks = 1;
+    info->max_tracks = midi_track_manager::default_max_tracks;
 
-        info->add_track_parameter()
-             .set_note();
+    info->add_track_parameter()
+        .set_note();
 
-        info->add_track_parameter()
-             .set_byte()
-             .set_name("Volume")
-             .set_description("Volume (00-80)")
-             .set_value_min(zzub_volume_value_min)
-             .set_value_max(zzub_volume_value_max)
-             .set_value_none(zzub_volume_value_none)
-             .set_value_default(zzub_volume_value_default);
+    info->add_track_parameter()
+        .set_byte()
+        .set_name("Volume")
+        .set_description("Volume (00-80)")
+        .set_value_min(zzub_volume_value_min)
+        .set_value_max(zzub_volume_value_max)
+        .set_value_none(zzub_volume_value_none)
+        .set_value_default(zzub_volume_value_default);
 
-        info->add_track_parameter()
-             .set_byte()
-             .set_name("Note length unit")
-             .set_description("0:beats | 1:beats/16 | 2:beats/256 | 4:secs | 5:secs/16 | 6:secs/256")
-             .set_value_min(zzub_note_unit_min)
-             .set_value_max(zzub_note_unit_max)
-             .set_value_none(zzub_note_unit_none)
-             .set_value_default(zzub_note_unit_default);
+    info->add_track_parameter()
+        .set_byte()
+        .set_name("Note length unit")
+        .set_description("0:beats | 1:beats/16 | 2:beats/256 | 4:secs | 5:secs/16 | 6:secs/256")
+        .set_value_min(zzub_note_unit_min)
+        .set_value_max(zzub_note_unit_max)
+        .set_value_none(zzub_note_unit_none)
+        .set_value_default(zzub_note_unit_default);
 
-        info->add_track_parameter()
-             .set_word()
-             .set_name("Note length")
-             .set_description("Length")
-             .set_value_min(zzub_note_len_min)
-             .set_value_max(zzub_note_len_max)
-             .set_value_none(zzub_note_len_none)
-             .set_value_default(zzub_note_len_default);
+    info->add_track_parameter()
+        .set_word()
+        .set_name("Note length")
+        .set_description("Length")
+        .set_value_min(zzub_note_len_min)
+        .set_value_max(zzub_note_len_max)
+        .set_value_none(zzub_note_len_none)
+        .set_value_default(zzub_note_len_default);
 
-        info->add_track_parameter()
-             .set_byte()
-             .set_name("Command")
-             .set_description("Command")
-             .set_value_min(zzub_midi_command_min)
-             .set_value_max(zzub_midi_command_max)
-             .set_value_none(zzub_midi_command_none)
-             .set_value_default(zzub_midi_command_none);
+    info->add_track_parameter()
+        .set_byte()
+        .set_name("Command")
+        .set_description("Command")
+        .set_value_min(zzub_midi_command_min)
+        .set_value_max(zzub_midi_command_max)
+        .set_value_none(zzub_midi_command_none)
+        .set_value_default(zzub_midi_command_none);
 
-        info->add_track_parameter()
-             .set_word()
-             .set_name("Data")
-             .set_description("Data")
-             .set_value_min(zzub_midi_data_min)
-             .set_value_max(zzub_midi_data_max)
-             .set_value_none(zzub_midi_data_none)
-             .set_value_default(zzub_midi_data_none);
+    info->add_track_parameter()
+        .set_word()
+        .set_name("Data")
+        .set_description("Data")
+        .set_value_min(zzub_midi_data_min)
+        .set_value_max(zzub_midi_data_max)
+        .set_value_none(zzub_midi_data_none)
+        .set_value_default(zzub_midi_data_none);
+}
+
+
+
+
+
+bool midi_track_manager::remove_matching_notes(std::function<bool(const active_note&)> note_matcher) {
+    int removed = 0;
+
+    auto it = active_notes.begin();
+
+    while(it != active_notes.end()) {
+        auto &playing = *it;
+
+        if ( note_matcher(playing) ) {
+            plugin.add_note_off(playing.note);
+            prev_tracks[playing.track_num].set_note_off();
+            it = active_notes.erase(it);
+            removed += 1;
+        } else {
+            ++it;
+        }
     }
+
+    return removed > 0;
+}
+
 
 }
