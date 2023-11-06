@@ -1164,6 +1164,16 @@ int zzub_plugin_get_input_connection_type(zzub_plugin_t *plugin, int index) {
     return plugin->_player->back.plugin_get_input_connection_type(plugin->id, index);
 }
 
+zzub_connection_t* zzub_plugin_get_input_connection(zzub_plugin_t *plugin, int index) {
+    operation_copy_flags flags;
+    flags.copy_graph = true;
+    flags.copy_plugins = true;
+    plugin->_player->merge_backbuffer_flags(flags);
+
+    return plugin->_player->back.plugin_get_input_connection(plugin->id, index);
+}
+
+
 zzub_plugin_t* zzub_plugin_get_input_connection_plugin(zzub_plugin_t *plugin, int index) {
 
     operation_copy_flags flags;
@@ -1174,6 +1184,16 @@ zzub_plugin_t* zzub_plugin_get_input_connection_plugin(zzub_plugin_t *plugin, in
     int id = plugin->_player->back.plugin_get_input_connection_plugin(plugin->id, index);
     return plugin->_player->back.plugins[id]->proxy;
 }
+
+zzub_connection_t* zzub_plugin_get_output_connection(zzub_plugin_t *plugin, int index) {
+    operation_copy_flags flags;
+    flags.copy_graph = true;
+    flags.copy_plugins = true;
+    plugin->_player->merge_backbuffer_flags(flags);
+
+    zzub_connection_t* conn = plugin->_player->back.plugin_get_output_connection(plugin->id, index);
+}
+
 
 int zzub_plugin_get_output_connection_count(zzub_plugin_t *plugin) {
 

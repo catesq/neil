@@ -396,7 +396,25 @@ namespace zzub:
 		def is_input(int index): bool
 		def get_master_channel(): int
 		def set_master_channel(int index)
-		
+
+	class EventConnectionBinding:
+		def get_group(): int
+
+	class EventConnection:
+		def get_type(): int
+		def get_binding_count(): int
+		def get_binding(): EventConnectionBinding
+
+	class CvConnection:
+		def get_type(): int
+
+
+	"Connection stuff"
+	class Connection:
+		def get_type(): int
+		def as_cv_connection(): EventConnection
+		def as_event_connection(): CvConnection 
+
 	"MIDI Driver Methods"
 	"Open midi devices."
 	class Mididriver:
@@ -723,6 +741,9 @@ namespace zzub:
 		"Returns the number of input connections for given plugin."
 		def get_input_connection_count(): int
 
+		"Return the Connection for at index "
+		def get_input_connection(int index): Connection
+
 		"Returns the input connection index for given plugin and connection type."
 		def get_input_connection_by_type(Plugin from_plugin, int type): int
 
@@ -737,6 +758,9 @@ namespace zzub:
 
 		"Returns the output connection index for given plugin and connection type."
 		def get_output_connection_by_type(Plugin from_plugin, int type): int
+
+		"Return the Connection at index"
+		def get_output_connection(int index): Connection
 
 		"Returns the connection type for given plugin and connection index."
 		def get_output_connection_type(int index): int

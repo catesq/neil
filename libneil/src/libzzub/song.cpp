@@ -212,6 +212,7 @@ int song::plugin_get_parameter(int plugin_id, int group, int track, int column) 
     return plugins[plugin_id]->state_last.groups[group][track][column][0];
 }
 
+
 int song::plugin_get_parameter_direct(int plugin_id, int group, int track, int column) {
     assert(plugins[plugin_id] != 0);
     assert(group >= 0 && group < plugins[plugin_id]->state_write.groups.size());
@@ -220,6 +221,7 @@ int song::plugin_get_parameter_direct(int plugin_id, int group, int track, int c
 
     return plugins[plugin_id]->state_write.groups[group][track][column][0];
 }
+
 
 void song::plugin_set_parameter_direct(int plugin_id, int group, int track, int column, int value, bool record) {
     assert(plugins[plugin_id] != 0);
@@ -669,6 +671,7 @@ void song::add_pattern_connection_track(zzub::pattern& pattern, const std::vecto
 
     for (size_t j = 0; j < parameters.size(); j++)
         t[j].resize(pattern.rows);
+
     reset_plugin_parameter_track(t, parameters);
 }
 
@@ -811,6 +814,9 @@ void song::plugin_add_input(int to_id, int from_id, connection_type type) {
     case connection_type_event:
         c.conn = new event_connection();
         break;
+    case connection_type_cv:
+        c.conn = new cv_connection();
+        break;
     }
 
     metaplugin& to_mpl = *plugins[to_id];
@@ -893,10 +899,7 @@ mixer::mixer() {
     mix_buffer.resize(2);
     mix_buffer[0].resize(zzub::buffer_size * 4);
     mix_buffer[1].resize(zzub::buffer_size * 4);
-    for (int i = 0; i < audiodriver::MAX_CHANNELS; i++) {
-        inputBuffer[i] = 0;
-    }
-
+    memset(inputBuffer, 0, sizeof(inputBuffer));
 }
 
 void mixer::set_state(player_state newstate) {

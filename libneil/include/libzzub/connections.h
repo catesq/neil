@@ -2,11 +2,17 @@
 
 #include <vector>
 
+#include "zzub/zzub_data.h"
 #include "zzub/plugin.h"
 #include "graph.h"
 
 
 namespace zzub {
+
+struct event_connection;
+struct audio_connection;
+struct cv_connection;
+struct midi_connection;
 
 struct connection {
     connection_type type;
@@ -16,6 +22,11 @@ struct connection {
     virtual ~connection() {};
     virtual void process_events(zzub::song& player, const connection_descriptor& conn) = 0;
     virtual bool work(zzub::song& player, const connection_descriptor& conn, int sample_count) = 0;
+
+    // cast to the correct subtype - was quickest way to give python access to the right subtypes of connection 
+    virtual event_connection* as_event_connection() { return nullptr; }
+    virtual cv_connection* as_cv_connection() { return nullptr; }
+    connection_type get_type() const { return type; }
 
 protected:
     // don't instantiate this class directly,
@@ -54,11 +65,17 @@ struct audio_connection : connection {
 };
 
 
+
 struct event_connection_binding {
     int source_param_index;
     int target_group_index;
     int target_track_index;
     int target_param_index;
+
+    int get_group() const { return target_group_index; }
+    int get_track() const { return target_track_index; }
+    int get_param() const { return target_param_index; }
+    int get_source_param() const { return source_param_index; }
 };
 
 
@@ -70,10 +87,48 @@ struct event_connection : connection {
     event_connection();
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
     virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count);
+    virtual event_connection* as_event_connection() { return this; }
+
+    int get_binding_count() const { return bindings.size(); }
+
+    event_connection_binding* get_binding(int index) { 
+        if(index < 0 || index >= bindings.size())
+            return nullptr;
+        else
+            return &bindings[index]; 
+    }
+
     int convert(int value, const zzub::parameter *oldparam, const zzub::parameter *newparam);
-    const zzub::parameter *getParam(struct metaplugin *mp, int group, int index);
+    // const zzub::parameter *getParam(struct metaplugin *mp, int group, int index);
 };
 
+struct cv_port_link {
+    // the only valid group_indexes are zzub_parameter_group_global and zzub_parameter_group_track
+    int source_group_index;
+    
+    // any track index for zzub_parameter_group_track. it is always 0 for zzub_parameter_group_global
+    int source_track_index;
+    
+    int source_param_index;
+
+    int target_group_index;
+    int target_track_index;
+    int target_param_index;
+
+    float buffer[zzub_buffer_size];
+};
+
+
+struct cv_connection : connection {
+    std::vector<cv_port_link> port_links;
+
+    cv_connection();
+    
+    virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
+    virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count);
+
+    virtual cv_connection* as_cv_connection() { return this; }
+};
 
 struct midi_connection : connection {
 

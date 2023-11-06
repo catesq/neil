@@ -108,22 +108,23 @@ event_connection::event_connection() {
     connection_values = 0;
 }
 
-const zzub::parameter *event_connection::getParam(struct metaplugin *mp, int group, int index)
-{
-    switch (group) {
-    case 0: // input connections
-        return connection_parameters[index];
-        /*		case 1: // globals
-            return mp->loader->plugin_info->global_parameters[index];
-        case 2: // track params
-            return mp->loader->plugin_info->track_parameters[index];
-        case 3: // controller params
-            return mp->loader->plugin_info->controller_parameters[index];
-*/
-    default:
-        return 0;
-    }
-}
+// only used in commented out code in event_connection - replaed by player.get_parameter
+// const zzub::parameter *event_connection::getParam(struct metaplugin *mp, int group, int index)
+// {
+//     switch (group) {
+//     case 0: // input connections
+//         return connection_parameters[index];
+//         /*		case 1: // globals
+//             return mp->loader->plugin_info->global_parameters[index];
+//         case 2: // track params
+//             return mp->loader->plugin_info->track_parameters[index];
+//         case 3: // controller params
+//             return mp->loader->plugin_info->controller_parameters[index];
+// */
+//     default:
+//         return 0;
+//     }
+// }
 
 int event_connection::convert(int value, const zzub::parameter *oldparam, const zzub::parameter *newparam) {
     int result = newparam->value_none;
@@ -206,6 +207,22 @@ bool event_connection::work(zzub::song& player, const zzub::connection_descripto
 
     return true;
 }
+
+
+cv_connection::cv_connection() {
+     type = connection_type_cv;
+}
+
+
+void cv_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn) {
+
+}
+
+
+bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
+
+}
+
 
 midi_connection::midi_connection() {
     type = connection_type_midi;

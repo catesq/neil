@@ -517,6 +517,7 @@ bool op_plugin_connect::prepare(zzub::song& song) {
             return false;
         }
         break;
+    case connection_type_cv:
     default:
         break;
 }
@@ -561,13 +562,15 @@ bool op_plugin_connect::prepare(zzub::song& song) {
     }
 
     switch (type) {
-    case connection_type_audio:
-        break;
     case connection_type_midi:
         ((midi_connection*)conn)->device_name = midi_device;
         break;
     case connection_type_event:
         ((event_connection*)conn)->bindings = bindings;
+        break;
+    case connection_type_audio:
+    case connection_type_cv:
+    default:
         break;
     }
 

@@ -43,7 +43,7 @@ struct audiodriver
     enum {
         // increase this if you get problems
         MAX_FRAMESIZE = 16384,
-        MAX_CHANNELS = 64
+        MAX_CHANNELS = 128
     };
 
     audioworker *worker;

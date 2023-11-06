@@ -857,7 +857,10 @@ void player::plugin_delete_input(int to_id, int from_id, connection_type type) {
     case zzub::connection_type_event:
         undo->bindings = ((event_connection*)conn)->bindings;
         break;
+    case zzub::connection_type_cv:
+        break;
     }
+    
     prepare_operation_redo(redo);
     prepare_operation_undo(undo);
 
@@ -908,6 +911,15 @@ void player::plugin_add_event_connection_binding(int to_id, int from_id, int sou
     end_plugin_operation(from_id);
     end_plugin_operation(to_id);
 }
+
+void player::plugin_add_cv_binding(int to_id, int from_id, int sourceparam, int targetparam) {
+    plugin_add_cv_binding(to_id, from_id, zzub_parameter_group_global, 0, sourceparam, zzub_parameter_group_global, 0, targetparam);
+}
+
+void player::plugin_add_cv_binding(int to_id, int from_id, int sourcegroup, int sourcetrack, int sourceparam, int targetgroup, int targettrack, int targetparam) {
+    // auto plugin_get_input_connection_index()
+}
+
 
 void player::plugin_remove_event_connection_binding(int to_id, int from_id, int index) {
     assert(false);

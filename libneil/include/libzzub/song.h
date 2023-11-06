@@ -275,6 +275,10 @@ struct song {
 
 };
 
+struct ConnectionBuffer {
+    // float *
+};
+
 
 struct mixer : song {
     bool is_recording_parameters;
