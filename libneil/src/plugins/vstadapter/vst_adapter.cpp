@@ -397,7 +397,7 @@ vst_adapter::process_events() {
 
 void 
 vst_adapter::add_note_on(uint8_t note, uint8_t volume) {
-    LOG_BEAT("vst_adapter add_note_on", _master_info, sample_pos);
+    // LOG_BEAT("vst_adapter add_note_on" + zzub::tools::describe_zzub_note(note), _master_info, sample_pos);
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_note_on(note, volume));
@@ -405,7 +405,7 @@ vst_adapter::add_note_on(uint8_t note, uint8_t volume) {
 
 void 
 vst_adapter::add_note_off(uint8_t note) {
-    LOG_BEAT("vst_adapter add_note_off", _master_info, sample_pos);
+    // LOG_BEAT("vst_adapter add_note_off " + zzub::tools::describe_zzub_note(note), _master_info, sample_pos);
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.insert(midi_events.begin(), midi_note_off(note));
@@ -414,7 +414,7 @@ vst_adapter::add_note_off(uint8_t note) {
 
 void 
 vst_adapter::add_aftertouch(uint8_t note, uint8_t volume) {
-    LOG_BEAT("vst_adapter add_aftertouch", _master_info, sample_pos);
+    // LOG_BEAT("vst_adapter add_aftertouch", _master_info, sample_pos);
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_note_aftertouch(note, volume));
@@ -423,7 +423,7 @@ vst_adapter::add_aftertouch(uint8_t note, uint8_t volume) {
 
 void 
 vst_adapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
-    LOG_BEAT("vst_adapter add_midi_command", _master_info, sample_pos);
+    // LOG_BEAT("vst_adapter add_midi_command", _master_info, sample_pos);
 
     if (midi_events.size() < MAX_EVENTS)
         midi_events.push_back(midi_message(cmd, data1, data2));
@@ -444,7 +444,6 @@ vst_adapter::process_stereo(float** pin, float** pout, int numsamples, int mode)
         midi_track_manager.process_samples(numsamples, mode);
 
         if (midi_events.size() > 0) {
-            printf("vst_adapter has midi events\n");
             vst_events->numEvents = midi_events.size();
             memcpy(&vst_events->events[0], &midi_events[0], vst_events->numEvents * sizeof(VstMidiEvent*));
             dispatch(plugin, effProcessEvents, 0, 0, vst_events, 0.f);
