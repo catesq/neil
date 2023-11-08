@@ -24,8 +24,6 @@ struct connection {
     virtual bool work(zzub::song& player, const connection_descriptor& conn, int sample_count) = 0;
 
     // cast to the correct subtype - was quickest way to give python access to the right subtypes of connection 
-    virtual event_connection* as_event_connection() { return nullptr; }
-    virtual cv_connection* as_cv_connection() { return nullptr; }
     connection_type get_type() const { return type; }
 
 protected:
@@ -87,7 +85,6 @@ struct event_connection : connection {
     event_connection();
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
     virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count);
-    virtual event_connection* as_event_connection() { return this; }
 
     int get_binding_count() const { return bindings.size(); }
 
@@ -102,18 +99,37 @@ struct event_connection : connection {
     // const zzub::parameter *getParam(struct metaplugin *mp, int group, int index);
 };
 
-struct cv_port_link {
-    // the only valid group_indexes are zzub_parameter_group_global and zzub_parameter_group_track
-    int source_group_index;
-    
-    // any track index for zzub_parameter_group_track. it is always 0 for zzub_parameter_group_global
-    int source_track_index;
-    
-    int source_param_index;
 
-    int target_group_index;
-    int target_track_index;
-    int target_param_index;
+namespace connections {
+    // channel is either left or right channel of a plugin
+    // the input/output is determined by if it's the souce or target link
+    struct audio_link {
+        int channel;
+    };
+
+    struct global_param_link {
+        int param;
+    };
+
+    struct track_param_link {
+        int track;
+        int param;
+    };
+
+    struct link {
+        zzub_parameter_group type;
+        union {
+            audio_link audio;
+            global_param_link global;
+            track_param_link track;
+        };
+    };
+};
+
+
+struct cv_port_link {
+    connections::link source;
+    connections::link target;
 
     float buffer[zzub_buffer_size];
 };
@@ -127,11 +143,11 @@ struct cv_connection : connection {
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
     virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count);
 
-    virtual cv_connection* as_cv_connection() { return this; }
+    virtual void add_port_link(const cv_port_link& link) { port_links.push_back(link); }
 };
 
-struct midi_connection : connection {
 
+struct midi_connection : connection {
     int device;
     std::string device_name;
 

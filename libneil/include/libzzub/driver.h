@@ -62,7 +62,7 @@ struct audiodriver
         buffersize = 512;
         master_channel = 0;
     }
-    virtual ~audiodriver() {}
+    virtual ~audiodriver() noexcept(false) {} 
     virtual void initialize(audioworker *worker) = 0;
     virtual bool enable(bool e) = 0;
 

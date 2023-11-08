@@ -1191,7 +1191,7 @@ zzub_connection_t* zzub_plugin_get_output_connection(zzub_plugin_t *plugin, int 
     flags.copy_plugins = true;
     plugin->_player->merge_backbuffer_flags(flags);
 
-    zzub_connection_t* conn = plugin->_player->back.plugin_get_output_connection(plugin->id, index);
+    return plugin->_player->back.plugin_get_output_connection(plugin->id, index);
 }
 
 
@@ -1234,6 +1234,40 @@ zzub_plugin_t* zzub_plugin_get_output_connection_plugin(zzub_plugin_t *plugin, i
 
     int id = plugin->_player->back.plugin_get_output_connection_plugin(plugin->id, index);
     return plugin->_player->back.plugins[id]->proxy;
+}
+
+int zzub_event_connection_binding_get_group(zzub_event_connection_binding_t* binding) {
+    return binding->target_group_index;
+}
+
+int zzub_event_connection_get_binding_count(zzub_event_connection_t* conn) {
+    return conn->bindings.size();
+}
+
+
+zzub_event_connection_t* zzub_connection_as_event_connection(zzub_connection_t* conn) {
+    return conn->type == zzub::connection_type_event ? (zzub_event_connection_t*) conn : nullptr;
+}
+
+zzub_cv_connection_t* zzub_connection_as_cv_connection(zzub_connection_t* conn) {
+    return conn->type == zzub::connection_type_cv ? (zzub_cv_connection_t*) conn : nullptr;
+}
+
+zzub_event_connection_binding_t* zzub_event_connection_get_binding(zzub_event_connection_t* conn, int index) {
+    return &conn->bindings[index];
+}
+
+int zzub_connection_get_type(zzub_connection_t* conn) {
+    return conn->type;
+}
+
+
+int zzub_cv_connection_get_type(zzub_cv_connection_t* conn) {
+    return conn->type;
+}
+
+int zzub_event_connection_get_type(zzub_event_connection_t* conn) {
+    return conn->type;
 }
 
 int zzub_connection_get_parameter_count(zzub_player_t *player, int plugin, int from_plugin) {
