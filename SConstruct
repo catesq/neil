@@ -43,8 +43,8 @@ def bool_converter(value):
         return False
     return bool(value)
 
-
-opts = Variables('options.conf', ARGUMENTS )
+opts_file = os.path.join(os.getcwd(), 'build', 'options.conf')
+opts = Variables(opts_file, ARGUMENTS )
 opts.Add("PREFIX", 'Set the install "prefix" ( /path/to/PREFIX )', "/usr/local")
 opts.Add("DESTDIR", 'Set the root directory to install into ( /path/to/DESTDIR )', "")
 opts.Add("ETCDIR", 'Set the configuration dir "prefix" ( /path/to/ETC )', "/etc")
@@ -111,7 +111,7 @@ CONFIG_PATHS = dict(
 # save config
 ######################################
 
-opts.Save('options.conf', env)
+opts.Save(opts_file, env)
 Help( opts.GenerateHelpText( env ) )
 
 ######################################
