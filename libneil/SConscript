@@ -606,6 +606,9 @@ def build_signature(target, source, env):
 builders = dict(
     Signature = Builder(action = build_signature),
     ZIDLCHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --c-header $TARGET $SOURCE'),
+    ZIDLApiHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --api-header $TARGET $SOURCE'),
+    ZIDLDataHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --data-header $TARGET $SOURCE'),
+
     ZIDLCDef = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --c-def $TARGET $SOURCE'),
     ZIDLPyCtypes = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --libversion $LIBZZUB_VERSION --py-ctypes $TARGET $SOURCE'),
 )
@@ -617,8 +620,15 @@ env['BUILDERS'].update(builders)
 # zidl
 #
 #######################################
+
+import glob
+for header in glob.glob('${BUILD_PATH}/libneil/include/zzub/*.h'):
+    env.Precious(header)
+
 output = []
 output.append(env.ZIDLCHeader('${BUILD_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLApiHeader('${BUILD_PATH}/libneil/include/zzub/zzub_api.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLDataHeader('${BUILD_PATH}/libneil/include/zzub/zzub_data.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
 output.append(env.ZIDLCDef('${BUILD_PATH}/libneil/pyzzub/libzzub.def', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
 output.append(env.ZIDLPyCtypes('${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__.py', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
 
