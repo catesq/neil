@@ -621,10 +621,6 @@ env['BUILDERS'].update(builders)
 #
 #######################################
 
-import glob
-for header in glob.glob('${BUILD_PATH}/libneil/include/zzub/*.h'):
-    env.Precious(header)
-
 output = []
 output.append(env.ZIDLCHeader('${BUILD_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
 output.append(env.ZIDLApiHeader('${BUILD_PATH}/libneil/include/zzub/zzub_api.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
@@ -657,7 +653,7 @@ Export(
 
 # generate signature
 env.Signature(target='include/zzub/signature.h', source=options_conf_file)
-# env.Signature(target='${BUILD_PATH}/libneil/include/zzub/signature.h', source='options.conf')
+
 
 env.SConscript('${LANTERNFISH_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/lanternfish', duplicate=0)
 env.SConscript('${KISSFFT_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/kiss_fft', duplicate=0)
@@ -670,15 +666,6 @@ env.SConscript('${PYZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libne
 # Rest
 #
 #######################################
-
-# install zzub plugin and type headers
-# iterate all headers in '${BUILD_PATH}/libneil/include/zzub' and install them
-
 import glob
 for header in glob.glob('${BUILD_PATH}/libneil/include/zzub/*.h'):
     install(includepath+'/zzub', header)
-    
-# install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/plugin.h')
-# # install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/types.h')
-# install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/zzub.h')
-# install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/signature.h')
