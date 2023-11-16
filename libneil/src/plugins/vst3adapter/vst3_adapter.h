@@ -51,7 +51,7 @@ struct WindowResizer: Steinberg::IPlugFrame {
     }
 
     virtual Steinberg::tresult PLUGIN_API queryInterface(const Steinberg::TUID iid, void** obj) { 
-        if (iid == Steinberg::FUnknown::iid || iid == Steinberg::IPlugFrame::iid) 
+        if (iid == Steinberg::FUnknown::iid.toTUID() || iid == Steinberg::IPlugFrame::iid.toTUID()) 
             return Steinberg::kResultOk; 
         else
             return Steinberg::kNoInterface;
