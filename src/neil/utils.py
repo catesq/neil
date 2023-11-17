@@ -21,7 +21,7 @@ Provides utility functions needed all over the place,
 which have no specific module or class they belong to.
 """
 
-import sys, math, os, zzub, imp, time
+import sys, math, os, zzub, time
 from string import ascii_letters, digits
 import struct
 
@@ -137,8 +137,8 @@ def is_frozen():
     @rtype: bool
     """
     return (hasattr(sys, "frozen") or # new py2exe
-            hasattr(sys, "importers") # old py2exe
-            or imp.is_frozen("__main__")) # tools/freeze
+            hasattr(sys, "importers")) # old py2exe
+            # or imp.is_frozen("__main__")) # tools/freeze
 
 
 def get_root_folder_path():
