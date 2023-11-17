@@ -22,5 +22,5 @@ Import('main_env', 'install', 'install_recursive')
 import glob
 
 #install('${ETC_PATH}', 'neil.cfg', 0644)
-main_env.BuildPathConfig('${ETC_PATH}/path.cfg', ['${SRC_PATH}/options.conf', '${SRC_PATH}/SConstruct'])
+main_env.BuildPathConfig('${ETC_PATH}/path.cfg', ['${BUILD_PATH}/options.conf', '${SRC_PATH}/SConstruct'])
 
