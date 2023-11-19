@@ -141,6 +141,14 @@ struct op_plugin_remove_event_connection_binding : operation {
     virtual void finish(zzub::song& song, bool send_events);
 };
 
+struct op_plugin_add_cv_port_link : operation {
+    
+};
+
+struct op_plugin_remove_cv_port_link : operation {
+
+};
+
 struct op_plugin_replace : operation {
     int id;
     metaplugin plugin;

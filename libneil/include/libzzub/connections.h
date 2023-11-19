@@ -103,6 +103,11 @@ struct event_connection : connection {
 namespace connections {
     // channel is either left or right channel of a plugin
     // the input/output is determined by if it's the souce or target link
+    enum link_type {
+        audio = 0, 
+        parameter = 1
+    };
+
     struct audio_link {
         int channel;
     };
@@ -111,17 +116,11 @@ namespace connections {
         int param;
     };
 
-    struct track_param_link {
-        int track;
-        int param;
-    };
-
     struct link {
         zzub_parameter_group type;
         union {
             audio_link audio;
             global_param_link global;
-            track_param_link track;
         };
     };
 };
