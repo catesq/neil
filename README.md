@@ -10,7 +10,7 @@ It's linux only atm.
 
 The build is slow and messy, fixing it is in the top ten todo. Proper sidechain support, better automation, CV connections, are nearer the top.  
 
-git clone --recursive https://github.com/catesq
+git clone --recursive https://github.com/catesq/neil
 
 Put the vst2 sdk in libneil/src/plugins/vstadapter/VST_SDK_2.4
 
