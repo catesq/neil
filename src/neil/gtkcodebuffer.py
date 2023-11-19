@@ -23,11 +23,11 @@
 
 from gi.repository import Gtk
 from gi.repository import Pango
+from .utils import get_root_folder_path
 import re
 import sys
 import os.path
 import xml.sax
-import imp
 from xml.sax.handler import ContentHandler
 from xml.sax.saxutils import unescape
 
@@ -58,22 +58,9 @@ DEFAULT_STYLES = {
 
 
 
-def _main_is_frozen():
-    """ Internal used function. """
-    return (hasattr(sys, "frozen") or # new py2exe
-            hasattr(sys, "importers") # old py2exe
-            or imp.is_frozen("__main__")) # tools/freeze
-
-
-if _main_is_frozen():
-    this_module_path = os.path.dirname(sys.executable)
-else:
-    this_module_path = os.path.abspath(os.path.dirname(__file__))
-
-
 # defines default-search paths for syntax-files
 SYNTAX_PATH = [ os.path.join('.', 'syntax'),
-                this_module_path,
+                get_root_folder_path(),
                 os.path.join(os.path.expanduser('~'),".pygtkcodebuffer"),
                 os.path.join(sys.prefix,"share","pygtkcodebuffer","syntax")]
 

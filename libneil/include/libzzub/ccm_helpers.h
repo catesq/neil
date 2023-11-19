@@ -1,6 +1,6 @@
 #pragma once
 
-#include "minizip-ng/mz_compat.h"
+#include "minizip/mz_compat.h"
 
 #include <string>
 #include "zzub/consts.h"

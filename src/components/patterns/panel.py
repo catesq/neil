@@ -5,7 +5,7 @@ from gi.repository import Gtk
 from .toolbar import PatternToolBar
 from .page import NeilNotebookPage
 from .views import PatternView
-from .statusbar import PatternStatusBar
+from .patternstatus import PatternStatus
 
 import neil.common as common
 import neil.com as com

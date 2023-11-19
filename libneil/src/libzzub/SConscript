@@ -71,7 +71,7 @@ localenv.Append(
         localenv['LIB_DL'],
         localenv['LIB_COMPAT'],
         'pugixml',
-        'minizip-ng',
+        'minizip',
         'ssl',
         'pthread',
         'm',
@@ -81,7 +81,6 @@ localenv.Append(
     CCFLAGS=[
         '-D_LIB', 
         '-D_LIBZZUB',
-        # '-I${BUILD_PATH}/include/'
     ]
 )
 

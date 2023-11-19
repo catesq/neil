@@ -45,9 +45,7 @@ def build_plugin(localenv, libname, files, helpfiles=None, deffile='zzub_plugin.
         install_plugin_help(libname, [filename for filename in helpfiles])
     return plugin
 
-
 Export('build_plugin')
-
 
 for plugin_name in [str(file) for file in env.Glob("*") if str(file) != "SConscript"]:
     plugin_dir = os.path.join(plugins_path, plugin_name)

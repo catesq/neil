@@ -10,7 +10,6 @@
 #include "loguru.hpp"
 
 
-#define MAX_TRACKS 16
 #define MAX_EVENTS 256
 
 #pragma pack(1)

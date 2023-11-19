@@ -51,10 +51,10 @@ class ExecNotFound:
 
 class SubModuleNotFound:
     def __init__(self, name, url):
-        self.name = prog
+        self.name = name
         self.url = url
     def __str__(self):
-        return "error: missing git submodule for %s (%s). try 'git submodule --init --update' in the root dir" % (self.prog, self.url)
+        return "error: missing git submodule for %s (%s). try 'git submodule --init --update' in the root dir" % (self.name, self.url)
 
 class PkgVersionErr:
     def __init__(self, lib, version):
@@ -162,13 +162,15 @@ else:
     #gcc = True
     #clang = False
 
-env['CC'] = ' clang'
-env['CXX'] = ' clang++'
+# env['CC'] = ' clang'
+# env['CXX'] = ' clang++'
 gcc = True
 
 if gcc:
     #env['CXXFLAGS'] += ['--no-rtti']
     env['CXXFLAGS'] += ['-std=c++20']
+    # env.Append(CCFLAGS=[ '-I/usr/include' ])
+    # env.Append(CXXLAGS=[ '-I/usr/include' ])
     if env['DEBUG'] == False:
         env.Append(CCFLAGS=[
                 '-Wall',
@@ -315,7 +317,7 @@ env['PYZZUB_SRC_PATH'] = '${SRC_PATH}/libneil/src/pyzzub'
 env['LANTERNFISH_SRC_PATH'] = '${SRC_PATH}/libneil/src/lanternfish'
 env['KISSFFT_SRC_PATH'] = '${SRC_PATH}/libneil/src/kiss_fft'
 
-## no way to externally alter the DEBUG_POSTFIX setting in loguru
+## no way to externally alter the DEBUG_POSTFIX setting in loguru from scons 
 env['LOGGER_LIB_NAME'] = 'logurud' if env['DEBUG'] else 'loguru'
 
 env['LOGGER_SRC_PATH'] = env['SRC_PATH'] + '/libneil/src/loguru'
@@ -424,42 +426,48 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     lib_errors = []
 
     if not conf.CheckCXXHeader('loguru.cpp'):
-        lib_errors += SubModuleNotFound('loguru', 'https://github.com/martinmoene/clue')
+        lib_errors.append(SubModuleNotFound('loguru', 'https://github.com/martinmoene/clue'))
 
     if not conf.CheckCHeader('zlib.h'):
-        lib_errors += LibraryNotFound("zlib")
+        lib_errors.append(LibraryNotFound("zlib"))
 
     if not conf.CheckCHeader('sndfile.h'):
-        lib_errors += LibraryNotFound("libsndfile")
+        lib_errors.append(LibraryNotFound("libsndfile"))
 
     if not conf.CheckCHeader('samplerate.h'):
-        lib_errors += LibraryNotFound("libsamplerate (libsrc)")
+        lib_errors.append(LibraryNotFound("libsamplerate (libsrc)"))
 
     if not conf.CheckCHeader('fftw3.h'):
-        lib_errors += LibraryNotFound("libfftw3")
+        lib_errors.append(LibraryNotFound("libfftw3"))
 
     if not conf.CheckCHeader('mad.h'):
-        lib_errors += LibraryNotFound("libmad")
+        lib_errors.append(LibraryNotFound("libmad"))
 
     if not conf.CheckCHeader('mpg123.h'):
-        lib_errors += LibraryNotFound("libmpg123")
+        lib_errors.append(LibraryNotFound("libmpg123"))
 
     if not conf.CheckCXXHeader('boost/graph/adjacency_list.hpp'):
-        lib_errors += LibraryNotFound("libboost-graph")
+        lib_errors.append(LibraryNotFound("libboost-graph"))
         
     if not conf.CheckCXXHeader('pugixml.hpp'):
-        lib_errors += LibraryNotFound("libpugixml")
+        lib_errors.append(LibraryNotFound("libpugixml"))
 
     if not conf.CheckCHeader('FLAC/all.h'):
-        lib_errors += LibraryNotFound("libflac")
+        lib_errors.append(LibraryNotFound("libflac"))
     
     if not conf.CheckCHeader('portaudio.h'):
-        lib_errors += LibraryNotFound("portaudio")
+        lib_errors.append(LibraryNotFound("portaudio"))
         
     if not conf.CheckCHeader('mad.h'):
         env['MAD'] = False
     else:
         env['MAD'] = True
+
+
+    if posix: # vst3 headers 
+        if not conf.CheckCHeader('X11/Xlib.h'):
+            lib_errors.append(LibraryNotFound("Xlib.h"))
+
         
     if conf.CheckCHeader('ladspa.h'):
         env['LADSPA'] = True
@@ -473,10 +481,10 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     missing_lv2 = []
     for pkg, header in (('lilv-0', 'lilv-0/lilv/lilv.h'), ('lv2', 'lv2.h'), ('suil-0', 'suil-0/suil/suil.h')):
         if not conf.CheckCHeader(header):
-            missing_lv2 += pkg
+            missing_lv2.append(pkg)
     
     if missing_lv2:
-        lib_errors += "To build LV2 plugins, install: " + missing_lv2.join()
+        lib_errors.append("To build LV2 plugins, install: " + " ".join(missing_lv2))
     else:
         env['LV2'] = True
 
@@ -493,17 +501,17 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         env['GTK3'] = False
 
     if not conf.CheckPKGConfig('0.15.0'):
-        lib_errors += PkgVersionErr("pkh-config", "0.15.0")
+        lib_errors.append(PkgVersionErr("pkg-config", "0.15.0"))
 
     if not conf.CheckPKGVersion('portaudio-2.0', '19'):
-        lib_errors += PkgVersionErr("portaudio-2.0", "19")
+        lib_errors.append(PkgVersionErr("portaudio-2.0", "19"))
 
     if not conf.HasExecutable('xmlto'):
-        lib_errors += ExecNotFound("xmlto")
+        lib_errors.append(ExecNotFound("xmlto"))
 
     if lib_errors:
         print("Could not build, dependency problems:")
-        print("\n".join(lib_errors))
+        print("\n".join((str(err) for err in lib_errors)))
         sys.exit(1)
 
     print("Finished configuration.")
@@ -598,6 +606,9 @@ def build_signature(target, source, env):
 builders = dict(
     Signature = Builder(action = build_signature),
     ZIDLCHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --c-header $TARGET $SOURCE'),
+    ZIDLApiHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --api-header $TARGET $SOURCE'),
+    ZIDLDataHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --data-header $TARGET $SOURCE'),
+
     ZIDLCDef = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --c-def $TARGET $SOURCE'),
     ZIDLPyCtypes = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --libversion $LIBZZUB_VERSION --py-ctypes $TARGET $SOURCE'),
 )
@@ -609,8 +620,11 @@ env['BUILDERS'].update(builders)
 # zidl
 #
 #######################################
+
 output = []
 output.append(env.ZIDLCHeader('${BUILD_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLApiHeader('${BUILD_PATH}/libneil/include/zzub/zzub_api.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLDataHeader('${BUILD_PATH}/libneil/include/zzub/zzub_data.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
 output.append(env.ZIDLCDef('${BUILD_PATH}/libneil/pyzzub/libzzub.def', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
 output.append(env.ZIDLPyCtypes('${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__.py', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
 
@@ -639,7 +653,7 @@ Export(
 
 # generate signature
 env.Signature(target='include/zzub/signature.h', source=options_conf_file)
-# env.Signature(target='${BUILD_PATH}/libneil/include/zzub/signature.h', source='options.conf')
+
 
 env.SConscript('${LANTERNFISH_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/lanternfish', duplicate=0)
 env.SConscript('${KISSFFT_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/kiss_fft', duplicate=0)
@@ -652,15 +666,6 @@ env.SConscript('${PYZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libne
 # Rest
 #
 #######################################
-
-# install zzub plugin and type headers
-# iterate all headers in '${BUILD_PATH}/libneil/include/zzub' and install them
-
 import glob
 for header in glob.glob('${BUILD_PATH}/libneil/include/zzub/*.h'):
     install(includepath+'/zzub', header)
-    
-# install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/plugin.h')
-# # install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/types.h')
-# install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/zzub.h')
-# install(includepath+'/zzub', '${BUILD_PATH}/libneil/include/zzub/signature.h')
