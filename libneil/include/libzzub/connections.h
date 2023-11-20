@@ -95,6 +95,22 @@ struct event_connection : connection {
             return &bindings[index]; 
     }
 
+    void remove_binding(event_connection_binding* binding) {
+        auto it = bindings.begin();
+        while(it != bindings.end()) {
+            if(
+                it->get_group() == binding->get_group() &&
+                it->get_track() == binding->get_track() &&
+                it->get_param() == binding->get_param() &&
+                it->get_source_param() == binding->get_source_param()
+            ) {
+                it = bindings.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
     int convert(int value, const zzub::parameter *oldparam, const zzub::parameter *newparam);
     // const zzub::parameter *getParam(struct metaplugin *mp, int group, int index);
 };
@@ -104,23 +120,24 @@ namespace connections {
     // channel is either left or right channel of a plugin
     // the input/output is determined by if it's the souce or target link
     enum link_type {
-        audio = 0, 
-        parameter = 1
+        audio_channel = 0, 
+        value_param = 1,
+        stream_param = 2
     };
 
     struct audio_link {
         int channel;
     };
 
-    struct global_param_link {
+    struct param_link {
         int param;
     };
 
     struct link {
-        zzub_parameter_group type;
+        link_type type;
         union {
             audio_link audio;
-            global_param_link global;
+            param_link global;
         };
     };
 };
