@@ -144,8 +144,8 @@ struct op_plugin_remove_event_connection_binding : operation {
 
 struct op_plugin_add_cv_port_link : operation {
     int from_id, to_id;
-    cv_port_link port_link;
-    op_plugin_add_cv_port_link(int to_id, int from_id, cv_port_link port_link);
+    cv_port_link link;
+    op_plugin_add_cv_port_link(int to_id, int from_id, cv_port_link link);
     virtual bool prepare(zzub::song& song);
     virtual bool operate(zzub::song& song);
     virtual void finish(zzub::song& song, bool send_events);
@@ -153,7 +153,8 @@ struct op_plugin_add_cv_port_link : operation {
 
 struct op_plugin_remove_cv_port_link : operation {
     int from_id, to_id;
-    cv_port_link port_link;
+    cv_port_link link;
+    op_plugin_remove_cv_port_link(int to_id, int from_id, cv_port_link link);
     virtual bool prepare(zzub::song& song);
     virtual bool operate(zzub::song& song);
     virtual void finish(zzub::song& song, bool send_events);

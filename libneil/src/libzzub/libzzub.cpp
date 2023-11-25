@@ -264,6 +264,11 @@ void zzub_plugin_add_event_connection_binding(zzub_plugin_t *to_plugin, zzub_plu
     to_plugin->_player->plugin_add_event_connection_binding(to_plugin->id, from_plugin->id, sourceparam, targetgroup, targettrack, targetparam);
 }
 
+void zzub_plugin_add_cv_port_link(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, zzub_cv_port_link_t *port_link) {
+
+    to_plugin->_player->plugin_add_cv_port_link(to_plugin->id, from_plugin->id, (zzub::cv_port_link*) port_link );
+}
+
 const float** zzub_player_work_stereo(zzub_player_t *player, int* numSamples) {
     player->work_stereo(*numSamples);
     static const float* workBuffer[] = { player->work_out_buffer[0], player->work_out_buffer[1] };

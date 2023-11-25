@@ -912,11 +912,7 @@ void player::plugin_add_event_connection_binding(int to_id, int from_id, int sou
     end_plugin_operation(to_id);
 }
 
-void player::plugin_add_cv_binding(int to_id, int from_id, int sourceparam, int targetparam) {
-    plugin_add_cv_binding(to_id, from_id, zzub_parameter_group_global, 0, sourceparam, zzub_parameter_group_global, 0, targetparam);
-}
-
-void player::plugin_add_cv_binding(int to_id, int from_id, int sourcegroup, int sourcetrack, int sourceparam, int targetgroup, int targettrack, int targetparam) {
+void player::plugin_add_cv_port_link(int to_id, int from_id, zzub::cv_port_link *link) {
     // auto plugin_get_input_connection_index()
 }
 

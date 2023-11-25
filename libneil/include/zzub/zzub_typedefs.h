@@ -20,12 +20,14 @@ namespace zzub {
 	struct mem_archive;
 	struct instream;
 	struct outstream;
-	struct cv_port_link;
 	struct connection;
-	struct event_connection_binding ;
 	struct event_connection;
+	struct event_connection_binding ;
 	struct cv_connection;
+	// struct cv_port_link;
 }
+
+struct zzub_cv_port_link;
 
 typedef zzub_flatapi_player zzub_player_t;
 typedef zzub::audiodriver zzub_audiodriver_t;
@@ -35,12 +37,13 @@ typedef const zzub::info zzub_pluginloader_t;
 typedef zzub::pluginlib zzub_plugincollection_t;
 typedef zzub::pattern zzub_pattern_t;
 typedef zzub::sequence_proxy zzub_sequence_t;
-typedef zzub::event_connection_binding zzub_event_connection_binding_t;
+
 typedef zzub::connection zzub_connection_t;
 typedef zzub::cv_connection zzub_cv_connection_t;
+typedef zzub_cv_port_link zzub_cv_port_link_t;
 typedef zzub::event_connection zzub_event_connection_t;
+typedef zzub::event_connection_binding zzub_event_connection_binding_t;
 
-typedef zzub::cv_port_link zzub_cv_port_link_t;
 typedef zzub::wave_proxy zzub_wave_t;
 typedef zzub::wavelevel_proxy zzub_wavelevel_t;
 typedef zzub::parameter zzub_parameter_t;

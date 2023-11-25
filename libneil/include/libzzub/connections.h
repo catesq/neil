@@ -88,8 +88,8 @@ struct event_connection : connection {
 
     int get_binding_count() const { return bindings.size(); }
 
-    event_connection_binding* get_binding(int index) { 
-        if(index < 0 || index >= bindings.size())
+    event_connection_binding* get_binding(unsigned index) { 
+        if(index >= bindings.size())
             return nullptr;
         else
             return &bindings[index]; 
@@ -116,38 +116,39 @@ struct event_connection : connection {
 };
 
 
-namespace connections {
-    // channel is either left or right channel of a plugin
-    // the input/output is determined by if it's the souce or target link
-    enum link_type {
-        audio_channel = 0, 
-        value_param = 1,
-        stream_param = 2
-    };
 
-    struct audio_link {
-        int channel;
-    };
 
-    struct param_link {
-        int param;
-    };
+enum cv_node_type {
+    audio_channel = 0, 
+    value_param = 1,
+    stream_param = 2
+};
 
-    struct link {
-        link_type type;
-        union {
-            audio_link audio;
-            param_link global;
-        };
-    };
+struct cv_node_audio {
+    int channel;
+};
+
+// the index of the parameter in the zzub_plugins globals
+struct cv_node_param {
+    int param;
+};
+
+// when node type is audio:
+//   input/output channel determined by whether it's the souce or target of the cv_node in cv_port_link
+//   channel is 0 or 1 -> the left or right channel
+// when node_type is value or stream:
+//   param is the index of the zzub_parameter in zzub_plugins globals
+struct cv_node {
+    cv_node_type type;
+    // if this is a audio channel it is either 0 or 1, if it's a value or stream param it's the index of a zzub_parameter in the zzub_plugins globals
+    int index;
 };
 
 
-struct cv_port_link {
-    connections::link source;
-    connections::link target;
 
-    float buffer[zzub_buffer_size];
+struct cv_port_link {
+    cv_node source;
+    cv_node target;
 };
 
 

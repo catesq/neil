@@ -400,14 +400,20 @@ namespace zzub:
 	class EventConnectionBinding:
 		def get_group(): int
 
-	class EventConnection:
-		def get_type(): int
-		def get_binding_count(): int
-		def get_binding(int index): EventConnectionBinding
+	class CvNode:
+		member int type
+		member int index
+
+	class CvPortLink:
+		member CvNode source
+		member CvNode target
+
 
 	class CvConnection:
 		def get_type(): int
 
+	class EventConnection:
+		def get_type(): int
 
 	"Connection stuff"
 	class Connection:
@@ -808,6 +814,15 @@ namespace zzub:
 
 		def set_midi_connection_device(Plugin from_plugin, string name): int
 		# 0.3: DEAD # def get_midi_connection_device(int from_plugin): string
+
+		#/*@}*/
+		#/** @name Event connection methods"
+		#/*@{*/
+
+		def add_cv_port_link(Plugin from_plugin, CvPortLink cv_port_link)
+		# 0.3: DEAD # def get_event_connection_binding_count(int from_plugin): int
+		# 0.3: DEAD # zzub_event_connection_binding_t *zzub_plugin_get_event_connection_binding(int from_plugin, int index)
+		# 0.3: DEAD # def remove_event_connection_binding(int from_plugin, int index): int
 
 		#/*@}*/
 		#/** @name Event connection methods"
