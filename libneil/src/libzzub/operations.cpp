@@ -568,22 +568,12 @@ bool op_plugin_connect::prepare(zzub::song& song) {
     case connection_type_event:
         ((event_connection*)conn)->bindings = bindings;
         break;
-<<<<<<< HEAD
-    case connection_type_audio:
-    case connection_type_cv:
-    default:
-        break;
-=======
-<<<<<<< Updated upstream
-=======
     case connection_type_cv:
         ((cv_connection*)conn)->port_links = port_links;
         break;
     case connection_type_audio:
     default:
         break;
->>>>>>> Stashed changes
->>>>>>> master
     }
 
     // reconnect no-undo plugins

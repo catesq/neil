@@ -208,35 +208,18 @@ bool event_connection::work(zzub::song& player, const zzub::connection_descripto
     return true;
 }
 
-<<<<<<< HEAD
-=======
-<<<<<<< Updated upstream
-=======
->>>>>>> master
-
 cv_connection::cv_connection() {
      type = connection_type_cv;
 }
-
 
 void cv_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn) {
 
 }
 
-
 bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
-<<<<<<< HEAD
-
-}
-
-
-=======
     return true;
 }
 
-
->>>>>>> Stashed changes
->>>>>>> master
 midi_connection::midi_connection() {
     type = connection_type_midi;
     connection_values = 0;
