@@ -12,19 +12,19 @@ using std::cerr;
 using std::endl;
 
 namespace zzub {
-struct find_note_column : public std::unary_function<const zzub::parameter*, bool> {
+struct find_note_column {
     bool operator()(const zzub::parameter* param) {
         return param->type == zzub::parameter_type_note;
     }
 };
 
-struct find_wave_column : public std::unary_function<const zzub::parameter*, bool> {
+struct find_wave_column {
     bool operator()(const zzub::parameter* param) {
         return param->flags & zzub::parameter_flag_wavetable_index;
     }
 };
 
-struct find_velocity_column : public std::unary_function<const zzub::parameter*, bool> {
+struct find_velocity_column {
     bool operator()(const zzub::parameter* param) {
         return param->description != 0 && ( (strstr(param->description, "Velocity")) || (strstr(param->description, "Volume")) );
     }
@@ -569,6 +569,15 @@ bool op_plugin_connect::prepare(zzub::song& song) {
     case connection_type_event:
         ((event_connection*)conn)->bindings = bindings;
         break;
+<<<<<<< Updated upstream
+=======
+    case connection_type_cv:
+        ((cv_connection*)conn)->port_links = port_links;
+        break;
+    case connection_type_audio:
+    default:
+        break;
+>>>>>>> Stashed changes
     }
 
     // reconnect no-undo plugins
@@ -761,6 +770,62 @@ bool op_plugin_remove_event_connection_binding::operate(zzub::song& song) {
 
 void op_plugin_remove_event_connection_binding::finish(zzub::song& song, bool send_events) {
 }
+
+// ---------------------------------------------------------------------------
+//
+// op_plugin_add_cv_port_link
+//
+// ---------------------------------------------------------------------------
+
+
+op_plugin_add_cv_port_link::op_plugin_add_cv_port_link(int to_id, int from_id, cv_port_link link) {
+    this->from_id = from_id;
+    this->to_id = to_id;
+    this->link = link;
+}
+
+bool op_plugin_add_cv_port_link::prepare(zzub::song& song) {
+    return true;
+}
+
+bool op_plugin_add_cv_port_link::operate(zzub::song& song) {
+    int conn_index = song.plugin_get_input_connection_index(to_id, from_id, connection_type_cv);
+    assert(conn_index != -1);
+    cv_connection* conn = (cv_connection*)song.plugin_get_input_connection(to_id, conn_index);
+    conn->port_links.push_back(link);
+    return true;
+}
+
+void op_plugin_add_cv_port_link::finish(zzub::song& song, bool send_events) {
+
+}
+
+// ---------------------------------------------------------------------------
+//
+// op_plugin_remove_cv_port_link
+//
+// ---------------------------------------------------------------------------
+
+
+
+op_plugin_remove_cv_port_link::op_plugin_remove_cv_port_link(int to_id, int from_id, cv_port_link link) {
+    this->from_id = from_id;
+    this->to_id = to_id;
+    this->link = link;
+}
+
+bool op_plugin_remove_cv_port_link::prepare(zzub::song& song) {
+
+}
+
+bool op_plugin_remove_cv_port_link::operate(zzub::song& song) {
+
+}
+
+void op_plugin_remove_cv_port_link::finish(zzub::song& song, bool send_events) {
+
+}
+
 
 // ---------------------------------------------------------------------------
 //
@@ -1560,7 +1625,7 @@ bool op_sequencer_create_track::prepare(zzub::song& song) {
     assert(id < song.plugins.size());
     assert(song.plugins[id] != 0);
 
-    zzub::sequencer_track t;
+    zzub::sequencer_track t {};
     t.plugin_id = id;
     t.type = type;
     t.proxy = new sequence_proxy(player, (int)song.sequencer_tracks.size());
@@ -1797,7 +1862,7 @@ op_wavetable_add_wavelevel::op_wavetable_add_wavelevel(zzub::player* _player, in
 
 bool op_wavetable_add_wavelevel::prepare(zzub::song& song) {
     wave_info_ex& w = *song.wavetable.waves[wave];
-    wave_level_ex wl;
+    wave_level_ex wl{};
     wl.proxy = new wavelevel_proxy(player, wave, w.levels.size());
     w.levels.push_back(wl);
     return true;

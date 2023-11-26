@@ -26,6 +26,7 @@ win32 = os.name == 'nt'
 mac = os.name == 'mac'
 
 
+
 ######################################
 #
 # init environment and define options
@@ -43,15 +44,23 @@ def bool_converter(value):
         return False
     return bool(value)
 
-opts_file = os.path.join(os.getcwd(), 'build', 'options.conf')
-opts = Variables(opts_file, ARGUMENTS )
+
+# test if build dir exists
+
+root_build_dir = os.path.join(os.getcwd(), 'build')
+if not os.path.exists(root_build_dir):
+    os.mkdir(root_build_dir)
+
+opts_file = os.path.join(root_build_dir, 'options.conf')
+
+opts = Variables(opts_file, ARGUMENTS)
 opts.Add("PREFIX", 'Set the install "prefix" ( /path/to/PREFIX )', "/usr/local")
 opts.Add("DESTDIR", 'Set the root directory to install into ( /path/to/DESTDIR )', "")
 opts.Add("ETCDIR", 'Set the configuration dir "prefix" ( /path/to/ETC )', "/etc")
 opts.Add("DEBUG", "Compile everything in debug mode if true", False, None, bool_converter)
 
 if posix:
-    opts.Add("COMPILER", "Either clang or gcc", "clang")
+    opts.Add("COMPILER", "Either clang or gcc", "gcc")
 
 env = Environment(ENV = os.environ, options=opts)
 
@@ -76,12 +85,10 @@ def get_settings_dir():
 
 distutils_prefix = "%s%s" % (env['DESTDIR'], env['PREFIX'])
 
-env['SRC_PATH'] = os.getcwd()
-
 is_debug = 'DEBUG' in env and env['DEBUG']
-build_subdir = 'debug' if is_debug else 'release'
 
-env['BUILD_PATH'] = os.path.join(env['SRC_PATH'], 'build', build_subdir)
+env['SRC_PATH'] = os.getcwd()
+env['BUILD_PATH'] = os.path.join(root_build_dir, 'debug' if is_debug else 'release')
 
 env['SITE_PACKAGE_PATH'] = distutils.sysconfig.get_python_lib(prefix=distutils_prefix)
 env['APPLICATIONS_PATH'] = '${DESTDIR}${PREFIX}/share/applications'
@@ -110,7 +117,7 @@ CONFIG_PATHS = dict(
 ######################################
 # save config
 ######################################
-
+print("save ", env['BUILD_PATH'], "to:", opts_file)
 opts.Save(opts_file, env)
 Help( opts.GenerateHelpText( env ) )
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 #include "zzub/consts.h"
 #include <cmath>
@@ -47,13 +48,13 @@ struct wave_level {
 
     int get_bytes_per_sample() const {
         switch (format) {
-            case wave_buffer_type_si16:
+            case zzub_wave_buffer_type_si16:
                 return 2;
-            case wave_buffer_type_si24:
+            case zzub_wave_buffer_type_si24:
                 return 3;
-            case wave_buffer_type_si32:
+            case zzub_wave_buffer_type_si32:
                 return 4;
-            case wave_buffer_type_f32:
+            case zzub_wave_buffer_type_f32:
                 return 4;
             default:
                 assert(false);
@@ -77,7 +78,8 @@ struct wave_level_ex : wave_level {
         legacy_sample_count = 0;
         legacy_loop_start = 0;
         legacy_loop_end = 0;
-        format = wave_buffer_type_si16;
+        root_note = 0;
+        format = zzub_wave_buffer_type_si16;
     }
 };
 
@@ -109,18 +111,18 @@ struct wave_info_ex : wave_info {
     }
 
     bool get_extended() const {
-        return flags&wave_flag_extended?true:false;
+        return flags&zzub_wave_flag_extended?true:false;
     }
 
     bool get_stereo() const {
-        return flags&zzub::wave_flag_stereo?true:false;
+        return flags&zzub_wave_flag_stereo?true:false;
     }
 
     void set_stereo(bool state) {
-        unsigned f = ((unsigned)flags)&(0xFFFFFFFF^zzub::wave_flag_stereo);
+        unsigned f = ((unsigned)flags)&(0xFFFFFFFF^zzub_wave_flag_stereo);
 
         if (state)
-            flags = f|zzub::wave_flag_stereo; else
+            flags = f|zzub_wave_flag_stereo; else
             flags = f;
     }
 
@@ -141,12 +143,12 @@ struct wave_info_ex : wave_info {
         if (!get_extended()) return 16;
 
         switch (l->legacy_sample_ptr[0]) {
-        case zzub::wave_buffer_type_si16:
+        case zzub_wave_buffer_type_si16:
             return 16;
-        case zzub::wave_buffer_type_si24:
+        case zzub_wave_buffer_type_si24:
             return 24;
-        case zzub::wave_buffer_type_f32:
-        case zzub::wave_buffer_type_si32:
+        case zzub_wave_buffer_type_f32:
+        case zzub_wave_buffer_type_si32:
             return 32;
         default:
             //std::cerr << "Unknown extended sample format:" << l->samples[0] << std::endl;
@@ -223,7 +225,7 @@ struct wave_info_ex : wave_info {
 
     void clear();
 
-    bool allocate_level(size_t level, size_t samples, zzub::wave_buffer_type waveFormat, bool stereo);
+    bool allocate_level(size_t level, size_t samples, wave_buffer_type waveFormat, bool stereo);
     bool reallocate_level(size_t level, size_t samples);
     void remove_level(size_t level);
     int get_root_note(size_t level);

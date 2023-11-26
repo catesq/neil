@@ -46,7 +46,7 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info)
     : info(info),
       cache(info->cache),
       midi_track_manager(*this) {
-        
+    printf("try to build plugin\n");
     if (info->zzubTotalDataSize) {
         global_values = malloc(info->zzubTotalDataSize);
         memset(global_values, 0, info->zzubTotalDataSize);
