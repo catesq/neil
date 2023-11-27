@@ -112,6 +112,7 @@ struct player : undo_manager, audioworker, midiworker {
     void plugin_set_midi_connection_device(int to_id, int from_id, std::string name);
     void plugin_add_event_connection_binding(int to_id, int from_id, int sourceparam, int targetgroup, int targettrack, int targetparam);
     void plugin_add_cv_port_link(int to_id, int from_id, zzub::cv_port_link* link);
+    void plugin_remove_cv_port_link(int to_id, int from_id, zzub::cv_port_link* link);
 
     void plugin_remove_event_connection_binding(int to_id, int from_id, int index);
     void plugin_set_stream_source(int plugin_id, std::string data_url);

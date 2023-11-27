@@ -913,9 +913,34 @@ void player::plugin_add_event_connection_binding(int to_id, int from_id, int sou
 }
 
 void player::plugin_add_cv_port_link(int to_id, int from_id, zzub::cv_port_link *link) {
-    // auto plugin_get_input_connection_index()
+    begin_plugin_operation(to_id);
+    begin_plugin_operation(from_id);
+
+    op_plugin_add_cv_port_link* redo = new op_plugin_add_cv_port_link(to_id, from_id, *link);
+    op_plugin_remove_cv_port_link* undo = new op_plugin_remove_cv_port_link(to_id, from_id, *link);
+
+    prepare_operation_redo(redo);
+    prepare_operation_undo(undo);
+
+    end_plugin_operation(from_id);
+    end_plugin_operation(to_id);
 }
 
+void player::plugin_remove_cv_port_link(int to_id, int from_id, zzub::cv_port_link *link) {
+    auto copy_link = *link;
+
+    begin_plugin_operation(to_id);
+    begin_plugin_operation(from_id);
+
+    op_plugin_remove_cv_port_link* redo = new op_plugin_remove_cv_port_link(to_id, from_id, *link);
+    op_plugin_add_cv_port_link* undo = new op_plugin_add_cv_port_link(to_id, from_id, *link);
+
+    prepare_operation_redo(redo);
+    prepare_operation_undo(undo);
+
+    end_plugin_operation(from_id);
+    end_plugin_operation(to_id);
+}
 
 void player::plugin_remove_event_connection_binding(int to_id, int from_id, int index) {
     assert(false);

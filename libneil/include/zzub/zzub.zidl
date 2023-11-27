@@ -820,6 +820,8 @@ namespace zzub:
 		#/*@{*/
 
 		def add_cv_port_link(Plugin from_plugin, CvPortLink cv_port_link)
+		def remove_cv_port_link(Plugin from_plugin, CvPortLink cv_port_link)
+		
 		# 0.3: DEAD # def get_event_connection_binding_count(int from_plugin): int
 		# 0.3: DEAD # zzub_event_connection_binding_t *zzub_plugin_get_event_connection_binding(int from_plugin, int index)
 		# 0.3: DEAD # def remove_event_connection_binding(int from_plugin, int index): int
