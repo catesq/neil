@@ -636,10 +636,9 @@ class RouteView(Gtk.DrawingArea):
         eventbus.active_plugins_changed += self.on_active_plugins_changed
 
         self.last_drop_ts = 0
-        self.connect('drag_motion', self.on_drag_motion)
-        self.connect('drag_drop', self.on_drag_drop)
-        self.connect('drag_data_received', self.on_drag_data_received)
-        self.connect('drag_leave', self.on_drag_leave)
+        self.connect('drag-motion', self.on_drag_motion)
+        self.connect('drag-data-Zreceived', self.on_drag_data_received)
+        self.connect('drag-leave', self.on_drag_leave)
         self.drag_dest_set(Gtk.DestDefaults.ALL, DRAG_TARGETS, Gdk.DragAction.COPY)
 
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
@@ -689,28 +688,17 @@ class RouteView(Gtk.DrawingArea):
         # context.drag_status(context.suggested_action, time)
         return True
 
-    def on_drag_drop(self, widget, context, x, y, time):
-        if context.list_targets():
-            widget.drag_get_data(context, Gdk.Atom.intern('application/x-neil-plugin-uri', False), time)
-            return True
-        return False
-
-
     def on_drag_data_received(self, widget, context, x, y, data, info, time):
-        if time == self.last_drop_ts:
-            print("TODO fix the duoble drop nonsense")
-            return
-
-        self.last_drop_ts = time
         if data.get_format() == 8:
             context.finish(True, True, time)
 
-            player = com.get('neil.core.player')
+            player = com.get_player()
             player.plugin_origin = self.pixel_to_float((x, y))
             uri = str(data.get_data(), "utf-8")
             conn = None
             plugin = None
             pluginloader = player.get_pluginloader_by_name(uri)
+
             if is_effect(pluginloader):
                 conn = self.get_connection_at((x, y))
             if not conn:
