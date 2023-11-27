@@ -32,6 +32,8 @@ using std::pair;
 using std::string;
 using std::vector;
 
+
+
 namespace zzub {
 
 struct connection;
@@ -188,6 +190,10 @@ struct sequencer_track {
     sequence_proxy* proxy;
 };
 
+// used by many methods in song class 
+
+#define ASSERT_PLUGIN(plugin_id) assert(plugin_id >= 0 && plugin_id < plugins.size()); assert(plugins[plugin_id] != 0);
+
 struct song {
     plugin_map graph;
     player_state state;
@@ -225,9 +231,11 @@ struct song {
     int plugin_get_input_connection_plugin(int plugin_id, int index);
     connection_type plugin_get_input_connection_type(int plugin_id, int index);
     connection* plugin_get_input_connection(int plugin_id, int index);
+    connection* plugin_get_input_connection(int plugin_id, int from_id, connection_type type);
     int plugin_get_input_connection_index(int to_id, int from_id, connection_type type);
     int plugin_get_output_connection_count(int to_id);
     connection* plugin_get_output_connection(int plugin_id, int index);
+    connection* plugin_get_output_connection(int plugin_id, int from_id, connection_type type);
     int plugin_get_output_connection_index(int to_id, int from_id, connection_type type);
     int plugin_get_output_connection_plugin(int plugin_id, int index);
     connection_type plugin_get_output_connection_type(int plugin_id, int index);
@@ -272,11 +280,20 @@ struct song {
     virtual void set_state(player_state newstate);
     void plugin_add_input(int to_id, int from_id, connection_type type);
     void plugin_delete_input(int to_id, int from_id, connection_type type);
+private:
+    // the input plugins are stored as out edges and vice versa
+    // this is confusing and i'm not sure why it's done this way 
+    // i see it as the plugin requesting audio from the plugins out edges to collect the plugins audio input
+    // and suspect the out_edge=>input audio and in_edge=>output audio oddity is something to do with how make_work_order functions
+    std::pair<zzub::out_edge_iterator, zzub::out_edge_iterator> get_plugin_input_edges(int plugin_id);
+    std::pair<zzub::in_edge_iterator, zzub::in_edge_iterator> get_plugin_output_edges(int plugin_id);
+    zzub::out_edge_iterator get_plugin_input_edge(int plugin_id, int index);
+    zzub::in_edge_iterator get_plugin_output_edge(int plugin_id, int index);
 
-};
+    std::pair<connection*, int> plugin_get_input_connection_and_index(int plugin_id, int from_id, connection_type type);
+    std::pair<connection*, int> plugin_get_output_connection_and_index(int plugin_id, int from_id, connection_type type);
 
-struct ConnectionBuffer {
-    // float *
+
 };
 
 
