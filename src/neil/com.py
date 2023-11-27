@@ -190,6 +190,8 @@ category = com.category
 get_from_category = com.get_from_category
 clear = com.clear
 
+def get_player():
+    return com.get('neil.core.player')
 
 def get_packages():
     return com.packages

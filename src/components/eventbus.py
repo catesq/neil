@@ -155,7 +155,7 @@ class EventHandlerList:
 
     def print_mapping(self):
         self.filter_dead_references()
-        print(("event [%s]" % self.name), end='\r')
+        print(("event [%s]" % self.name), end='\n')
         for ref,funcname,args in self.handlers:
             if funcname:
                 func = getattr(ref(), funcname)
@@ -164,7 +164,7 @@ class EventHandlerList:
             funcname = func.__name__
             if hasattr(func, '__self__'):
                 funcname = func.__self__.__class__.__name__ + '.' + funcname
-            print((" => %s(%s)" % (funcname,','.join([repr(x) for x in args]))), end='\r')
+            print((" => %s(%s)" % (funcname,','.join([repr(x) for x in args]))), end='\n')
 
 class EventBus:
     __readonly__ = False
@@ -187,7 +187,6 @@ class EventBus:
         self.__dict__[name] = value
 
     def print_mapping(self):
-        print("Eventbus")
         for idstr in sorted(self.handlers):
             handlerlist = getattr(self, idstr)
             handlerlist.print_mapping()
