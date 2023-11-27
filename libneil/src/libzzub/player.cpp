@@ -313,6 +313,7 @@ void player::work_stereo(int sample_count) {
         // handle MIDI input
         if (midiDriver)
             midiDriver->poll();
+
         for (int i = 0; i < work_out_channel_count; i++) {
             front.outputBuffer[i] = &work_out_buffer[i][work_buffer_position];
         }
@@ -323,6 +324,7 @@ void player::work_stereo(int sample_count) {
             else
                 front.inputBuffer[i] = 0;
         }
+
         int chunk_size = front.generate_audio(remaining_samples);
         // the master plugins work_buffer has the final output
         // users can add Audio Output-plugins to send output to channels > 2

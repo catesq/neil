@@ -190,8 +190,7 @@ struct sequencer_track {
     sequence_proxy* proxy;
 };
 
-// used by many methods in song class 
-
+// can only be used in zzub::song methods
 #define ASSERT_PLUGIN(plugin_id) assert(plugin_id >= 0 && plugin_id < plugins.size()); assert(plugins[plugin_id] != 0);
 
 struct song {

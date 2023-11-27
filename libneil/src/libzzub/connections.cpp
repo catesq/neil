@@ -217,6 +217,14 @@ void cv_connection::process_events(zzub::song& player, const zzub::connection_de
 }
 
 bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
+    int to_id = player.get_plugin_id(source(conn, player.graph));
+    int from_id = player.get_plugin_id(target(conn, player.graph));
+    std::cout << " cv_connection::work: " << to_id << " -> " << from_id << std::endl;
+
+    for(auto& it : port_links) {
+        std::cout << "  port_link: " << it.source.type << "." << it.source.index << " -> " << it.target.type << "." << it.target.index << std::endl;
+    }
+
     return true;
 }
 
