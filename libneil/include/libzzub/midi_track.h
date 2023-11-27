@@ -118,7 +118,6 @@ struct midi_note_track {
 
 #pragma pack()
 
-namespace {
     
 // the track_manager keeps a list of these active notes
 struct active_note {
@@ -132,8 +131,6 @@ struct active_note {
     }
 };
 
-
-}  // end private namespace
 
 
 
