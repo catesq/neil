@@ -220,6 +220,28 @@ bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& 
     return true;
 }
 
+void cv_connection::add_port_link(const cv_port_link& link) {
+    // check link not in port_links
+    for(auto& it : port_links) {
+        if(it == link)
+            return;
+    }
+
+    port_links.push_back(link);
+}
+
+
+void cv_connection::remove_port_link(const cv_port_link& link) {
+    auto it = port_links.begin();
+    while(it != port_links.end()) {
+        if(*it == link) {
+            it = port_links.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 midi_connection::midi_connection() {
     type = connection_type_midi;
     connection_values = 0;
@@ -227,6 +249,7 @@ midi_connection::midi_connection() {
 
 void midi_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn) {
 }
+
 
 bool midi_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
     int to_id = player.get_plugin_id(source(conn, player.graph));
@@ -256,3 +279,4 @@ int midi_connection::get_midi_device(zzub::song& player, int plugin_id, std::str
 }
 
 } // namespace zzub
+

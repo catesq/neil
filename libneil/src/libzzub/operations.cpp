@@ -479,7 +479,7 @@ bool op_plugin_connect::prepare(zzub::song& song) {
 
     // check for duplicate connection
     if (song.plugin_get_input_connection_index(to_id, from_id, type) != -1) {
-        cerr << "duplicate connection" << endl;
+        cerr << "duplicate connection: " << song.plugin_get_input_connection_count(to_id) << endl;
         return false;
     }
     // check for existing connection in opposite direction
@@ -754,7 +754,6 @@ bool op_plugin_remove_event_connection_binding::prepare(zzub::song& song) {
 }
 
 bool op_plugin_remove_event_connection_binding::operate(zzub::song& song) {
-
     int conn_index = song.plugin_get_input_connection_index(to_id, from_id, connection_type_event);
     if (conn_index == -1) return true;	// plugin was deleted
     assert(conn_index != -1);
@@ -785,10 +784,10 @@ bool op_plugin_add_cv_port_link::prepare(zzub::song& song) {
 }
 
 bool op_plugin_add_cv_port_link::operate(zzub::song& song) {
-    int conn_index = song.plugin_get_input_connection_index(to_id, from_id, connection_type_cv);
-    assert(conn_index != -1);
-    cv_connection* conn = (cv_connection*)song.plugin_get_input_connection(to_id, conn_index);
-    conn->port_links.push_back(link);
+    if (auto conn = song.plugin_get_input_connection(to_id, from_id, connection_type_cv)) {
+        static_cast<cv_connection*>(conn)->add_port_link(link);
+    }
+
     return true;
 }
 
@@ -810,16 +809,32 @@ op_plugin_remove_cv_port_link::op_plugin_remove_cv_port_link(int to_id, int from
     this->link = link;
 }
 
-bool op_plugin_remove_cv_port_link::prepare(zzub::song& song) {
 
+bool op_plugin_remove_cv_port_link::prepare(zzub::song& song) {
+    return true;
 }
+
 
 bool op_plugin_remove_cv_port_link::operate(zzub::song& song) {
+    int conn_index = song.plugin_get_input_connection_index(to_id, from_id, connection_type_event);
+    if (conn_index == -1) return true;	// plugin was deleted
+    assert(conn_index != -1);
 
+    cv_connection* conn = (cv_connection*)song.plugin_get_input_connection(to_id, conn_index);
+
+    for(auto it = conn->port_links.begin(); it != conn->port_links.end(); ) {
+        if (*it == link) {
+            it = conn->port_links.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    return true;
 }
 
-void op_plugin_remove_cv_port_link::finish(zzub::song& song, bool send_events) {
 
+void op_plugin_remove_cv_port_link::finish(zzub::song& song, bool send_events) {
 }
 
 
