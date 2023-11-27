@@ -142,6 +142,8 @@ struct cv_node {
     cv_node_type type;
     // if this is a audio channel it is either 0 or 1, if it's a value or stream param it's the index of a zzub_parameter in the zzub_plugins globals
     int index;
+
+    bool operator==(const cv_node& other) const { return type == other.type && index == other.index; }
 };
 
 
@@ -149,6 +151,8 @@ struct cv_node {
 struct cv_port_link {
     cv_node source;
     cv_node target;
+
+    bool operator==(const cv_port_link& other) const { return source == other.source && target == other.target; }
 };
 
 
@@ -160,7 +164,8 @@ struct cv_connection : connection {
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
     virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count);
 
-    virtual void add_port_link(const cv_port_link& link) { port_links.push_back(link); }
+    void add_port_link(const cv_port_link& link);
+    void remove_port_link(const cv_port_link& link);
 };
 
 
