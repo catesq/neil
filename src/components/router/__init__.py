@@ -637,7 +637,7 @@ class RouteView(Gtk.DrawingArea):
 
         self.last_drop_ts = 0
         self.connect('drag-motion', self.on_drag_motion)
-        self.connect('drag-data-Zreceived', self.on_drag_data_received)
+        self.connect('drag-data-received', self.on_drag_data_received)
         self.connect('drag-leave', self.on_drag_leave)
         self.drag_dest_set(Gtk.DestDefaults.ALL, DRAG_TARGETS, Gdk.DragAction.COPY)
 
