@@ -71,8 +71,6 @@ class FramePanel(Gtk.Notebook):
             if not hasattr(panel, '__view__'):
                 print(("panel",panel,"misses attribute __view__"))
                 continue
-            panel._notebook = self
-            panel._index = index
             options = panel.__view__
             stockid = options['stockid']
             label = options['label']
@@ -98,27 +96,31 @@ class FramePanel(Gtk.Notebook):
 
         if defaultpanel:
             self.select_viewpanel(defaultpanel)
+        else:
+            self.select_viewpanel(self.pages[0])
 
         self.show_all()
 
     def select_viewpanel(self, panel):
-        if not hasattr(panel, '_index'):
-            return
-        
         prev_index = self.get_current_page()
 
-        if prev_index == panel._index:
+        if prev_index < 0 or prev_index > len(self.pages):
+            return
+
+        if self.pages[prev_index] == panel:
+            return
+        
+        try:
+            next_index = self.pages.index(panel)
+        except ValueError:
             return
         
         self.statusbar.clear_both_sides()
 
-        if prev_index in self.pages and hasattr(self.pages[prev_index], 'remove_focus'):
+        if hasattr(self.pages[prev_index], 'remove_focus'):
             self.pages[prev_index].remove_focus()
 
-        self.set_current_page(panel._index)
-
-        # if hasattr(panel, 'can_hide'):
-            # panel.hide()
+        self.set_current_page(next_index)
 
         if hasattr(panel, 'handle_focus'):
             panel.handle_focus()

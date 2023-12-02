@@ -17,7 +17,7 @@ from neil.utils import \
 
 from .cmp import cmp_view
 
-
+# auto fills the view menu - find any components with a "__neil__" property which have the category "view". Example in "src/components/patterns/panel.py"
 class ViewMenu(Menu):
     __neil__ = dict(
         id = 'neil.core.viewmenu',
