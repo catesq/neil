@@ -257,7 +257,7 @@ class PlayPosPainter():
             ctx.paint()
             self.prev_playpos = False
 
-        if not self.widget.panel.is_current_page():
+        if not self.widget.has_focus():
             return
 
         w, h = self.widget.get_client_size()
@@ -553,17 +553,46 @@ class PatternView(Gtk.DrawingArea):
                                        self.on_popup_delete_track)
         self.accel_map.add_accelerator('<Control>minus',
                                        self.on_popup_delete_track)
-        self.connect('key-press-event', self.accel_map.handle_key_press_event)
-        self.connect("draw", self.on_draw)
-        self.connect('key-press-event', self.on_key_down)
-        self.connect('key-release-event', self.on_key_up)
-        self.connect('button-press-event', self.on_button_down)
-        self.connect('button-release-event', self.on_button_up)
-        self.connect('motion-notify-event', self.on_motion)
-        self.connect('scroll-event', self.on_mousewheel)
-        GLib.timeout_add(100, self.update_position)
+        
+        self.is_connected = False
+        self.updater_id = False
+        self.handler_ids = []
+
+        
         self.hscroll.connect('change-value', self.on_hscroll_window)
         self.vscroll.connect('change-value', self.on_vscroll_window)
+
+        self.pattern_changed()
+
+
+    def handle_focus(self):
+        statusbar = com.get('neil.core.statusbar')
+        statusbar.set_left(self.pattern_status.get_values_widget(), self.pattern_status.get_description_widget())
+        statusbar.set_right(self.pattern_status.get_position_widget(), self.pattern_status.get_selection_widget())
+        self.connect_handlers()
+
+
+    def remove_focus(self):
+        self.disconnect_handlers()
+
+    def is_focused(self):
+        return self.is_connected
+
+    def connect_handlers(self):
+        if self.is_connected:
+            return
+        
+        self.updater_id = GLib.timeout_add(100, self.update_position)
+
+        self.handler_ids.append(self.connect('key-press-event', self.accel_map.handle_key_press_event))
+        self.handler_ids.append(self.connect("draw", self.on_draw))
+        self.handler_ids.append(self.connect('key-press-event', self.on_key_down))
+        self.handler_ids.append(self.connect('key-release-event', self.on_key_up))
+        self.handler_ids.append(self.connect('button-press-event', self.on_button_down))
+        self.handler_ids.append(self.connect('button-release-event', self.on_button_up))
+        self.handler_ids.append(self.connect('motion-notify-event', self.on_motion))
+        self.handler_ids.append(self.connect('scroll-event', self.on_mousewheel))
+
         eventbus = com.get('neil.core.eventbus')
         eventbus.active_patterns_changed += self.on_active_patterns_changed
         eventbus.active_plugins_changed += self.on_active_patterns_changed
@@ -573,7 +602,34 @@ class PatternView(Gtk.DrawingArea):
         eventbus.zzub_pattern_remove_rows += self.on_pattern_remove_rows
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         eventbus.document_loaded += self.update_all
-        self.pattern_changed()
+
+        self.is_connected = True
+
+
+    def disconnect_handlers(self):
+        if not self.is_connected:
+            return
+        
+        if self.updater_id:
+            GLib.source_remove(self.updater_id)
+
+        for handler_id in self.handler_ids:
+            self.disconnect(handler_id)
+
+        eventbus = com.get('neil.core.eventbus')
+        eventbus.active_patterns_changed - self.on_active_patterns_changed
+        eventbus.active_plugins_changed -= self.on_active_patterns_changed
+        eventbus.zzub_pattern_changed - self.on_pattern_changed
+        eventbus.zzub_edit_pattern -= self.on_edit_pattern
+        eventbus.zzub_pattern_insert_rows - self.on_pattern_insert_rows
+        eventbus.zzub_pattern_remove_rows -= self.on_pattern_remove_rows
+        eventbus.zzub_parameter_changed - self.on_zzub_parameter_changed
+        eventbus.document_loaded -= self.update_all
+
+        self.handler_ids = []
+        self.updater_id = False
+        self.is_connected = False
+            
 
     ## each function in updater_listeners is called when a pattern is changed
     def add_update_listener(self, update_func):
@@ -757,8 +813,9 @@ class PatternView(Gtk.DrawingArea):
         """
         Updates the position.
         """
-        if not self.panel.is_current_page():
+        if not self.has_focus():
             return True
+
         player = com.get('neil.core.player')
 
         playpos = player.get_position()
@@ -775,6 +832,7 @@ class PatternView(Gtk.DrawingArea):
         """
         if not m:
             m = self.get_plugin()
+            
         return get_new_pattern_name(m)
 
     def init_values(self):
@@ -991,16 +1049,13 @@ class PatternView(Gtk.DrawingArea):
         if self.is_visible():
             self.pattern_changed()
 
-    def focused(self):
-        statusbar = com.get('neil.core.statusbar')
-        statusbar.set_left(self.pattern_status.get_values_widget(), self.pattern_status.get_description_widget())
-        statusbar.set_right(self.pattern_status.get_position_widget(), self.pattern_status.get_selection_widget())
-
 
     def pattern_changed(self, *args):
         """
         Loads and redraws the pattern view after the pattern has been changed.
         """
+        print("patterns.views.PatternView,pattern_changed()")
+        return
         self.init_values()
         self.show_cursor_left()
         plugin = self.get_plugin()
@@ -1478,6 +1533,7 @@ class PatternView(Gtk.DrawingArea):
         """
         Callback that responds to mouse click in pattern view.
         """
+        print("patterns.views.on_button_down")
         if not self.selection:
             self.selection = self.Selection()
         self.grab_focus()
@@ -2268,13 +2324,14 @@ class PatternView(Gtk.DrawingArea):
 
     def update_all(self):
         if self.is_visible():
+            print("patterns.views.update_all")
             self.prepare_textbuffer()
             self.refresh_view()
 
     def refresh_view(self):
         if not self.plugin:
             return
-        print("refresh view")
+        print("patterns.views.refresh_view")
         self.update_statusbar()
         self.redraw()
         self.adjust_scrollbars()

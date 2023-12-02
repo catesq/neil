@@ -104,9 +104,10 @@ class EventHandlerList:
             handlers = []
         self.handlers = handlers
 
-    def __add__(self, funcargs):
+    def make_func_def_args(self, funcargs):
         func = None
         args = ()
+
         if isinstance(funcargs, (list, tuple)):
             if len(funcargs) >= 2:
                 func,args = funcargs[0],funcargs[1:]
@@ -114,7 +115,12 @@ class EventHandlerList:
                 func = funcargs[0]
         else:
             func = funcargs
+
         assert callable(func), "object %r must be callable." % func
+
+        return func, args
+    
+    def make_ref_funcname(self, func):
         ref = None
         funcname = None
         if hasattr(func, '__self__'):
@@ -122,18 +128,44 @@ class EventHandlerList:
             funcname = func.__name__
         else:
             ref = weakref.ref(func)
-        handler = EventHandlerList(self.name, self.handlers)
-        handler.handlers.append((ref,funcname,args))
-        return handler
+
+        return ref, funcname
+    
+    def define_handler(self, funcargs):
+        func, args = self.make_func_def_args(funcargs)
+        ref, funcname = self.make_ref_funcname(func)
+
+        return ref,funcname,args
+
+
+    def __add__(self, funcargs):
+        ref,funcname,args = self.define_handler(funcargs)
+
+        self.handlers.append((ref,funcname,args))
+        # handler = EventHandlerList(self.name, self.handlers)
+        # handler.handlers.append((ref,funcname,args))
+
+        return self
+    
+
+    def __sub__(self, funcargs):
+        rm_ref, rm_funcname, rm_args = self.define_handler(funcargs)
+
+        self.handlers = [(ref,funcname,args) for ref, funcname, args in self.handlers if ref != rm_ref or funcname != rm_funcname or args != rm_args]
+
+        return self
+
 
     def __len__(self):
         return len(self.handlers)
+
 
     def filter_dead_references(self):
         """
         filter handlers from dead references
         """
         self.handlers = [(ref,funcname,args) for ref,funcname,args in self.handlers if ref()]
+
 
     def __call__(self, *cargs):
         self.filter_dead_references()

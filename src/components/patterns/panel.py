@@ -3,14 +3,13 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 from .toolbar import PatternToolBar
-from .page import NeilNotebookPage
 from .views import PatternView
 from .patternstatus import PatternStatus
 
 import neil.common as common
 import neil.com as com
 
-class PatternPanel(NeilNotebookPage):
+class PatternPanel(Gtk.VBox):
     """
     Panel containing the pattern toolbar and pattern view.
     """
@@ -35,6 +34,7 @@ class PatternPanel(NeilNotebookPage):
         Initialization.
         """
         Gtk.VBox.__init__(self)
+        self.is_focused = False
 
         vscroll = Gtk.VScrollbar()
         hscroll = Gtk.HScrollbar()
@@ -60,6 +60,9 @@ class PatternPanel(NeilNotebookPage):
         framepanel = com.get('neil.core.framepanel')
         framepanel.select_viewpanel(self)
 
+    # def has_focus(self):
+    #     return self.is_focused
+    
     def handle_focus(self):
         player = com.get('neil.core.player')
         # check if active patterns match the pattern view settings
@@ -77,12 +80,17 @@ class PatternPanel(NeilNotebookPage):
             self.view.show_cursor_right()
         except AttributeError:  # no pattern in current machine
             pass
+
+        self.view.handle_focus()
+        self.toolbar.handle_focus()
         self.view.needfocus = True
-        self.view.focused()
         self.view.redraw()
 
+    def remove_focus(self):
+        self.view.remove_focus()
+        self.toolbar.remove_focus()
+
     def update_all(self):
-        
-        if self.is_current_page():
+        if self.self.is_focused:
             self.view.update_font()
             self.view.redraw()
