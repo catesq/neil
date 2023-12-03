@@ -470,7 +470,7 @@ class VolumeSlider(Gtk.Window):
         """
         Initializer.
         """
-        self.parent_window = parent
+        self.parent_widget = parent
         self.plugin = None
         self.index = -1
         Gtk.Window.__init__(self, Gtk.WindowType.POPUP)
@@ -553,6 +553,9 @@ class VolumeSlider(Gtk.Window):
         """
         (mx, my) = xxx_todo_changeme
 
+        self.set_attached_to(self.parent_widget)
+        self.set_transient_for(self.parent_widget.get_toplevel())
+
         self.plugin = mp
         self.index = index
         self.amp = abs((linear2db((self.plugin.get_parameter_value(0, index, 0) / 16384.0), -48.0) / -48.0))
@@ -573,7 +576,7 @@ class VolumeSlider(Gtk.Window):
         @param event: Mouse event.
         @type event: wx.MouseEvent
         """
-        self.parent_window.redraw()
+        self.parent_widget.redraw()
         self.hide()
         self.drawingarea.grab_remove()
 
@@ -626,7 +629,7 @@ class RouteView(Gtk.DrawingArea):
         self.autoconnect_target          = None
         self.chordnotes                  = []
         self.volume_slider               = VolumeSlider(self)
-        self.selections                  = {}                    #slections stored using the remember selction option
+        self.selections                  = {}                    #selections stored using the remember selection option
 
         eventbus                         = com.get('neil.core.eventbus')
         eventbus.zzub_connect           += self.on_zzub_redraw_event
@@ -1313,6 +1316,7 @@ class RouteView(Gtk.DrawingArea):
         cfg = config.get_config()
         rect = self.get_allocation()
         w, h = rect.width, rect.height
+
         arrowcolors = {
                 zzub.zzub_connection_type_audio: [
                         cfg.get_float_color("MV Arrow"),
@@ -1388,8 +1392,6 @@ class RouteView(Gtk.DrawingArea):
             rx, ry = self.connectpos
             linepen = cfg.get_float_color("MV Line")
             draw_line(ctx, linepen, int(crx), int(cry), int(rx), int(ry))
-
-
 
         self.draw_leds(ctx, pango_layout)
 
