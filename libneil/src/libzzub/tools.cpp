@@ -126,43 +126,6 @@ void StereoToMulti::copy(float **src, float **dest, int num_samples) {
 }
 }
 
-
-void AddM2SPan(float* output, float* input, int numSamples, float inAmp, float inPan) {
-    float panR=1.0f, panL=1.0f;
-    if (inPan<1) {
-        panR=inPan;	// when inPan<1, fade out right
-    }
-    if (inPan>1) {
-        panL=2-inPan;	// when inPan>1, fade out left
-    }
-    for (int i=0; i<numSamples; i++) {
-        float L=input[i]*panL * inAmp;
-        float R=input[i]*panR * inAmp;
-
-        output[i*2]+=L;
-        output[i*2+1]+=R;
-
-    }
-}
-
-void AddS2SPan(float* output, float* input, int numSamples, float inAmp, float inPan) {
-    float panR=1.0f, panL=1.0f;
-    if (inPan<1) {
-        panR=inPan;	// when inPan<1, fade out right
-    }
-    if (inPan>1) {
-        panL=2-inPan;	// when inPan>1, fade out left
-    }
-    for (int i=0; i<numSamples; i++) {
-        float L=input[i*2]*panL * inAmp;
-        float R=input[i*2+1]*panR * inAmp;
-
-        output[i*2]+=L;
-        output[i*2+1]+=R;
-
-    }
-}
-
 void AddS2SPanMC(float** output, float** input, int numSamples, float inAmp, float inPan) {
     if (!numSamples)
         return;
