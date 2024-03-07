@@ -5,3 +5,6 @@
 [submodule "libneil/src/loguru"]
 	path = libneil/src/loguru
 	url = https://github.com/emilk/loguru
+[submodule "libneil/src/gist"]
+	path = libneil/src/gist
+	url = https://github.com/adamstark/Gist

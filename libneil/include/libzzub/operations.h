@@ -90,11 +90,13 @@ struct op_plugin_delete : operation {
 
 struct op_plugin_connect : operation {
     int from_id, to_id;
+    bool allow_duplicate;
     std::string from_name;
     zzub::connection_type type;
     std::vector<int> values;
     std::string midi_device;
     std::vector<event_connection_binding> bindings;
+    std::vector<cv_connector> connectors;
 
     op_plugin_connect(int _from_id, int _to_id, zzub::connection_type type);
     virtual bool prepare(zzub::song& song);
@@ -136,6 +138,42 @@ struct op_plugin_remove_event_connection_binding : operation {
     int from_id, to_id;
     int index;
     op_plugin_remove_event_connection_binding(int _to_id, int _from_id, int _index);
+    virtual bool prepare(zzub::song& song);
+    virtual bool operate(zzub::song& song);
+    virtual void finish(zzub::song& song, bool send_events);
+};
+
+struct op_plugin_add_cv_connector : operation {
+    int from_id, to_id;
+    cv_connector connector;
+    op_plugin_connect plugin_connect_op;
+    bool do_plugin_connect = false;
+
+    op_plugin_add_cv_connector(int to_id, int from_id, const cv_connector& connector);
+
+    virtual bool prepare(zzub::song& song);
+    virtual bool operate(zzub::song& song);
+    virtual void finish(zzub::song& song, bool send_events);
+};
+
+struct op_plugin_edit_cv_connector : operation {
+    int to_id, from_id;
+    cv_connector connector;
+    int conn_index;
+
+    op_plugin_edit_cv_connector(int to_id, int from_id, const cv_connector& connector, int conn_index);
+
+    virtual bool prepare(zzub::song& song);
+    virtual bool operate(zzub::song& song);
+    virtual void finish(zzub::song& song, bool send_events);
+};
+
+struct op_plugin_remove_cv_connector : operation {
+    int from_id, to_id;
+    cv_connector connector;
+    op_plugin_disconnect plugin_disconnect_op;
+    bool do_plugin_disconnect = false;
+    op_plugin_remove_cv_connector(int to_id, int from_id, const cv_connector& connector);
     virtual bool prepare(zzub::song& song);
     virtual bool operate(zzub::song& song);
     virtual void finish(zzub::song& song, bool send_events);

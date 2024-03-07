@@ -19,7 +19,6 @@
 VERSION = "0.13"
 
 import os, glob, sys, time
-import distutils.sysconfig
 
 posix = os.name == 'posix'
 win32 = os.name == 'nt'
@@ -83,14 +82,12 @@ def get_settings_dir():
     else:
         return None
 
-distutils_prefix = "%s%s" % (env['DESTDIR'], env['PREFIX'])
-
 is_debug = 'DEBUG' in env and env['DEBUG']
 
 env['SRC_PATH'] = os.getcwd()
 env['BUILD_PATH'] = os.path.join(root_build_dir, 'debug' if is_debug else 'release')
 
-env['SITE_PACKAGE_PATH'] = distutils.sysconfig.get_python_lib(prefix=distutils_prefix)
+env['SITE_PACKAGE_PATH'] = '${DESTDIR}${PREFIX}/lib/python' 
 env['APPLICATIONS_PATH'] = '${DESTDIR}${PREFIX}/share/applications'
 env['BIN_PATH'] = '${DESTDIR}${PREFIX}/bin'
 env['SHARE_PATH'] = '${DESTDIR}${PREFIX}/share/neil'
@@ -133,7 +130,6 @@ SConsEnvironment.Chmod = SCons.Action.ActionFactory(os.chmod, lambda dest, mode:
 def InstallPerm(env, dir, source, perm):
     obj = env.Install(dir, source)
     for i in obj:
-        print(i)
         env.AddPostAction(i, env.Chmod(str(i), perm))
     return dir
 

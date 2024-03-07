@@ -43,7 +43,7 @@ struct audiodriver
     enum {
         // increase this if you get problems
         MAX_FRAMESIZE = 16384,
-        MAX_CHANNELS = 64
+        MAX_CHANNELS = 128
     };
 
     audioworker *worker;
@@ -62,7 +62,7 @@ struct audiodriver
         buffersize = 512;
         master_channel = 0;
     }
-    virtual ~audiodriver() {}
+    virtual ~audiodriver() noexcept(false) {} 
     virtual void initialize(audioworker *worker) = 0;
     virtual bool enable(bool e) = 0;
 

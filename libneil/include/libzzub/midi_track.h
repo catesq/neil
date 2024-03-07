@@ -96,6 +96,12 @@ struct midi_note_len {
     }
 };
 
+
+struct note_track {
+    uint8_t get_note();
+    int get_volume();
+};
+
 struct midi_note_track {
     uint8_t note = zzub_note_value_none;
     uint8_t volume = zzub_volume_value_none;
@@ -119,12 +125,12 @@ struct midi_note_track {
 #pragma pack()
 
     
-// the track_manager keeps a list of these active notes
+// the midi_track_manager holds a list of active notes
 struct active_note {
-    uint16_t note;
-    uint16_t track_num;
-    uint64_t start_at;
-    uint64_t length;
+    uint16_t note;      // zzub::note
+    uint16_t track_num; // plugin track number
+    uint64_t start_at;  // samplepos
+    uint64_t length;    // samples
 
     bool has_ended_at(uint64_t tick) const {
         return tick >= start_at + length;
@@ -197,7 +203,7 @@ private:
 
     uint32_t num_tracks = 0;
 
-    // used a counter to send note length events
+    // samplepos number of samples processed so far
     uint64_t play_pos = 0;
 
     uint32_t sample_rate = zzub_default_rate;

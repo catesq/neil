@@ -20,10 +20,9 @@ class RouterMenu(Menu):
         Menu.__init__(self)
 
         router = com.get("neil.core.router.view")
-        player = com.get("neil.core.player")
+        player = com.get_player()
 
         self.add_submenu("_Add machine", machine_tree_submenu(connection=False))
-
 
         if player.active_plugins or router.selection_count() > 0:
             self.add_separator()

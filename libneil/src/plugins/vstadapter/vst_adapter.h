@@ -20,6 +20,7 @@ extern "C" {
 }
 
 
+
 struct vst_adapter : zzub::plugin, zzub::event_handler, zzub::midi_plugin_interface {
     vst_adapter(const vst_zzub_info* info);
     virtual ~vst_adapter();

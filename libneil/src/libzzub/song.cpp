@@ -25,6 +25,7 @@
 #include <sstream>
 #include "libzzub/timer.h"
 #include "libzzub/dummy.h"
+#include "libzzub/metaplugin.h"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -212,6 +213,7 @@ int song::plugin_get_parameter(int plugin_id, int group, int track, int column) 
     return plugins[plugin_id]->state_last.groups[group][track][column][0];
 }
 
+
 int song::plugin_get_parameter_direct(int plugin_id, int group, int track, int column) {
     assert(plugins[plugin_id] != 0);
     assert(group >= 0 && group < plugins[plugin_id]->state_write.groups.size());
@@ -220,6 +222,7 @@ int song::plugin_get_parameter_direct(int plugin_id, int group, int track, int c
 
     return plugins[plugin_id]->state_write.groups[group][track][column][0];
 }
+
 
 void song::plugin_set_parameter_direct(int plugin_id, int group, int track, int column, int value, bool record) {
     assert(plugins[plugin_id] != 0);
@@ -231,6 +234,7 @@ void song::plugin_set_parameter_direct(int plugin_id, int group, int track, int 
     if (record)
         plugins[plugin_id]->state_automation.groups[group][track][column][0] = value;
 }
+
 
 zzub::info* song::create_dummy_info(int flags, std::string pluginUri, int attributes, int globalValues, int trackValues, parameter* params) {
 
@@ -264,114 +268,176 @@ zzub::info* song::create_dummy_info(int flags, std::string pluginUri, int attrib
     return new_info;
 }
 
-int song::plugin_get_input_connection_count(int to_id) {
-    assert(to_id >= 0 && to_id < plugins.size());
-    assert(plugins[to_id] != 0);
 
-    plugin_descriptor to_plugin = plugins[to_id]->descriptor;
-    zzub::out_edge_iterator out, out_end;
-    boost::tie(out, out_end) = out_edges(to_plugin, graph);
-    return int(out_end - out);
+std::pair<zzub::out_edge_iterator, zzub::out_edge_iterator> song::get_plugin_input_edges(int plugin_id) {
+    ASSERT_PLUGIN(plugin_id);
+
+    return out_edges(plugins[plugin_id]->descriptor, graph);
 }
+
+
+zzub::out_edge_iterator song::get_plugin_input_edge(int plugin_id, int index) {
+    auto [first_edge, last_edge] = get_plugin_input_edges(plugin_id);
+
+    assert(index < (last_edge - first_edge));
+
+    return first_edge + index;
+}
+
+
+std::vector<connection*> song::plugin_get_input_connections(int plugin_id, int from_id) {
+    std::vector<connection*> result;
+
+    auto [first_edge, last_edge] = get_plugin_input_edges(plugin_id);
+
+    for (out_edge_iterator it = first_edge; it != last_edge; ++it) {
+        if (target(*it, graph) == from_id) {
+            result.push_back(graph[*it].conn);
+        }
+    }
+
+    return result;
+}
+
+
+int song::plugin_get_input_connection_count(int to_id) {
+    auto [first_edge, last_edge] = get_plugin_input_edges(to_id);
+
+    return int(last_edge - first_edge);
+}
+
 
 int song::plugin_get_input_connection_plugin(int plugin_id, int index) {
-    assert(plugin_id >= 0 && plugin_id < plugins.size());
-    assert(plugins[plugin_id] != 0);
+    auto edge = get_plugin_input_edge(plugin_id, index);
 
-    plugin_descriptor to_plugin = plugins[plugin_id]->descriptor;
+    plugin_descriptor from_plugin = target(*edge, graph);
 
-    zzub::out_edge_iterator out, out_end;
-    boost::tie(out, out_end) = out_edges(to_plugin, graph);
-    assert(index < (out_end - out));
-
-    plugin_descriptor from_plugin = target(*(out+index), graph);
     return graph[from_plugin].id;
 }
+
 
 connection_type song::plugin_get_input_connection_type(int plugin_id, int index) {
-    connection* conn = plugin_get_input_connection(plugin_id, index);
-    assert(conn);
-    return conn->type;
+    return plugin_get_input_connection(plugin_id, index)->type;
 }
+
 
 connection* song::plugin_get_input_connection(int plugin_id, int index) {
-    assert(plugin_id >= 0 && plugin_id < plugins.size());
-    assert(plugins[plugin_id] != 0);
+    auto [first_edge, last_edge] = get_plugin_input_edges(plugin_id);
 
-    plugin_descriptor to_plugin = plugins[plugin_id]->descriptor;
+    assert(index < (last_edge - first_edge));
 
-    zzub::out_edge_iterator out, out_end;
-    boost::tie(out, out_end) = out_edges(to_plugin, graph);
-    assert(index < (out_end - out));
-
-    edge_props& c = graph[*(out + index)];
-    return c.conn;
+    return graph[*(first_edge + index)].conn;
 }
+
+
+std::pair<connection*, int> song::plugin_get_input_connection_and_index(int plugin_id, int from_id, connection_type type) {
+    ASSERT_PLUGIN(from_id);
+
+    plugin_descriptor from_plugin = plugins[from_id]->descriptor;
+
+    auto [first_edge, last_edge] = get_plugin_input_edges(plugin_id);
+
+    for (out_edge_iterator it = first_edge; it != last_edge; ++it) {
+        if (target(*it, graph) == from_plugin && graph[*it].conn->type == type) 
+            return std::make_pair(graph[*it].conn, (int)(it - first_edge));
+    }
+
+    return std::make_pair(nullptr, -1);
+}
+
 
 int song::plugin_get_input_connection_index(int plugin_id, int from_id, connection_type type) {
-    assert(plugin_id >= 0 && plugin_id < plugins.size());
-    assert(from_id >= 0 && from_id < plugins.size());
-    assert(plugins[plugin_id] != 0);
-    assert(plugins[from_id] != 0);
-
-    plugin_descriptor to_plugin = plugins[plugin_id]->descriptor;
-    plugin_descriptor from_plugin = plugins[from_id]->descriptor;
-    out_edge_iterator out, out_end;
-    boost::tie(out, out_end) = out_edges(to_plugin, graph);
-    for (out_edge_iterator i = out; i != out_end; ++i) {
-        if (target(*i, graph) == from_plugin && graph[*i].conn->type == type) return (int)(i - out);
-    }
-    return -1;
+    return plugin_get_input_connection_and_index(plugin_id, from_id, type).second;
 }
+
+
+connection* song::plugin_get_input_connection(int plugin_id, int from_id, connection_type type) {
+    return plugin_get_input_connection_and_index(plugin_id, from_id, type).first;
+}
+
+
+std::pair<zzub::in_edge_iterator, zzub::in_edge_iterator> song::get_plugin_output_edges(int plugin_id) {
+    ASSERT_PLUGIN(plugin_id);
+
+    return in_edges(plugins[plugin_id]->descriptor, graph);
+}
+
+
+zzub::in_edge_iterator song::get_plugin_output_edge(int plugin_id, int index) {
+    auto [first_edge, last_edge] = get_plugin_output_edges(plugin_id);
+
+    assert(index < (last_edge - first_edge));
+
+    return first_edge + index;
+}
+
 
 int song::plugin_get_output_connection_count(int to_id) {
-    assert(to_id >= 0 && to_id < plugins.size());
-    assert(plugins[to_id] != 0);
+    auto [first_edge, last_edge] = get_plugin_output_edges(to_id);
 
-    plugin_descriptor to_plugin = plugins[to_id]->descriptor;
-    in_edge_iterator out, out_end;
-    boost::tie(out, out_end) = in_edges(to_plugin, graph);
-    return int(out_end - out);
+    return int(last_edge - first_edge);
 }
+
 
 connection* song::plugin_get_output_connection(int plugin_id, int index) {
-    plugin_descriptor to_plugin = plugins[plugin_id]->descriptor;
-
-    in_edge_iterator out, out_end;
-    boost::tie(out, out_end) = in_edges(to_plugin, graph);
-    assert(index < (out_end - out));
-
-    edge_props& c = graph[*(out + index)];
-    return c.conn;
+    auto edge = get_plugin_output_edge(plugin_id, index);
+    
+    return graph[*edge].conn;
 }
+
+
+
+std::pair<connection*, int> song::plugin_get_output_connection_and_index(int plugin_id, int to_id, connection_type type) {
+    ASSERT_PLUGIN(to_id);
+
+    plugin_descriptor to_plugin = plugins[to_id]->descriptor;
+
+    auto [first_edge, last_edge] = get_plugin_output_edges(plugin_id);
+
+    for (in_edge_iterator it = first_edge; it != last_edge; ++it) {
+        if (source(*it, graph) == to_plugin && graph[*it].conn->type == type) 
+            return std::make_pair(graph[*it].conn, (int)(it - first_edge));
+    }
+
+    return std::make_pair(nullptr, -1);
+}
+
 
 int song::plugin_get_output_connection_index(int to_id, int from_id, connection_type type) {
-    plugin_descriptor to_plugin = plugins[to_id]->descriptor;
-    //plugin_descriptor from_plugin = plugins[from_id]->descriptor;
-    in_edge_iterator out, out_end;
-    boost::tie(out, out_end) = in_edges(to_plugin, graph);
-    for (in_edge_iterator i = out; i != out_end; ++i) {
-        if (graph[*i].conn->type == type) return (int)(i - out);
-    }
-    return -1;
+    return plugin_get_output_connection_and_index(to_id, from_id, type).second;
 }
 
+
+connection* song::plugin_get_output_connection(int to_id, int from_id, connection_type type) {
+    return plugin_get_output_connection_and_index(to_id, from_id, type).first;
+}
+
+
 int song::plugin_get_output_connection_plugin(int plugin_id, int index) {
-    plugin_descriptor to_plugin = plugins[plugin_id]->descriptor;
+    auto edge = get_plugin_output_edge(plugin_id, index);
 
-    zzub::in_edge_iterator out, out_end;
-    boost::tie(out, out_end) = in_edges(to_plugin, graph);
-    assert(index < (out_end - out));
+    plugin_descriptor from_plugin = source(*edge, graph);
 
-    plugin_descriptor from_plugin = source(*(out+index), graph);
     return graph[from_plugin].id;
 }
 
+
 connection_type song::plugin_get_output_connection_type(int plugin_id, int index) {
-    connection* conn = plugin_get_output_connection(plugin_id, index);
-    assert(conn != 0);
-    return conn->type;
+    return plugin_get_output_connection(plugin_id, index)->type;
 }
+
+zzub::port* song::plugin_get_port(int plugin_id, int index) {
+    ASSERT_PLUGIN(plugin_id);
+
+    return plugins[plugin_id]->plugin->get_port(index);
+}
+
+int song::plugin_get_port_count(int plugin_id) {
+    ASSERT_PLUGIN(plugin_id);
+
+    return plugins[plugin_id]->plugin->get_port_count();
+}
+
 
 struct feedback_detector : public base_visitor<feedback_detector> {
     struct has_cycle { };
@@ -669,6 +735,7 @@ void song::add_pattern_connection_track(zzub::pattern& pattern, const std::vecto
 
     for (size_t j = 0; j < parameters.size(); j++)
         t[j].resize(pattern.rows);
+
     reset_plugin_parameter_track(t, parameters);
 }
 
@@ -811,6 +878,9 @@ void song::plugin_add_input(int to_id, int from_id, connection_type type) {
     case connection_type_event:
         c.conn = new event_connection();
         break;
+    case connection_type_cv:
+        c.conn = new cv_connection();
+        break;
     }
 
     metaplugin& to_mpl = *plugins[to_id];
@@ -893,10 +963,7 @@ mixer::mixer() {
     mix_buffer.resize(2);
     mix_buffer[0].resize(zzub::buffer_size * 4);
     mix_buffer[1].resize(zzub::buffer_size * 4);
-    for (int i = 0; i < audiodriver::MAX_CHANNELS; i++) {
-        inputBuffer[i] = 0;
-    }
-
+    memset(inputBuffer, 0, sizeof(inputBuffer));
 }
 
 void mixer::set_state(player_state newstate) {
@@ -1239,25 +1306,23 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
 
     memcpy(&mix_buffer[0].front(), &m.work_buffer[0].front(), sample_count * sizeof(float));
     memcpy(&mix_buffer[1].front(), &m.work_buffer[1].front(), sample_count * sizeof(float));
-
     float *plin[] = { &mix_buffer[0].front(), &mix_buffer[1].front() };
     float *plout[] = { &m.work_buffer[0].front(), &m.work_buffer[1].front() };
 
     if (m.is_muted || m.sequencer_state == sequencer_event_type_mute) {
         m.last_work_audio_result = false;
-    } else
-        if (m.is_bypassed || m.sequencer_state == sequencer_event_type_thru) {
-            m.last_work_audio_result = result;
-        } else {
-            SETABRPUN(); // turn on flush-to-zero for SSE machines
-            m.last_work_audio_result = m.plugin->process_stereo(plin, plout, sample_count, flags);
-            // (paniq) flush to zero should be turned off outside our DSP loop
-            // because the player library might be running in a process where
-            // precise computation is expected (i.e. realtime physics simulation).
-            // leaving it on will cause unexpected behavior on code paths
-            // we do not control.
-            SETGRADUN();
-        }
+    } else if (m.is_bypassed || m.sequencer_state == sequencer_event_type_thru) {
+        m.last_work_audio_result = result;
+    } else {
+        SETABRPUN(); // turn on flush-to-zero for SSE machines
+        m.last_work_audio_result = m.plugin->process_stereo(plin, plout, sample_count, flags);
+        // (paniq) flush to zero should be turned off outside our DSP loop
+        // because the player library might be running in a process where
+        // precise computation is expected (i.e. realtime physics simulation).
+        // leaving it on will cause unexpected behavior on code paths
+        // we do not control.
+        SETGRADUN();
+    }
 
     std::copy(m.callbacks->feedback_buffer[0].begin() + sample_count, m.callbacks->feedback_buffer[0].begin() + buffer_size, m.callbacks->feedback_buffer[0].begin());
     std::copy(m.callbacks->feedback_buffer[1].begin() + sample_count, m.callbacks->feedback_buffer[1].begin() + buffer_size, m.callbacks->feedback_buffer[1].begin());

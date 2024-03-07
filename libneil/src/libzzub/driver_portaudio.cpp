@@ -85,7 +85,7 @@ audiodriver_portaudio::audiodriver_portaudio() {
     stream = 0;
 }
 
-audiodriver_portaudio::~audiodriver_portaudio() {
+audiodriver_portaudio::~audiodriver_portaudio() noexcept(false) {
     PaError err;
     err = Pa_Terminate();
     if (err != paNoError) {

@@ -22,7 +22,7 @@
 VERSION = "0.3"
 
 import os, sys, platform
-import distutils.sysconfig
+import ext_modules
 
 posix = os.name == 'posix'
 linux = sys.platform == 'linux'
@@ -62,6 +62,10 @@ class PkgVersionErr:
         self.version = version
     def __str__(self):
         return "error: '%s' version needs to be > %s" % (self.lib, self.version)
+
+
+
+
 
 # def tools_converter(value):
 #     return value.split(',')
@@ -278,8 +282,9 @@ binpath = "${DESTDIR}${PREFIX}/bin"
 libpath = "${DESTDIR}${PREFIX}${LIBDIR}"
 includepath = "${DESTDIR}${PREFIX}/include"
 pluginpath = "${DESTDIR}${PREFIX}${LIBDIR}/zzub"
-pypath = "%s%s" % (env['DESTDIR'], env['PREFIX'])
-pyextpath = distutils.sysconfig.get_python_lib(prefix=pypath)
+
+pyextpath = main_env['SITE_PACKAGE_PATH']
+
 
 def install(target, source, perm=None, symlink=False):
     if not perm:
@@ -311,35 +316,84 @@ def install_plugin(source):
 def install_plugin_help(name, files):
     return install("${DESTDIR}${PREFIX}/share/doc/zzub/plugins/"+name, files, 0o644)
 
-env['LIBZZUB_SRC_PATH'] = '${SRC_PATH}/libneil/src/libzzub'
-env['PLUGINS_SRC_PATH'] = '${SRC_PATH}/libneil/src/plugins'
-env['PYZZUB_SRC_PATH'] = '${SRC_PATH}/libneil/src/pyzzub'
-env['LANTERNFISH_SRC_PATH'] = '${SRC_PATH}/libneil/src/lanternfish'
-env['KISSFFT_SRC_PATH'] = '${SRC_PATH}/libneil/src/kiss_fft'
 
-## no way to externally alter the DEBUG_POSTFIX setting in loguru from scons 
-env['LOGGER_LIB_NAME'] = 'logurud' if env['DEBUG'] else 'loguru'
+################################################################################
+# every submodule (subdirs of libneil/src) has a <SUBMODULENAME>_SRC_PATH. 
+# the src_path is needed for: build_cmake_module, build_scons_module, include path
+################################################################################
 
-env['LOGGER_SRC_PATH'] = env['SRC_PATH'] + '/libneil/src/loguru'
-env['LOGGER_INCLUDE_PATH'] = env['LOGGER_SRC_PATH']
-env['LOGGER_BUILD_PATH'] = env['LOGGER_SRC_PATH'] + '/build/' + ('debug' if env['DEBUG'] else 'release')
 
-env['LIB_BUILD_PATH'] = '${BUILD_PATH}/lib'
-env['BIN_BUILD_PATH'] = '${BUILD_PATH}/bin'
 
-######################################
+loguru_lib_name = 'logurud' if env['DEBUG'] else 'loguru'
+
+submodules = [
+    ext_modules.cpp_path('libneil', '${BUILD_PATH}/libneil/include'),
+
+    ext_modules.scons_module('kiss_fft'),
+
+    ext_modules.cmake_module('gist', 'Gist', build_subdir = 'src', cpp_defines = ['USE_KISS_FFT'], ),
+
+    ext_modules.cmake_module('loguru', loguru_lib_name, always_link = True),
+
+    ext_modules.scons_module('lanternfish'),
+
+    ext_modules.scons_module('libzzub', env_flags = {
+        'LIB_BUILD_PATH': '${BUILD_PATH}/lib',
+        'BIN_BUILD_PATH': '${BUILD_PATH}/bin',
+    }),
+    
+    ext_modules.scons_module('plugins'),
+
+    ext_modules.scons_module('pyzzub'),
+]
+
+##################################################################################
+# add ???_SRC_PATH for each submodule's build path 
+##################################################################################
+# for subdir in ('libzzub', 'pyzzub', 'plugins', 'lanternfish', 'kiss_fft', 'loguru', 'gist'):
+#     add_submodule_src_path(subdir)
+
+for module in submodules:
+    if module.get_src_path():
+        env.Append(CPPPATH = [module.get_src_path()])
+
+        if module.get_src_path_key():
+            env[module.get_src_path_key()] = module.get_src_path()
+
+    if module.get_cpp_defines():
+        env.Append(CPPDEFINES = module.get_cpp_defines())
+
+    for key, val in module.get_env_flags().items():
+        env[key] = val
+
+
+
+
+###############################
 #
-# configure
+# c/c++ src dirs and defines 
 #
-######################################
+###############################
 
-env.Append(CPPPATH=['${BUILD_PATH}/libneil/include', '${LOGGER_INCLUDE_PATH}'])
+# env.Append(CPPPATH=[ '${BUILD_PATH}/libneil/include', 
+#                      '${LOGURU_SRC_PATH}', 
+#                      '${GIST_SRC_PATH}/src', 
+#                      '${LANTERNFISH_SRC_PATH}', 
+#                      '${KISS_FFT_SRC_PATH}' ],
 
-######################################
+#            CPPDEFINES = [ 'USE_KISS_FFT' ])
+
+
+# env['LOGURU_LIB_NAME'] = 'logurud' if env['DEBUG'] else 'loguru'
+# env['LIB_BUILD_PATH']  = '${BUILD_PATH}/lib'
+# env['BIN_BUILD_PATH']  = '${BUILD_PATH}/bin'
+
+
+######################################################
 #
-# configuration
+# configuration helpers
 #
-######################################
+######################################################
 
 USE_SNDFILE = env['SNDFILE']
 
@@ -405,6 +459,10 @@ def is_cleaning():
     except: return SCons.Script.Main.options.clean
 
 
+##############################################
+# configuration
+##############################################
+    
 if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     import os
 
@@ -421,7 +479,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         }
     )
 
-    # make sure all the development libraries are installed
+    # check if dev libs installed
 
     lib_errors = []
 
@@ -458,13 +516,13 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     if not conf.CheckCHeader('portaudio.h'):
         lib_errors.append(LibraryNotFound("portaudio"))
         
-    if not conf.CheckCHeader('mad.h'):
+    if not conf.CheckCHeader('mad.h'):  # needed by libmad 
         env['MAD'] = False
     else:
         env['MAD'] = True
 
 
-    if posix: # vst3 headers 
+    if posix: # needed by vst3 headers 
         if not conf.CheckCHeader('X11/Xlib.h'):
             lib_errors.append(LibraryNotFound("Xlib.h"))
 
@@ -546,6 +604,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
 ######################################
 # save config
 ######################################
+    
 env.Precious(options_conf_file)
 opts.Save(options_conf_file, env)
 Help( opts.GenerateHelpText( env ) )
@@ -558,38 +617,13 @@ if (not is_cleaning()) and (env['CONFIGURED'] != VERSION):
 
 
 
-######################################
-# build loguru logging library 
-######################################
 
-
-log_build_path = env['LOGGER_BUILD_PATH']
-log_lib_name = env['LOGGER_LIB_NAME']
-if not os.path.exists(log_build_path):
-    os.makedirs(log_build_path)
-
-
-if ( not os.path.exists(os.path.join(log_build_path, 'lib' + env['LOGGER_LIB_NAME'] + '.a')) and 
-     not os.path.exists(os.path.join(log_build_path, 'lib' + env['LOGGER_LIB_NAME'] + '.lib'))
-    ):
-    prev_dir = os.getcwd()
-    build_type = 'Debug' if env['DEBUG'] else 'Release'
-    os.chdir(env['LOGGER_BUILD_PATH'])
-    env.Execute('cmake -DCMAKE_POSITION_INDEPENDENT_CODE=On -DBUILD_SHARED_LIBS=Off -DCMAKE_BUILD_TYPE=' + build_type + ' ../..')
-    env.Execute('cmake --build .')
-    os.chdir(prev_dir)
-
-env.Append(LINKFLAGS=['-L${LOGGER_BUILD_PATH}'], LIBS=['${LOGGER_LIB_NAME}'])
-
-#######################################
-#
-# custom builders
-#
-#######################################
+#############################
+# added to builders
+#############################
 
 
 def build_signature(target, source, env):
-    print("build signature: %s %s" % (target, source))
     outfilepath = str(target[0])
     optionsconfpath = str(source[0])
 
@@ -603,13 +637,27 @@ def build_signature(target, source, env):
 
 
 
+
+#########################################################
+#
+# custom builders
+#
+# mostly using:
+#     /libneil/tools/zidl 
+#
+# to generate zzub's c headers and python swig bindings  
+# as defined in:
+#     libneil/include/zzub/zzub.zidl
+#
+#########################################################
+
 builders = dict(
     Signature = Builder(action = build_signature),
     ZIDLCHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --c-header $TARGET $SOURCE'),
     ZIDLApiHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --api-header $TARGET $SOURCE'),
     ZIDLDataHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --data-header $TARGET $SOURCE'),
 
-    ZIDLCDef = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --c-def $TARGET $SOURCE'),
+    ZIDLCDef = Builder(action =     'python ${SRC_PATH}/libneil/tools/zidl --c-def $TARGET $SOURCE'),
     ZIDLPyCtypes = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --libversion $LIBZZUB_VERSION --py-ctypes $TARGET $SOURCE'),
 )
 
@@ -617,21 +665,32 @@ env['BUILDERS'].update(builders)
 
 #######################################
 #
-# zidl
+# generate zidl
 #
 #######################################
 
 output = []
-output.append(env.ZIDLCHeader('${BUILD_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-output.append(env.ZIDLApiHeader('${BUILD_PATH}/libneil/include/zzub/zzub_api.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-output.append(env.ZIDLDataHeader('${BUILD_PATH}/libneil/include/zzub/zzub_data.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-output.append(env.ZIDLCDef('${BUILD_PATH}/libneil/pyzzub/libzzub.def', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-output.append(env.ZIDLPyCtypes('${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__.py', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLCHeader(   '${BUILD_PATH}/libneil/include/zzub/zzub.h',         '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLApiHeader( '${BUILD_PATH}/libneil/include/zzub/zzub_api.h',     '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLDataHeader('${BUILD_PATH}/libneil/include/zzub/zzub_data.h',    '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLCDef(      '${BUILD_PATH}/libneil/pyzzub/libzzub.def',          '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLPyCtypes(  '${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__.py', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
 
 # make targets dependent on script
 env.Depends(output, '${SRC_PATH}/libneil/tools/zidl')
 
-env.ZIDLCHeader('${SRC_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl')
+
+# copy generated header files from build dir to src dir for vscode 
+# when the debug + release versions are built, there are multiple identical versions of the same headers visible vscode
+# this made: autocomplete, goto definition etc - very slow. 
+# so add build dir to files.exclude in settings.json and copy generated headers to source tree
+# todo: should make this a compile option which defaults to no
+for obj in output[0:3]:
+    header_name = str(obj[0])
+    src = env['BUILD_PATH'] + '/libneil/' + header_name
+    dest = env['SRC_PATH'] + '/libneil/' + header_name
+    env.AddPostAction(obj, Copy(dest, src))
+
 #######################################
 #
 # SConscripts
@@ -655,17 +714,27 @@ Export(
 env.Signature(target='include/zzub/signature.h', source=options_conf_file)
 
 
-env.SConscript('${LANTERNFISH_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/lanternfish', duplicate=0)
-env.SConscript('${KISSFFT_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/kiss_fft', duplicate=0)
-env.SConscript('${LIBZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/libzzub', duplicate=0)
-env.SConscript('${PLUGINS_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/plugins', duplicate=0)
-env.SConscript('${PYZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/pyzzub', duplicate=0)
+
+##############################################################################
+#
+# build projects in subdir of libneil which have SConscruct files
+# this does not link the libraties like the cmake builder does
+#
+##############################################################################
+
+
+
+for module in submodules:
+    module.build(env)
+
 
 #######################################
 #
-# Rest
+# install headers
 #
 #######################################
+
+
 import glob
-for header in glob.glob('${BUILD_PATH}/libneil/include/zzub/*.h'):
+for header in glob.glob(env['BUILD_PATH'] + '/libneil/include/zzub/*.h'):
     install(includepath+'/zzub', header)

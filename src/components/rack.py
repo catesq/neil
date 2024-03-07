@@ -448,25 +448,31 @@ class ParameterView(Gtk.VBox):
     def get_event_connection_bindings(self, g,t,i):
         # 0.3: DEAD
         # no event connection implementation right now
-        return []
+        # return []
         result = []
         if g == 3:
             # we are the source
-            for conn in self.plugin.get_output_connection_list():
+            for (index,conn) in (
+                (index, self.plugin.get_input_connection(index)) 
+                for index in range(self.plugin.get_input_connection_count())
+            ):
                 if conn.get_type() == zzub.zzub_connection_type_event:
                     cv = conn.get_event_connection()
                     for c in range(cv.get_binding_count()):
                         binding = cv.get_binding(c)
-                        if binding.get_controller() == i:
-                            result.append((conn,c))
+                        if binding.get_source_param() == i:
+                            result.append((conn, c))
         else:
             # we are the target
-            for conn in self.plugin.get_input_connection_list():
+            for (index,conn) in (
+                    (index, self.plugin.get_output_connection(index)) 
+                    for index in range(self.plugin.get_output_connection_count())
+            ):
                 if conn.get_type() == zzub.zzub_connection_type_event:
                     cv = conn.get_event_connection()
                     for c in range(cv.get_binding_count()):
                         binding = cv.get_binding(c)
-                        if (binding.get_group() == g) and (binding.get_track() == t) and (binding.get_column() == i):
+                        if (binding.get_group() == g) and (binding.get_track() == t) and (binding.get_param() == i):
                             result.append((conn,c))
         return result
 

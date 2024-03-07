@@ -25,7 +25,7 @@ lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin* lilvPlugin
 
     LilvUIs* uis = lilv_plugin_get_uis(lilvPlugin);
     if (uis) {
-        flags |= zzub_plugin_flag_has_custom_gui;
+        flags |= zzub_plugin_flag_has_custom_gui ;
         lilv_uis_free(uis);
     }
 
@@ -72,6 +72,8 @@ lv2_zzub_info::lv2_zzub_info(lv2_lilv_world* cache, const LilvPlugin* lilvPlugin
     } else {
         flags |= zzub::plugin_flag_control_plugin;
     }
+
+    flags |= zzub_plugin_flag_has_ports;
 }
 
 PortFlow

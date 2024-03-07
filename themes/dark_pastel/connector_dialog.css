@@ -1,0 +1,44 @@
+/* "dark" dark theme */
+
+
+dialog#connector  {
+    background-color: #000000;
+    color: #aaa;
+}
+
+
+dialog#connector widget {
+    background-color: #000000;
+    color: #aaa;
+}
+
+dialog#connector widget.selected {
+    background-color: #141;
+    color: #ada;
+}
+
+/* audio in ports  */
+dialog#connector grid.audio_in widget {
+    background-color: #124;
+    color: #aaa;
+}
+
+
+dialog#connector grid.audio_in widget.selected {
+    background-color: #236;
+    color: #69e;
+}
+
+
+/* audio out ports */
+dialog#connector grid.audio_out widget {
+    background-color: #412;
+    color: #aaa;
+}
+
+
+/* audio out ports */
+dialog#connector grid.audio_out widget.selected {
+    background-color: #623;
+    color: #aaa;
+}

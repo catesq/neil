@@ -52,11 +52,19 @@ class PluginInfo(object):
         self.songplugin = True
         self.plugingfx = None
         self.patterngfx = {}
+        self.gfx_cache = {}
         self.amp = -9999.0
         self.octave = 3
 
     def reset_patterngfx(self):
         self.patterngfx = {}
+
+    def get_cached_gfx(self, key):
+        return self.gfx_cache.get(key, None)
+
+    def add_cached_gfx(self, key, item):
+        self.gfx_cache[key] = item
+    
 
     def reset_plugingfx(self):
         self.plugingfx = None
@@ -83,7 +91,7 @@ class PluginInfoCollection:
     def keys(self):
         return list(self.plugin_info.keys())
 
-    def get(self, k):
+    def get(self, k) -> PluginInfo:
         if not k in self.plugin_info:
             self.add_plugin(k)
         return self.plugin_info.__getitem__(k)

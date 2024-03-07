@@ -87,4 +87,3 @@ struct Vst3IntParam : Vst3Param {
     uint32_t step_count;
 };
 
-

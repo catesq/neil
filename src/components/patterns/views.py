@@ -502,6 +502,7 @@ class PatternView(Gtk.DrawingArea):
         ## the painters can add themself to update_listeners so that their prepare() method
         # is called in init_values when a pattern is changed
         self.updater_listeners = []
+        
         self.playpos_painter = PlayPosPainter(self)
         self.pattern_bg_painter = PatternBackgroundPainter(self)
         self.bar_mark_painter = BarMarksPainter(self)

@@ -303,6 +303,8 @@ namespace zzub:
 		set has_cv_input = bit 28 # for event effects
 		set has_cv_output = bit 29 # for event generators and effects
 
+		set has_ports = bit 30
+
 	enum StateFlag:
 		# player state flags
 		set playing	= 1
@@ -396,7 +398,59 @@ namespace zzub:
 		def is_input(int index): bool
 		def get_master_channel(): int
 		def set_master_channel(int index)
-		
+
+	class EventConnectionBinding:
+		def get_group(): int
+	
+	enum CvNodeType:
+		set audio_node = 1
+		set global_node =2
+		set track_node = 4
+		set port_node = 5
+		set midi_node = 6
+
+	class CvNode:
+		def static create(int plugin_id, uint type, uint value): CvNode
+		def get_plugin_id(): int
+		def get_type(): uint
+		def get_value(): uint
+
+	enum CvModulateMode:
+		set add = 0
+		set subtract = 1
+		set multiply = 2
+		set divide = 3
+		set max = 4
+		set min = 5
+		set average = 6
+		set copy = 6
+
+	"no typedef"
+	class CvConnectorData:
+		member float amp
+		member uint modulate_mode
+		member float offset_before
+		member float offset_after
+
+	class CvConnector:
+		def get_source(): CvNode
+		def get_target(): CvNode
+		def get_data(): CvConnectorData
+
+	class CvConnection:
+		def get_type(): int
+		def get_connector_count(): int
+		def get_connector(int index): CvConnector
+
+	class EventConnection:
+		def get_type(): int
+
+	"Connection stuff"
+	class Connection:
+		def get_type(): int
+		def as_cv_connection(): CvConnection
+		def as_event_connection(): EventConnection
+
 	"MIDI Driver Methods"
 	"Open midi devices."
 	class Mididriver:
@@ -537,6 +591,22 @@ namespace zzub:
 		# def get_import_format_count(): int
 		# def get_import_format_ext(int index): string
 		
+	enum PortFlow:
+		set input = 0
+		set output = 1
+
+	enum PortType:
+		set audio = 1
+		set parameter = 2
+		set cv = 3
+		set midi = 4
+
+	class Port:
+		def get_index(): int
+		def get_name(): string
+		def get_flow(): int
+		def get_type(): int
+
 	"Plugin methods"
 	"Retreive more details about plugins."
 	class Plugin:
@@ -718,10 +788,19 @@ namespace zzub:
 
 		def get_parameter(int group, int track, int column): Parameter
 
+		def get_global_parameter_count(): int
+
+		def get_global_parameter(int index): Parameter
+
+		iterator get_global_parameters: for get_global_parameter in get_global_parameter_count
+
 		# Plugin connection methods
 
 		"Returns the number of input connections for given plugin."
 		def get_input_connection_count(): int
+
+		"Return the Connection for at index "
+		def get_input_connection(int index): Connection
 
 		"Returns the input connection index for given plugin and connection type."
 		def get_input_connection_by_type(Plugin from_plugin, int type): int
@@ -737,6 +816,9 @@ namespace zzub:
 
 		"Returns the output connection index for given plugin and connection type."
 		def get_output_connection_by_type(Plugin from_plugin, int type): int
+
+		"Return the Connection at index"
+		def get_output_connection(int index): Connection
 
 		"Returns the connection type for given plugin and connection index."
 		def get_output_connection_type(int index): int
@@ -776,6 +858,7 @@ namespace zzub:
 		def play_pattern_row_ref(int pattern, int row)
 		def play_pattern_row(Pattern pattern, int row)
 
+
 		# Connection methods
 
 		#/*@}*/
@@ -785,14 +868,24 @@ namespace zzub:
 		def set_midi_connection_device(Plugin from_plugin, string name): int
 		# 0.3: DEAD # def get_midi_connection_device(int from_plugin): string
 
+
+		def add_cv_connector(Plugin from_plugin, CvNode source, CvNode target, CvConnectorData data)
+		def get_cv_connector(Plugin from_Plugin, int connector_index): CvConnector
+		def remove_cv_connector(Plugin from_plugin, CvNode source, CvNode target)
+		def update_cv_connector(Plugin from_plugin, CvNode source, CvNode target, CvConnectorData data, int index)
+		
+
 		#/*@}*/
 		#/** @name Event connection methods"
 		#/*@{*/
-
 		def add_event_connection_binding(Plugin from_plugin, int sourceparam, int targetgroup, int targettrack, int targetparam)
 		# 0.3: DEAD # def get_event_connection_binding_count(int from_plugin): int
 		# 0.3: DEAD # zzub_event_connection_binding_t *zzub_plugin_get_event_connection_binding(int from_plugin, int index)
 		# 0.3: DEAD # def remove_event_connection_binding(int from_plugin, int index): int
+
+		def get_port(int index): Port
+		def get_port_count(): int
+		iterator get_ports: for get_port in get_port_count
 
 	
 	"Sequencer methods"

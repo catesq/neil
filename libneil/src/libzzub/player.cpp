@@ -313,6 +313,7 @@ void player::work_stereo(int sample_count) {
         // handle MIDI input
         if (midiDriver)
             midiDriver->poll();
+
         for (int i = 0; i < work_out_channel_count; i++) {
             front.outputBuffer[i] = &work_out_buffer[i][work_buffer_position];
         }
@@ -323,6 +324,7 @@ void player::work_stereo(int sample_count) {
             else
                 front.inputBuffer[i] = 0;
         }
+
         int chunk_size = front.generate_audio(remaining_samples);
         // the master plugins work_buffer has the final output
         // users can add Audio Output-plugins to send output to channels > 2
@@ -857,7 +859,10 @@ void player::plugin_delete_input(int to_id, int from_id, connection_type type) {
     case zzub::connection_type_event:
         undo->bindings = ((event_connection*)conn)->bindings;
         break;
+    case zzub::connection_type_cv:
+        break;
     }
+    
     prepare_operation_redo(redo);
     prepare_operation_undo(undo);
 
@@ -900,8 +905,50 @@ void player::plugin_add_event_connection_binding(int to_id, int from_id, int sou
     begin_plugin_operation(from_id);
 
     op_plugin_add_event_connection_binding* redo = new op_plugin_add_event_connection_binding(to_id, from_id, binding);
-
     op_plugin_remove_event_connection_binding* undo = new op_plugin_remove_event_connection_binding(to_id, from_id, -1);
+    
+    prepare_operation_redo(redo);
+    prepare_operation_undo(undo);
+
+    end_plugin_operation(from_id);
+    end_plugin_operation(to_id);
+}
+
+void player::plugin_add_cv_connector(int to_id, int from_id, const zzub::cv_connector &link) {
+    begin_plugin_operation(to_id);
+    begin_plugin_operation(from_id);
+
+    op_plugin_add_cv_connector* cv_redo = new op_plugin_add_cv_connector(to_id, from_id, link);
+    op_plugin_remove_cv_connector* cv_undo = new op_plugin_remove_cv_connector(to_id, from_id, link);
+
+    prepare_operation_redo(cv_redo);
+    prepare_operation_undo(cv_undo);
+
+    end_plugin_operation(from_id);
+    end_plugin_operation(to_id);
+}
+
+void player::plugin_remove_cv_connector(int to_id, int from_id, const zzub::cv_connector &link) {
+    begin_plugin_operation(to_id);
+    begin_plugin_operation(from_id);
+
+    op_plugin_remove_cv_connector* redo = new op_plugin_remove_cv_connector(to_id, from_id, link);
+    op_plugin_add_cv_connector* undo = new op_plugin_add_cv_connector(to_id, from_id, link);
+
+    prepare_operation_redo(redo);
+    prepare_operation_undo(undo);
+
+    end_plugin_operation(from_id);
+    end_plugin_operation(to_id);
+}
+
+void player::plugin_update_cv_connector(int to_id, int from_id, const zzub::cv_connector &old_link, const zzub::cv_connector &new_link, int connector_index) {
+    begin_plugin_operation(to_id);
+    begin_plugin_operation(from_id);
+
+    op_plugin_edit_cv_connector* redo = new op_plugin_edit_cv_connector(to_id, from_id, new_link, connector_index);
+    op_plugin_edit_cv_connector* undo = new op_plugin_edit_cv_connector(to_id, from_id, old_link, connector_index);
+
     prepare_operation_redo(redo);
     prepare_operation_undo(undo);
 

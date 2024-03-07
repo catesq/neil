@@ -18,7 +18,7 @@ struct audiodriver_portaudio : audiodriver {
 
     audiodriver_portaudio();
 
-    virtual ~audiodriver_portaudio();
+    virtual ~audiodriver_portaudio() noexcept(false);
     virtual void initialize(audioworker *worker);
     virtual bool enable(bool e);
 

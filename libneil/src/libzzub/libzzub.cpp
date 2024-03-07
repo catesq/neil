@@ -254,15 +254,57 @@ zzub_plugin_t* zzub_player_get_plugin(zzub_player_t *player, int index) {
 }
 
 int zzub_plugin_set_midi_connection_device(zzub_plugin_t *to_plugin, zzub_plugin_t* from_plugin, const char* name) {
-
     to_plugin->_player->plugin_set_midi_connection_device(to_plugin->id, from_plugin->id, name);
     return 0;
 }
 
 void zzub_plugin_add_event_connection_binding(zzub_plugin_t *to_plugin, zzub_plugin_t* from_plugin, int sourceparam, int targetgroup, int targettrack, int targetparam) {
-
     to_plugin->_player->plugin_add_event_connection_binding(to_plugin->id, from_plugin->id, sourceparam, targetgroup, targettrack, targetparam);
 }
+
+
+void zzub_plugin_add_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, zzub_cv_node_t *source, zzub_cv_node_t *target, zzub_cv_connector_data_t* data) {
+    to_plugin->_player->plugin_add_cv_connector(to_plugin->id, from_plugin->id, zzub::cv_connector(*source, *target, *data));
+}
+
+
+void zzub_plugin_remove_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, zzub_cv_node_t *source, zzub_cv_node_t *target) {
+    to_plugin->_player->plugin_remove_cv_connector(to_plugin->id, from_plugin->id, zzub::cv_connector(*source, *target));
+}
+
+
+
+zzub::cv_connector* zzub_plugin_get_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, int connector_index) {
+    auto conn = to_plugin->_player->back.plugin_get_input_connection(
+        to_plugin->id, 
+        from_plugin->id, 
+        zzub::connection_type_cv
+    );
+
+    if(!conn) {
+        return nullptr;
+    }
+
+    auto cv_conn = static_cast<zzub::cv_connection*>(conn);
+    auto connector = cv_conn->get_connector(connector_index);
+    
+    return const_cast<zzub::cv_connector*>(connector);
+}
+
+
+void zzub_plugin_update_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, zzub_cv_node_t *source, zzub_cv_node_t *target, zzub_cv_connector_data_t* data, int connector_index) {
+    zzub::cv_connector* old_connector = zzub_plugin_get_cv_connector(to_plugin, from_plugin, connector_index);
+    zzub::cv_connector  new_connector(*source, *target, *data);
+    
+    to_plugin->_player->plugin_update_cv_connector( 
+        to_plugin->id, 
+        from_plugin->id, 
+        *old_connector, 
+        new_connector,
+        connector_index 
+    );
+}
+
 
 const float** zzub_player_work_stereo(zzub_player_t *player, int* numSamples) {
     player->work_stereo(*numSamples);
@@ -1013,6 +1055,15 @@ int zzub_plugin_get_pattern_value(zzub_plugin_t *plugin, int pattern, int group,
     return plugin->_player->back.plugins[plugin->id]->patterns[pattern]->groups[group][track][column][row];
 }
 
+int zzub_plugin_get_global_parameter_count(zzub_plugin_t *plugin) {
+    return zzub_plugin_get_parameter_count(plugin, zzub_parameter_group_global, 0);
+}
+
+zzub_parameter_t* zzub_plugin_get_global_parameter(zzub_plugin_t *plugin, int index) {
+    return zzub_plugin_get_parameter(plugin, zzub_parameter_group_global, 0, index);
+}
+
+
 int zzub_plugin_get_parameter_count(zzub_plugin_t *plugin, int group, int track) {
 
     operation_copy_flags flags;
@@ -1164,6 +1215,16 @@ int zzub_plugin_get_input_connection_type(zzub_plugin_t *plugin, int index) {
     return plugin->_player->back.plugin_get_input_connection_type(plugin->id, index);
 }
 
+zzub_connection_t* zzub_plugin_get_input_connection(zzub_plugin_t *plugin, int index) {
+    operation_copy_flags flags;
+    flags.copy_graph = true;
+    flags.copy_plugins = true;
+    plugin->_player->merge_backbuffer_flags(flags);
+
+    return plugin->_player->back.plugin_get_input_connection(plugin->id, index);
+}
+
+
 zzub_plugin_t* zzub_plugin_get_input_connection_plugin(zzub_plugin_t *plugin, int index) {
 
     operation_copy_flags flags;
@@ -1174,6 +1235,25 @@ zzub_plugin_t* zzub_plugin_get_input_connection_plugin(zzub_plugin_t *plugin, in
     int id = plugin->_player->back.plugin_get_input_connection_plugin(plugin->id, index);
     return plugin->_player->back.plugins[id]->proxy;
 }
+
+zzub_connection_t* zzub_plugin_get_output_connection(zzub_plugin_t *plugin, int index) {
+    operation_copy_flags flags;
+    flags.copy_graph = true;
+    flags.copy_plugins = true;
+    plugin->_player->merge_backbuffer_flags(flags);
+
+    return plugin->_player->back.plugin_get_output_connection(plugin->id, index);
+}
+
+zzub_port_t* zzub_plugin_get_port(zzub_plugin_t *plugin, int index) {
+    return plugin->_player->back.plugin_get_port(plugin->id, index);
+}
+
+int zzub_plugin_get_port_count(zzub_plugin_t *plugin) {
+    return plugin->_player->back.plugin_get_port_count(plugin->id);
+}
+
+
 
 int zzub_plugin_get_output_connection_count(zzub_plugin_t *plugin) {
 
@@ -1214,6 +1294,82 @@ zzub_plugin_t* zzub_plugin_get_output_connection_plugin(zzub_plugin_t *plugin, i
 
     int id = plugin->_player->back.plugin_get_output_connection_plugin(plugin->id, index);
     return plugin->_player->back.plugins[id]->proxy;
+}
+
+int zzub_event_connection_binding_get_group(zzub_event_connection_binding_t* binding) {
+    return binding->target_group_index;
+}
+
+int zzub_event_connection_get_binding_count(zzub_event_connection_t* conn) {
+    return conn->bindings.size();
+}
+
+
+zzub_event_connection_t* zzub_connection_as_event_connection(zzub_connection_t* conn) {
+    return conn->type == zzub::connection_type_event ? (zzub_event_connection_t*) conn : nullptr;
+}
+
+zzub_cv_connection_t* zzub_connection_as_cv_connection(zzub_connection_t* conn) {
+    return conn->type == zzub::connection_type_cv ? (zzub_cv_connection_t*) conn : nullptr;
+}
+
+zzub_event_connection_binding_t* zzub_event_connection_get_binding(zzub_event_connection_t* conn, int index) {
+    return &conn->bindings[index];
+}
+
+int zzub_connection_get_type(zzub_connection_t* conn) {
+    return conn->type;
+}
+
+
+int zzub_cv_connection_get_type(zzub_cv_connection_t* conn) {
+    return conn->type;
+}
+
+
+zzub_cv_connector_t* zzub_cv_connection_get_connector(zzub_cv_connection_t* conn, int index) {
+    return const_cast<zzub_cv_connector_t*>(conn->get_connector(index));
+}
+
+
+
+int zzub_cv_connection_get_connector_count(zzub_cv_connection_t* conn) {
+    return conn->get_connector_count();
+}
+
+zzub_cv_node_t* zzub_cv_node_create(int plugin_id, unsigned int type, unsigned int value) {
+    return new zzub::cv_node{plugin_id, type, value};
+}
+
+
+int zzub_cv_node_get_plugin_id(zzub_cv_node_t* node) {
+    return node->plugin_id;
+}
+
+uint zzub_cv_node_get_type(zzub_cv_node_t* node) {
+    return node->type;
+}
+
+uint zzub_cv_node_get_value(zzub_cv_node_t* node) {
+    return node->value;
+}
+
+zzub_cv_node_t* zzub_cv_connector_get_source(zzub_cv_connector_t* connector) {
+    return static_cast<zzub_cv_node_t*>(&connector->source);
+}
+
+
+zzub_cv_node_t* zzub_cv_connector_get_target(zzub_cv_connector_t* connector) {
+    return static_cast<zzub_cv_node_t*>(&connector->target);
+}
+
+zzub_cv_connector_data_t* zzub_cv_connector_get_data(zzub_cv_connector_t* connector) {
+    return static_cast<zzub_cv_connector_data_t*>(&connector->data);
+}
+
+
+int zzub_event_connection_get_type(zzub_event_connection_t* conn) {
+    return conn->type;
 }
 
 int zzub_connection_get_parameter_count(zzub_player_t *player, int plugin, int from_plugin) {
@@ -1556,6 +1712,23 @@ int zzub_plugin_set_instrument(zzub_plugin_t *plugin, const char *name) {
     plugin->_player->merge_backbuffer_flags(flags);
 
     return plugin->_player->back.plugins[plugin->id]->plugin->set_instrument(name) ? 0 : -1;
+}
+
+
+const char* zzub_port_get_name(zzub_port_t* port) {
+    return port->get_name().c_str();
+ }
+
+int zzub_port_get_flow(zzub_port_t* port) {
+    return (int) port->get_flow();
+}
+
+int zzub_port_get_index(zzub_port_t* port) {
+    return port->get_index();
+}
+
+int zzub_port_get_type(zzub_port_t* port) {
+    return (int) port->get_type();
 }
 
 /***

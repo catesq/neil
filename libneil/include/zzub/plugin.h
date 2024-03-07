@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <functional>
 
 #include <cstdint>
 
@@ -54,6 +55,28 @@ struct event_handler {
     virtual bool invoke(zzub_event_data_t &data) = 0;
 };
 
+
+enum class port_flow {
+    input = 0,
+    output = 1
+};
+
+enum class port_type {
+    audio = 1,
+    parameter = 2,
+    cv = 3,
+    midi = 4,
+};
+
+struct port {
+    virtual std::string get_name() = 0;
+    virtual port_flow get_flow() = 0;
+    virtual int get_index() = 0;
+    virtual port_type get_type() = 0;
+    virtual float get_value() = 0;
+};
+
+
 struct plugin {
     virtual ~plugin() {}
     virtual void destroy() { delete this; }
@@ -85,17 +108,28 @@ struct plugin {
     virtual bool set_instrument(const char *name) { return false; }
     virtual void get_sub_menu(int index, zzub::outstream *os) {}
     virtual void add_input(const char *name, zzub::connection_type type) {}
+
     virtual void delete_input(const char *name, zzub::connection_type type) {}
     virtual void rename_input(const char *oldname, const char *newname) {}
     virtual void input(float **samples, int size, float amp) {}
+
     virtual void midi_control_change(int ctrl, int channel, int value) {}
     virtual bool handle_input(int index, int amp, int pan) { return false; }
+    
     // plugin_flag_has_midi_output
     virtual void get_midi_output_names(outstream *pout) {}
 
     // plugin_flag_stream | plugin_flag_has_audio_output
     virtual void set_stream_source(const char *resource) {}
     virtual const char *get_stream_source() { return 0; }
+
+    // used by cv_connections
+    virtual zzub::port* get_port(int index) { return nullptr; }
+    virtual int get_port_count() { return 0; }
+
+    // used in cv connections
+    virtual bool has_tracks() { return false; }
+    // virtual std::vector<zzub::note_track> get_tracks();
 
     virtual void play_sequence_event(zzub_sequence_t *seq, const sequence_event &ev, int offset) {}
 

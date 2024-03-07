@@ -21,6 +21,7 @@
 #include <format>
 
 #include "zzub/plugin.h"
+#include "libzzub/metaplugin.h"
 
 float linear_to_dB(float val);
 float dB_to_linear(float val);
@@ -30,6 +31,16 @@ void handleError(std::string errorTitle);
 double square(double v);
 double sawtooth(double v);
 double triangle(double v);
+
+
+
+// #define GET_PLUGIN_AUDIO_FROM(plugin_from, plugin_to, buffer_index) \
+//     (plugin_from.last_work_frame != plugin_to.last_work_frame + plugin_to.last_work_buffersize) ? \
+//         &plugin_from.callbacks->feedback_buffer[buffer_index].front() : \
+//         &plugin_from.work_buffer[buffer_index].front()
+
+// #define PLUGIN_HAS_AUDIO_FROM(plugin, amp) (plugin.last_work_audio_result && amp > 0 && (plugin.last_work_max_left > SIGNAL_TRESHOLD || plugin.last_work_max_right > SIGNAL_TRESHOLD))
+
 
 namespace zzub {
 namespace tools {
@@ -123,10 +134,14 @@ struct find_info_by_uri {
 };
 
 
+inline bool plugin_has_audio(zzub::metaplugin& plugin, float amp) {
+    return plugin.last_work_audio_result && amp > 0 && (plugin.last_work_max_left > SIGNAL_TRESHOLD || plugin.last_work_max_right > SIGNAL_TRESHOLD);
+}
 
 
-}
-}
+} // namespace tools
+} // namespace zzub
+
 
 // buffer tools
 void AddS2SPanMC(float** output, float** input, int numSamples, float inAmp, float inPan);

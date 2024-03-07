@@ -47,6 +47,7 @@ std::string connectiontype_to_string(int connectiontype) {
     case zzub::connection_type_audio: return "audio";
     case zzub::connection_type_event: return "event";
     case zzub::connection_type_midi: return "midi";
+    case zzub::connection_type_cv: return "cv";
     default: assert(0);
     }
     return "";

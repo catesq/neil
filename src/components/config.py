@@ -84,6 +84,11 @@ CONFIG_OPTIONS = dict(
             onget=lambda v: v or None,
             doc="the name of the currently active theme."
         ),
+        Style=dict(
+            default='dark_pastel',
+            vtype=str,
+            doc="name of css theme in \"configdir/neil/themes\""
+        ),
         KeymapLanguage=dict(
             default='en',
             onset=lambda s: s.lower(),
@@ -952,7 +957,7 @@ class NeilConfigSingleton(NeilConfig):
     )
 
 
-def get_config(*args):
+def get_config(*args) -> NeilConfig:
     """
     Returns the global object singleton.
 
