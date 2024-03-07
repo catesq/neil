@@ -407,6 +407,7 @@ class zzubIDLObject(object):
 			print(file=f)
 		for i,doc in enumerate(self.doc):
 			doc = doc.strip()
+
 			if len(self.doc) == 1:
 				print ('/** \\brief ' + doc + ' */', file=f)
 			elif i == 0:
@@ -448,6 +449,9 @@ class zzubIDLObject(object):
 			return
 		tab = '\t' * ident
 		for i,doc in enumerate(self.doc):
+			if doc == "no typedef":
+				continue
+			
 			if len(self.doc) == 1:
 				print (tab + '"""' + doc + '"""', file=f)
 			elif i == 0:
@@ -672,7 +676,7 @@ class Class(zzubIDLObject):
 			function.write_py_ctypes(self, f)
 			
 	def write_py_classes(self, parent, f):
-		if self.members:
+		if self.members and not "no typedef" in self.doc:
 			print (self.name + ' = ' + self.struct_name, file=f)
 			print (file=f)
 		else:
