@@ -19,6 +19,15 @@ struct cv_connection;
 struct midi_connection;
 
 
+/*************************************************************************************
+ * 
+ * connection interface
+ * 
+ * every edge of the audio graph - defined in graph.h - is one of these connections
+ * 
+ ************************************************************************************/
+
+
 struct connection {
     connection_type type;
     void* connection_values;
@@ -36,6 +45,14 @@ protected:
     // use either audio_connection or events_connection or midi_connection or cv_connection
     connection();
 };
+
+
+
+/*************************************************************************
+ * 
+ * audio connection
+ * 
+ ************************************************************************/
 
 
 
@@ -71,6 +88,12 @@ struct audio_connection : connection {
     virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count);
 };
 
+
+/*************************************************************************
+ * 
+ * cv_connection
+ * 
+ ************************************************************************/
 
 
 struct event_connection_binding {
@@ -126,30 +149,39 @@ struct event_connection : connection {
 
 
 
+/*************************************************************************
+ * 
+ * cv connector
+ * 
+ ************************************************************************/
+
+
 struct cv_connector {
     cv_node source;
     cv_node target;
+    cv_connector_data data;
 
-    std::shared_ptr<cv_input> input;
-    std::shared_ptr<cv_output> output;
-
-    cv_connector(cv_node source, cv_node target) : source(source), target(target) {
-        input = build_cv_input(this->source);
-        output = build_cv_output(this->target);
-        std::cout << "cv_connector::cv_connector source: " << source.type <<  ", input: " <<  input->node.type <<  ", value: " <<  input->node.value << ", plugin_id: " <<  input->node.plugin_id << std::endl;
-        std::cout << "cv_connector::cv_connector target: " << target.type <<  ", output: " <<  output->node.type <<  ", value: " <<  output->node.value << ", plugin_id: " <<  output->node.plugin_id << std::endl;
-    }
-
-    bool work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, int sample_count) {
-        if(input->read(from, to, sample_count)) {
-            return output->write(input.get(), from, to, sample_count);
-        }
-
-        return false;
-    }
+    cv_connector(cv_node source, cv_node target);
+    cv_connector(cv_node source, cv_node target,  cv_connector_data data);
+    
+    void process_events(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to);
+    void work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, int sample_count);
 
     bool operator==(const cv_connector& other) const { return source == other.source && target == other.target; }
+
+private:
+    std::shared_ptr<cv_input> input;
+    std::shared_ptr<cv_output> output;
 };
+
+
+
+/*************************************************************************
+ * 
+ * cv_connection
+ * 
+ ************************************************************************/
+
 
 
 struct cv_connection : connection {
@@ -161,11 +193,23 @@ struct cv_connection : connection {
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
     virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count);
 
-    void add_connector(const cv_connector& link);
-    void remove_connector(const cv_connector& link);
-    bool has_connector(const cv_connector& link);
-    int  num_connectors() const { return connectors.size(); }
+    void  add_connector(const cv_connector& link);
+    bool  remove_connector(const cv_connector& link);
+    bool  has_connector(const cv_connector& link);
+    int   get_connector_count() const { return connectors.size(); }
+    const cv_connector* get_connector(int index);
+    bool  update_connector(int index, const cv_connector& link);
 };
+
+
+
+
+/*************************************************************************
+ * 
+ * midi connector
+ * 
+ ************************************************************************/
+
 
 
 struct midi_connection : connection {

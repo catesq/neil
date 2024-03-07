@@ -845,7 +845,7 @@ class RouteView(Gtk.DrawingArea):
         self.redraw(True)
 
     def on_zzub_redraw_event(self, *args):
-        print("redraw event")
+        print("zubb redraw event")
         self.redraw(True)
 
     def on_focus(self, event):
@@ -1126,9 +1126,12 @@ class RouteView(Gtk.DrawingArea):
         else:
             source = target = False
 
+        data = dialog.get_cv_data()
+        print("chosen connector", data)
+
         dialog.destroy()
 
-        return (source, target)
+        return (source, target, data)
 
 
     def on_left_up(self, widget, event):
@@ -1169,10 +1172,11 @@ class RouteView(Gtk.DrawingArea):
                 
                 if player.active_plugins:
                     if event.get_state() & Gdk.ModifierType.MOD1_MASK:
-                        (source_connector, target_connector) = self.choose_cv_connectors_dialog(player.active_plugins[0], mp)
+                        (source_connector, target_connector, data) = self.choose_cv_connectors_dialog(player.active_plugins[0], mp)
 
-                        if source_connector and target_connector:
-                            mp.add_cv_connector(player.active_plugins[0], source_connector, target_connector)
+                        if source_connector and target_connector and data:
+                            print("cv connector data", data, data.amp, data.modulate_mode, data.offset_before, data.offset_after)
+                            mp.add_cv_connector(player.active_plugins[0], source_connector, target_connector, data)
                             player.history_commit("new cv connection")
                             
                     elif not is_controller(player.active_plugins[0]):

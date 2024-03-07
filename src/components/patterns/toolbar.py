@@ -1,7 +1,7 @@
 
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, GObject
 
 import neil.com as com
 from neil.common import MARGIN
@@ -11,6 +11,8 @@ from neil.utils import (
     filenameify,
 )
 
+
+
 class eventbus_handler:
     def __init__(self, func, events, *args, **kwargs):
         self.func = func
@@ -19,12 +21,14 @@ class eventbus_handler:
     def remove(self, eventbus):
         for event in self.events:
             getattr(eventbus, event).remove_handler(self.func)
-            # eventbus[event] -= self.func
 
     def register(self, eventbus):
-        for event in self.events:
-            getattr(eventbus, event).add_handler(self.func)
-            # eventbus[event] += self.func
+        for event_name in self.events:
+            getattr(eventbus, event_name).add_handler(self.func)
+
+    def get_func(self):
+        return self.func
+
 
 class gtk_widget_handler:
     def __init__(self, widget, signal_name, func, *args, **kwargs):
@@ -33,14 +37,18 @@ class gtk_widget_handler:
         self.signal_name = signal_name
         self.widget = widget
 
-    def remove(self, widget):
+    def remove(self, eventbus):
         if self.id:
-            GLib.source_remove(self.id)
+            self.widget.disconnect(self.id)
             self.id = False
 
     def register(self, eventbus):
         if not self.id:
             self.id = self.widget.connect(self.signal_name, self.func)
+
+    def get_func(self):
+        return self.func
+    
 
 class PatternToolBar(Gtk.HBox):
     """
@@ -136,15 +144,26 @@ class PatternToolBar(Gtk.HBox):
             gtk_widget_handler(self.btnhelp, 'clicked', self.on_button_help),
         }
 
+    def signal_handler_func_for(self, widget):
+        for handler in self.event_handlers:
+            if getattr(handler, 'widget', False) == widget:
+                return handler.func
+        return None
+
     def handle_focus(self):
-        if self.has_focus:
-            return
-        
-        self.has_focus = True
-        
+        if not self.has_focus:
+            self.has_focus = True
+            self.register_events()
+
+    def register_events(self):
         eventbus = com.get('neil.core.eventbus')
         for handler in self.event_handlers:
             handler.register(eventbus)
+
+    def remove_events(self):
+        eventbus = com.get('neil.core.eventbus')
+        for handler in self.event_handlers:
+            handler.remove(eventbus)
 
         # eventbus.zzub_new_plugin += self.pluginselect_update
         # eventbus.zzub_delete_plugin += self.pluginselect_update
@@ -178,20 +197,20 @@ class PatternToolBar(Gtk.HBox):
         
 
     def remove_focus(self):
-        if not self.has_focus:
-            return
-
-        self.has_focus = False
+        if self.has_focus:
+            self.has_focus = False
+            self.remove_events()
 
         # for prop in ['pluginselect_handler', 'patternselect_handler', 'waveselect_handler', 'octaveselect_handler', 'edit_step_handler', 'playnotes_handler', 'btnhelp_handler']:
         #     if getattr(self, prop):
         #         GLib.source_remove(getattr(self, prop))
         #         setattr(self, prop, False)
 
-        eventbus = com.get('neil.core.eventbus')
 
-        for event_handler in self.event_handlers:
-            event_handler.remove(eventbus)
+        # eventbus = com.get('neil.core.eventbus')
+
+        # for event_handler in self.event_handlers:
+        #     event_handler.remove(eventbus)
 
         # eventbus.zzub_new_plugin -= self.pluginselect_update
         # eventbus.zzub_delete_plugin -= self.pluginselect_update
@@ -232,7 +251,9 @@ class PatternToolBar(Gtk.HBox):
 
     def pluginselect_update(self, *args):
         player = com.get('neil.core.player')
-        self.pluginselect.handler_block(self.pluginselect_handler)
+        pluginselect_handler = self.signal_handler_func_for(self.pluginselect)
+
+        self.pluginselect.handler_block_by_func(pluginselect_handler)
         plugins = self.get_plugin_source()
         active = -1
         if player.active_plugins != []:
@@ -241,11 +262,14 @@ class PatternToolBar(Gtk.HBox):
                     active = i
         model = self.pluginselect.get_model()
         model.clear()
+
         for plugin in plugins:
             self.pluginselect.append_text(plugin[0])
+
         if active != -1:
             self.pluginselect.set_active(active)
-        self.pluginselect.handler_unblock(self.pluginselect_handler)
+
+        self.pluginselect.handler_unblock_by_func(pluginselect_handler)
 
     def octave_update(self, *args):
         """
@@ -260,7 +284,8 @@ class PatternToolBar(Gtk.HBox):
         This function is called whenever it is decided that
         the wave list in the combox box is outdated.
         """
-        self.waveselect.handler_block(self.waveselect_handler)
+        waveselect_handler = self.signal_handler_func_for(self.pluginselect)
+        self.waveselect.handler_block_by_func(waveselect_handler)
         player = com.get('neil.core.player')
         sel = player.active_waves
         # active = self.waveselect.get_active()
@@ -275,7 +300,7 @@ class PatternToolBar(Gtk.HBox):
             self.waveselect.set_active(index)
         else:
             self.waveselect.set_active(0)
-        self.waveselect.handler_unblock(self.waveselect_handler)
+        self.waveselect.handler_unblock_by_func(waveselect_handler)
 
     def edit_step_changed(self, event):
         step = int(self.edit_step_box.get_active_text())
@@ -328,10 +353,11 @@ class PatternToolBar(Gtk.HBox):
         for i, name in names:
             self.patternselect.append_text("%d %s" % (i, name))
         # Block signal handler to avoid infinite recursion.
-        self.patternselect.handler_block(self.patternselect_handler)
+        patternselect_handler = self.signal_handler_func_for(self.patternselect)
+        self.patternselect.handler_block_by_func(patternselect_handler)
         if len(player.active_patterns) > 0:
             self.patternselect.set_active(player.active_patterns[0][1])
-        self.patternselect.handler_unblock(self.patternselect_handler)
+        self.patternselect.handler_unblock_by_func(patternselect_handler)
 
     def get_pattern_sel(self):
         player = com.get('neil.core.player')

@@ -162,16 +162,23 @@ xml_node CcmWriter::saveEventBindings(xml_node &parent, std::vector<zzub::event_
 
 xml_node CcmWriter::saveCVConnector(xml_node &parent, zzub::cv_connector &link) {
     xml_node item = parent.append_child(node_element);
+
     item.set_name("cv_connector");
     
-    item.append_attribute("source_type") = link.source.type;
-    item.append_attribute("source_value") = link.source.value;
+    item.append_attribute("source_type")        = link.source.type;
+    item.append_attribute("source_value")       = link.source.value;
 
-    item.append_attribute("target_type") = link.target.type;
-    item.append_attribute("target_value") = link.target.value;
+    item.append_attribute("target_type")        = link.target.type;
+    item.append_attribute("target_value")       = link.target.value;
+
+    item.append_attribute("data_amp")           = link.data.amp;
+    item.append_attribute("data_modulate_mode") = link.data.modulate_mode;
+    item.append_attribute("data_offset_before") = link.data.offset_before;
+    item.append_attribute("data_offset_after")  = link.data.offset_after;
 
     return item;
 }
+
 
 xml_node CcmWriter::saveCVConnectors(xml_node &parent, std::vector<zzub::cv_connector> &connectors) {
     xml_node item = parent.append_child(node_element);
@@ -183,6 +190,7 @@ xml_node CcmWriter::saveCVConnectors(xml_node &parent, std::vector<zzub::cv_conn
 
     return item;
 }
+
 
 xml_node CcmWriter::saveArchive(xml_node &parent, const std::string &pathbase, zzub::mem_archive &arc) {
     zzub::mem_archive::buffermap::iterator i;

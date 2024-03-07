@@ -1,223 +1,432 @@
 #include "libzzub/cv_connections.h"
 #include "libzzub/tools.h"
 
+#include "lanternfish.h"
+
+#include "Gist.h"
+
 
 namespace zzub {
     
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 
-bool cv_input_audio::read(zzub::metaplugin& plugin_from, zzub::metaplugin& plugin_to, int numsamples) {
-    float* src = zzub::tools::get_plugin_audio_from(plugin_from, plugin_to, node.value % 1);
+/******************************** cv_input types ********************************/
 
-    memcpy(data, src, numsamples * sizeof(float));  
 
-    return true;
+
+/***********************
+ * 
+ * cv_input_audio 
+ * 
+ ***********************/
+
+
+void cv_input_audio::process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) { }
+
+void cv_input_audio::work(zzub::metaplugin& plugin_from, zzub::metaplugin& plugin_to, int numsamples) {
+    switch(node.value) {
+        case 0:
+        case 1: {
+            float* src = &plugin_from.callbacks->feedback_buffer[node.value % 2].front();
+            memcpy(data, &src[256 - numsamples], numsamples * sizeof(float));
+            break;
+        }
+        
+        //  getting input from both channel they have to be mixed
+        case 3: {
+            // pan will be a user controller parameter on cv_node_data - for now it's always 0
+            float pan = 0.f;
+
+            float pan_l = 1.0, pan_r = 1.f;
+
+            if(pan < 0.f) {
+                pan_r = 1 + pan;
+            } else if (pan > 0.f){
+                pan_l = 1 - pan;
+            }
+
+            float* left  = &plugin_from.callbacks->feedback_buffer[0].front();
+            float* right = &plugin_from.callbacks->feedback_buffer[1].front();
+            
+            for(int i = 0; i < numsamples; i++) {
+                data[i] = left[i] * pan_l + right[i] * pan_r;
+            }
+        }
+    }
+    
+}
+
+
+/*****************************
+ * 
+ * cv_input_zzub_global_param 
+ * 
+ *****************************/
+
+
+void cv_input_global_param::process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) { }
+
+// cv_input_param methods
+void cv_input_global_param::work(zzub::metaplugin& from_plugin, zzub::metaplugin& to, int numsamples) {
+    raw_value =  from_plugin.callbacks->get_parameter(from_plugin.proxy, zzub_parameter_group_global, 0, node.value);
+    norm_value = from_plugin.info->global_parameters[node.value]->normalize(raw_value);
+}
+
+
+
+/*****************************
+ * 
+ * cv_input_zzub_track_param 
+ * 
+ *****************************/
+
+
+void cv_input_track_param::process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) { }
+
+// cv_input_param methods
+void cv_input_track_param::work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) {
+    raw_value = from_plugin.callbacks->get_parameter(from_plugin.proxy, zzub_parameter_group_track, track_index, param_index);
+    norm_value = from_plugin.info->track_parameters[param_index]->normalize(raw_value);
+}
+
+
+
+
+/*****************************
+ * 
+ * cv_input_ext_port 
+ * 
+ *****************************/
+
+
+void cv_input_ext_port::process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {
+
 }
 
 
 // cv_input_param methods
-bool cv_input_zzub_param::read(zzub::metaplugin& source, zzub::metaplugin& target, int numsamples) {
-    return true;
+void cv_input_ext_port::work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) {
+
 }
 
 
-// cv_input_param methods
-bool cv_input_ext_port::read(zzub::metaplugin& source, zzub::metaplugin& target, int numsamples) {
-    return true;
+
+
+/*****************************
+ * 
+ * cv_input_midi 
+ * 
+ *****************************/
+
+
+void cv_input_midi::process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {
+
 }
 
 
 // cv_input_midi methods
-bool cv_input_midi::read(zzub::metaplugin& source, zzub::metaplugin& target, int numsamples) {
-    return true;
+void cv_input_midi::work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) {
+
 }
 
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 
-// cv_target_param methods
-bool cv_output_zzub_param::write(cv_input* read, zzub::metaplugin& source, zzub::metaplugin& target, int numsamples) {
-    switch(read->node.type) {
-        case audio_node:{
+/******************************** cv_output types ********************************/
+
+
+
+
+
+/*****************************
+ * 
+ * cv_output_global_param 
+ * 
+ *****************************/
+
+
+void cv_output_global_param::process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {
+
+}
+
+void cv_output_global_param::work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) {
+    switch(input->node.type) {
+        case audio_node: {
             //average audio samples, need to add a flags + settings properties to cv_connector to indicate how to average/amplify - 
             // for now just - average(abs(sample))) -> convert to param
-            float *src = static_cast<cv_input_audio*>(read)->data;
-
-            float sum = 0.0f;
-            for(int i = 0; i < numsamples; i++) {
-                sum += fabsf(*src++);
-            }
+            float rms = lanternfish::rms(static_cast<cv_input_audio*>(input)->data, numsamples);
             
-            return true;
+            
+            break;
         }
 
-        case zzub_param_node:
-            return true;
+        case zzub_track_param_node:
+            break;
+
+        case zzub_global_param_node:
+            break;
 
         case ext_port_node:
-            return true;
+            break;
 
         case midi_track_node:
-            return true;
+            break;
     }
+}
 
-    return true;
+
+/*****************************
+ * 
+ * cv_output_track_param 
+ * 
+ *****************************/
+
+
+void cv_output_track_param::process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {
+
+}
+
+void cv_output_track_param::work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) {
+    switch(input->node.type) {
+        case audio_node: {
+            //average audio samples, need to add a flags + settings properties to cv_connector to indicate how to average/amplify - 
+            // for now just - average(abs(sample))) -> convert to param
+            float rms = lanternfish::rms(static_cast<cv_input_audio*>(input)->data, numsamples);
+            
+            
+            break;
+        }
+
+        case zzub_track_param_node:
+            break;
+
+        case zzub_global_param_node:
+            break;
+
+        case ext_port_node:
+            break;
+
+        case midi_track_node:
+            break;
+    }
+}
+
+
+/*****************************
+ * 
+ * cv_output_ext_port 
+ * 
+ *****************************/
+
+
+
+
+void cv_output_ext_port::process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {
+
 }
 
 
 
-bool cv_output_ext_port::write(cv_input* read, zzub::metaplugin& source, zzub::metaplugin& target, int numsamples) {
-    switch(read->node.type) {
+void cv_output_ext_port::work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) {
+    switch(input->node.type) {
         case audio_node:
-            return true;
+            break;
 
-        case zzub_param_node:
-            return true;
+        case zzub_track_param_node:
+            break;
+
+        case zzub_global_param_node:
+            break;
 
         case ext_port_node:
-            return true;
+            break;
 
         case midi_track_node:
-            return true;
+            break;
     }
-
-    return true;
 }
 
 
 
-bool cv_output_midi_track::write(cv_input* read, zzub::metaplugin& source, zzub::metaplugin& target, int numsamples) {
-    switch(read->node.type) {
-        case audio_node:
-            return true;
+/*****************************
+ * 
+ * cv_output_midi_track 
+ * 
+ *****************************/
 
-        case zzub_param_node:
-            return true;
+
+
+void cv_output_midi_track::process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {
+
+}
+
+
+void cv_output_midi_track::work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) {
+    switch(input->node.type) {
+        case audio_node:
+            break;
+
+        case zzub_track_param_node:
+            break;
+
+        case zzub_global_param_node:
+            break;
 
         case ext_port_node:
-            return true;
+            break;
 
         case midi_track_node:
-            return true;
+            break;
     }
-
-    return true;
 }
 
 
 
-bool cv_output_audio::write(cv_input* read, zzub::metaplugin& source, zzub::metaplugin& target, int numsamples) {
-    switch(read->node.type) {
+
+/*****************************
+ * 
+ * cv_output_audio 
+ * 
+ *****************************/
+
+
+
+void cv_output_audio::process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {
+  
+}
+
+void cv_output_audio::work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) {
+    switch(input->node.type) {
         case audio_node:
-            return write_buffer(static_cast<cv_input_audio*>(read)->data, source, target, numsamples);
+            write_buffer(static_cast<cv_input_audio*>(input)->data, from_plugin, to_plugin, numsamples);
+            break;
 
-        case zzub_param_node: {
-            int param_int = source.callbacks->get_parameter(source.proxy, zzub_parameter_group_global, 0, read->node.value);
-            float param_norm = source.info->global_parameters[read->node.value]->normalize(param_int);
-            float *data = buf;
+        case zzub_track_param_node:
+            write_value_to_buffer(static_cast<cv_input_track_param*>(input)->norm_value, from_plugin, to_plugin, numsamples);
+            break;
 
-            for(int i = 0; i < numsamples; i++) {
-                *data++ = param_norm;
-            }
+        case zzub_global_param_node:
+            write_value_to_buffer(static_cast<cv_input_global_param*>(input)->norm_value, from_plugin, to_plugin, numsamples);
+            break;
 
-            return write_buffer(data, source, target, numsamples);
-        }
+        case ext_port_node: 
+            write_value_to_buffer(static_cast<cv_input_ext_port*>(input)->value, from_plugin, to_plugin, numsamples);
+            break;
 
-        case ext_port_node: {
-            zzub::port* port = source.plugin->get_port(read->node.value);
-            float value = port->get_value();
-            float *data = buf;
-
-            for(int i = 0; i < numsamples; i++) {
-                *data++ = value;
-            }
-
-            return write_buffer(data, source, target, numsamples);
-        }
 
         case midi_track_node:
             // return write_buffer(read->data, source, target, numsamples);
-            return true;
+            break;
     }
-    
-    return true;
 }
 
+void cv_output_audio::write_value_to_buffer(float value, zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) {
+    float *tmp = buf;
 
-// cv_target_audio methods
-bool cv_output_audio::write_buffer(float* data, zzub::metaplugin& source, zzub::metaplugin& target, int numsamples) {
+    for(int i = 0; i < numsamples; i++) {
+        *tmp++ = value;
+    }
+
+    write_buffer(buf, from_plugin, to_plugin, numsamples);
+}
+
+//    return plugin.last_work_audio_result && amp > 0 && (plugin.last_work_max_left > SIGNAL_TRESHOLD || plugin.last_work_max_right > SIGNAL_TRESHOLD);
+
+void cv_output_audio::write_buffer(float* buffer, zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) {
     float amp = 1.0f;
 
-    bool target_does_input_mixing = (target.info->flags & zzub::plugin_flag_does_input_mixing) != 0;
-    bool result = zzub::tools::plugin_has_audio(source, amp);
-
+    bool target_does_input_mixing = (to_plugin.info->flags & zzub::plugin_flag_does_input_mixing) != 0;
+    bool result = zzub::tools::plugin_has_audio(from_plugin, amp);
+    int sample_count = numsamples;
+    
     if (target_does_input_mixing) {
-        bool target_to_is_bypassed = target.is_bypassed || (target.sequencer_state == sequencer_event_type_thru);
-        bool target_to_is_muted = target.is_muted || (target.sequencer_state == sequencer_event_type_mute);
+        bool target_is_bypassed = to_plugin.is_bypassed || (to_plugin.sequencer_state == sequencer_event_type_thru);
+        bool target_is_muted = to_plugin.is_muted || (to_plugin.sequencer_state == sequencer_event_type_mute);
 
         if(result) {
             // the only two plugin which do input mixing, the btdsys_ringmod and jmmcd_Crossfade, expect stereo audio so they get the mono input on both channels
-            float *stereo_in[2] = {data, data};
-            target.plugin->input(stereo_in, numsamples, amp);
+            float *stereo_in[2] = {buffer, buffer};
+            to_plugin.plugin->input(stereo_in, numsamples, amp);
         } else {
-            target.plugin->input(0, 0, 0);
+            to_plugin.plugin->input(0, 0, 0);
         }
 
     } else if(result && numsamples > 0) {
-        float* dest = &target.work_buffer[node.value % 1].front();
-        float *src = data;
+        // node.value is -> 0 =left channel, 1 = right channel, 3 = stereo
+        switch(node.value) {
+            case 0:
+            case 1:{
+                float* dest = &to_plugin.work_buffer[node.value % 2].front();
+                float *src = buffer;
 
-        do {
-            *dest++ += *src++ * amp;
-        } while(--numsamples);
+                do {
+                    *dest++ += *src++ * amp;
 
-    } else {
-        return false;
+                } while(--numsamples);
+            }
+
+            case 3: {
+                float* dest_l = &to_plugin.work_buffer[0].front();
+                float* dest_r = &to_plugin.work_buffer[1].front();
+                float *src = buffer;
+
+                do {
+                    *dest_l++ += *src * amp;
+                    *dest_r++ += *src++ * amp;
+
+                } while(--numsamples);
+            }
+        }
     }
-
-    return true;
 }
 
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+/*************************************
+ * 
+ * build_cv_input and build_cv_output 
+ * 
+ *************************************/
 
-std::shared_ptr<cv_input> build_cv_input(const cv_node& source) {
-    printf("build input node type: %d\n", source.type);
+
+std::shared_ptr<cv_input> build_cv_input(const cv_node& source, const cv_connector_data& data) {
     switch(source.type) {
-        case zzub_param_node:
-            return std::make_shared<cv_input_zzub_param>(source);
+        case zzub_track_param_node:
+            return std::make_shared<cv_input_track_param>(source, data);
+
+        case zzub_global_param_node:
+            return std::make_shared<cv_input_global_param>(source, data);
 
         case ext_port_node:
-            return std::make_shared<cv_input_ext_port>(source);
+            return std::make_shared<cv_input_ext_port>(source, data);
 
         case midi_track_node:
-            return std::make_shared<cv_input_midi>(source);
+            return std::make_shared<cv_input_midi>(source, data);
 
         case audio_node:
         default:
-            return std::make_shared<cv_input_audio>(source);
+            return std::make_shared<cv_input_audio>(source, data);
     }
 }
 
 
-std::shared_ptr<cv_output> build_cv_output(const cv_node& target) {
-    printf("build output node type: %d\n", target.type);
+std::shared_ptr<cv_output> build_cv_output(const cv_node& target, const cv_connector_data& data, cv_input* input) {
     switch(target.type) {
-        case zzub_param_node:
-            return std::make_shared<cv_output_zzub_param>(target);
+        case zzub_track_param_node:
+            return std::make_shared<cv_output_track_param>(target, data, input);
+
+        case zzub_global_param_node:
+            return std::make_shared<cv_output_global_param>(target, data, input);
 
         case ext_port_node:
-            return std::make_shared<cv_output_ext_port>(target);
+            return std::make_shared<cv_output_ext_port>(target, data, input);
 
         case midi_track_node:
-            return std::make_shared<cv_output_midi_track>(target);
+            return std::make_shared<cv_output_midi_track>(target, data, input);
 
         case audio_node:
         default:
-            return std::make_shared<cv_output_audio>(target);
+            return std::make_shared<cv_output_audio>(target, data, input);
     }
 }
 

@@ -9,9 +9,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 
-# used to store port information
-# the lv2 plugin have ports with a matching api - 
-# zzub plugins have no concept of ports (yet) so portwrapper is used to mimic the zzub::port api using the zzub::paramaters and audio in/out channels which zzub::plugins do have 
+# used to store port information, matches api of ports on the lv2 plugin
 class PortWrapper:
     def __init__(self, name, flow, index, type):
         self.name = name
@@ -32,7 +30,11 @@ class PortWrapper:
         return self.name
 
 
-# 
+
+# The connect dialog builds a PortInfo structure for the source and target plugins
+# It builds a list of PortWrapper objects
+# only the lv2 plugin wrapper directly supports port's
+# vst and zzub plugins use the make_ports() method to mimic the lv2 ports
 class PortInfo:
     def __init__(self, plugin):
         if plugin.get_flags() & zzub.zzub_plugin_flag_has_ports:
@@ -75,16 +77,22 @@ class PortInfo:
 
 
 
-# used to display port name and change colour when clicked
-# can't use a label as they inherit background color which can't be changed
+# a toggle switch which display port name and changes colour when clicked
+# would prefer to use a gtk.label but they inherit background color from enclosing widget which makes changing colour messy 
 class BoxyLabel(Gtk.EventBox):
     def __init__(self, text):
         Gtk.EventBox.__init__(self, expand=True)
         self.label = Gtk.Label(text)
         self.add(self.label)
+    
+    def set_selected_value(self, value):
+        if value:
+            self.get_style_context().add_class("selected")
+        else:
+            self.get_style_context().remove_class("selected")
 
 
-# build two columns. the left side has all the ports on the source plugin, the right side the target plugin
+# there are two audiogrids in the connect dialog, the left side is ports on source source, right side is ports for target plugin
 class AudioGrid(Gtk.Grid):
     def __init__(self, title, port_count):
         Gtk.Grid.__init__(self)
@@ -110,36 +118,34 @@ class AudioGrid(Gtk.Grid):
             self.make_grid(range(port_count))
 
         label = BoxyLabel(title)
-        label.connect("button-release-event", self.toggle_all_channels)
+        # label.connect("button-release-event", self.toggle_all_channels)
         self.attach(label, 0, 0, port_count, 1)
 
     def make_grid(self, titles):
         for index, title in enumerate(titles):
             label = BoxyLabel(title)
-            label.connect("button-release-event", self.toggle_one_channel, index)
+            label.connect("button-release-event", self.toggle_channel, index)
             self.attach(label, index, 1, 1, 1)
 
     # the "L" or "R" button was clicked. toggle: channel on <-> channel off
-    def toggle_one_channel(self, widget, event, channel):
-        return self.toggle_channels_mask(1 << channel)
-
-    # the tiitle was clicked. toggle: all channels on <-> all channels off
-    def toggle_all_channels(self, widget, event): 
-        return self.toggle_channels_mask((~self.selected) & self.all_mask)
-
-    def toggle_channels_mask(self, mask):
-        self.selected ^= mask
-
-        for index in range(self.port_count):
-            label = self.get_child_at(index, 1)
-
-            if self.selected & (1 << index):
-                label.get_style_context().add_class("selected")
-            else:
-                label.get_style_context().remove_class("selected")
+    def toggle_channel(self, widget, event, channel):
+        self.set_selected_value(self.selected ^ (1 << channel))
 
         if self.handler:
             self.handler(self.selected, *self.args)
+
+    def set_selected_value(self, value):
+        self.selected = value
+        self.update_css_classes(value)
+
+    def update_css_classes(self, value):
+        for index in range(self.port_count):
+            label = self.get_child_at(index, 1)
+
+            if value & (1 << index):
+                label.get_style_context().add_class("selected")
+            else:
+                label.get_style_context().remove_class("selected")
 
     def clear_all(self):
         self.selected = 0
@@ -155,7 +161,8 @@ class AudioGrid(Gtk.Grid):
 
 
      
-# store current port selection - the ConnectDialog uses two of these for the source and target plugins 
+# store selected port info to create a cvnode
+# the connectdialog has two of these and they are update when user clicks a label in the dialog
 class Connector:
     def __init__(self, plugin_id, is_source):
         self.type = None           # audio/parameter/cv
@@ -168,32 +175,43 @@ class Connector:
         self.value = value
 
     def as_node(self):
-        return zzub.CvNode(
+        return zzub.CvNode.create(
             self.plugin_id,
             self.type if self.type is not None else zzub.zzub_port_type_parameter,
             self.value if self.value is not None else 0
         )
 
 
-class ConnectDialog(Gtk.Dialog):
-    # __popup__ = dict(
-    #     label = "Connect plugin",
-    #     where = "router.connect.dialog",
-    #     default = True,
-    #     singleton = False,
-    # )
 
-    def __init__(self, parent, from_plugin: Plugin, to_plugin: Plugin):
+class ConnectDialog(Gtk.Dialog):
+    def __init__(self, 
+                 parent, 
+                 from_plugin: Plugin, 
+                 to_plugin: Plugin, 
+                 source_node: zzub.CvNode = None, 
+                 target_node: zzub.CvNode = None, 
+                 cvdata: zzub.CvConnectorData = None
+                ):
         """
         Show lists of all ports on the souce and target plugin
+
         parent: the parent window
         from_plugin: the plugin to connect from
         to_plugin: the plugin to connect to
+        source_node: port on from_plugin connecting from (only used when when editing)
+        target_node: port on to_plugin connecting to (only used when when editing)
+        cvdata: cv data of the connector being edited
         """
-        Gtk.Dialog.__init__(self, transient_for = parent.get_toplevel(), title = "Connect", name="connector")
+        Gtk.Dialog.__init__(
+            self, 
+            transient_for = parent.get_toplevel(), 
+            title = "Connect", 
+            name="connector"
+        )
         
-        self.source = Connector(from_plugin.get_id(), True)
-        self.target = Connector(to_plugin.get_id(), False)
+        self.source = Connector(from_plugin.get_id(), True) 
+        self.target = Connector(to_plugin.get_id(), False) 
+        self.cvdata = zzub.CvConnectorData(1.0, 0, 0, 0) if cvdata is None else cvdata
 
         def has_flag(plugin, flag):
             return plugin.get_flags() & flag
@@ -210,6 +228,7 @@ class ConnectDialog(Gtk.Dialog):
         targets = self.make_connectors(False, self.target_ports, has_audio)
 
         self.grid = grid = Gtk.Grid()
+        
         grid.attach(Gtk.Label("Source"), 0, 0, 1, 1)
         grid.attach(Gtk.Label("Targets"), 1, 0, 1, 1)
 
@@ -220,12 +239,12 @@ class ConnectDialog(Gtk.Dialog):
             if not target:
                 target = Gtk.Box()
 
-            grid.attach(source, 0, index + 1, 1, 1)
+            grid.attach(source,  0, index + 1, 1, 1)
             grid.attach(target, 1, index + 1, 1, 1)
 
         cancel = Gtk.Button("Cancel")
         ok = Gtk.Button("OK")
-
+  
         grid.attach(cancel, 0, index + 2, 1, 1)
         grid.attach(ok, 1, index + 2, 1, 1)
 
@@ -238,33 +257,60 @@ class ConnectDialog(Gtk.Dialog):
         self.set_size_request(400, 500)
         self.show_all()
 
-    
+        if source_node and target_node:
+            self.init_connector(source_node.get_type(), source_node.get_value(), True)
+            self.init_connector(target_node.get_type(), target_node.get_value(), False)
+
+
     def build_port_infos(self, plugin):
         return PortInfo(plugin)
 
 
-    # get the selected source and target connectors
-    # only valid if dialog returns OK
-    def get_connectors(self):
-        return [self.source.as_node(), self.target.as_node()]
-    
+    def init_connector(self, cv_type, cv_value, is_source):
+        connector = self.source if is_source else self.target
+        connector.update(cv_type, cv_value)
+        
+        if cv_type == zzub.zzub_cv_node_type_audio_node:
+            self.audio_channel_selected(cv_value, is_source)
+            self.get_audio_connector_gridbox(is_source).set_selected_value(cv_value)
+        elif cv_type ==  zzub.zzub_cv_node_type_global_node:
+            self.parameter_selected(None, None, cv_value, is_source)
+        else:
+            print("unknown connector type", cv_type, "value", cv_value, is_source)
 
+
+    def get_connectors(self):
+        """
+        get the selected source and target connectors
+        only valid if dialog returns OK
+        """
+        return [self.source.as_node(), self.target.as_node()]
+
+
+    def get_cv_data(self):
+        return self.cvdata
+    
+    def get_audio_connector_gridbox(self, is_source):
+        return self.grid.get_child_at(0 if is_source else 1, 1)
+    
+    def get_parameter_gridbox(self, index, is_source):
+        return self.grid.get_child_at(0 if is_source else 1, 2 + index)
+    
     # messages from AudioGrid channel selector received here
     def audio_channel_selected(self, selected_channels, is_source):
         connector = self.source if is_source else self.target
-
         self.clear_selected(connector)
         connector.update(zzub.zzub_port_type_audio, selected_channels)
 
 
+
     # signals from button-release-event on a parameter 
-    def parameter_selected(self, widget, event, is_source, index):
+    def parameter_selected(self, widget, event, index, is_source):
         (connector, column) = (self.source, 0) if is_source else (self.target, 1)
 
         self.clear_selected(connector, True)
         connector.update(zzub.zzub_port_type_parameter, index)
-
-        self.grid.get_child_at(column, 2 + index).get_style_context().add_class("selected")
+        self.get_parameter_gridbox(index, is_source).set_selected_value(True)
 
 
     # remove "selected" css class from the previously selected port        
@@ -320,16 +366,58 @@ class ConnectDialog(Gtk.Dialog):
 
     def make_param_connector(self, is_source, param: PortWrapper):
         box = BoxyLabel(param.get_name())
-        box.connect("button-press-event", self.parameter_selected, is_source, param.get_index())
+        box.connect("button-press-event", self.parameter_selected, param.get_index(), is_source)
         return box
     
 
+# todo: finish
+class ChooseConnectorDialog(Gtk.Dialog):
+    def __init__(self, parent, to_plugin, conn_index):
+        super().__init__(transient_for=parent, title=self.__popup__.label)
+
+        from_plugin = to_plugin.get_input_connection_plugin(conn_index)
+        connection = to_plugin.get_input_connection(conn_index).as_cv_connection()
+        connector_count = connection.get_connector_count()
+
+        grid = Gtk.Grid()
+
+        for i in enumerate(connector_count):
+            connector = connection.get_connector(from_plugin, to_plugin, i)
+            label = self.get_label_for(connector)
+            grid.attach(label, 0, i, 1, 1)
+
+        self.get_content_area().add(grid)
+        self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+        self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        self.show_all()
+
+
+    def get_label_for(self, from_plugin, to_plugin, connector):
+        node_from = self.describe_node(from_plugin, connector.get_source())
+        node_to = self.describe_node(to_plugin, connector.get_target())
+
+        return Gtk.Label(f"{node_from} -> {node_to}")
+
+
+    def describe_connector_node(self, plugin, node):
+        if node.type == zzub.zzub_cv_node_type_audio_node:
+            return "Audio channel %d" % node.value
+        elif node.type == zzub.zzub_cv_node_type_global_node:
+            param = plugin.info.get_parameter(zzub.zzub_parameter_group_global, node.value)
+
+            return "plugin parameter %d, %s" % (node.value, param.get_name())
+        elif node.type == zzub.zzub_cv_node_type_track_node:
+            desc = "track parameter %d" % node.value
+        elif node.type == zzub.zzub_cv_node_type_port_node:
+            desc = "port %d" % node.value
+        elif node.type == zzub.zzub_cv_node_type_midi_node:
+            desc = "midi %d" % node.value
+        else:
+            return "unknown"
 
 
 
-
-
-
+# unfinished, can use the ChooseConnectorDialog for now
 class DisconnectDialog(Gtk.Dialog):
     # __popup__ = dict(
     #     label = "Disconnect plugin",

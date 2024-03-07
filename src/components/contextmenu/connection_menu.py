@@ -3,7 +3,7 @@ import zzub
 from neil.com import com
 from neil.utils import Menu
 
-from .actions import on_popup_disconnect, on_popup_disconnect_dialog, on_popup_disconnect_all
+from .actions import on_popup_disconnect, on_popup_disconnect_dialog, on_popup_disconnect_all, on_popup_edit_cv_connection
 from .submenus import machine_tree_submenu
 
 
@@ -28,8 +28,11 @@ class ConnectionMenu(Menu):
             if conntype == zzub.zzub_connection_type_audio:
                 self.add_submenu("Add machine", machine_tree_submenu(connection=True))
                 self.add_separator()
+            elif conntype == zzub.zzub_connection_type_cv:
+                self.add_item("Edit cv connection", on_popup_edit_cv_connection, mp, 0)
+                self.add_separator()
 
             self.add_item("Disconnect plugin", on_popup_disconnect, mp, index)
         else:
-            self.add_item("Disconnect choice", on_popup_disconnect_dialog, connections)
-            self.add_item("Disconnect all", on_popup_disconnect_all, connections)
+            self.add_item("Choose connector to delete", on_popup_disconnect_dialog, connections)
+            self.add_item("Disconnect plugin", on_popup_disconnect_all, connections)

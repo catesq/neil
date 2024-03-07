@@ -914,12 +914,12 @@ void player::plugin_add_event_connection_binding(int to_id, int from_id, int sou
     end_plugin_operation(to_id);
 }
 
-void player::plugin_add_cv_connector(int to_id, int from_id, zzub::cv_connector *link) {
+void player::plugin_add_cv_connector(int to_id, int from_id, const zzub::cv_connector &link) {
     begin_plugin_operation(to_id);
     begin_plugin_operation(from_id);
 
-    op_plugin_add_cv_connector* cv_redo = new op_plugin_add_cv_connector(to_id, from_id, *link);
-    op_plugin_remove_cv_connector* cv_undo = new op_plugin_remove_cv_connector(to_id, from_id, *link);
+    op_plugin_add_cv_connector* cv_redo = new op_plugin_add_cv_connector(to_id, from_id, link);
+    op_plugin_remove_cv_connector* cv_undo = new op_plugin_remove_cv_connector(to_id, from_id, link);
 
     prepare_operation_redo(cv_redo);
     prepare_operation_undo(cv_undo);
@@ -928,14 +928,26 @@ void player::plugin_add_cv_connector(int to_id, int from_id, zzub::cv_connector 
     end_plugin_operation(to_id);
 }
 
-void player::plugin_remove_cv_connector(int to_id, int from_id, zzub::cv_connector *link) {
-    auto copy_link = *link;
-
+void player::plugin_remove_cv_connector(int to_id, int from_id, const zzub::cv_connector &link) {
     begin_plugin_operation(to_id);
     begin_plugin_operation(from_id);
 
-    op_plugin_remove_cv_connector* redo = new op_plugin_remove_cv_connector(to_id, from_id, *link);
-    op_plugin_add_cv_connector* undo = new op_plugin_add_cv_connector(to_id, from_id, *link);
+    op_plugin_remove_cv_connector* redo = new op_plugin_remove_cv_connector(to_id, from_id, link);
+    op_plugin_add_cv_connector* undo = new op_plugin_add_cv_connector(to_id, from_id, link);
+
+    prepare_operation_redo(redo);
+    prepare_operation_undo(undo);
+
+    end_plugin_operation(from_id);
+    end_plugin_operation(to_id);
+}
+
+void player::plugin_update_cv_connector(int to_id, int from_id, const zzub::cv_connector &old_link, const zzub::cv_connector &new_link, int connector_index) {
+    begin_plugin_operation(to_id);
+    begin_plugin_operation(from_id);
+
+    op_plugin_edit_cv_connector* redo = new op_plugin_edit_cv_connector(to_id, from_id, new_link, connector_index);
+    op_plugin_edit_cv_connector* undo = new op_plugin_edit_cv_connector(to_id, from_id, old_link, connector_index);
 
     prepare_operation_redo(redo);
     prepare_operation_undo(undo);

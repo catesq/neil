@@ -134,21 +134,6 @@ struct find_info_by_uri {
 };
 
 
-// get the audio buffer of plugin_from.
-// depending where the from and to plugins are in the work order it returns either: 
-//   earlier work frame held in the feedback buffer
-//   current work frame in work_buffer
-// buffer index is 0 or 1
-// float* get_plugin_audio_from(zzub::metaplugin& plugin_from, zzub::metaplugin& plugin_to, int buffer_index);
-
-inline float* get_plugin_audio_from(zzub::metaplugin& plugin_from, zzub::metaplugin& plugin_to, int buffer_index) {
-    if (plugin_from.last_work_frame != plugin_to.last_work_frame + plugin_to.last_work_buffersize) {
-        return &plugin_from.callbacks->feedback_buffer[buffer_index].front();
-    } else {
-        return &plugin_from.work_buffer[buffer_index].front();
-    }
-}
-
 inline bool plugin_has_audio(zzub::metaplugin& plugin, float amp) {
     return plugin.last_work_audio_result && amp > 0 && (plugin.last_work_max_left > SIGNAL_TRESHOLD || plugin.last_work_max_right > SIGNAL_TRESHOLD);
 }

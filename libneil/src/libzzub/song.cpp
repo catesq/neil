@@ -284,21 +284,21 @@ zzub::out_edge_iterator song::get_plugin_input_edge(int plugin_id, int index) {
     return first_edge + index;
 }
 
+
 std::vector<connection*> song::plugin_get_input_connections(int plugin_id, int from_id) {
     std::vector<connection*> result;
 
     auto [first_edge, last_edge] = get_plugin_input_edges(plugin_id);
 
     for (out_edge_iterator it = first_edge; it != last_edge; ++it) {
-        printf("input connection target: %d\n", target(*it, graph));
         if (target(*it, graph) == from_id) {
-            printf("got input connection - index: %d, type %d\n", it - first_edge, graph[*it].conn->type);
             result.push_back(graph[*it].conn);
         }
     }
 
     return result;
 }
+
 
 int song::plugin_get_input_connection_count(int to_id) {
     auto [first_edge, last_edge] = get_plugin_input_edges(to_id);
@@ -356,12 +356,12 @@ connection* song::plugin_get_input_connection(int plugin_id, int from_id, connec
 }
 
 
-
 std::pair<zzub::in_edge_iterator, zzub::in_edge_iterator> song::get_plugin_output_edges(int plugin_id) {
     ASSERT_PLUGIN(plugin_id);
 
     return in_edges(plugins[plugin_id]->descriptor, graph);
 }
+
 
 zzub::in_edge_iterator song::get_plugin_output_edge(int plugin_id, int index) {
     auto [first_edge, last_edge] = get_plugin_output_edges(plugin_id);
@@ -1306,7 +1306,6 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
 
     memcpy(&mix_buffer[0].front(), &m.work_buffer[0].front(), sample_count * sizeof(float));
     memcpy(&mix_buffer[1].front(), &m.work_buffer[1].front(), sample_count * sizeof(float));
-
     float *plin[] = { &mix_buffer[0].front(), &mix_buffer[1].front() };
     float *plout[] = { &m.work_buffer[0].front(), &m.work_buffer[1].front() };
 

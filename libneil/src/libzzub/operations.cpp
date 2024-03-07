@@ -778,13 +778,12 @@ void op_plugin_remove_event_connection_binding::finish(zzub::song& song, bool se
 // ---------------------------------------------------------------------------
 
 
-op_plugin_add_cv_connector::op_plugin_add_cv_connector(int to_id, int from_id, cv_connector connector) :
+op_plugin_add_cv_connector::op_plugin_add_cv_connector(int to_id, int from_id, const cv_connector& connector) :
     from_id(from_id),
     to_id(to_id),
     connector(connector),
     plugin_connect_op(from_id, to_id, connection_type_cv) {
         copy_flags = plugin_connect_op.copy_flags;
-        printf("op_plugin_add_cv_port_link::op_plugin_add_cv_connector copy flags length: %d\n", copy_flags.plugin_flags.size());
 }
 
 bool op_plugin_add_cv_connector::prepare(zzub::song& song) {
@@ -828,7 +827,7 @@ void op_plugin_add_cv_connector::finish(zzub::song& song, bool send_events) {
 
 
 
-op_plugin_remove_cv_connector::op_plugin_remove_cv_connector(int to_id, int from_id, cv_connector connector) :
+op_plugin_remove_cv_connector::op_plugin_remove_cv_connector(int to_id, int from_id, const cv_connector& connector) :
     from_id(from_id),
     to_id(to_id),
     connector(connector),
@@ -845,8 +844,9 @@ bool op_plugin_remove_cv_connector::prepare(zzub::song& song) {
 
     auto cv_conn = static_cast<cv_connection*>(conn);
 
-    // will remove cv connection if this was the last pair of linked ports on the connection
-    if(cv_conn->has_connector(connector) && cv_conn->num_connectors() == 1) {
+    // remove the cv_connection from the connection graph 
+    // if this is the last cv connector between the two plugins
+    if(cv_conn->has_connector(connector) && cv_conn->get_connector_count() == 1) {
         do_plugin_disconnect = true;
         plugin_disconnect_op.prepare(song);
     }
@@ -859,7 +859,7 @@ bool op_plugin_remove_cv_connector::operate(zzub::song& song) {
     auto conn = (cv_connection*) song.plugin_get_input_connection(to_id, from_id, connection_type_cv);
 
     if (!conn) 
-        return true;	// plugin probably deleted
+        return true;	// plugin already deleted somehow
 
     for(auto it = conn->connectors.begin(); it != conn->connectors.end(); ) {
         if (*it == connector) {
@@ -880,6 +880,45 @@ void op_plugin_remove_cv_connector::finish(zzub::song& song, bool send_events) {
     if(do_plugin_disconnect)
         plugin_disconnect_op.finish(song, send_events);
 }
+
+
+
+// ---------------------------------------------------------------------------
+//
+// op_plugin_edit_cv_port_link
+//
+// ---------------------------------------------------------------------------
+
+op_plugin_edit_cv_connector::op_plugin_edit_cv_connector(int to_id, int from_id, const cv_connector& connector, int conn_index) :
+    from_id(from_id),
+    to_id(to_id),
+    connector(connector),
+    conn_index(conn_index) {
+}
+
+
+bool op_plugin_edit_cv_connector::prepare(zzub::song& song) {    
+    return true;
+}
+
+
+bool op_plugin_edit_cv_connector::operate(zzub::song& song) {
+    auto connection = (cv_connection*) song.plugin_get_input_connection(to_id, from_id, connection_type_cv);
+
+    if (!connection) {
+        return false;
+    }
+
+    connection->update_connector(conn_index, this->connector);
+
+    return true;
+}
+
+
+void op_plugin_edit_cv_connector::finish(zzub::song& song, bool send_events) {
+}
+
+
 
 
 // ---------------------------------------------------------------------------
