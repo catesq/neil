@@ -73,6 +73,8 @@ localenv.Append(
         localenv['LIB_COMPAT'],
         'pugixml',
         'minizip',
+        'lanternfish',
+        'kissfft',
         'ssl',
         'pthread',
         'm',
