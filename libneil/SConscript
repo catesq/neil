@@ -22,7 +22,7 @@
 VERSION = "0.3"
 
 import os, sys, platform
-import distutils.sysconfig
+import ext_modules
 
 posix = os.name == 'posix'
 linux = sys.platform == 'linux'
@@ -62,6 +62,10 @@ class PkgVersionErr:
         self.version = version
     def __str__(self):
         return "error: '%s' version needs to be > %s" % (self.lib, self.version)
+
+
+
+
 
 # def tools_converter(value):
 #     return value.split(',')
@@ -278,8 +282,9 @@ binpath = "${DESTDIR}${PREFIX}/bin"
 libpath = "${DESTDIR}${PREFIX}${LIBDIR}"
 includepath = "${DESTDIR}${PREFIX}/include"
 pluginpath = "${DESTDIR}${PREFIX}${LIBDIR}/zzub"
-pypath = "%s%s" % (env['DESTDIR'], env['PREFIX'])
-pyextpath = distutils.sysconfig.get_python_lib(prefix=pypath)
+
+pyextpath = main_env['SITE_PACKAGE_PATH']
+
 
 def install(target, source, perm=None, symlink=False):
     if not perm:
@@ -312,50 +317,83 @@ def install_plugin_help(name, files):
     return install("${DESTDIR}${PREFIX}/share/doc/zzub/plugins/"+name, files, 0o644)
 
 
-
-def add_src_path_to_env(subdir: str, name=False):
-    src_path = os.path.join(env['SRC_PATH'], 'libneil', 'src', subdir)
-
-    if name:
-        env[name + '_SRC_PATH'] = src_path
-    else:
-        env[subdir.upper() + '_SRC_PATH'] = src_path
+################################################################################
+# every submodule (subdirs of libneil/src) has a <SUBMODULENAME>_SRC_PATH. 
+# the src_path is needed for: build_cmake_module, build_scons_module, include path
+################################################################################
 
 
-# some internal and external submodule - some using cmake some Scons
-# the cmake projects, loguru and gist, are build at around line 580 - 630
-for subdir in ('libzzub', 'pyzzub', 'plugins', 'lanternfish', 'kiss_fft', 'loguru', 'gist'):
-    add_src_path_to_env(subdir)
 
+loguru_lib_name = 'logurud' if env['DEBUG'] else 'loguru'
 
-# add_env_src_path('kiss_fft', 'KISS_FFT_SRC_PATH')
+submodules = [
+    ext_modules.cpp_path('libneil', '${BUILD_PATH}/libneil/include'),
+
+    ext_modules.scons_module('kiss_fft'),
+
+    ext_modules.cmake_module('gist', 'Gist', build_subdir = 'src', cpp_defines = ['USE_KISS_FFT'], ),
+
+    ext_modules.cmake_module('loguru', loguru_lib_name, always_link = True),
+
+    ext_modules.scons_module('lanternfish'),
+
+    ext_modules.scons_module('libzzub', env_flags = {
+        'LIB_BUILD_PATH': '${BUILD_PATH}/lib',
+        'BIN_BUILD_PATH': '${BUILD_PATH}/bin',
+    }),
     
-# env['LIBZZUB_SRC_PATH'] = '${SRC_PATH}/libneil/src/libzzub'
-# env['PLUGINS_SRC_PATH'] = '${SRC_PATH}/libneil/src/plugins'
-# env['PYZZUB_SRC_PATH'] = '${SRC_PATH}/libneil/src/pyzzub'
-# env['LANTERNFISH_SRC_PATH'] = '${SRC_PATH}/libneil/src/lanternfish'
-# env['KISSFFT_SRC_PATH'] = '${SRC_PATH}/libneil/src/kiss_fft'
+    ext_modules.scons_module('plugins'),
+
+    ext_modules.scons_module('pyzzub'),
+]
+
+##################################################################################
+# add ???_SRC_PATH for each submodule's build path 
+##################################################################################
+# for subdir in ('libzzub', 'pyzzub', 'plugins', 'lanternfish', 'kiss_fft', 'loguru', 'gist'):
+#     add_submodule_src_path(subdir)
+
+for module in submodules:
+    if module.get_src_path():
+        env.Append(CPPPATH = [module.get_src_path()])
+
+        if module.get_src_path_key():
+            env[module.get_src_path_key()] = module.get_src_path()
+
+    if module.get_cpp_defines():
+        env.Append(CPPDEFINES = module.get_cpp_defines())
+
+    for key, val in module.get_env_flags().items():
+        env[key] = val
 
 
-env['LOGURU_LIB_NAME'] = 'logurud' if env['DEBUG'] else 'loguru'
 
-env['LIB_BUILD_PATH'] = '${BUILD_PATH}/lib'
-env['BIN_BUILD_PATH'] = '${BUILD_PATH}/bin'
 
-######################################
+###############################
 #
-# configure
+# c/c++ src dirs and defines 
 #
-######################################
+###############################
 
-env.Append(CPPPATH=['${BUILD_PATH}/libneil/include', '${LOGURU_SRC_PATH}', '${GIST_SRC_PATH}/src'])
+# env.Append(CPPPATH=[ '${BUILD_PATH}/libneil/include', 
+#                      '${LOGURU_SRC_PATH}', 
+#                      '${GIST_SRC_PATH}/src', 
+#                      '${LANTERNFISH_SRC_PATH}', 
+#                      '${KISS_FFT_SRC_PATH}' ],
+
+#            CPPDEFINES = [ 'USE_KISS_FFT' ])
 
 
-######################################
+# env['LOGURU_LIB_NAME'] = 'logurud' if env['DEBUG'] else 'loguru'
+# env['LIB_BUILD_PATH']  = '${BUILD_PATH}/lib'
+# env['BIN_BUILD_PATH']  = '${BUILD_PATH}/bin'
+
+
+######################################################
 #
-# configuration
+# configuration helpers
 #
-######################################
+######################################################
 
 USE_SNDFILE = env['SNDFILE']
 
@@ -421,6 +459,10 @@ def is_cleaning():
     except: return SCons.Script.Main.options.clean
 
 
+##############################################
+# configuration
+##############################################
+    
 if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     import os
 
@@ -437,7 +479,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         }
     )
 
-    # make sure all the development libraries are installed
+    # check if dev libs installed
 
     lib_errors = []
 
@@ -474,13 +516,13 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     if not conf.CheckCHeader('portaudio.h'):
         lib_errors.append(LibraryNotFound("portaudio"))
         
-    if not conf.CheckCHeader('mad.h'):
+    if not conf.CheckCHeader('mad.h'):  # needed by libmad 
         env['MAD'] = False
     else:
         env['MAD'] = True
 
 
-    if posix: # vst3 headers 
+    if posix: # needed by vst3 headers 
         if not conf.CheckCHeader('X11/Xlib.h'):
             lib_errors.append(LibraryNotFound("Xlib.h"))
 
@@ -562,6 +604,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
 ######################################
 # save config
 ######################################
+    
 env.Precious(options_conf_file)
 opts.Save(options_conf_file, env)
 Help( opts.GenerateHelpText( env ) )
@@ -575,97 +618,24 @@ if (not is_cleaning()) and (env['CONFIGURED'] != VERSION):
 
 
 
-##############################
-# build libraries using cmake
-##############################
-
-def check_lib_exists(lib_name, lib_path):
-    return os.path.exists(os.path.join(lib_path, 'lib' + lib_name + '.a')) or os.path.exists(os.path.join(lib_path, 'lib' + lib_name + '.lib'))
-
-# module_path is path to cmake project. eg env['LOGURU_SRC_PATH'] or env['GIST_SRC_PATH']
-
-# actual name of the library cmake will build, as used in -L linker flag
-    # for loguru it is either 'loguru' or 'logurud'
-    # for gist it is 'Gist'
-
-# libsubdir is a subdirectory of the cmake build path where the library is built - eg 'src' for libGist
-
-def build_cmake_module(module_path, actual_lib_name, lib_subdir = False):
-    if not os.path.exists(module_path):
-        os.makedirs(module_path)
-
-    cmake_build_type = 'Debug' if env['DEBUG'] else 'Release'
-    cmake_build_path = os.path.join(module_path, 'build', cmake_build_type.lower())
-    cmake_lib_path = os.path.join(cmake_build_path, lib_subdir) if lib_subdir else cmake_build_path
-
-    if not os.path.exists(cmake_build_path):
-        os.makedirs(cmake_build_path)
-
-    if check_lib_exists(actual_lib_name, cmake_lib_path):
-        return
-    
-    os.chdir(cmake_build_path)
-    env.Execute('cmake -DCMAKE_POSITION_INDEPENDENT_CODE=On -DBUILD_SHARED_LIBS=Off -DCMAKE_BUILD_TYPE=' + cmake_build_type + ' ../..')
-    env.Execute('cmake --build .')
-    os.chdir(env['BUILD_PATH'])
-
-    if check_lib_exists(actual_lib_name, cmake_lib_path):
-        env.Append(LINKFLAGS=['-L' + cmake_build_path], LIBS=[actual_lib_name])
-    else:
-        raise Exception("%s library not built" % actual_lib_name)
-    
-
-###################################
-# build loguru library for logging  
-###################################
+#############################
+# added to builders
+#############################
 
 
-build_cmake_module(env['LOGURU_SRC_PATH'], env['LOGURU_LIB_NAME'])
-    
+def build_signature(target, source, env):
+    outfilepath = str(target[0])
+    optionsconfpath = str(source[0])
+
+    opts = {}
+    exec (open(optionsconfpath,"r").read(), {}, opts)
+
+    ofile = open(outfilepath,"w")
+    print("// generated by scons, do not touch", file=ofile)
+    print("const char ZZUB_SIGNATURE[] = \"%s\";" % opts['SIGNATURE'], file=ofile)
+    ofile.close()
 
 
-# loguru_build_path = env['LOGURU_SRC_PATH'] + '/build/' + ('debug' if env['DEBUG'] else 'release')
-# if not os.path.exists(loguru_build_path):
-#     os.makedirs(loguru_build_path)
-
-
-# if ( not os.path.exists(os.path.join(loguru_build_path, 'lib' + env['LOGURU_LIB_NAME'] + '.a')) and 
-#      not os.path.exists(os.path.join(loguru_build_path, 'lib' + env['LOGURU_LIB_NAME'] + '.lib')) ):
-#     prev_dir = os.getcwd()
-
-#     os.chdir(loguru_build_path)
-#     env.Execute('cmake -DCMAKE_POSITION_INDEPENDENT_CODE=On -DBUILD_SHARED_LIBS=Off -DCMAKE_BUILD_TYPE=' + cmake_build_type + ' ../..')
-#     env.Execute('cmake --build .')
-#     os.chdir(prev_dir)
-
-# env.Append(LINKFLAGS=['-L' + loguru_build_path], LIBS=['${LOGURU_LIB_NAME}'])
-
-
-
-########################################
-# build gist library for audio analysis 
-########################################
-
-# gist_build_path = log_build_path = env['GIST_SRC_PATH'] + '/build/' + ('debug' if env['DEBUG'] else 'release')
-
-
-build_cmake_module(env['GIST_SRC_PATH'], 'Gist', 'src')
-
-
-
-# if not os.path.exists(gist_build_path):
-#     os.makedirs(gist_build_path)
-
-# if ( not os.path.exists(os.path.join(gist_build_path, 'src', 'libGist.a')) and 
-#      not os.path.exists(os.path.join(gist_build_path, 'src', 'libGist.lib')) ):
-    
-#     prev_dir = os.getcwd()
-#     os.chdir(gist_build_path)
-#     env.Execute('cmake -DCMAKE_POSITION_INDEPENDENT_CODE=On -DBUILD_SHARED_LIBS=Off -DCMAKE_BUILD_TYPE=' + cmake_build_type + ' ../..')
-#     env.Execute('cmake --build .')
-#     os.chdir(prev_dir)
-
-# env.Append(LINKFLAGS=['-L' + gist_build_path], LIBS=['${LOGURU_LIB_NAME}'])
 
 
 #########################################################
@@ -681,29 +651,13 @@ build_cmake_module(env['GIST_SRC_PATH'], 'Gist', 'src')
 #
 #########################################################
 
-
-def build_signature(target, source, env):
-    print("build signature: %s %s" % (target, source))
-    outfilepath = str(target[0])
-    optionsconfpath = str(source[0])
-
-    opts = {}
-    exec (open(optionsconfpath,"r").read(), {}, opts)
-
-    ofile = open(outfilepath,"w")
-    print("// generated by scons, do not touch", file=ofile)
-    print("const char ZZUB_SIGNATURE[] = \"%s\";" % opts['SIGNATURE'], file=ofile)
-    ofile.close()
-
-
-
 builders = dict(
     Signature = Builder(action = build_signature),
     ZIDLCHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --c-header $TARGET $SOURCE'),
     ZIDLApiHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --api-header $TARGET $SOURCE'),
     ZIDLDataHeader = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --data-header $TARGET $SOURCE'),
 
-    ZIDLCDef = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --c-def $TARGET $SOURCE'),
+    ZIDLCDef = Builder(action =     'python ${SRC_PATH}/libneil/tools/zidl --c-def $TARGET $SOURCE'),
     ZIDLPyCtypes = Builder(action = 'python ${SRC_PATH}/libneil/tools/zidl --libversion $LIBZZUB_VERSION --py-ctypes $TARGET $SOURCE'),
 )
 
@@ -711,29 +665,31 @@ env['BUILDERS'].update(builders)
 
 #######################################
 #
-# zidl
+# generate zidl
 #
 #######################################
 
 output = []
-output.append(env.ZIDLCHeader('${BUILD_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-output.append(env.ZIDLApiHeader('${BUILD_PATH}/libneil/include/zzub/zzub_api.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-output.append(env.ZIDLDataHeader('${BUILD_PATH}/libneil/include/zzub/zzub_data.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-output.append(env.ZIDLCDef('${BUILD_PATH}/libneil/pyzzub/libzzub.def', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-output.append(env.ZIDLPyCtypes('${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__.py', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLCHeader(   '${BUILD_PATH}/libneil/include/zzub/zzub.h',         '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLApiHeader( '${BUILD_PATH}/libneil/include/zzub/zzub_api.h',     '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLDataHeader('${BUILD_PATH}/libneil/include/zzub/zzub_data.h',    '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLCDef(      '${BUILD_PATH}/libneil/pyzzub/libzzub.def',          '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
+output.append(env.ZIDLPyCtypes(  '${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__.py', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
 
 # make targets dependent on script
-
-
-# so vscode can access to includes and i can hide the build directory from vscode
-# could add symlinks but it's messy. adding the generated include dir to .vscode/c_cpp_properties.json 
-# seems to mess up vscode autocomplete/goto symbol/definition etc 
-# probably because there are multiple matching headers beneath the build/debug/ and build/release/ dirs - at every step of the include path chain
-output.append(env.ZIDLCHeader('${SRC_PATH}/libneil/include/zzub/zzub.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-output.append(env.ZIDLApiHeader('${SRC_PATH}/libneil/include/zzub/zzub_api.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-output.append(env.ZIDLDataHeader('${SRC_PATH}/libneil/include/zzub/zzub_data.h', '${SRC_PATH}/libneil/include/zzub/zzub.zidl'))
-
 env.Depends(output, '${SRC_PATH}/libneil/tools/zidl')
+
+
+# copy generated header files from build dir to src dir for vscode 
+# when the debug + release versions are built, there are multiple identical versions of the same headers visible vscode
+# this made: autocomplete, goto definition etc - very slow. 
+# so add build dir to files.exclude in settings.json and copy generated headers to source tree
+# todo: should make this a compile option which defaults to no
+for obj in output[0:3]:
+    header_name = str(obj[0])
+    src = env['BUILD_PATH'] + '/libneil/' + header_name
+    dest = env['SRC_PATH'] + '/libneil/' + header_name
+    env.AddPostAction(obj, Copy(dest, src))
 
 #######################################
 #
@@ -758,30 +714,27 @@ Export(
 env.Signature(target='include/zzub/signature.h', source=options_conf_file)
 
 
-# build_scons_module('plugins') will run 
-#    env.SConscript('${PLUGINS_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/plugins', duplicate=0) 
-def build_scons_module(name):
-    env_key = name.upper() + '_SRC_PATH'
-    src_path = '${%s}/SConscript' % env_key
-    
-    module_build_path = os.path.join(env['BUILD_PATH'], 'libneil', 'src', name)
-    env.SConscript(src_path, variant_dir=module_build_path, duplicate=0)
 
-for name in ('lanternfish', 'kiss_fft', 'libzzub', 'plugins', 'pyzzub'):
-    build_scons_module(name)
+##############################################################################
+#
+# build projects in subdir of libneil which have SConscruct files
+# this does not link the libraties like the cmake builder does
+#
+##############################################################################
 
 
-# env.SConscript('${LANTERNFISH_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/lanternfish', duplicate=0)
-# env.SConscript('${KISS_FFT_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/kiss_fft', duplicate=0)
-# env.SConscript('${LIBZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/libzzub', duplicate=0)
 
-# env.SConscript('${PYZZUB_SRC_PATH}/SConscript', variant_dir='${BUILD_PATH}/libneil/src/pyzzub', duplicate=0)
+for module in submodules:
+    module.build(env)
+
 
 #######################################
 #
-# Rest
+# install headers
 #
 #######################################
+
+
 import glob
-for header in glob.glob('${BUILD_PATH}/libneil/include/zzub/*.h'):
+for header in glob.glob(env['BUILD_PATH'] + '/libneil/include/zzub/*.h'):
     install(includepath+'/zzub', header)
