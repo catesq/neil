@@ -32,11 +32,9 @@ if __name__ == '__main__':
 import gi
 gi.require_version("Gtk", "3.0")
 import neil.com as com
-from gi.repository import Gtk, Gdk
-from gi.repository import GObject
-from gi.repository import Pango, PangoCairo
-# from cairo import Context
+from gi.repository import Gtk, Gdk, GObject, Pango, PangoCairo
 import cairo
+import math
 
 
 from neil.utils import PluginType
@@ -73,16 +71,63 @@ AREA_ANY = 0
 AREA_PANNING = 1
 AREA_LED = 2
 
-def draw_line(bmpctx, linepen, crx, cry, rx, ry):
-    vx, vy = (rx - crx), (ry - cry)
-    length = (vx * vx + vy * vy) ** 0.5
-    if not length:
+def draw_line(ctx, linepen, crx, cry, rx, ry):
+    if abs(crx - rx) < 1 and abs(cry - ry) < 1:
         return
-    vx, vy = vx / length, vy / length
-    bmpctx.move_to(crx, cry)
-    bmpctx.line_to(rx, ry)
-    bmpctx.set_source_rgb(*linepen)
-    bmpctx.stroke()
+    
+    ctx.move_to(crx, cry)
+    ctx.line_to(rx, ry)
+    ctx.set_source_rgb(*linepen)
+    ctx.stroke()
+
+# draw a line that looks vaguely like a sine wave along a stright line from (c_x, c_y) to (d_x, d_y) 
+def draw_wavy_line(ctx, linepen, crx, cry, rx, ry, wave_height = 10, wave_length = 20):
+    dx = rx - crx
+    dy = ry - cry
+
+    if abs(dx) < 1 and abs(dy) < 1:
+        return
+
+    line_len = (dx ** 2 + dy ** 2) ** 0.5
+
+    ctx.save()
+    # set up a clip region that to cut off the end of the wavy line 
+    clip_expand = line_len / wave_height
+    clip_offsetx = dy / clip_expand
+    clip_offsety = -dx / clip_expand
+
+    ctx.move_to(crx + clip_offsetx, cry + clip_offsety)
+    ctx.line_to(rx + clip_offsetx, ry + clip_offsety)
+    ctx.line_to(rx - clip_offsetx, ry - clip_offsety)
+    ctx.line_to(crx - clip_offsetx, cry - clip_offsety)
+    ctx.close_path()
+    ctx.clip()
+ 
+    # data used for handles of bezier curve
+    curve_count = line_len / wave_length
+    curve_offset = wave_length / wave_height
+
+    xstep = dx / curve_count
+    ystep = dy / curve_count
+
+    curve_x = ystep / curve_offset
+    curve_y = xstep / curve_offset
+
+    ## curve_count + 1, draws the wavy line with an extra curve - the last wave is partly clipped  
+    for i in range(0, int(curve_count) + 1):
+        start_x = crx + i * xstep
+        start_y = cry + i * ystep
+        ctx.move_to(start_x, start_y)
+        ctx.curve_to(start_x + xstep/2 - curve_x, start_y + ystep/2 + curve_y, # control point 1
+                     start_x + xstep/2 + curve_x, start_y + ystep/2 - curve_y, # control point 2
+                     start_x + xstep            , start_y + ystep)             # end point
+
+    ctx.set_source_rgb(*linepen)
+    ctx.stroke()
+    ctx.restore()
+
+
+
 
 def draw_line_arrow(bmpctx, clr, crx, cry, rx, ry, cfg):
     vx, vy = (rx - crx), (ry - cry)
@@ -179,10 +224,10 @@ class AttributesDialog(Gtk.Dialog):
     Displays plugin atttributes and allows to edit them.
     """
     __neil__ = dict(
-            id = 'neil.core.attributesdialog',
-            singleton = False,
-            categories = [
-            ]
+        id = 'neil.core.attributesdialog',
+        singleton = False,
+        categories = [
+        ]
     )
 
     def __init__(self, plugin, parent):
@@ -293,10 +338,10 @@ class ParameterDialog(Gtk.Dialog):
     Displays parameter sliders for a plugin in a new Dialog.
     """
     __neil__ = dict(
-            id = 'neil.core.parameterdialog',
-            singleton = False,
-            categories = [
-            ]
+        id = 'neil.core.parameterdialog',
+        singleton = False,
+        categories = [
+        ]
     )
 
     def __init__(self, manager, plugin, parent):
@@ -502,7 +547,7 @@ class VolumeSlider(Gtk.Window):
         amp = min(max(int(db2linear(self.amp * -48.0, -48.0) * 16384.0), 0), 16384)
         self.plugin.set_parameter_value_direct(0, self.index, 0, amp, False)
         self.redraw()
-        return True
+        return False
 
     def on_draw(self, widget, ctx):
         """
@@ -540,7 +585,7 @@ class VolumeSlider(Gtk.Window):
 
         return False
 
-    def display(self, xxx_todo_changeme, mp, index, orig_event_y):
+    def display(self, xy, mp, index, orig_event_y):
         """
         Called by the router view to show the control.
 
@@ -551,7 +596,7 @@ class VolumeSlider(Gtk.Window):
         @param conn: Connection to control.
         @type conn: zzub.Connection
         """
-        (mx, my) = xxx_todo_changeme
+        (mx, my) = xy
 
         self.set_attached_to(self.parent_widget)
         self.set_transient_for(self.parent_widget.get_toplevel())
@@ -582,23 +627,23 @@ class VolumeSlider(Gtk.Window):
 
 
 
+
 class RouteView(Gtk.DrawingArea):
     """
     Allows to monitor and control plugins and their connections.
     """
     __neil__ = dict(
-            id = 'neil.core.router.view',
-            singleton = True,
-            categories = [
-            ]
+        id = 'neil.core.router.view',
+        singleton = True,
+        categories = []
     )
 
     current_plugin = None
     connecting = False
+    connecting_alt = False
     dragging = False
     dragoffset = 0, 0
     contextmenupos = 0, 0
-    showing_cvports = False
 
     COLOR_DEFAULT = 0
     COLOR_MUTED = 1
@@ -629,7 +674,10 @@ class RouteView(Gtk.DrawingArea):
         self.autoconnect_target          = None
         self.chordnotes                  = []
         self.volume_slider               = VolumeSlider(self)
-        self.selections                  = {}                    #selections stored using the remember selection option
+        self.selections                  = {}                        #selections stored using the remember selection option
+        self.area                        = Gdk.Rectangle(0, 0, 1, 1) # will be the pixel dimensions allocated to the drawingarea
+        self.connecting                  = False
+        self.drag_update_timer           = False
 
         eventbus                         = com.get('neil.core.eventbus')
         eventbus.zzub_connect           += self.on_zzub_redraw_event
@@ -646,6 +694,7 @@ class RouteView(Gtk.DrawingArea):
 
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.update_colors()
+
         self.set_can_focus(True)
         self.connect('button-press-event', self.on_left_down)
         self.connect('button-release-event', self.on_left_up)
@@ -654,23 +703,46 @@ class RouteView(Gtk.DrawingArea):
         self.connect('key-press-event', self.on_key_jazz, None)
         self.connect('key-release-event', self.on_key_jazz_release, None)
         self.connect('configure-event', self.on_configure_event)
+        self.connect('realize', self.on_realized)
 
         if config.get_config().get_led_draw() == True:
-            GObject.timeout_add(500, self.on_draw_led_timer)
+            self.adjust_draw_led_timer()
+
+
+    def on_realized(self, widget):
+        self.update_area()
+
+    def adjust_draw_led_timer(self, timeout = 200):
+        if getattr(self, 'ui_timeout', False):
+            GObject.source_remove(self.ui_timeout)
+
+        self.ui_timeout = GObject.timeout_add(timeout, self.on_draw_led_timer)
+
+    def on_configure_event(self, widget, requisition):
+        self.update_area()
+        
+
+    def update_area(self):
+        self.area = self.get_allocation()
+        self.redraw(True)
+        
 
     def on_active_plugins_changed(self, *args):
        # player = com.get('neil.core.player')
         common.get_plugin_infos().reset_plugingfx()
 
+
     def get_plugin_info(self, plugin):
         return common.get_plugin_infos().get(plugin)
+
 
     def on_drag_leave(self, widget, context, time):
         #print "on_drag_leave",widget,context,time
         self.drag_unhighlight()
 
+
     def on_drag_motion(self, widget, context, x, y, time):
-        #print "on_drag_motion",widget,context,x,y,time
+        print ("!!on_drag_motion!!",widget,context,x,y,time)
 
         # TODO!: highlight arrow drop
         # conn = self.get_connection_at((x,y))
@@ -703,7 +775,7 @@ class RouteView(Gtk.DrawingArea):
             pluginloader = player.get_pluginloader_by_name(uri)
 
             if is_effect(pluginloader):
-                conn = self.get_connection_at((x, y))
+                conn = self.get_audio_connection_at((x, y))
             if not conn:
                 res = self.get_plugin_at((x, y))
                 if res:
@@ -718,8 +790,6 @@ class RouteView(Gtk.DrawingArea):
             Gdk.drop_finish(context, True, time)
         return True
 
-    def on_configure_event(self, widget, requisition):
-        self.redraw()
 
     def update_colors(self):
         """
@@ -750,17 +820,36 @@ class RouteView(Gtk.DrawingArea):
             for name in [x.replace('${PLUGIN}', name) for x in names]:
                 brushes.append(cfg.get_float_color(name))
             self.plugintype2brushes[plugintype] = brushes
+
+
+        self.default_brushes = self.plugintype2brushes[PluginType.Generator]
+
         common.get_plugin_infos().reset_plugingfx()
+
+        self.arrowcolors = {
+            zzub.zzub_connection_type_audio: [
+                cfg.get_float_color("MV Arrow"),
+                cfg.get_float_color("MV Arrow Border In"),
+                cfg.get_float_color("MV Arrow Border Out"),
+            ],
+            zzub.zzub_connection_type_cv: [
+                cfg.get_float_color("MV Controller Arrow"),
+                cfg.get_float_color("MV Controller Arrow Border In"),
+                cfg.get_float_color("MV Controller Arrow Border Out"),
+            ],
+        }
+
 
     def on_zzub_plugin_changed(self, plugin):
         common.get_plugin_infos().get(plugin).reset_plugingfx()
-        self.redraw()
+        self.redraw(True)
 
     def on_zzub_redraw_event(self, *args):
-        self.redraw()
+        print("redraw event")
+        self.redraw(True)
 
     def on_focus(self, event):
-        self.redraw()
+        self.redraw(True)
 
     def store_selection(self, index, plugins):
         self.selections[index] = [plugin.get_id() for plugin in plugins]
@@ -788,6 +877,7 @@ class RouteView(Gtk.DrawingArea):
         player = com.get('neil.core.player')
         player.plugin_origin = self.pixel_to_float((mx, my))
         res = self.get_plugin_at((mx, my))
+
         if res:
             mp, (x, y), area = res
             if mp in player.active_plugins and len(player.active_plugins) > 1:
@@ -795,17 +885,18 @@ class RouteView(Gtk.DrawingArea):
             else:
                 menu = com.get('neil.core.contextmenu.singleplugin', mp)
         else:
-            res = self.get_connection_at((mx, my))
-            if res:
-                metaplugin, index = res
-                menu = com.get('neil.core.contextmenu.connection', metaplugin, index)
+            conns = self.get_connections_at((mx, my))
+            if conns:
+                # metaplugin, index = res
+                menu = com.get('neil.core.contextmenu.connection', conns)
             else:
                 (x, y) = self.pixel_to_float((mx, my))
                 menu = com.get('neil.core.contextmenu.router', x, y)
 
         menu.popup(self, event)
 
-    def float_to_pixel(self, xxx_todo_changeme1):
+
+    def float_to_pixel(self, xy):
         """
         Converts a router coordinate to an on-screen pixel coordinate.
 
@@ -816,13 +907,10 @@ class RouteView(Gtk.DrawingArea):
         @return: A tuple returning the pixel coordinate.
         @rtype: (int,int)
         """
-        (x, y) = xxx_todo_changeme1
-        rect = self.get_allocation()
-        w, h = rect.width, rect.height
-        cx, cy = w * 0.5, h * 0.5
-        return cx * (1 + x), cy * (1 + y)
+        return (xy[0] + 1) * self.area.width / 2, (xy[1] + 1) * self.area.height / 2
 
-    def pixel_to_float(self, xxx_todo_changeme2):
+
+    def pixel_to_float(self, xy):
         """
         Converts an on-screen pixel coordinate to a router coordinate.
 
@@ -833,13 +921,16 @@ class RouteView(Gtk.DrawingArea):
         @return: A tuple returning the router coordinate.
         @rtype: (float, float)
         """
-        (x, y) = xxx_todo_changeme2
-        rect = self.get_allocation()
-        w, h = rect.width, rect.height
-        cx, cy = w * 0.5, h * 0.5
-        return (x / cx) - 1, (y / cy) - 1
+        return (2 * xy[0] / self.area.width) - 1, (2 * xy[1] / self.area.height) - 1
 
-    def get_connection_at(self, xxx_todo_changeme3):
+    def get_audio_connection_at(self, xy):
+        for mp, index in self.get_connections_at(xy):
+            if mp.get_input_connection_type(index) == zzub.zzub_connection_type_audio:
+                return mp, index
+            
+        return None
+
+    def get_connections_at(self, xy):
         """
         Finds the connection arrow at a specific position.
 
@@ -850,25 +941,24 @@ class RouteView(Gtk.DrawingArea):
         @return: A connection item or None.
         @rtype: zzub.Connection or None
         """
-        (mx, my) = xxx_todo_changeme3
+        (mx, my) = xy
         player = com.get('neil.core.player')
-        rect = self.get_allocation()
-        w, h = rect.width, rect.height
-        cx, cy = w * 0.5, h * 0.5
-
-        def get_pixelpos(x, y):
-            return cx * (1 + x), cy * (1 + y)
+        matches = []
         for mp in player.get_plugin_list():
-            rx, ry = get_pixelpos(*mp.get_position())
+            rx, ry = self.float_to_pixel(mp.get_position())
             for index in range(mp.get_input_connection_count()):
-                crx, cry = get_pixelpos(*mp.get_input_connection_plugin(index).get_position())
+                crx, cry = self.float_to_pixel(mp.get_input_connection_plugin(index).get_position())
+                
                 cpx, cpy = (crx + rx) * 0.5, (cry + ry) * 0.5
                 dx, dy = cpx - mx, cpy - my
                 length = (dx * dx + dy * dy) ** 0.5
                 if length <= 14:  # why exactly 14?
-                    return mp, index
+                    matches.append((mp, index))
 
-    def get_plugin_at(self, xxx_todo_changeme4):
+        return matches
+
+
+    def get_plugin_at(self, xy):
         """
         Finds a plugin at a specific position.
 
@@ -879,10 +969,7 @@ class RouteView(Gtk.DrawingArea):
         @return: A connection item, exact pixel position and area (AREA_ANY, AREA_PANNING, AREA_LED) or None.
         @rtype: (zzub.Plugin,(int,int),int) or None
         """
-        (x, y) = xxx_todo_changeme4
-        rect = self.get_allocation()
-        w, h = rect.width, rect.height
-        cx, cy = w * 0.5, h * 0.5
+        (x, y) = xy
         mx, my = x, y
         PW, PH = PLUGINWIDTH / 2, PLUGINHEIGHT / 2
         area = AREA_ANY
@@ -891,8 +978,7 @@ class RouteView(Gtk.DrawingArea):
             pi = common.get_plugin_infos().get(mp)
             if not pi.songplugin:
                 continue
-            x, y = mp.get_position()
-            x, y = int(cx * (1 + x)), int(cy * (1 + y))
+            x,y = self.float_to_pixel(mp.get_position())
             plugin_box = (x - PW, y - PH, x + PW, y + PH)
 
             if box_contains(mx, my, plugin_box):
@@ -936,11 +1022,14 @@ class RouteView(Gtk.DrawingArea):
         player = com.get('neil.core.player')
         if (event.button == 3):
             return self.on_context_menu(widget, event)
+
         if not event.button in (1, 2):
             return
+
         if (event.button == 1) and (event.type == Gdk.EventType._2BUTTON_PRESS):
             self.get_window().set_cursor(None)
             return self.on_left_dclick(widget, event)
+            
         mx, my = int(event.x), int(event.y)
         res = self.get_plugin_at((mx, my))
         if res:
@@ -964,58 +1053,83 @@ class RouteView(Gtk.DrawingArea):
                     if is_controller(mp):
                         pass
                     else:
-                        self.connecting = True
                         self.connectpos = int(mx), int(my)
+                        self.connecting_alt = event.get_state() & Gdk.ModifierType.MOD1_MASK
                         self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR))
+                        self.connecting = True
                 if not self.connecting:
+                    # self.dragstart = (mx, my)
+                    self.dragoffset = (x - mx, y - my)
                     for plugin in player.active_plugins:
                         pinfo = self.get_plugin_info(plugin)
                         pinfo.dragpos = plugin.get_position()
-                        x, y = self.float_to_pixel(pinfo.dragpos)
-                        pinfo.dragoffset = x - mx, y - my
+                        px, py = self.float_to_pixel(pinfo.dragpos)
+                        pinfo.dragoffset = px - mx, py - my
+
+                    self.adjust_draw_led_timer(100)
                     self.dragging = True
                     self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.FLEUR))
                     self.grab_add()
         else:
-            res = self.get_connection_at((mx, my))
-            if res:
-                mp, index = res
-                (ret, ox, oy) = self.get_window().get_origin()
-                connectiontype = mp.get_input_connection_type(index)
-                if connectiontype == zzub.zzub_connection_type_audio:
-                    self.volume_slider.display((ox + mx, oy + my), mp, index, my)
-                elif connectiontype == zzub.zzub_connection_type_event:
-                    # no idea what to do when clicking on an event connection yet
-                    pass
-            else:
-                player.active_plugins = []
+            conn_at = self.get_audio_connection_at((mx, my))
+
+            if not conn_at:
+                return
+            
+            mp, index = conn_at
+            (ret, ox, oy) = self.get_window().get_origin()
+            if mp.get_input_connection_type(index) == zzub.zzub_connection_type_audio:
+                self.volume_slider.display((ox + mx, oy + my), mp, index, my)
+
+    def drag_update(self, x, y, state):
+        player = com.get('neil.core.player')
+        ox, oy = self.dragoffset
+        mx, my = int(x), int(y)
+        x, y = (mx - ox, my - oy)
+        if (state & Gdk.ModifierType.CONTROL_MASK):
+            # quantize position
+            x = int(float(x) / QUANTIZEX + 0.5) * QUANTIZEX
+            y = int(float(y) / QUANTIZEY + 0.5) * QUANTIZEY
+        for plugin in player.active_plugins:
+            pinfo = self.get_plugin_info(plugin)
+            dx, dy = pinfo.dragoffset
+            pinfo.dragpos = self.pixel_to_float((x + dx, y + dy))
+        
+        self.redraw(True)
+
 
     def on_motion(self, widget, event):
-        x, y, state = event.x, event.y, event.state
         if self.dragging:
-            player = com.get('neil.core.player')
-            ox, oy = self.dragoffset
-            mx, my = int(x), int(y)
-            size = self.get_allocation()
-            x, y = max(0, min(mx - ox, size.width)), max(0, min(my - oy, size.height))
-            if (event.get_state() & Gdk.ModifierType.CONTROL_MASK):
-                # quantize position
-                x = int(float(x) / QUANTIZEX + 0.5) * QUANTIZEX
-                y = int(float(y) / QUANTIZEY + 0.5) * QUANTIZEY
-            for plugin in player.active_plugins:
-                pinfo = self.get_plugin_info(plugin)
-                dx, dy = pinfo.dragoffset
-                pinfo.dragpos = self.pixel_to_float((x + dx, y + dy))
-            self.redraw()
+            self.drag_update(event.x, event.y, event.state)
         elif self.connecting:
-            self.connectpos = int(x), int(y)
+            self.connectpos = int(event.x), int(event.y)
+            # if False: connect as stereo audio. if True: connect as control port
+            self.connecting_alt = event.state & Gdk.ModifierType.MOD1_MASK
             self.redraw()
         else:
-            res = self.get_plugin_at((x, y))
+            res = self.get_plugin_at((event.x, event.y))
             if res:
                 mp, (mx, my), area = res
                 self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1) if area == AREA_LED else None)
-        return True
+
+        return False
+
+
+    # called by on_left_up after alt plugin connection 
+    def choose_cv_connectors_dialog(self, from_plugin, to_plugin):
+        from contextmenu import ConnectDialog
+        dialog = ConnectDialog(self, from_plugin, to_plugin)
+        response = dialog.run()
+
+        if response == Gtk.ResponseType.OK:
+            source, target = dialog.get_connectors()
+        else:
+            source = target = False
+
+        dialog.destroy()
+
+        return (source, target)
+
 
     def on_left_up(self, widget, event):
         """
@@ -1025,7 +1139,8 @@ class RouteView(Gtk.DrawingArea):
         @type event: wx.MouseEvent
         """
         mx, my = int(event.x), int(event.y)
-        player = com.get('neil.core.player')
+        player = com.get_player()
+
         if self.dragging:
             self.dragging = False
             self.get_window().set_cursor(None)
@@ -1043,17 +1158,34 @@ class RouteView(Gtk.DrawingArea):
                 dx, dy = pinfo.dragoffset
                 plugin.set_position(*self.pixel_to_float((dx + x, dy + y)))
             player.history_commit("move plugin")
+
+            self.redraw(True)
+            self.adjust_draw_led_timer(200)
+
         if self.connecting:
             res = self.get_plugin_at((mx, my))
             if res:
                 mp, (x, y), area = res
+                
                 if player.active_plugins:
-                    if not is_controller(player.active_plugins[0]):
+                    if event.get_state() & Gdk.ModifierType.MOD1_MASK:
+                        (source_connector, target_connector) = self.choose_cv_connectors_dialog(player.active_plugins[0], mp)
+
+                        if source_connector and target_connector:
+                            mp.add_cv_connector(player.active_plugins[0], source_connector, target_connector)
+                            player.history_commit("new cv connection")
+                            
+                    elif not is_controller(player.active_plugins[0]):
                         mp.add_input(player.active_plugins[0], zzub.zzub_connection_type_audio)
-                        player.history_commit("new connection")
-        self.connecting = False
-        self.redraw()
+                        player.history_commit("new event connection")
+
+            self.connecting = False
+            self.connecting_alt = False
+
+            self.redraw(True)
+
         res = self.get_plugin_at((mx, my))
+
         if res:
             mp, (x, y), area = res
             if area == AREA_LED:
@@ -1067,30 +1199,48 @@ class RouteView(Gtk.DrawingArea):
 
     def on_draw_led_timer(self):
         """
-        Timer event that only updates the plugin leds.
+        Timer event that used to only update the plugin leds 5 times a second. 
+        Temporarily fix for on-motion handlers being laggy for unknown reasons
         """
+        if self.dragging:
+            self.prepare_drag_update()
+            return True
+        
+        if self.connecting:
+            self.redraw()
+
         # TODO: find some other way to find out whether we are really visible
         #if self.rootwindow.get_current_panel() != self.panel:
         #       return True
         # TODO: find a better way
         if self.is_visible():
             player = com.get('neil.core.player')
-            rect = self.get_allocation()
-            w, h = rect.width, rect.height
-            cx, cy = w * 0.5, h * 0.5
-
-            def get_pixelpos(x, y):
-                return cx * (1 + x), cy * (1 + y)
+            
             PW, PH = PLUGINWIDTH / 2, PLUGINHEIGHT / 2
-            for mp, (rx, ry) in ((mp, get_pixelpos(*mp.get_position())) for mp in player.get_plugin_list()):
+            for mp, (rx, ry) in ((mp, self.float_to_pixel(mp.get_position())) for mp in player.get_plugin_list()):
                 rx, ry = rx - PW, ry - PH
                 rect = Gdk.Rectangle(int(rx), int(ry), PLUGINWIDTH, PLUGINHEIGHT)
+
 #                self.get_window().invalidate_rect(rect, False)
         return True
+    
+    # dragging plugins was very jumpy, this is a backup till i figure out the proper fix
+    def prepare_drag_update(self):
+        display = Gdk.Display.get_default()
+        seat = display.get_default_seat()
+        device = seat.get_pointer()
 
-    def redraw(self):
-        if self.get_window():
+        pos = self.get_window().get_device_position(device)
+
+        self.drag_update(pos.x, pos.y, pos.mask)
+
+        # self.translate_coordinates(parent, position[0], position[1], self.dragoffset)
+
+    def redraw(self, full_refresh=False):
+        if full_refresh:
             self.surface = None
+
+        if self.get_window():
             alloc_rect = self.get_allocation()
             rect = Gdk.Rectangle(0, 0, alloc_rect.width, alloc_rect.height)
             self.get_window().invalidate_rect(rect, False)
@@ -1105,36 +1255,28 @@ class RouteView(Gtk.DrawingArea):
             return
 
         cfg = config.get_config()
-        rect = self.get_allocation()
 
-        w, h = rect.width, rect.height
-        cx, cy = w * 0.5, h * 0.5
-
-        def get_pixelpos(x, y):
-            return cx * (1 + x), cy * (1 + y)
         PW, PH = PLUGINWIDTH / 2, PLUGINHEIGHT / 2
         driver = com.get('neil.core.driver.audio')
         cpu_scale = driver.get_cpu_load()
         max_cpu_scale = 1.0 / player.get_plugin_count()
-        for mp, (rx, ry) in ((mp, get_pixelpos(*mp.get_position())) for mp in player.get_plugin_list()):
+        for mp, (rx, ry) in ((mp, self.float_to_pixel(mp.get_position())) for mp in player.get_plugin_list()):
             pi = common.get_plugin_infos().get(mp)
 
-            if not pi.songplugin:
+            if not pi or not pi.songplugin:
                 continue
 
             if self.dragging and mp in player.active_plugins:
-                pinfo = self.get_plugin_info(mp)
-                rx, ry = get_pixelpos(*pinfo.dragpos)
+                # pinfo = self.get_plugin_info(mp)
+                rx, ry = self.float_to_pixel(pi.dragpos)
+                
+                # print("drag pos in draw %.2f %.2f" % self.float_to_pixel(pinfo.dragpos), "%.2f %.2f" % pinfo.dragpos)
+                # print("drag pos in draw %.2f %.2f" % pi.dragpos, "%.2f %.2f" % self.float_to_pixel(pi.dragpos))
 
             rx, ry = rx - PW, ry - PH
-            pi = common.get_plugin_infos().get(mp)
 
-            if not pi:
-                continue
-
-            brushes = self.plugintype2brushes.get(
-                get_plugin_type(mp),
-                self.plugintype2brushes[PluginType.Generator])
+            # default_brushes = self.plugintype2brushes[PluginType.Generator];
+            brushes = self.plugintype2brushes.get(get_plugin_type(mp), self.default_brushes)
 
             def flag2col(flag):
                 return brushes[flag]
@@ -1210,7 +1352,7 @@ class RouteView(Gtk.DrawingArea):
 
                 maxl, maxr = mp.get_last_peak()
                 amp = min(max(maxl, maxr), 1.0)
-                if amp != amp:   # occasionally getting a nan during srtartup
+                if amp != amp:   # occasionally getting a nan during startup
                     amp = 0
                 if amp != pi.amp:
                     if amp >= 1:
@@ -1277,34 +1419,53 @@ class RouteView(Gtk.DrawingArea):
             ctx.set_source_surface(pi.plugingfx, int(rx), int(ry))
             ctx.paint()
 
-            if self.showing_cvports:
-                pl = mp.get_pluginloader()
-                port_names = pl.get_cv_port_names()
-                if not port_names:
-                    continue
-
-                ports = pl.get_cv_port_names().split("\n")
-
-                pango_layout.set_text(port_names)
-                tx, ty = pango_layout.get_pixel_size()
-
-                ctx.set_source_rgb(*cfg.get_float_color("MV Background"))
-
-                ctx.rectangle(rx+PLUGINWIDTH, ry, tx+3, ty+3)
-                ctx.fill()
-
-                ctx.set_source_rgb(*cfg.get_float_color("MV Border"))
-                ctx.rectangle(rx+PLUGINWIDTH-1, ry-1, tx+4, ty+4)
-                ctx.stroke()
-
-                ctx.move_to(rx+PLUGINWIDTH+1, ry+1)
-                ctx.set_source_rgb(*cfg.get_float_color("MV Text"))
-                PangoCairo.show_layout(ctx, pango_layout)
 
     def on_draw(self, widget, ctx):
         self.draw(ctx)
         return True
+    
+    def normalize_amp(self, amp):
+        amp /= 16384.0
+        amp = amp ** 0.5
+        return amp
+                    
+    def draw_connections(self, ctx, cfg):
+        ctx.translate(0.5, 0.5)
+        ctx.set_line_width(1)
+        player = com.get_player()
+        for mp in player.get_plugin_list():
+            rx,ry = self.float_to_pixel(mp.get_position())
 
+            if self.dragging and mp in player.active_plugins:
+                pinfo = self.get_plugin_info(mp)
+                rx, ry = self.float_to_pixel(pinfo.dragpos)
+
+            for index in range(mp.get_input_connection_count()):
+                target_mp = mp.get_input_connection_plugin(index)
+                conn_type = mp.get_input_connection_type(index)
+
+                pi = common.get_plugin_infos().get(target_mp)
+                if not pi.songplugin:
+                    continue
+
+                t_pos = target_mp.get_position()
+                if self.dragging and target_mp in player.active_plugins:
+                    pinfo = self.get_plugin_info(target_mp)
+                    t_pos = pinfo.dragpos
+
+                crx, cry = self.float_to_pixel(t_pos)
+
+                if (conn_type == zzub.zzub_connection_type_cv):
+                    draw_wavy_line(ctx, self.arrowcolors[zzub.zzub_connection_type_cv][0], int(crx), int(cry), int(rx), int(ry))
+                else:
+                    amp = self.normalize_amp(mp.get_parameter_value(0, index, 0))
+                    blended = blend_float(cfg.get_float_color("MV Arrow"), (0.0, 0.0, 0.0), amp)
+                    self.arrowcolors[zzub.zzub_connection_type_audio][0] = blended
+                    draw_line_arrow(ctx, self.arrowcolors[mp.get_input_connection_type(index)], int(crx), int(cry), int(rx), int(ry), cfg)
+
+        ctx.translate(-0.5, -0.5)
+
+    
     def draw(self, ctx):
         """
         Draws plugins, connections and arrows to an offscreen buffer.
@@ -1314,86 +1475,40 @@ class RouteView(Gtk.DrawingArea):
             return
 
         cfg = config.get_config()
-        rect = self.get_allocation()
-        w, h = rect.width, rect.height
-
-        arrowcolors = {
-                zzub.zzub_connection_type_audio: [
-                        cfg.get_float_color("MV Arrow"),
-                        cfg.get_float_color("MV Arrow Border In"),
-                        cfg.get_float_color("MV Arrow Border Out"),
-                ],
-                zzub.zzub_connection_type_event: [
-                        cfg.get_float_color("MV Controller Arrow"),
-                        cfg.get_float_color("MV Controller Arrow Border In"),
-                        cfg.get_float_color("MV Controller Arrow Border Out"),
-                ],
-        }
-
-        cx, cy = w * 0.5, h * 0.5
-
 
         pango_layout = Pango.Layout(self.get_pango_context())
         #~ layout.set_font_description(self.fontdesc)
         pango_layout.set_width(-1)
 
-        def get_pixelpos(x, y):
-            return cx * (1 + x), cy * (1 + y)
-
         if not self.surface:
             w = self.get_allocated_width()
             h = self.get_allocated_height()
-            self.surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+            self.surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.area.width, self.area.height)
             surfctx = cairo.Context(self.surface)
 
-            surfctx.translate(0.5, 0.5)
             bg_color = cfg.get_float_color('MV Background')
             surfctx.set_source_rgb(*bg_color)
             surfctx.rectangle(0, 0, w, h)
             surfctx.fill()
 
-            surfctx.set_line_width(1)
-            mplist = [(mp, get_pixelpos(*mp.get_position()))
-                      for mp in player.get_plugin_list()]
+            self.draw_connections(surfctx, cfg)
 
-            for mp, (rx, ry) in mplist:
-                if self.dragging and mp in player.active_plugins:
-                    pinfo = self.get_plugin_info(mp)
-                    rx, ry = get_pixelpos(*pinfo.dragpos)
-
-                for index in range(mp.get_input_connection_count()):
-                    targetmp = mp.get_input_connection_plugin(index)
-                    pi = common.get_plugin_infos().get(targetmp)
-                    if not pi.songplugin:
-                        continue
-                    tmppos = targetmp.get_position()
-                    if self.dragging and targetmp in player.active_plugins:
-                        pinfo = self.get_plugin_info(targetmp)
-                        tmppos = pinfo.dragpos
-
-
-                    crx, cry = get_pixelpos(*tmppos)
-                    if (mp.get_input_connection_type(index) != zzub.zzub_connection_type_event):
-                        amp = mp.get_parameter_value(0, index, 0)
-                        amp /= 16384.0
-                        amp = amp ** 0.5
-                        blended = blend_float(cfg.get_float_color("MV Arrow"), (0.0, 0.0, 0.0), amp)
-                        arrowcolors[zzub.zzub_connection_type_audio][0] = blended
-
-                    draw_line_arrow(surfctx, arrowcolors[mp.get_input_connection_type(index)], int(crx), int(cry), int(rx), int(ry), cfg)
-            surfctx.translate(-0.5, -0.5)
+            self.draw_leds(surfctx, pango_layout)
 
         ctx.set_source_surface(self.surface, 0.0, 0.0)
         ctx.paint()
         
         if self.connecting and len(player.active_plugins) > 0:
             ctx.set_line_width(1)
-            crx, cry = get_pixelpos(*player.active_plugins[0].get_position())
+            crx, cry = self.float_to_pixel(player.active_plugins[0].get_position())
             rx, ry = self.connectpos
             linepen = cfg.get_float_color("MV Line")
-            draw_line(ctx, linepen, int(crx), int(cry), int(rx), int(ry))
 
-        self.draw_leds(ctx, pango_layout)
+            if self.connecting_alt:
+                draw_wavy_line(ctx, linepen, int(crx), int(cry), int(rx), int(ry))
+            else:
+                draw_line(ctx, linepen, int(crx), int(cry), int(rx), int(ry))
+
 
     # This method is not *just* for key-jazz, it handles all key-events in router. Rename?
     def on_key_jazz(self, widget, event, plugin):
@@ -1403,10 +1518,6 @@ class RouteView(Gtk.DrawingArea):
         if mask & Gdk.ModifierType.CONTROL_MASK:
             if k == 'Return':
                 com.get('neil.core.pluginbrowser', self)
-                return
-            if mask & Gdk.ModifierType.META_MASK:
-                self.showing_cvports = True
-                self.redraw()
                 return
         player = com.get('neil.core.player')
         if not plugin:
@@ -1438,10 +1549,6 @@ class RouteView(Gtk.DrawingArea):
         kv = event.keyval
         mask = event.get_state()
 
-        if self.showing_cvports == True:
-            if not mask & (Gdk.ModifierType.CONTROL_MASK|Gdk.ModifierType.META_MASK):
-                self.showing_cvports = False
-                self.redraw()
         if not plugin:
             if player.active_plugins:
                 plugin = player.active_plugins[0]

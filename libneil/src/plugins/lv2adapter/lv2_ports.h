@@ -48,7 +48,7 @@ union BodgeEndian {
     uint8_t c[2];
 };
 
-struct lv2_port {
+struct lv2_port : public zzub::port {
     // the LilvPort, LilvPlugin and lv2_lilv_world are needed to assign the properties, designation and other class members and are not stored
     lv2_port(const LilvPort* lilvPort,
              const LilvPlugin* lilvPlugin,
@@ -71,9 +71,26 @@ struct lv2_port {
     PortType type;
     uint32_t index;
 
-    virtual void* data_pointer() { return nullptr; }
 
     virtual unsigned get_zzub_flags() { return 0; }
+
+    virtual std::string get_name() override { return name; }
+    virtual zzub::port_flow get_flow() override { return flow == PortFlow::Input ? zzub::port_flow::input : zzub::port_flow::output ; }
+    virtual int get_index() override { return index; }
+
+    virtual zzub::port_type get_type() override {
+        switch (type) {
+            case Audio: return zzub::port_type::audio;
+            case Control: return zzub::port_type::parameter;
+            case CV: return zzub::port_type::cv;
+            case Midi: return zzub::port_type::midi;
+            default: return zzub::port_type::cv;
+        }
+    }
+
+    // subtypes of port use one of the other of these two
+    virtual float get_value() override { return 0.0f; }
+    virtual void* data_pointer() { return nullptr; }
 };
 
 struct audio_buf_port : lv2_port {

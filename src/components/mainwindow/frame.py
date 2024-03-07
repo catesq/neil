@@ -21,12 +21,13 @@
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version('PangoCairo', '1.0')
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk, Gdk, GLib, Gio
 
 import os
 import re
 import ctypes
 from functools import cmp_to_key
+import neil.pathconfig as pathconfig
 
 #    is_debug, \
 from neil.utils import \
@@ -176,6 +177,8 @@ class Accelerators(Gtk.AccelGroup):
 #     GObject.GObject.__init__(self)
 #     self.push(0, "Ready to rok again")
 
+
+
 class NeilFrame(Gtk.Window):
     """
     The application main window class.
@@ -214,7 +217,22 @@ class NeilFrame(Gtk.Window):
 
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
 
-        com.get('neil.core.player').set_host_info(1,1,ctypes.c_void_p(hash(self)))
+        com.get('neil.core.player').set_host_info(1, 1, ctypes.c_void_p(hash(self)))
+
+        
+        theme = config.get_config().get_style()
+
+        theme_file = Gio.File.new_for_path(os.path.join(pathconfig.get_settings_dir(), "themes", theme, "main.css"))
+
+
+        provider = Gtk.CssProvider()
+        screen = Gdk.Screen.get_default()
+        style_context = Gtk.StyleContext()
+        style_context.add_provider_for_screen(
+            screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+        provider.load_from_file(theme_file)
+
 
         errordlg.install(self)
         geometry = Gdk.Geometry()

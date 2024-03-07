@@ -264,13 +264,18 @@ void zzub_plugin_add_event_connection_binding(zzub_plugin_t *to_plugin, zzub_plu
     to_plugin->_player->plugin_add_event_connection_binding(to_plugin->id, from_plugin->id, sourceparam, targetgroup, targettrack, targetparam);
 }
 
-void zzub_plugin_add_cv_port_link(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, zzub_cv_port_link_t *port_link) {
-    to_plugin->_player->plugin_add_cv_port_link(to_plugin->id, from_plugin->id, (zzub::cv_port_link*) port_link );
+
+void zzub_plugin_add_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, zzub_cv_node_t *source, zzub_cv_node_t *target) {
+    auto connector = zzub::cv_connector(*((zzub::cv_node*) source), *((zzub::cv_node*) target));
+    
+    to_plugin->_player->plugin_add_cv_connector(to_plugin->id, from_plugin->id, &connector);
 }
 
 
-void zzub_plugin_remove_cv_port_link(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, zzub_cv_port_link_t *port_link) {
-    to_plugin->_player->plugin_remove_cv_port_link(to_plugin->id, from_plugin->id, (zzub::cv_port_link*) port_link );
+void zzub_plugin_remove_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, zzub_cv_node_t *source, zzub_cv_node_t *target) {
+    auto port_link = zzub::cv_connector(*((zzub::cv_node*) source), *((zzub::cv_node*) target));
+
+    to_plugin->_player->plugin_remove_cv_connector(to_plugin->id, from_plugin->id, &port_link);
 }
 
 
@@ -1023,6 +1028,15 @@ int zzub_plugin_get_pattern_value(zzub_plugin_t *plugin, int pattern, int group,
     return plugin->_player->back.plugins[plugin->id]->patterns[pattern]->groups[group][track][column][row];
 }
 
+int zzub_plugin_get_global_parameter_count(zzub_plugin_t *plugin) {
+    return zzub_plugin_get_parameter_count(plugin, zzub_parameter_group_global, 0);
+}
+
+zzub_parameter_t* zzub_plugin_get_global_parameter(zzub_plugin_t *plugin, int index) {
+    return zzub_plugin_get_parameter(plugin, zzub_parameter_group_global, 0, index);
+}
+
+
 int zzub_plugin_get_parameter_count(zzub_plugin_t *plugin, int group, int track) {
 
     operation_copy_flags flags;
@@ -1203,6 +1217,15 @@ zzub_connection_t* zzub_plugin_get_output_connection(zzub_plugin_t *plugin, int 
 
     return plugin->_player->back.plugin_get_output_connection(plugin->id, index);
 }
+
+zzub_port_t* zzub_plugin_get_port(zzub_plugin_t *plugin, int index) {
+    return plugin->_player->back.plugin_get_port(plugin->id, index);
+}
+
+int zzub_plugin_get_port_count(zzub_plugin_t *plugin) {
+    return plugin->_player->back.plugin_get_port_count(plugin->id);
+}
+
 
 
 int zzub_plugin_get_output_connection_count(zzub_plugin_t *plugin) {
@@ -1620,6 +1643,23 @@ int zzub_plugin_set_instrument(zzub_plugin_t *plugin, const char *name) {
     plugin->_player->merge_backbuffer_flags(flags);
 
     return plugin->_player->back.plugins[plugin->id]->plugin->set_instrument(name) ? 0 : -1;
+}
+
+
+const char* zzub_port_get_name(zzub_port_t* port) {
+    return port->get_name().c_str();
+ }
+
+int zzub_port_get_flow(zzub_port_t* port) {
+    return (int) port->get_flow();
+}
+
+int zzub_port_get_index(zzub_port_t* port) {
+    return port->get_index();
+}
+
+int zzub_port_get_type(zzub_port_t* port) {
+    return (int) port->get_type();
 }
 
 /***

@@ -76,25 +76,33 @@ bool audio_connection::work(zzub::song& player, const zzub::connection_descripto
     metaplugin& plugin_from = player.get_plugin(target(conn, player.graph));
     metaplugin& plugin_to = player.get_plugin(source(conn, player.graph));
 
-    float *plout[] = { &plugin_to.work_buffer[0].front(), &plugin_to.work_buffer[1].front() };
-    float *plin[] = { 0, 0 };
-    if (plugin_from.last_work_frame != plugin_to.last_work_frame + plugin_to.last_work_buffersize) {
-        plin[0] = &plugin_from.callbacks->feedback_buffer[0].front();
-        plin[1] = &plugin_from.callbacks->feedback_buffer[1].front();
-    } else {
-        plin[0] = &plugin_from.work_buffer[0].front();
-        plin[1] = &plugin_from.work_buffer[1].front();
-    }
+    float *plout[] = { 
+        &plugin_to.work_buffer[0].front(),
+        &plugin_to.work_buffer[1].front()
+    };
+
+    float *plin[] = {
+        zzub::tools::get_plugin_audio_from(plugin_from, plugin_to, 0),
+        zzub::tools::get_plugin_audio_from(plugin_from, plugin_to, 1)
+    };
+
+    // if (plugin_from.last_work_frame != plugin_to.last_work_frame + plugin_to.last_work_buffersize) {
+    //     plin[0] = &plugin_from.callbacks->feedback_buffer[0].front();
+    //     plin[1] = &plugin_from.callbacks->feedback_buffer[1].front();
+    // } else {
+    //     plin[0] = &plugin_from.work_buffer[0].front();
+    //     plin[1] = &plugin_from.work_buffer[1].front();
+    // }
 
     bool plugin_to_does_input_mixing = (plugin_to.info->flags & zzub::plugin_flag_does_input_mixing) != 0;
     bool plugin_to_is_bypassed = plugin_to.is_bypassed || (plugin_to.sequencer_state == sequencer_event_type_thru);
     bool plugin_to_is_muted = plugin_to.is_muted || (plugin_to.sequencer_state == sequencer_event_type_mute);
-    bool result = plugin_from.last_work_audio_result && values.amp > 0 &&
-            (plugin_from.last_work_max_left > SIGNAL_TRESHOLD || plugin_from.last_work_max_right > SIGNAL_TRESHOLD);
+    bool result = zzub::tools::plugin_has_audio(plugin_from, values.amp);
 
     if (plugin_to_does_input_mixing && !plugin_to_is_bypassed && !plugin_to_is_muted) {
         if (result)
-            plugin_to.plugin->input(plin, sample_count, values.amp / (float)0x4000); else
+            plugin_to.plugin->input(plin, sample_count, values.amp / (float)0x4000); 
+        else
             plugin_to.plugin->input(0, 0, 0);
     } else {
         if (result)
@@ -204,56 +212,79 @@ void event_connection::process_events(zzub::song& player, const zzub::connection
 }
 
 bool event_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
-
     return true;
 }
 
+
 cv_connection::cv_connection() {
      type = connection_type_cv;
+     connection_values = 0;
 }
+
 
 void cv_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn) {
 
 }
 
-bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
-    int to_id = player.get_plugin_id(source(conn, player.graph));
-    int from_id = player.get_plugin_id(target(conn, player.graph));
-    std::cout << " cv_connection::work: " << to_id << " -> " << from_id << std::endl;
 
-    for(auto& it : port_links) {
-        std::cout << "  port_link: " << it.source.type << "." << it.source.index << " -> " << it.target.type << "." << it.target.index << std::endl;
+bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
+    auto to = player.get_plugin(source(conn, player.graph));
+    auto from = player.get_plugin(target(conn, player.graph));
+
+    for(auto& it : connectors) {
+        it.work(player, from, to, sample_count);
+
+        if(count < 10) {
+            std::cout << " cv_connection::work: " << to.proxy->id << " -> " << from.proxy->id << std::endl;
+            std::cout << "work count" << count++ << std::endl;
+            std::cout << "  connector: " << it.source.type << "." << it.source.value << " -> " << it.target.type << "." << it.target.value << std::endl;
+            std::cout << "cv_connection::work. source: " << it.source.type << ", target:" << it.target.type << ", input: " <<  it.input->node.type << " output: " <<  it.output->node.type << std::endl;
+
+        }
     }
 
     return true;
 }
 
-void cv_connection::add_port_link(const cv_port_link& link) {
+
+void cv_connection::add_connector(const cv_connector& link) {
     // check link not in port_links
-    for(auto& it : port_links) {
+    std::cout << "cv_connection::add_connector. source: " << link.source.type << ", target:" << link.target.type << ", input: " <<  link.input->node.type << " output: " <<  link.output->node.type << std::endl;
+    for(auto& it : connectors) {
         if(it == link)
             return;
     }
 
-    port_links.push_back(link);
+    connectors.push_back(link);
 }
 
 
-void cv_connection::remove_port_link(const cv_port_link& link) {
-    auto it = port_links.begin();
-    while(it != port_links.end()) {
+void cv_connection::remove_connector(const cv_connector& link) {
+    auto it = connectors.begin();
+    while(it != connectors.end()) {
         if(*it == link) {
-            it = port_links.erase(it);
+            it = connectors.erase(it);
         } else {
             ++it;
         }
     }
 }
 
+
+bool cv_connection::has_connector(const cv_connector& link) {
+    for(auto& it : connectors) {
+        if(it == link)
+            return true;
+    }
+    return false;
+}
+
+
 midi_connection::midi_connection() {
     type = connection_type_midi;
     connection_values = 0;
 }
+
 
 void midi_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn) {
 }

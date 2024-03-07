@@ -1,10 +1,14 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "zzub/zzub_data.h"
 #include "zzub/plugin.h"
 #include "graph.h"
+
+#include "cv_connections.h"
+
 
 
 namespace zzub {
@@ -14,16 +18,17 @@ struct audio_connection;
 struct cv_connection;
 struct midi_connection;
 
+
 struct connection {
     connection_type type;
     void* connection_values;
     std::vector<const parameter*> connection_parameters;
 
-    virtual ~connection() {};
-    virtual void process_events(zzub::song& player, const connection_descriptor& conn) = 0;
-    virtual bool work(zzub::song& player, const connection_descriptor& conn, int sample_count) = 0;
+    virtual         ~connection() {};
+    virtual void    process_events(zzub::song& player, const connection_descriptor& conn) = 0;
+    virtual bool    work(zzub::song& player, const connection_descriptor& conn, int sample_count) = 0;
 
-    // cast to the correct subtype - was quickest way to give python access to the right subtypes of connection 
+    
     connection_type get_type() const { return type; }
 
 protected:
@@ -33,9 +38,11 @@ protected:
 };
 
 
+
 struct audio_connection_parameter_volume : parameter {
     audio_connection_parameter_volume();
 };
+
 
 
 struct audio_connection_parameter_panning : parameter {
@@ -43,9 +50,11 @@ struct audio_connection_parameter_panning : parameter {
 };
 
 
+
 struct audio_connection_values {
     unsigned short amp, pan;
 };
+
 
 
 struct audio_connection : connection {
@@ -117,55 +126,45 @@ struct event_connection : connection {
 
 
 
-
-enum cv_node_type {
-    audio_channel = 0, 
-    value_param = 1,
-    stream_param = 2
-};
-
-struct cv_node_audio {
-    int channel;
-};
-
-// the index of the parameter in the zzub_plugins globals
-struct cv_node_param {
-    int param;
-};
-
-// when node type is audio:
-//   input/output channel determined by whether it's the souce or target of the cv_node in cv_port_link
-//   channel is 0 or 1 -> the left or right channel
-// when node_type is value or stream:
-//   param is the index of the zzub_parameter in zzub_plugins globals
-struct cv_node {
-    cv_node_type type;
-    // if this is a audio channel it is either 0 or 1, if it's a value or stream param it's the index of a zzub_parameter in the zzub_plugins globals
-    int index;
-
-    bool operator==(const cv_node& other) const { return type == other.type && index == other.index; }
-};
-
-
-
-struct cv_port_link {
+struct cv_connector {
     cv_node source;
     cv_node target;
 
-    bool operator==(const cv_port_link& other) const { return source == other.source && target == other.target; }
+    std::shared_ptr<cv_input> input;
+    std::shared_ptr<cv_output> output;
+
+    cv_connector(cv_node source, cv_node target) : source(source), target(target) {
+        input = build_cv_input(this->source);
+        output = build_cv_output(this->target);
+        std::cout << "cv_connector::cv_connector source: " << source.type <<  ", input: " <<  input->node.type <<  ", value: " <<  input->node.value << ", plugin_id: " <<  input->node.plugin_id << std::endl;
+        std::cout << "cv_connector::cv_connector target: " << target.type <<  ", output: " <<  output->node.type <<  ", value: " <<  output->node.value << ", plugin_id: " <<  output->node.plugin_id << std::endl;
+    }
+
+    bool work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, int sample_count) {
+        if(input->read(from, to, sample_count)) {
+            return output->write(input.get(), from, to, sample_count);
+        }
+
+        return false;
+    }
+
+    bool operator==(const cv_connector& other) const { return source == other.source && target == other.target; }
 };
 
 
 struct cv_connection : connection {
-    std::vector<cv_port_link> port_links;
+    std::vector<cv_connector> connectors;
+    int count = 0;
 
     cv_connection();
     
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
     virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count);
 
-    void add_port_link(const cv_port_link& link);
-    void remove_port_link(const cv_port_link& link);
+    void add_connector(const cv_connector& link);
+    void remove_connector(const cv_connector& link);
+    bool has_connector(const cv_connector& link);
+    int  num_connectors() const { return connectors.size(); }
 };
 
 
@@ -174,9 +173,10 @@ struct midi_connection : connection {
     std::string device_name;
 
     midi_connection();
-    int get_midi_device(zzub::song& player, int plugin, std::string name);
+    int          get_midi_device(zzub::song& player, int plugin, std::string name);
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
     virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count);
 };
+
 
 } // namespace zzub

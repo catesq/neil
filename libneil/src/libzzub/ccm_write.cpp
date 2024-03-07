@@ -136,8 +136,9 @@ xml_node CcmWriter::saveClass(xml_node &parent, const zzub::info &info) {
 
 
 xml_node CcmWriter::saveEventBinding(xml_node &parent, zzub::event_connection_binding &binding) {
-    xml_node item = parent.append_child(node_element);
-    item.set_name("binding");
+    // xml_node item = parent.append_child(node_element);
+    // item.set_name("binding");
+    xml_node item = parent.append_child("binding");
 
     item.append_attribute("source_param_index") = binding.source_param_index;
     item.append_attribute("target_group_index") = binding.target_group_index;
@@ -148,11 +149,36 @@ xml_node CcmWriter::saveEventBinding(xml_node &parent, zzub::event_connection_bi
 }
 
 xml_node CcmWriter::saveEventBindings(xml_node &parent, std::vector<zzub::event_connection_binding> &bindings) {
-    xml_node item = parent.append_child(node_element);
-    item.set_name("bindings");
+    // xml_node item = parent.append_child(node_element);
+    // item.set_name("bindings");
+    xml_node item = parent.append_child("bindings");
 
     for (size_t i = 0; i < bindings.size(); i++) {
         saveEventBinding(item, bindings[i]);
+    }
+
+    return item;
+}
+
+xml_node CcmWriter::saveCVConnector(xml_node &parent, zzub::cv_connector &link) {
+    xml_node item = parent.append_child(node_element);
+    item.set_name("cv_connector");
+    
+    item.append_attribute("source_type") = link.source.type;
+    item.append_attribute("source_value") = link.source.value;
+
+    item.append_attribute("target_type") = link.target.type;
+    item.append_attribute("target_value") = link.target.value;
+
+    return item;
+}
+
+xml_node CcmWriter::saveCVConnectors(xml_node &parent, std::vector<zzub::cv_connector> &connectors) {
+    xml_node item = parent.append_child(node_element);
+    item.set_name("cv_connectors");
+
+    for(size_t i = 0; i < connectors.size(); i++) {
+        saveCVConnector(item, connectors[i]);
     }
 
     return item;
@@ -461,12 +487,16 @@ xml_node CcmWriter::savePlugin(xml_node &parent, zzub::song &player, int plugin)
                 item.append_attribute("panning") = pan_to_double(player.plugin_get_parameter(plugin, 0, i, 1));
                 break;
             case zzub::connection_type_event: {
-                zzub::event_connection &ac = *(zzub::event_connection*)player.plugin_get_input_connection(plugin, i);
-                saveEventBindings(item, ac.bindings);
+                zzub::event_connection &midi_conn = *(zzub::event_connection*)player.plugin_get_input_connection(plugin, i);
+                saveEventBindings(item, midi_conn.bindings);
             } break;
             case zzub::connection_type_midi: {
-                zzub::midi_connection &ac = *(zzub::midi_connection*)player.plugin_get_input_connection(plugin, i);
-                item.append_attribute("device") = ac.device_name.c_str();
+                zzub::midi_connection &midi_conn = *(zzub::midi_connection*)player.plugin_get_input_connection(plugin, i);
+                item.append_attribute("device") = midi_conn.device_name.c_str();
+            } break;
+            case zzub::connection_type_cv: {
+                zzub::cv_connection &cv_conn = *(zzub::cv_connection*)player.plugin_get_input_connection(plugin, i);
+                saveCVConnectors(item, cv_conn.connectors);
             } break;
             default:
                 assert(0);

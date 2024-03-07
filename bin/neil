@@ -68,7 +68,6 @@ if '--debug' in sys.argv:
     raise SystemExit(0)
 
 
-
 if '--pydebug' in sys.argv:
     sys.argv.remove('--pydebug')
     os.system('winpdb "%s"' % sys.argv[0])
@@ -76,7 +75,8 @@ if '--pydebug' in sys.argv:
 
 
 package_path = str(next(dest.glob("**/*lib/python*/**/zzub")).resolve().parent)
-sys.path = [package_path] + sys.path
+components_path = str(next(dest.glob("**/neil/components")).resolve())
+sys.path = [package_path, components_path] + sys.path
 
 import neil.main
 neil.main.run(sys.argv)

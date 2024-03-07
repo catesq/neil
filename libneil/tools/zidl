@@ -625,7 +625,7 @@ class Class(zzubIDLObject):
 		print (file=f)
 		
 	def write_c_fwddecl(self, parent, f):
-		if self.classes or self.members and not "not typedef" in self.doc:
+		if self.classes or self.members and not "no typedef" in self.doc:
 			self.write_c_doc(f)
 			print ('typedef struct ' + self.c_name + ' ' + self.struct_name + ';', file=f)
 			for class_ in self.classes:

@@ -229,7 +229,7 @@ void lv2_adapter::ui_event_import() {
             break;
         }
         assert(ev.index < info->ports.size());
-        lv2_port* port = ports[ev.index];
+        lv2_port* port = (lv2_port*) ports[ev.index];
 
         if (ev.protocol == 0 && port->type == PortType::Param) {
             update_port(static_cast<param_port*>(port), *((float*)body));

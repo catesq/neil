@@ -18,9 +18,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from typing import Dict, List
 from .pathconfig import path_cfg
 import os,sys,glob
 from configparser import ConfigParser
+import player
+
 
 SECTION_NAME = 'Neil COM'
 OPTIONS = [
@@ -72,7 +75,7 @@ class ComponentManager:
         names = []
         component_path = [
             path_cfg.get_path('components') or os.path.join(path_cfg.get_path('share'), 'components'),
-            os.path.expanduser('~/.neil/components'),
+            os.path.expanduser('~/.local/neil/components'),
         ]
         for path in component_path:
             print("scanning " + path + " for components")
@@ -181,6 +184,16 @@ class ComponentManager:
     def get_from_category(self, category, *args, **kwargs):
         return [self.get(classid, *args, **kwargs) for classid in self.categories.get(category, [])]
 
+    def get_player(self) -> player.NeilPlayer:
+        return self.get('neil.core.player')
+    
+    def get_categories() -> Dict[str, List[str]]:
+        return com.categories
+    
+    def get_factories() -> Dict[str, Dict[str, str]]:
+        return com.factories
+        
+
 com = ComponentManager()
 get = com.get
 factory = com.factory
@@ -190,7 +203,8 @@ category = com.category
 get_from_category = com.get_from_category
 clear = com.clear
 
-def get_player():
+
+def get_player() -> player.NeilPlayer:
     return com.get('neil.core.player')
 
 def get_packages():

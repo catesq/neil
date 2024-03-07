@@ -18,21 +18,19 @@
 
 
 
-#ifndef LIBNEIL_SONG_H
-#define LIBNEIL_SONG_H
+#pragma once
 
 #include "zzub/plugin.h"
-#include "graph.h"
-#include "wavetable.h"
-#include "master.h"
-#include "driver.h"
-#include "timer.h"
+#include "libzzub/graph.h"
+#include "libzzub/wavetable.h"
+#include "libzzub/master.h"
+#include "libzzub/driver.h"
+#include "libzzub/timer.h"
+#include "libzzub/metaplugin.h"
 
 using std::pair;
 using std::string;
 using std::vector;
-
-
 
 namespace zzub {
 
@@ -64,28 +62,8 @@ enum player_state {
     player_state_released
 };
 
-// sequencer action values
-enum sequencer_event_type {
-    sequencer_event_type_none = -1,
-    sequencer_event_type_mute = 0,
-    sequencer_event_type_break = 1,
-    sequencer_event_type_thru = 2,
-    sequencer_event_type_pattern = 0x10,
-};
 
-struct pattern {
-    typedef vector<int> column;
-    typedef vector<column> track;
-    typedef vector<track> group;
 
-    vector<group> groups;
-    string name;
-    int rows;
-
-    pattern() {
-        rows = 0;
-    }
-};
 
 struct metaplugin_proxy {
     metaplugin_proxy(player* _playr, int _id):_player(_playr),id(_id){}
@@ -93,47 +71,6 @@ struct metaplugin_proxy {
     unsigned int id;
 };
 
-struct metaplugin {
-    zzub::plugin* plugin;
-    plugin_descriptor descriptor;
-    const zzub::info* info;
-    int flags;
-    host* callbacks;
-    bool initialized;
-    vector<vector<float> > work_buffer;
-    string name;
-    int tracks;
-    sequencer_event_type sequencer_state;
-    float x, y;
-    bool is_muted, is_bypassed;
-    pattern state_write;
-    pattern state_last;
-    pattern state_automation;
-
-    std::string stream_source;
-
-    int last_work_buffersize, last_work_frame;
-    float last_work_max_left, last_work_max_right;
-    bool last_work_audio_result;
-    bool last_work_midi_result;
-    double last_work_time;
-    double cpu_load_time;
-    int cpu_load_buffersize;
-    double cpu_load;
-    int writemode_errors;
-
-    int midi_input_channel;
-    vector<midi_message> midi_messages;
-
-    vector<event_handler*> event_handlers;
-    vector<pattern*> patterns;
-
-    int note_group, note_column;
-    int velocity_column;
-    int wave_column;
-
-    metaplugin_proxy* proxy;
-};
 
 
 //struct connection {
@@ -231,6 +168,8 @@ struct song {
     connection_type plugin_get_input_connection_type(int plugin_id, int index);
     connection* plugin_get_input_connection(int plugin_id, int index);
     connection* plugin_get_input_connection(int plugin_id, int from_id, connection_type type);
+    std::vector<connection*> plugin_get_input_connections(int plugin_id, int from_id);
+
     int plugin_get_input_connection_index(int to_id, int from_id, connection_type type);
     int plugin_get_output_connection_count(int to_id);
     connection* plugin_get_output_connection(int plugin_id, int index);
@@ -261,6 +200,9 @@ struct song {
     void invoke_plugin_parameter_changes(int plugin_id);
     void invoke_plugin_parameter_changes(int plugin_id, int g);
     bool plugin_invoke_event(int plugin_id, zzub_event_data data, bool immediate = false);
+
+    zzub::port* plugin_get_port(int plugin_id, int index);
+    int plugin_get_port_count(int plugin_id);
 
     // plugin methods
     string plugin_describe_parameter(plugin_descriptor plugindesc, int group, int track, int column);
@@ -345,5 +287,4 @@ struct mixer : song {
 };
 
 };
-#endif //LIBNEIL_SONG_H
 

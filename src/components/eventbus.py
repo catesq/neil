@@ -146,7 +146,13 @@ class EventHandlerList:
         # handler.handlers.append((ref,funcname,args))
 
         return self
-    
+
+    def add_handler(self, funcargs):
+        return self.__add__(funcargs)
+
+    def remove_handler(self, funcargs):
+        return self.__sub__(funcargs)
+
 
     def __sub__(self, funcargs):
         rm_ref, rm_funcname, rm_args = self.define_handler(funcargs)

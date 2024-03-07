@@ -272,6 +272,32 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
                             assert(false);
                             player.plugin_add_input(c->target, iplug->second, connection_type_midi);
                             player.plugin_set_midi_connection_device(c->target, iplug->second, i->attribute("device").value());
+                        } else if (conntype == "cv") {
+                            player.plugin_add_input(c->target, iplug->second, connection_type_cv);
+                            for (xml_node::iterator j = i->begin(); j != i->end(); ++j) {
+                                if (!strcmp(j->name(), "cv_connectors")) {
+                                    for (xml_node::iterator k = j->begin(); k != j->end(); ++k) {
+                                        if (!strcmp(k->name(), "cv_connector")) {
+
+                                            auto source_type = k->attribute("source_type").as_int();
+                                            // auto source_flags = k->attribute("source_flags").as_int();
+                                            auto source_value = k->attribute("source_value").as_int();
+
+                                            auto target_type = k->attribute("target_type").as_int();
+                                            // auto target_flags = k->attribute("target_flags").as_int();
+                                            auto target_value = k->attribute("target_value").as_int();
+
+                                            cv_connector port_link = { 
+                                                cv_node{ c->target, source_type, source_value }, 
+                                                cv_node{ iplug->second, target_type, target_value } 
+                                            };
+
+                                            player.plugin_add_cv_connector(c->target, iplug->second, &port_link);
+                                        }
+                                    }
+                                }
+                            }
+                            
                         } else {
                             assert(0);
                         }

@@ -303,6 +303,8 @@ namespace zzub:
 		set has_cv_input = bit 28 # for event effects
 		set has_cv_output = bit 29 # for event generators and effects
 
+		set has_ports = bit 30
+
 	enum StateFlag:
 		# player state flags
 		set playing	= 1
@@ -399,15 +401,24 @@ namespace zzub:
 
 	class EventConnectionBinding:
 		def get_group(): int
+	
+	enum CvNodeType:
+		set audio_node = 1
+		set param_node = 2
+		set port_node = 3
+		set track_node = 4
 
+	"no typedef"
 	class CvNode:
+		member int plugin_id
 		member int type
-		member int index
+		member int value
 
-	class CvPortLink:
+
+	"no typedef"
+	class CvLink:
 		member CvNode source
 		member CvNode target
-
 
 	class CvConnection:
 		def get_type(): int
@@ -561,6 +572,22 @@ namespace zzub:
 		# def get_import_format_count(): int
 		# def get_import_format_ext(int index): string
 		
+	enum PortFlow:
+		set input = 0
+		set output = 1
+
+	enum PortType:
+		set audio = 1
+		set parameter = 2
+		set cv = 3
+		set midi = 4
+
+	class Port:
+		def get_index(): int
+		def get_name(): string
+		def get_flow(): int
+		def get_type(): int
+
 	"Plugin methods"
 	"Retreive more details about plugins."
 	class Plugin:
@@ -742,6 +769,12 @@ namespace zzub:
 
 		def get_parameter(int group, int track, int column): Parameter
 
+		def get_global_parameter_count(): int
+
+		def get_global_parameter(int index): Parameter
+
+		iterator get_global_parameters: for get_global_parameter in get_global_parameter_count
+
 		# Plugin connection methods
 
 		"Returns the number of input connections for given plugin."
@@ -806,6 +839,7 @@ namespace zzub:
 		def play_pattern_row_ref(int pattern, int row)
 		def play_pattern_row(Pattern pattern, int row)
 
+
 		# Connection methods
 
 		#/*@}*/
@@ -815,25 +849,22 @@ namespace zzub:
 		def set_midi_connection_device(Plugin from_plugin, string name): int
 		# 0.3: DEAD # def get_midi_connection_device(int from_plugin): string
 
-		#/*@}*/
-		#/** @name Event connection methods"
-		#/*@{*/
 
-		def add_cv_port_link(Plugin from_plugin, CvPortLink cv_port_link)
-		def remove_cv_port_link(Plugin from_plugin, CvPortLink cv_port_link)
+		def add_cv_connector(Plugin from_plugin, CvNode source, CvNode target)
+		def remove_cv_connector(Plugin from_plugin, CvNode source, CvNode target)
 		
-		# 0.3: DEAD # def get_event_connection_binding_count(int from_plugin): int
-		# 0.3: DEAD # zzub_event_connection_binding_t *zzub_plugin_get_event_connection_binding(int from_plugin, int index)
-		# 0.3: DEAD # def remove_event_connection_binding(int from_plugin, int index): int
 
 		#/*@}*/
 		#/** @name Event connection methods"
 		#/*@{*/
-
 		def add_event_connection_binding(Plugin from_plugin, int sourceparam, int targetgroup, int targettrack, int targetparam)
 		# 0.3: DEAD # def get_event_connection_binding_count(int from_plugin): int
 		# 0.3: DEAD # zzub_event_connection_binding_t *zzub_plugin_get_event_connection_binding(int from_plugin, int index)
 		# 0.3: DEAD # def remove_event_connection_binding(int from_plugin, int index): int
+
+		def get_port(int index): Port
+		def get_port_count(): int
+		iterator get_ports: for get_port in get_port_count
 
 	
 	"Sequencer methods"

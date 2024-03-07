@@ -449,10 +449,10 @@ void op_plugin_replace::finish(zzub::song& song, bool send_events) {
 //
 // ---------------------------------------------------------------------------
 
-op_plugin_connect::op_plugin_connect(int _from_id, int _to_id, zzub::connection_type _type) {
-    from_id = _from_id;
-    to_id = _to_id;
-    type = _type;
+op_plugin_connect::op_plugin_connect(int from_id, int to_id, zzub::connection_type type) {
+    this->from_id = from_id;
+    this->to_id = to_id;
+    this->type = type;
 
     copy_flags.copy_graph = true;
     copy_flags.copy_work_order = true;
@@ -479,12 +479,13 @@ bool op_plugin_connect::prepare(zzub::song& song) {
 
     // check for duplicate connection
     if (song.plugin_get_input_connection_index(to_id, from_id, type) != -1) {
-        cerr << "duplicate connection: " << song.plugin_get_input_connection_count(to_id) << endl;
+        cerr << "duplicate input connection not allowed: [" << from_id << " -> " << to_id << "] at index: " << song.plugin_get_input_connection_index(to_id, from_id, type) << endl;
         return false;
     }
+
     // check for existing connection in opposite direction
     if (song.plugin_get_input_connection_index(from_id, to_id, type) != -1) {
-        cerr << "existing connection in opposite direction" << endl;
+        cerr << "existing connection in opposite direction not allowed" << endl;
         return false;
     }
 
@@ -554,8 +555,12 @@ bool op_plugin_connect::prepare(zzub::song& song) {
     song.plugin_add_input(to_id, from_id, type);
 
     // set initial connection states
+    // int conn_count = song.plugin_get_input_connection_count(to_id);
+    // printf("conn_count: %d\n", conn_count);
     int conn_index = song.plugin_get_input_connection_index(to_id, from_id, type);
+    // printf("conn index: %d\n", conn_index);
     connection* conn = song.plugin_get_input_connection(to_id, conn_index);
+    // printf("conn type: %d\n", conn->type);
 
     for (size_t i = 0; i < values.size() && i < conn->connection_parameters.size(); i++) {
         to_mpl.state_write.groups[0].back()[i][0] = values[i];
@@ -569,7 +574,7 @@ bool op_plugin_connect::prepare(zzub::song& song) {
         ((event_connection*)conn)->bindings = bindings;
         break;
     case connection_type_cv:
-        ((cv_connection*)conn)->port_links = port_links;
+        ((cv_connection*)conn)->connectors = connectors;
         break;
     case connection_type_audio:
     default:
@@ -773,26 +778,46 @@ void op_plugin_remove_event_connection_binding::finish(zzub::song& song, bool se
 // ---------------------------------------------------------------------------
 
 
-op_plugin_add_cv_port_link::op_plugin_add_cv_port_link(int to_id, int from_id, cv_port_link link) {
-    this->from_id = from_id;
-    this->to_id = to_id;
-    this->link = link;
+op_plugin_add_cv_connector::op_plugin_add_cv_connector(int to_id, int from_id, cv_connector connector) :
+    from_id(from_id),
+    to_id(to_id),
+    connector(connector),
+    plugin_connect_op(from_id, to_id, connection_type_cv) {
+        copy_flags = plugin_connect_op.copy_flags;
+        printf("op_plugin_add_cv_port_link::op_plugin_add_cv_connector copy flags length: %d\n", copy_flags.plugin_flags.size());
 }
 
-bool op_plugin_add_cv_port_link::prepare(zzub::song& song) {
-    return true;
-}
+bool op_plugin_add_cv_connector::prepare(zzub::song& song) {
+    if(song.plugin_get_input_connection(to_id, from_id, connection_type_cv)) {
+        this->do_plugin_connect = false;
+    } else {
+            this->do_plugin_connect = this->plugin_connect_op.prepare(song);
 
-bool op_plugin_add_cv_port_link::operate(zzub::song& song) {
-    if (auto conn = song.plugin_get_input_connection(to_id, from_id, connection_type_cv)) {
-        static_cast<cv_connection*>(conn)->add_port_link(link);
+        if(!this->do_plugin_connect)
+            return false;
     }
 
     return true;
 }
 
-void op_plugin_add_cv_port_link::finish(zzub::song& song, bool send_events) {
+bool op_plugin_add_cv_connector::operate(zzub::song& song) {
+    if(this->do_plugin_connect) {
+        plugin_connect_op.operate(song);
+    }
 
+    auto conn = song.plugin_get_input_connection(to_id, from_id, connection_type_cv);
+
+    if(!conn)    
+        return false;
+        
+    static_cast<cv_connection*>(conn)->add_connector(connector);
+
+    return true;
+}
+
+void op_plugin_add_cv_connector::finish(zzub::song& song, bool send_events) {
+    if(this->do_plugin_connect)
+        plugin_connect_op.finish(song, send_events);
 }
 
 // ---------------------------------------------------------------------------
@@ -803,38 +828,57 @@ void op_plugin_add_cv_port_link::finish(zzub::song& song, bool send_events) {
 
 
 
-op_plugin_remove_cv_port_link::op_plugin_remove_cv_port_link(int to_id, int from_id, cv_port_link link) {
-    this->from_id = from_id;
-    this->to_id = to_id;
-    this->link = link;
+op_plugin_remove_cv_connector::op_plugin_remove_cv_connector(int to_id, int from_id, cv_connector connector) :
+    from_id(from_id),
+    to_id(to_id),
+    connector(connector),
+    plugin_disconnect_op(to_id, from_id, connection_type_cv) {
 }
 
 
-bool op_plugin_remove_cv_port_link::prepare(zzub::song& song) {
-    return true;
-}
+bool op_plugin_remove_cv_connector::prepare(zzub::song& song) {
+    auto conn = song.plugin_get_input_connection(to_id, from_id, connection_type_cv);
 
+    if (!conn) {
+        return false;
+    }
 
-bool op_plugin_remove_cv_port_link::operate(zzub::song& song) {
-    int conn_index = song.plugin_get_input_connection_index(to_id, from_id, connection_type_event);
-    if (conn_index == -1) return true;	// plugin was deleted
-    assert(conn_index != -1);
+    auto cv_conn = static_cast<cv_connection*>(conn);
 
-    cv_connection* conn = (cv_connection*)song.plugin_get_input_connection(to_id, conn_index);
-
-    for(auto it = conn->port_links.begin(); it != conn->port_links.end(); ) {
-        if (*it == link) {
-            it = conn->port_links.erase(it);
-        } else {
-            ++it;
-        }
+    // will remove cv connection if this was the last pair of linked ports on the connection
+    if(cv_conn->has_connector(connector) && cv_conn->num_connectors() == 1) {
+        do_plugin_disconnect = true;
+        plugin_disconnect_op.prepare(song);
     }
 
     return true;
 }
 
 
-void op_plugin_remove_cv_port_link::finish(zzub::song& song, bool send_events) {
+bool op_plugin_remove_cv_connector::operate(zzub::song& song) {
+    auto conn = (cv_connection*) song.plugin_get_input_connection(to_id, from_id, connection_type_cv);
+
+    if (!conn) 
+        return true;	// plugin probably deleted
+
+    for(auto it = conn->connectors.begin(); it != conn->connectors.end(); ) {
+        if (*it == connector) {
+            it = conn->connectors.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    if(do_plugin_disconnect)
+        plugin_disconnect_op.operate(song);
+
+    return true;
+}
+
+
+void op_plugin_remove_cv_connector::finish(zzub::song& song, bool send_events) {
+    if(do_plugin_disconnect)
+        plugin_disconnect_op.finish(song, send_events);
 }
 
 

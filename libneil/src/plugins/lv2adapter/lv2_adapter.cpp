@@ -311,8 +311,8 @@ void lv2_adapter::init(zzub::archive *arc) {
         lv2_worker_init(this, &worker, (const LV2_Worker_Interface *)iface, true);
     }
 
-    for (auto &port : ports)
-        lilv_instance_connect_port(lilvInstance, port->index, port->data_pointer());
+    for (auto &port : ports) 
+        lilv_instance_connect_port(lilvInstance, port->get_index(), static_cast<lv2_port*>(port)->data_pointer());
 
     lilv_instance_activate(lilvInstance);
 
@@ -341,6 +341,17 @@ void lv2_adapter::created() {
     for (param_port *port : paramPorts) {
         _host->set_parameter(metaPlugin, 1, 0, port->paramIndex, port->lilv_to_zzub_value(port->value));
     }
+}
+
+
+
+// bool lv2_adapter::is_param_continuous(int index) { }
+zzub::port* lv2_adapter::get_port(int index) {
+    return index < ports.size() ? ports[index] : nullptr;
+}
+
+int lv2_adapter::get_port_count() {
+    return ports.size();
 }
 
 bool lv2_adapter::invoke(zzub_event_data_t &data) {

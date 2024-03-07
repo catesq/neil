@@ -2,6 +2,7 @@ from gi.repository import Gtk
 from neil.com import com
 from functools import reduce
 from neil.utils import gettext, prepstr, filenameify, show_machine_manual, is_root, clone_plugin, clone_plugin_patterns, clone_preset
+from .disconnect_dialog import DisconnectDialog
 
 
 def on_popup_mute_selected(widget, plugins):
@@ -88,12 +89,34 @@ def on_machine_help(widget, plugin):
         info.destroy()
 
 
-def on_popup_disconnect(widget, plugin, index):
-    conn_plugin = plugin.get_input_connection_plugin(index)
-    conn_type = plugin.get_input_connection_type(index)
+def disconnect_plugin(plugin, conn_index):
+    conn_plugin = plugin.get_input_connection_plugin(conn_index)
+    conn_type = plugin.get_input_connection_type(conn_index)
     plugin.delete_input(conn_plugin, conn_type)
-    player = com.get('neil.core.player')
-    player.history_commit("disconnect")
+
+
+def on_popup_disconnect(widget, plugin, index):
+    disconnect_plugin(plugin, index)
+
+    com.get_player().history_commit("disconnect")
+
+
+def on_popup_disconnect_dialog(widget, connections):
+    dialog = DisconnectDialog(widget, connections)
+    res = dialog.popup()
+
+    if res == Gtk.ResponseType.OK:
+        for plugin, index in dialog.get_selected_indexes():
+            disconnect_plugin(plugin, index)
+
+        com.get_player().history_commit("disconnect")
+
+
+def on_popup_disconnect_all(widget, connections):
+    for plugin, index in connections:
+        disconnect_plugin(plugin, index)
+        
+    com.get_player().history_commit("disconnect")
 
 
 # all the hard work for this is done in ccmwriter in ccm.cpp and is basically a c++ copy of clone_chain() hooked into the file save

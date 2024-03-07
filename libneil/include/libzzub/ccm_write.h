@@ -22,6 +22,10 @@ class CcmWriter {
     xml_node saveSequencer(xml_node &parent, const std::string &id, zzub::song &seq);
     xml_node saveEventBindings(xml_node &parent, std::vector<zzub::event_connection_binding> &bindings);
     xml_node saveEventBinding(xml_node &parent, zzub::event_connection_binding &binding);
+
+    xml_node saveCVConnector(xml_node &parent, zzub::cv_connector &connector);
+    xml_node saveCVConnectors(xml_node &parent, std::vector<zzub::cv_connector> &connectors);
+
     xml_node saveParameterValue(xml_node &parent, std::string &group, int track, int param, int value);
     xml_node saveArchive(xml_node &parent, const std::string&, zzub::mem_archive &arc);
     xml_node saveInit(xml_node &parent, zzub::song &player, int plugin_id);

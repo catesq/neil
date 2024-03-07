@@ -48,6 +48,7 @@ files = [
     'ccm_write.cpp',
     'ccm_helpers.cpp',
     'connections.cpp',
+    'cv_connections.cpp',
     'input.cpp',
     'operations.cpp',
     'output.cpp',

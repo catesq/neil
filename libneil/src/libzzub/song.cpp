@@ -25,6 +25,7 @@
 #include <sstream>
 #include "libzzub/timer.h"
 #include "libzzub/dummy.h"
+#include "libzzub/metaplugin.h"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -283,6 +284,21 @@ zzub::out_edge_iterator song::get_plugin_input_edge(int plugin_id, int index) {
     return first_edge + index;
 }
 
+std::vector<connection*> song::plugin_get_input_connections(int plugin_id, int from_id) {
+    std::vector<connection*> result;
+
+    auto [first_edge, last_edge] = get_plugin_input_edges(plugin_id);
+
+    for (out_edge_iterator it = first_edge; it != last_edge; ++it) {
+        printf("input connection target: %d\n", target(*it, graph));
+        if (target(*it, graph) == from_id) {
+            printf("got input connection - index: %d, type %d\n", it - first_edge, graph[*it].conn->type);
+            result.push_back(graph[*it].conn);
+        }
+    }
+
+    return result;
+}
 
 int song::plugin_get_input_connection_count(int to_id) {
     auto [first_edge, last_edge] = get_plugin_input_edges(to_id);
@@ -408,6 +424,18 @@ int song::plugin_get_output_connection_plugin(int plugin_id, int index) {
 
 connection_type song::plugin_get_output_connection_type(int plugin_id, int index) {
     return plugin_get_output_connection(plugin_id, index)->type;
+}
+
+zzub::port* song::plugin_get_port(int plugin_id, int index) {
+    ASSERT_PLUGIN(plugin_id);
+
+    return plugins[plugin_id]->plugin->get_port(index);
+}
+
+int song::plugin_get_port_count(int plugin_id) {
+    ASSERT_PLUGIN(plugin_id);
+
+    return plugins[plugin_id]->plugin->get_port_count();
 }
 
 
@@ -1284,19 +1312,18 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
 
     if (m.is_muted || m.sequencer_state == sequencer_event_type_mute) {
         m.last_work_audio_result = false;
-    } else
-        if (m.is_bypassed || m.sequencer_state == sequencer_event_type_thru) {
-            m.last_work_audio_result = result;
-        } else {
-            SETABRPUN(); // turn on flush-to-zero for SSE machines
-            m.last_work_audio_result = m.plugin->process_stereo(plin, plout, sample_count, flags);
-            // (paniq) flush to zero should be turned off outside our DSP loop
-            // because the player library might be running in a process where
-            // precise computation is expected (i.e. realtime physics simulation).
-            // leaving it on will cause unexpected behavior on code paths
-            // we do not control.
-            SETGRADUN();
-        }
+    } else if (m.is_bypassed || m.sequencer_state == sequencer_event_type_thru) {
+        m.last_work_audio_result = result;
+    } else {
+        SETABRPUN(); // turn on flush-to-zero for SSE machines
+        m.last_work_audio_result = m.plugin->process_stereo(plin, plout, sample_count, flags);
+        // (paniq) flush to zero should be turned off outside our DSP loop
+        // because the player library might be running in a process where
+        // precise computation is expected (i.e. realtime physics simulation).
+        // leaving it on will cause unexpected behavior on code paths
+        // we do not control.
+        SETGRADUN();
+    }
 
     std::copy(m.callbacks->feedback_buffer[0].begin() + sample_count, m.callbacks->feedback_buffer[0].begin() + buffer_size, m.callbacks->feedback_buffer[0].begin());
     std::copy(m.callbacks->feedback_buffer[1].begin() + sample_count, m.callbacks->feedback_buffer[1].begin() + buffer_size, m.callbacks->feedback_buffer[1].begin());

@@ -58,10 +58,10 @@ typedef struct {
         printf(format, __VA_ARGS__); \
     }
 
-enum PortFlow : unsigned {
+enum PortFlow : int {
+    Input   = -1,
     Unknown = 0,
-    Input   = 1,
-    Output  = 2,
+    Output  = 1,
 };
 
 enum PortType : unsigned {

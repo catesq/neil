@@ -75,7 +75,7 @@ struct lv2_adapter : zzub::plugin,
                      zzub::event_handler,
                      zzub::midi_plugin_interface 
 {
-    std::vector<lv2_port*> ports;
+    std::vector<zzub::port*> ports;
 
     std::vector<audio_buf_port*> audioInPorts;
     std::vector<audio_buf_port*> audioOutPorts;
@@ -157,6 +157,9 @@ struct lv2_adapter : zzub::plugin,
     virtual void add_note_off(uint8_t note) override;
     virtual void add_aftertouch(uint8_t note, uint8_t volume) override;
     virtual void add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) override;
+
+    virtual zzub::port* get_port(int index) override;
+    virtual int get_port_count() override;
 
 private:
     GtkWidget* ui_open_window(GtkWidget** root_container, GtkWidget** parent_container);
