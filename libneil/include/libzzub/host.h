@@ -82,6 +82,8 @@ struct host {
     virtual bool get_input(int index, float *samples, int buffersize, bool stereo, float *extrabuffer);
     virtual bool get_osc_url(zzub_plugin_t *pmac, char *url);
 
+    virtual const parameter* get_parameter_info(zzub_plugin_t* _metaplugin, int group, int param);
+
     // peerctrl extensions
     virtual int get_parameter(zzub_plugin_t *_metaplugin, int group, int track, int param);
     virtual void set_parameter(zzub_plugin_t *_metaplugin, int group, int track, int param, int value);
