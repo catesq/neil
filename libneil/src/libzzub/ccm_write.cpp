@@ -733,7 +733,7 @@ bool CcmWriter::save(std::string fileName, zzub::player* player) {
 }
 
 bool CcmWriter::saveSelected(std::string filename, zzub::player* player, const int* plugins, unsigned int size) {
-    printf("save selected plugins...\n");
+    printf("todo: save selected plugins not implemented...\n");
     return false;
 }
 

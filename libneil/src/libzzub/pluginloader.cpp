@@ -53,7 +53,6 @@ pluginlib::~pluginlib() {
 }
 
 void pluginlib::unload() {
-    printf("unloading plugin library\n");
     if (collection) {
         collection->destroy();
         collection = 0;
@@ -68,8 +67,6 @@ void pluginlib::unload() {
 }
 
 void pluginlib::init_dll() {
-    printf("loading machine '%s'\n", fileName.c_str());
-
     bool is_so = false;
     bool is_win32 = false;
 

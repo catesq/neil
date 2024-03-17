@@ -1,6 +1,6 @@
 #
 
-import os
+import os, typing
 
     # used by build_cmake_module() to check if the library is has been built 
 def check_lib_exists(lib_name, lib_path):
@@ -34,7 +34,7 @@ class cmake_module(cpp_module):
         self.always_link = always_link
         self.cpp_defines = cpp_defines
 
-    def get_env_flags(self) -> {}:
+    def get_env_flags(self) -> typing.Dict[str, str]:
         return {
             self.name.upper() + '_LIB_NAME': self.lib_name,
         }

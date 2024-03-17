@@ -126,7 +126,6 @@ void player::initialize_plugin_directory(std::string folder) {
     else {
         while(n--) {
             string fullFilePath=folder + namelist[n]->d_name;
-            printf("enumerating %s\n", fullFilePath.c_str());
             if (!stat(fullFilePath.c_str(), &statinfo))
             {
                 if (!S_ISDIR(statinfo.st_mode))
@@ -932,6 +931,7 @@ void player::plugin_remove_cv_connector(int to_id, int from_id, const zzub::cv_c
     begin_plugin_operation(to_id);
     begin_plugin_operation(from_id);
 
+    // cv_connector connector
     op_plugin_remove_cv_connector* redo = new op_plugin_remove_cv_connector(to_id, from_id, link);
     op_plugin_add_cv_connector* undo = new op_plugin_add_cv_connector(to_id, from_id, link);
 

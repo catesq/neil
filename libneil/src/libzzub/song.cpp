@@ -93,7 +93,11 @@ void topological_sort_kahn(plugin_map& tg, std::deque<plugin_descriptor>& input,
             graph_traits<plugin_map>::in_edge_iterator in, in_end;
             boost::tie(in, in_end) = in_edges(*i, tg);
             if ((in_end - in) == 0) {
-                input.push_back(*i);
+                // when a plugin has audio and cv connections there were duplicates
+                // this will be removed when i rewrite connectors.coo
+                if(*i != input.back()) {
+                    input.push_back(*i);
+                }
             }
         }
     }
@@ -770,6 +774,7 @@ void song::process_plugin_events(int plugin_id) {
     zzub::out_edge_iterator out, out_end;
     boost::tie(out, out_end) = out_edges(m.descriptor, graph);
     int index = 0;
+
     for(; out != out_end; ++out, index++) {
         assert(source(*out, graph) < num_vertices(graph));
         assert(target(*out, graph) < num_vertices(graph));
@@ -1184,7 +1189,7 @@ int mixer::generate_audio(int sample_count) {
         work_plugin(work_order[i], work_chunk_size);
 
     }
-
+    
     // process midi
     for (size_t i = 0; i < work_order.size(); i++) {
         metaplugin& workplugin = get_plugin(work_order[i]);
@@ -1267,7 +1272,6 @@ void mixer::sequencer_update_play_pattern_positions() {
 }
 
 void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
-
     double start_time = timer.frame();
 
     // process connections
@@ -1275,7 +1279,7 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
     metaplugin& m = *plugins[plugin_id];
     memset(&m.work_buffer[0].front(), 0, sample_count * sizeof(float));
     memset(&m.work_buffer[1].front(), 0, sample_count * sizeof(float));
-
+    
     bool result = false;
     zzub::out_edge_iterator out, out_end;
     boost::tie(out, out_end) = out_edges(plugin, graph);
@@ -1308,7 +1312,6 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
     memcpy(&mix_buffer[1].front(), &m.work_buffer[1].front(), sample_count * sizeof(float));
     float *plin[] = { &mix_buffer[0].front(), &mix_buffer[1].front() };
     float *plout[] = { &m.work_buffer[0].front(), &m.work_buffer[1].front() };
-
     if (m.is_muted || m.sequencer_state == sequencer_event_type_mute) {
         m.last_work_audio_result = false;
     } else if (m.is_bypassed || m.sequencer_state == sequencer_event_type_thru) {

@@ -135,7 +135,7 @@ struct find_info_by_uri {
 
 
 inline bool plugin_has_audio(zzub::metaplugin& plugin, float amp) {
-    return plugin.last_work_audio_result && amp > 0 && (plugin.last_work_max_left > SIGNAL_TRESHOLD || plugin.last_work_max_right > SIGNAL_TRESHOLD);
+    return plugin.last_work_audio_result && amp > 0.f && (plugin.last_work_max_left > SIGNAL_TRESHOLD || plugin.last_work_max_right > SIGNAL_TRESHOLD);
 }
 
 

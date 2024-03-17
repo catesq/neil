@@ -170,9 +170,10 @@ struct op_plugin_edit_cv_connector : operation {
 
 struct op_plugin_remove_cv_connector : operation {
     int from_id, to_id;
-    cv_connector connector;
     op_plugin_disconnect plugin_disconnect_op;
     bool do_plugin_disconnect = false;
+    cv_connector connector;
+
     op_plugin_remove_cv_connector(int to_id, int from_id, const cv_connector& connector);
     virtual bool prepare(zzub::song& song);
     virtual bool operate(zzub::song& song);

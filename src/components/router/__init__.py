@@ -41,7 +41,7 @@ from neil.utils import PluginType
 from neil.utils import get_plugin_type
 from neil.utils import is_effect, is_generator, is_controller, is_root
 from neil.utils import prepstr, db2linear, linear2db, error, new_listview, add_scrollbars
-from neil.utils import blend_float, box_contains
+from neil.utils import blend_float, box_contains, distance_from_line
 import config
 import zzub
 import neil.common as common
@@ -764,30 +764,36 @@ class RouteView(Gtk.DrawingArea):
         return True
 
     def on_drag_data_received(self, widget, context, x, y, data, info, time):
-        if data.get_format() == 8:
-            context.finish(True, True, time)
-
-            player = com.get_player()
-            player.plugin_origin = self.pixel_to_float((x, y))
-            uri = str(data.get_data(), "utf-8")
-            conn = None
-            plugin = None
-            pluginloader = player.get_pluginloader_by_name(uri)
-
-            if is_effect(pluginloader):
-                conn = self.get_audio_connection_at((x, y))
-            if not conn:
-                res = self.get_plugin_at((x, y))
-                if res:
-                    mp, (px, py), area = res
-                    if is_effect(mp) or is_root(mp):
-                        plugin = mp
-            player.create_plugin(pluginloader, connection=conn, plugin=plugin)
-            Gtk.drag_finish(context, True, False, time)
-            Gdk.drop_finish(context, True, time)
-        else:
+        if data.get_format() != 8:
             Gtk.drag_finish(context, False, False, time)
             Gdk.drop_finish(context, True, time)
+            return True
+        
+        context.finish(True, True, time)
+
+        player = com.get_player()
+        player.plugin_origin = self.pixel_to_float((x, y))
+        uri = str(data.get_data(), "utf-8")
+        conn = None
+        plugin = None
+        pluginloader = player.get_pluginloader_by_name(uri)
+
+        # autoconnect if dragged onto an existing audio connection
+        if is_effect(pluginloader):
+            conn = self.get_audio_connection_at((x, y))
+
+        # autoconnect if dragged onto an existing plugin
+        if not conn:
+            res = self.get_plugin_at((x, y))
+            if res:
+                mp, (px, py), area = res
+                if is_effect(mp) or is_generator(mp):
+                    plugin = mp
+
+        player.create_plugin(pluginloader, connection=conn, plugin=plugin)
+        Gtk.drag_finish(context, True, False, time)
+        Gdk.drop_finish(context, True, time)
+            
         return True
 
 
@@ -900,12 +906,8 @@ class RouteView(Gtk.DrawingArea):
         """
         Converts a router coordinate to an on-screen pixel coordinate.
 
-        @param x: X coordinate.
-        @type x: float
-        @param y: Y coordinate.
-        @type y: float
-        @return: A tuple returning the pixel coordinate.
-        @rtype: (int,int)
+        @param xy: tuple (x,y) coordinate in float
+        @return: tuple (x, y) coordinate in pixels.
         """
         return (xy[0] + 1) * self.area.width / 2, (xy[1] + 1) * self.area.height / 2
 
@@ -923,37 +925,49 @@ class RouteView(Gtk.DrawingArea):
         """
         return (2 * xy[0] / self.area.width) - 1, (2 * xy[1] / self.area.height) - 1
 
+    
     def get_audio_connection_at(self, xy):
-        for mp, index in self.get_connections_at(xy):
-            if mp.get_input_connection_type(index) == zzub.zzub_connection_type_audio:
-                return mp, index
-            
-        return None
-
-    def get_connections_at(self, xy):
         """
-        Finds the connection arrow at a specific position.
-
-        @param mx: X coordinate in pixels.
-        @type mx: int
-        @param my: Y coordinate in pixels.
-        @type my: int
-        @return: A connection item or None.
-        @rtype: zzub.Connection or None
+        @param xy coordinate in pixels
+        @return tuple (target_plugin, connection_index)
         """
-        (mx, my) = xy
+        conns = self.get_connections_at(xy, (zzub.zzub_connection_type_audio,))
+
+        if len(conns) == 0:
+            return None
+        
+        if len(conns) == 1:
+            return conns[0][:2]
+
+        #TODO: implement a better way to select the connection
+        return conns[0][:2]
+
+    
+    def get_connections_at(self, xy, types = (zzub.zzub_connection_type_audio, zzub.zzub_connection_type_cv)):
+        """
+        Finds all connections at a specific position. 
+        By default it only matches audio + cv connections
+
+        @param xy: (x, y) coordinate in pixels.
+        @param types: a list of zzub connection types to match
+        @return: a list of tuples [(target_plugin, connection_index, connection_type), (target_plugin, connection_index, connection_type), ...]
+        """
         player = com.get('neil.core.player')
+
         matches = []
-        for mp in player.get_plugin_list():
-            rx, ry = self.float_to_pixel(mp.get_position())
-            for index in range(mp.get_input_connection_count()):
-                crx, cry = self.float_to_pixel(mp.get_input_connection_plugin(index).get_position())
-                
-                cpx, cpy = (crx + rx) * 0.5, (cry + ry) * 0.5
-                dx, dy = cpx - mx, cpy - my
-                length = (dx * dx + dy * dy) ** 0.5
-                if length <= 14:  # why exactly 14?
-                    matches.append((mp, index))
+        for tplugin in player.get_plugin_list():
+            tpos = self.float_to_pixel(tplugin.get_position()) # target plugin
+
+            for index in range(tplugin.get_input_connection_count()):
+                splugin = tplugin.get_input_connection_plugin(index) # source plugin
+                spos = self.float_to_pixel(splugin.get_position()) 
+                conn_type = tplugin.get_input_connection_type(index)
+
+                if conn_type not in types:
+                    continue
+
+                if distance_from_line(spos, tpos, xy) < 13.5:
+                    matches.append((tplugin, index, conn_type))
 
         return matches
 

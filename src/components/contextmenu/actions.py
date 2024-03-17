@@ -2,7 +2,7 @@ from gi.repository import Gtk
 from neil.com import com
 from functools import reduce
 from neil.utils import gettext, prepstr, filenameify, show_machine_manual, is_root, clone_plugin, clone_plugin_patterns, clone_preset
-from .cv_connector_dialog import DisconnectDialog, ConnectDialog, ChooseConnectorDialog
+from .cv_connector_dialog import ConnectDialog
 
 
 def on_popup_mute_selected(widget, plugins):
@@ -96,75 +96,54 @@ def disconnect_plugin(plugin, conn_index):
 
 
 
-def on_popup_select_cv_connector(widget, plugin, conn_index):
-    """
-    when several connectors are available, show a dialog to choose which one to edit/delete
-    """
-    dialog = ChooseConnectorDialog(widget, plugin, conn_index)
-    res = dialog.run()
-    connector_id = dialog.get_selected_connector_index()
-    dialog.destroy()
-
-    if res == Gtk.ResponseType.OK and connector_id >= 0:
-        return connector_id
-    else:
-        return None
 
 
-def on_popup_edit_cv_connection(widget, plugin, conn_index):
+# called from contextmenu.ConnectionMenu 
+def on_popup_edit_cv_connector(widget, to_plugin, connection_id, connector_id):
     """
     show a to edit dialog the cv connection between two plugins
-
     """
-    from_plugin = plugin.get_input_connection_plugin(conn_index)
-    connection = plugin.get_input_connection(conn_index).as_cv_connection()
-    
-    if connection.get_connector_count() == 1:
-        connector_id = 0
-    else:
-        connector_id = on_popup_select_cv_connector(widget, plugin, conn_index)
+    from_plugin = to_plugin.get_input_connection_plugin(connection_id)
+    connection = to_plugin.get_input_connection(connection_id).as_cv_connection()
 
-    if connector_id is None:
-        return
 
     connector = connection.get_connector(connector_id)
     source, target, data = (connector.get_source(), connector.get_target(), connector.get_data())
 
-    #  
-    dialog = ConnectDialog(widget, from_plugin, plugin, source, target, data)
+    dialog = ConnectDialog(widget, from_plugin, to_plugin, source, target, data)
     
     res = dialog.run()
 
     if res == Gtk.ResponseType.OK:
         [source, target] = dialog.get_connectors()
-        plugin.update_cv_connector(from_plugin, source, target, dialog.get_cv_data(), connector_id)
+        to_plugin.update_cv_connector(from_plugin, source, target, dialog.get_cv_data(), connector_id)
         com.get_player().history_commit("edit cv connection")
 
     dialog.destroy()
 
 
+
+
+
+
+def on_popup_remove_cv_connector(widget, to_plugin, from_plugin, connector_id):
+    to_plugin.remove_cv_connector(to_plugin, from_plugin, connector_id)
+    com.get_player().history_commit("remove cv connection")
+
+
 def on_popup_disconnect(widget, plugin, index):
     disconnect_plugin(plugin, index)
-
     com.get_player().history_commit("disconnect")
 
 
-def on_popup_disconnect_dialog(widget, connections):
-    dialog = DisconnectDialog(widget, connections)
-    res = dialog.run()
-
-    if res == Gtk.ResponseType.OK:
-        for plugin, index in dialog.get_selected_indexes():
-            disconnect_plugin(plugin, index)
-
-        com.get_player().history_commit("disconnect")
 
 
 def on_popup_disconnect_all(widget, connections):
-    for plugin, index in connections:
+    for plugin, index, conntype in connections:
         disconnect_plugin(plugin, index)
         
     com.get_player().history_commit("disconnect")
+
 
 
 # all the hard work for this is done in ccmwriter in ccm.cpp and is basically a c++ copy of clone_chain() hooked into the file save
@@ -173,6 +152,7 @@ def on_popup_save_chain(widget, plugins):
 
     for pl in chained_plugins_list:
         pass
+
 
 
 # get the output connections for this plugin then call get_plugin_chains recursively with each of plugin in the output connections

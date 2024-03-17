@@ -268,13 +268,16 @@ void zzub_plugin_add_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_
 }
 
 
-void zzub_plugin_remove_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, zzub_cv_node_t *source, zzub_cv_node_t *target) {
-    to_plugin->_player->plugin_remove_cv_connector(to_plugin->id, from_plugin->id, zzub::cv_connector(*source, *target));
+void zzub_plugin_remove_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, int subconn_id) {
+    auto connector = zzub_plugin_get_cv_connector(to_plugin, from_plugin, subconn_id);
+
+    if(connector)
+        to_plugin->_player->plugin_remove_cv_connector(to_plugin->id, from_plugin->id, *connector);
 }
 
 
 
-zzub::cv_connector* zzub_plugin_get_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, int connector_index) {
+zzub::cv_connector* zzub_plugin_get_cv_connector(zzub_plugin_t *to_plugin, zzub_plugin_t *from_plugin, int subconn_id) {
     auto conn = to_plugin->_player->back.plugin_get_input_connection(
         to_plugin->id, 
         from_plugin->id, 
@@ -286,7 +289,7 @@ zzub::cv_connector* zzub_plugin_get_cv_connector(zzub_plugin_t *to_plugin, zzub_
     }
 
     auto cv_conn = static_cast<zzub::cv_connection*>(conn);
-    auto connector = cv_conn->get_connector(connector_index);
+    auto connector = cv_conn->get_connector(subconn_id);
     
     return const_cast<zzub::cv_connector*>(connector);
 }
@@ -1353,6 +1356,11 @@ uint zzub_cv_node_get_type(zzub_cv_node_t* node) {
 uint zzub_cv_node_get_value(zzub_cv_node_t* node) {
     return node->value;
 }
+
+zzub_cv_connector_data_t* zzub_cv_connector_data_create() {
+    return new zzub::cv_connector_data();
+}
+
 
 zzub_cv_node_t* zzub_cv_connector_get_source(zzub_cv_connector_t* connector) {
     return static_cast<zzub_cv_node_t*>(&connector->source);
