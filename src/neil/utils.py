@@ -48,6 +48,16 @@ class PluginType(Enum):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
+# line is from la_xy to lb_xy, point is pt_xy
+def distance_from_line(la_xy, lb_xy, pt_xy):
+    x1, y1 = la_xy
+    x2, y2 = lb_xy
+    x0, y0 = pt_xy
+
+    return abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1) / math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
+
+
 # used in the router view
 def rename_plugin(player, plugin):
     num = 1

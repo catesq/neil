@@ -560,11 +560,8 @@ bool op_plugin_connect::prepare(zzub::song& song) {
 
     // set initial connection states
     // int conn_count = song.plugin_get_input_connection_count(to_id);
-    // printf("conn_count: %d\n", conn_count);
     int conn_index = song.plugin_get_input_connection_index(to_id, from_id, type);
-    // printf("conn index: %d\n", conn_index);
     connection* conn = song.plugin_get_input_connection(to_id, conn_index);
-    // printf("conn type: %d\n", conn->type);
 
     for (size_t i = 0; i < values.size() && i < conn->connection_parameters.size(); i++) {
         to_mpl.state_write.groups[0].back()[i][0] = values[i];
@@ -797,7 +794,7 @@ bool op_plugin_add_cv_connector::prepare(zzub::song& song) {
     if(song.plugin_get_input_connection(to_id, from_id, connection_type_cv)) {
         this->do_plugin_connect = false;
     } else {
-            this->do_plugin_connect = this->plugin_connect_op.prepare(song);
+        this->do_plugin_connect = this->plugin_connect_op.prepare(song);
 
         if(!this->do_plugin_connect)
             return false;
@@ -815,7 +812,7 @@ bool op_plugin_add_cv_connector::operate(zzub::song& song) {
 
     if(!conn)    
         return false;
-        
+    
     static_cast<cv_connection*>(conn)->add_connector(connector);
 
     return true;
@@ -835,8 +832,8 @@ void op_plugin_add_cv_connector::finish(zzub::song& song, bool send_events) {
 
 
 op_plugin_remove_cv_connector::op_plugin_remove_cv_connector(int to_id, int from_id, const cv_connector& connector) :
-    from_id(from_id),
     to_id(to_id),
+    from_id(from_id),
     connector(connector),
     plugin_disconnect_op(to_id, from_id, connection_type_cv) {
 }

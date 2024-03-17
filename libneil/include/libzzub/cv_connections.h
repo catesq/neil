@@ -50,7 +50,7 @@ enum cv_node_type {
     zzub_global_param_node = 2, // value: index of a zzub plugin global parameter
     zzub_track_param_node = 3,  // value: index of a zzub plugin track parameter
     ext_port_node  = 4,         // value: index of a external plugin port - lv2/vst2 or vst3
-    midi_track_node  = 5,       // value: copy notes/volume to + from tracks of zzub plugin
+    // midi_track_node  = 5,       // value: copy notes/volume to + from tracks of zzub plugin
 };
 
 
@@ -166,32 +166,31 @@ struct cv_input_audio : public cv_input {
 
 
 
-struct cv_input_global_param : public cv_input  {
+
+struct cv_input_param : public cv_input  {
     int raw_value;
     float norm_value;
 
-    using cv_input::cv_input;
+    uint16_t param_type;
+    uint16_t track_index;
+    uint16_t param_index;
 
-    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
-    virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-};
-
-
-
-struct cv_input_track_param : public cv_input  {
-    int raw_value;
-    float norm_value;
-
-    uint16_t track_index, param_index;
-
-    cv_input_track_param(const cv_node& node, const cv_connector_data& data) : cv_input(node, data) {
-        track_index = (node.value >> 16) & 0xffff;
-        param_index = node.value & 0xffff;
+    cv_input_param(const cv_node& node, const cv_connector_data& data) : cv_input(node, data) {
+        if(node.type == zzub_track_param_node) {
+            param_type = zzub_parameter_group_track;
+            track_index = (node.value >> 16) & 0x00ff;
+            param_index = node.value & 0x00ff;
+        } else {
+            param_type = zzub_parameter_group_global;
+            track_index = 0;
+            param_index = node.value;
+        }
     }
 
     virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
 };
+
 
 
 
@@ -206,15 +205,15 @@ struct cv_input_ext_port : public cv_input  {
 
 
 
-struct cv_input_midi : cv_input {
-    using cv_input::cv_input;
+// struct cv_input_midi : cv_input {
+//     using cv_input::cv_input;
 
-    unsigned char data[2048];
-    uint len;
+//     unsigned char data[2048];
+//     uint len;
 
-    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
-    virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-};
+//     virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
+//     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
+// };
 
 
 
@@ -227,27 +226,33 @@ struct cv_input_midi : cv_input {
  * 
  ************************************************************************/
 
-
-struct cv_output_global_param : cv_output {
+struct cv_output_param : cv_output {
     using cv_output::cv_output;
-
-    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
-    virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-};
-
-
-
-struct cv_output_track_param : cv_output {
-    uint16_t track_index, param_index;
     
-    cv_output_track_param(const cv_node& node, const cv_connector_data& data, cv_input* input) : cv_output(node, data, input) {
-        track_index = (node.value >> 16) & 0xffff;
-        param_index = node.value & 0xffff;
+    uint16_t param_type;
+    uint16_t track_index;
+    uint16_t param_index;
+
+    cv_output_param(const cv_node& node, const cv_connector_data& data, cv_input* input) : cv_output(node, data, input) {
+        if(node.type == zzub_track_param_node) {
+            param_type = zzub_parameter_group_track;
+            track_index = (node.value >> 16) & 0x00ff;
+            param_index = node.value & 0x00ff;
+        } else {
+            param_type = zzub_parameter_group_global;
+            track_index = 0;
+            param_index = node.value;
+        }
     }
 
-    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
-    virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
+    virtual void  process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
+    virtual void  work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
+
+private:
+    // between 0.0 and 1.0
+    float get_input_value(int numsamples);
 };
+
 
 
 
@@ -260,12 +265,12 @@ struct cv_output_ext_port : cv_output {
 
 
 
-struct cv_output_midi_track : cv_output {
-    using cv_output::cv_output;
+// struct cv_output_midi_track : cv_output {
+//     using cv_output::cv_output;
 
-    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
-    virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-};
+//     virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
+//     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
+// };
 
 
 
@@ -277,8 +282,6 @@ struct cv_output_audio  : cv_output {
 
     virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-    void write_value_to_buffer(float value, zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-
     void write_buffer(float* buffer, zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
 };
 
@@ -293,7 +296,6 @@ struct cv_output_audio  : cv_output {
 
 
 std::shared_ptr<cv_input> build_cv_input(const cv_node& source, const cv_connector_data& data);
-
 std::shared_ptr<cv_output> build_cv_output(const cv_node& target, const cv_connector_data& data, cv_input* input);
 
 

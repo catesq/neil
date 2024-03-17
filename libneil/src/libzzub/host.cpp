@@ -381,6 +381,10 @@ void host::control_change(metaplugin_proxy* pmac, int group, int track, int para
     //	pmac->tickAsync();
 }
 
+const parameter* host::get_parameter_info(metaplugin_proxy* _metaplugin, int group, int param) {
+    return plugin_player->plugin_get_parameter_info(_metaplugin->id, group, 0, param);
+}
+
 // peerctrl extensions
 int host::get_parameter(metaplugin_proxy* _metaplugin, int group, int track, int param) {
     return plugin_player->plugin_get_parameter(_metaplugin->id, group, track, param);
