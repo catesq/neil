@@ -18,14 +18,18 @@ class PortWrapper:
         self.index = index
         self.type = type
 
+
     def get_index(self):
         return self.index
-    
+
+
     def get_flow(self):
         return self.flow
-    
+
+
     def get_type(self):
         return self.type
+
 
     def get_name(self):
         return self.name
@@ -61,7 +65,7 @@ class PortInfo:
         self.track_in_ports = filter_ports(zzub.zzub_port_type_track, zzub.zzub_port_flow_input)
         self.track_out_ports = []
 
-    
+
     def make_ports(self, mp) -> List[PortWrapper]:
         ports = []
 
@@ -75,7 +79,7 @@ class PortInfo:
 
         if mp.get_flags() & zzub.zzub_plugin_flag_has_midi_input:
             ports.append(PortWrapper("Midi In", zzub.zzub_port_flow_input, 0, zzub.zzub_port_type_midi))
-        
+
         if mp.get_flags() & zzub.zzub_plugin_flag_has_midi_output:
             ports.append(PortWrapper("Midi Out", zzub.zzub_port_flow_output, 0, zzub.zzub_port_type_midi))
 
@@ -87,14 +91,14 @@ class PortInfo:
 
 
 # a toggle switch which display port name and changes colour when clicked
-# would prefer to use a gtk.label but they inherit background color from enclosing widget which makes changing colour messy 
+# would prefer to use a gtk.label but they inherit background color from enclosing widget which makes changing colour messy
 class BoxyLabel(Gtk.EventBox):
     def __init__(self, text):
         Gtk.EventBox.__init__(self, expand=True)
         self.label = Gtk.Label(text)
         self.add(self.label)
-    
-    
+
+
     def set_selected_value(self, value):
         if value:
             self.get_style_context().add_class("selected")
@@ -103,8 +107,8 @@ class BoxyLabel(Gtk.EventBox):
 
 
 # used to populate a grid with two columns and very variable number of rows
-# it uses/updates a row_counts property on the grid to 
-# the inital row_offset is read from the grid.row_counts property 
+# it uses/updates a row_counts property on the grid to
+# the inital row_offset is read from the grid.row_counts property
 # is_target is used as the column index
 # the build_rows function adds rows - starting from row_offset - and returns the number of new rows added
 class AbstractPortGroup:
@@ -127,13 +131,16 @@ class AbstractPortGroup:
     def build_rows(self, grid, column_id, first_row, *args):
         return 0
 
+
     def set_handler(self, handler):
         self.handler = handler
+
 
     def add_base_css(self, widget):
         context = widget.get_style_context()
         context.add_class(self.full_css_name)
         context.add_class(self.type_css_name)
+
 
     def set_selected_value(self, value):
         self.selected = value
@@ -142,8 +149,10 @@ class AbstractPortGroup:
         if self.handler:
             self.handler(self.port_type, self.is_target, value)
 
+
     def remove_highlight(self, value):
         pass
+
 
     def add_highlight(self, value):
         pass
@@ -159,8 +168,10 @@ class DummyGroup():
     def set_handler(self, handler):
         pass
 
+
     def remove_highlight(self, value):
         pass
+
 
     def add_highlight(self, value):
         pass
@@ -174,6 +185,7 @@ class DummyGroup():
 class TypedPorts(AbstractPortGroup):
     def __init__(self, grid, is_target, name, ports, port_type):
         AbstractPortGroup.__init__(self, grid, is_target, port_type, name, ports)
+
 
     def build_rows(self, grid, column_id, first_row, ports):
         self.labels = []
@@ -191,13 +203,16 @@ class TypedPorts(AbstractPortGroup):
     def toggle_port(self, widget, event, index):
         self.set_selected_value(index)
 
+
     def remove_highlight(self, value):
         if value < len(self.labels):
             self.labels[value].get_style_context().remove_class("selected")
 
+
     def add_highlight(self, value):
         if value < len(self.labels):
             self.labels[value].get_style_context().add_class("selected")
+
 
 
 
@@ -220,7 +235,7 @@ class AudioPorts(AbstractPortGroup):
         grid.attach(channels, column_id, first_row, 1, 1)
 
         return 1
-    
+
 
     # return number of columns created
     def build_channel_list(self, titles) -> Gtk.Box:
@@ -233,7 +248,7 @@ class AudioPorts(AbstractPortGroup):
             self.add_base_css(label)
 
         return hbox
-        
+
 
     # the "L" or "R" button was clicked. toggle: channel on <-> channel off
     def toggle_channel(self, widget, event, channel):
@@ -249,13 +264,10 @@ class AudioPorts(AbstractPortGroup):
         for index, label in enumerate(self.channels.get_children()):
             if value & (1 << index):
                 label.get_style_context().add_class("selected")
-            # else:
-            #     label.get_style_context().remove_class("selected")
 
 
 
 
-     
 # store selected port info to create a cvnode
 # the connectdialog has two of these and they are update when user clicks a label in the dialog
 class Connector:
@@ -280,12 +292,12 @@ class Connector:
 
 
 class ConnectDialog(Gtk.Dialog):
-    def __init__(self, 
-                 parent, 
-                 from_plugin: zzub.Plugin, 
-                 to_plugin: zzub.Plugin, 
-                 source_node: zzub.CvNode = None, 
-                 target_node: zzub.CvNode = None, 
+    def __init__(self,
+                 parent,
+                 from_plugin: zzub.Plugin,
+                 to_plugin: zzub.Plugin,
+                 source_node: zzub.CvNode = None,
+                 target_node: zzub.CvNode = None,
                  cvdata: zzub.CvConnectorData = None
                 ):
         """
@@ -299,14 +311,14 @@ class ConnectDialog(Gtk.Dialog):
         cvdata: cv data of the connector being edited
         """
         Gtk.Dialog.__init__(
-            self, 
-            transient_for = parent.get_toplevel(), 
-            title = "Connect", 
+            self,
+            transient_for = parent.get_toplevel(),
+            title = "Connect",
             name="connector"
         )
-        
-        self.source = Connector(from_plugin.get_id(), False) 
-        self.target = Connector(to_plugin.get_id(), True) 
+
+        self.source = Connector(from_plugin.get_id(), False)
+        self.target = Connector(to_plugin.get_id(), True)
         self.cvdata = zzub.CvConnectorData.create() if cvdata is None else cvdata
 
         self.target_ports = PortInfo(to_plugin)
@@ -317,7 +329,7 @@ class ConnectDialog(Gtk.Dialog):
         self.grid.set_column_homogeneous(True)
 
         # self.groups is list of TypedGroup, AudioGroup and DummyGroup
-        # all connectors for one plugin are added to a single column of the grid, 
+        # all connectors for one plugin are added to a single column of the grid,
         # the group objects keep track of which cells of the grid hold audio/midi/param/cv connectors
         # self.get_group() uses the port_type and is_target property of the group to locate them
         self.groups = self.build_groups(self.grid, from_plugin, to_plugin)
@@ -344,14 +356,14 @@ class ConnectDialog(Gtk.Dialog):
     def build_layout(self, grid):
         # add hbox to bottom of vbox
         btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        
+
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.add(grid)
 
         cancel = Gtk.Button("Cancel")
         ok = Gtk.Button("OK")
-  
+
         btn_box.pack_end(cancel, False, False, 0)
         btn_box.pack_end(ok, False, False, 0)
 
@@ -385,7 +397,7 @@ class ConnectDialog(Gtk.Dialog):
         if connector.type is not None:
             group = self.get_group(connector.type, connector.is_target)
             group.remove_highlight(connector.value)
-        
+
         connector.update(port_type, index)
 
 
@@ -403,8 +415,8 @@ class ConnectDialog(Gtk.Dialog):
         return source_column + target_column
 
 
-    # build the audio/midi/paramater connectors grids. 
-    # and returns a list of grids 
+    # build the audio/midi/paramater connectors grids.
+    # and returns a list of grids
     def build_column(self, grid, ports: List[PortWrapper], is_target, suffix):
         sub_grids = []
 
@@ -428,7 +440,7 @@ class ConnectDialog(Gtk.Dialog):
         return sub_grids
 
 
-    # 
+    #
     def build_audio_group(self, grid, ports: List[PortWrapper], is_target, title):
         group = AudioPorts(grid, is_target, title, len(ports))
         group.set_handler(self.item_selected)
