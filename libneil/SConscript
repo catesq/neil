@@ -712,7 +712,7 @@ Export(
 
 # generate signature
 env.Signature(target='include/zzub/signature.h', source=options_conf_file)
-
+env.Signature(target='${SRC_PATH}/libneil/include/zzub/signature.h', source=options_conf_file)
 
 
 ##############################################################################
