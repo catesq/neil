@@ -359,7 +359,7 @@ struct track_port : public zzub::port {
 
     virtual const char* get_name() override { return name.c_str(); }
     virtual zzub::port_flow get_flow() override { return zzub::port_flow::input; }
-    virtual int get_index() override { return port_index; }
+    // virtual int get_index() override { return port_index; }
 
     virtual zzub::port_type get_type() override {
         return zzub::port_type::track;

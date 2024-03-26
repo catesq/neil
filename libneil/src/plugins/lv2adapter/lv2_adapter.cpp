@@ -245,7 +245,6 @@ void lv2_adapter::init(zzub::archive *arc) {
         ports.insert(ports.end(), track_ports.begin(), track_ports.end());
     }
 
-
     LV2_Options_Option options[] = {
         {LV2_OPTIONS_INSTANCE, 0,
             cache->urids.param_sampleRate,
@@ -618,15 +617,14 @@ void lv2_adapter::process_events() {
         midi_track_manager.process_events();
 }
 
+
+// send midi events received by track manager to the plugin
 void lv2_adapter::send_midi_events() {
     printf("Send midi events\n");
     if (midiEvents.count() == 0)
         return;
 
-    for (event_buf_port *midiPort : midiPorts) {
-        if (midiPort->flow != PortFlow::Input)
-            continue;
-
+    for (event_buf_port *midiPort : midiInPorts) {
         LV2_Evbuf_Iterator buf_iter = lv2_evbuf_begin(midiPort->get_lv2_evbuf());
 
         for (auto &midi_event : midiEvents.data) {

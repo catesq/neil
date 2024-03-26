@@ -116,9 +116,8 @@ class BoxyLabel(Gtk.EventBox):
 class AbstractPortGroup:
     def __init__(self, grid, is_target, port_type, name, *args):
         self.row_offset = grid.row_counts[is_target]
-        self.name = name                                     # eg 'audio in', 'midi out'
         self.full_css_name = name.replace(" ", "_")          # eg 'audio_in', 'midi_out'
-        self.type_css_name = name[0:name.find(" ")]          # eg 'audio', 'midi'
+        self.short_css_name = name[0:name.find(" ")]         # eg 'audio', 'midi'
 
         self.port_type = port_type
         self.is_target = is_target
@@ -141,22 +140,28 @@ class AbstractPortGroup:
     def add_base_css(self, widget):
         context = widget.get_style_context()
         context.add_class(self.full_css_name)
-        context.add_class(self.type_css_name)
+        context.add_class(self.short_css_name)
 
 
+    # the way the audio port group works is sensitive. do not reorder this function
+    # the toggle_port function of audio group failed when:
+    # an audio chan was selected, then a param channel, then the *same* audio channel reselected
+    # as self.selected was toggled to 0 instead of 1 - audios channel had to be re-selected twice 
+
+    # so set self.selected to 0 in audiogroup.clear() - called by the handler, dialog.item_selected -
+    # then set self.selected to value after the handler call
     def set_selected_value(self, value):
-        self.selected = value
-        self.add_highlight(value)
-
         if self.handler:
             self.handler(self.port_type, self.is_target, value)
 
+        self.selected = value   
 
-    def remove_highlight(self, value):
+
+    def clear(self, value):
         pass
 
 
-    def add_highlight(self, value):
+    def highlight(self, value):
         pass
 
 
@@ -171,11 +176,11 @@ class DummyGroup():
         pass
 
 
-    def remove_highlight(self, value):
+    def clear(self, value):
         pass
 
 
-    def add_highlight(self, value):
+    def highlight(self, value):
         pass
 
 
@@ -185,8 +190,8 @@ class DummyGroup():
 
 
 class TypedPorts(AbstractPortGroup):
-    def __init__(self, grid, is_target, name, ports, port_type):
-        AbstractPortGroup.__init__(self, grid, is_target, port_type, name, ports)
+    def __init__(self, grid, is_target, css_name, ports, port_type):
+        AbstractPortGroup.__init__(self, grid, is_target, port_type, css_name, ports)
 
 
     def build_rows(self, grid, column_id, first_row, ports):
@@ -206,12 +211,12 @@ class TypedPorts(AbstractPortGroup):
         self.set_selected_value(index)
 
 
-    def remove_highlight(self, value):
+    def clear(self, value):
         if value < len(self.labels):
             self.labels[value].get_style_context().remove_class("selected")
 
 
-    def add_highlight(self, value):
+    def highlight(self, value):
         if value < len(self.labels):
             self.labels[value].get_style_context().add_class("selected")
 
@@ -257,12 +262,13 @@ class AudioPorts(AbstractPortGroup):
         self.set_selected_value(self.selected ^ (1 << channel))
 
 
-    def remove_highlight(self, value):
+    def clear(self, value):
+        self.selected = 0
         for label in self.channels.get_children():
             label.get_style_context().remove_class("selected")
 
 
-    def add_highlight(self, value):
+    def highlight(self, value):
         for index, label in enumerate(self.channels.get_children()):
             if value & (1 << index):
                 label.get_style_context().add_class("selected")
@@ -394,14 +400,17 @@ class ConnectDialog(Gtk.Dialog):
         return self.cvdata
 
 
-    def item_selected(self, port_type, is_target, index):
+    def item_selected(self, port_type, is_target, value):
         connector = self.target if is_target else self.source
 
         if connector.type is not None:
             group = self.get_group(connector.type, connector.is_target)
-            group.remove_highlight(connector.value)
+            group.clear(connector.value)
+            
+        connector.update(port_type, value)
 
-        connector.update(port_type, index)
+        group = self.get_group(port_type, is_target)
+        group.highlight(value)
 
 
     # builds two sets of grids and add them to the main grid. one on left for source connectors

@@ -22,7 +22,7 @@ dialog#connector widget.selected {
 
 /* audio ports  */
 dialog#connector widget.audio {
-    background-color: #124;
+    background-color: #125;
     color: #aaa;
 }
 
