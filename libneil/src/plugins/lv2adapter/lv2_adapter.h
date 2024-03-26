@@ -11,6 +11,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "lv2_defines.h"
 #include "lv2_ports.h"
@@ -59,7 +60,8 @@ void write_events_from_ui(
 
 uint32_t lv2_port_index(
     void* const lv2adapter_handle,
-    const char* symbol);
+    const char* symbol
+);
 
 struct lv2_zzub_info;
 struct ParamPort;
@@ -86,6 +88,8 @@ struct lv2_adapter : zzub::plugin,
 
     std::vector<control_port*> controlPorts;
     std::vector<param_port*> paramPorts;
+    std::vector<zzub::port*> track_ports;
+
     zzub::midi_track_manager midi_track_manager;
 
     std::vector<float*> in_buffers {};
@@ -93,9 +97,6 @@ struct lv2_adapter : zzub::plugin,
     zzub::tools::CopyChannels* copy_in = nullptr;
     zzub::tools::CopyChannels* copy_out = nullptr;
 
-    // zzub engine boilerplate - trak_states are the previous plugin port values, trak_values are the new port values.
-    //     trackvals       trak_values[NUJM_TRACKS]{};
-    //     trackvals       trak_states[16]{};
     attrvals attr_values{0, 0};
 
     bool initialized = false;

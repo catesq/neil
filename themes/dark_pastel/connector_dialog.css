@@ -7,6 +7,7 @@ dialog#connector  {
 }
 
 
+
 dialog#connector widget {
     background-color: #000000;
     color: #aaa;
@@ -17,28 +18,40 @@ dialog#connector widget.selected {
     color: #ada;
 }
 
-/* audio in ports  */
-dialog#connector grid.audio_in widget {
+
+
+/* audio ports  */
+dialog#connector widget.audio {
     background-color: #124;
     color: #aaa;
 }
 
-
-dialog#connector grid.audio_in widget.selected {
+dialog#connector widget.audio.selected {
     background-color: #236;
     color: #69e;
 }
 
 
-/* audio out ports */
-dialog#connector grid.audio_out widget {
-    background-color: #412;
+/* parameter ports */
+dialog#connector widget.param  {
+    background-color: #133;
     color: #aaa;
 }
 
+dialog#connector widget.param.selected {
+    background-color: #244;
+    color: #6aa;
+}
 
-/* audio out ports */
-dialog#connector grid.audio_out widget.selected {
-    background-color: #623;
+
+
+/* track ports */
+dialog#connector widget.track  {
+    background-color: #133;
     color: #aaa;
+}
+
+dialog#connector widget.track.selected {
+    background-color: #244;
+    color: #6aa;
 }

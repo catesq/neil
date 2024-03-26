@@ -71,7 +71,8 @@ enum PortType : unsigned {
     Param   = 8,
     CV      = 16,
     Event   = 32,
-    Midi    = 64
+    Midi    = 64,
+    Track   = 128,
 };
 
 

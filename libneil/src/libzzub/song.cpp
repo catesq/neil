@@ -131,6 +131,12 @@ zzub::metaplugin& song::get_plugin(zzub::plugin_descriptor index) {
     return *plugins[id];
 }
 
+
+zzub::metaplugin& song::get_plugin(int id) {
+    assert(id >= 0 && (size_t)id < plugins.size());
+    return *plugins[id];
+}
+
 int song::get_plugin_count() {
     return (int)num_vertices(graph);
 }

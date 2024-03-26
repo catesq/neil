@@ -55,34 +55,53 @@ as_string(LilvNode* node, bool freeNode) {
     return val;
 }
 
+
+
 std::string
-as_string(const LilvNode* node) {
+as_string(const LilvNode* node) 
+{
     return as_string((LilvNode*)node, false);
 }
 
-float as_float(const LilvNode* node, bool canFreeNode) {
+
+
+float as_float(const LilvNode* node, bool canFreeNode) 
+{
     return as_numeric<float>((LilvNode*)node, canFreeNode);
 }
 
-int as_int(const LilvNode* node, bool canFreeNode) {
+
+
+int as_int(const LilvNode* node, bool canFreeNode) 
+{
     return as_numeric<int>((LilvNode*)node, canFreeNode);
 }
 
+
+
 unsigned
-scale_size(const LilvScalePoints* scale_points) {
+scale_size(const LilvScalePoints* scale_points) 
+{
     return (scale_points != nullptr) ? lilv_scale_points_size(scale_points) : 0;
 }
 
+
+
 unsigned
-nodes_size(const LilvNodes* nodes) {
+nodes_size(const LilvNodes* nodes) 
+{
     return (nodes != nullptr) ? lilv_nodes_size(nodes) : 0;
 }
+
+
 
 // uint64_t get_plugin_type(const PluginWorld *world, const LilvPlugin *lilvPlugin);
 
 extern "C" {
+
 LV2_URID
-map_uri(LV2_URID_Map_Handle handle, const char* uri) {
+map_uri(LV2_URID_Map_Handle handle, const char* uri) 
+{
     lv2_lilv_world* cache = (lv2_lilv_world*)handle;
     const LV2_URID id = symap_map(cache->symap, uri);
     //        printf("mapped %u from %s\n", id, uri);
@@ -90,52 +109,71 @@ map_uri(LV2_URID_Map_Handle handle, const char* uri) {
 }
 
 const char*
-unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid) {
+unmap_uri(LV2_URID_Unmap_Handle handle, LV2_URID urid) 
+{
     lv2_lilv_world* cache = (lv2_lilv_world*)handle;
     const char* uri = symap_unmap(cache->symap, urid);
     //        printf("unmapped %u to %s\n", urid, uri);
     return uri;
 }
 
-char* lv2_make_path(LV2_State_Make_Path_Handle handle, const char* path) {
+char* lv2_make_path(LV2_State_Make_Path_Handle handle, const char* path) 
+{
     lv2_lilv_world* cache = (lv2_lilv_world*)handle;
     std::string fname = cache->hostParams.tempDir + FILE_SEPARATOR + std::string(path);
     return strdup(fname.c_str());
 }
-}
 
-float get_ui_scale_factor(zzub::host* host) {
+} // extern "C"
+
+
+
+float 
+get_ui_scale_factor(zzub::host* host) 
+{
     GtkWidget* ui_window = (GtkWidget*)host->get_host_info()->host_ptr;
     return gtk_widget_get_scale_factor(ui_window);
 }
 
+
+
 std::string
-describe_port_type(PortType type) {
+describe_port_type(PortType type) 
+{
     switch (type) {
-        case PortType::BadPort:
-            return "badport";
         case PortType::Audio:
             return "audio";
-        case PortType::CV:
-            return "cv";
         case PortType::Control:
             return "control";
+        case PortType::Param:
+            return "param";
+        case PortType::CV:
+            return "cv";
         case PortType::Event:
             return "event";
         case PortType::Midi:
             return "midi";
-        case PortType::Param:
-            return "param";
+        case PortType::BadPort:
+            return "badport";
     }
+
+    return "";
 }
 
+
+
 std::string
-as_hex(u_int8_t byte) {
+as_hex(u_int8_t byte) 
+{
     static char hexchars[16]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     return std::string({hexchars[(byte >> 4) & 0xf], hexchars[byte & 0xf]});
 }
 
-char* note_param_to_str(u_int8_t note_value, char* text) {
+
+
+char* 
+note_param_to_str(u_int8_t note_value, char* text) 
+{
     text[0] = 'A' + (note_value & 0xFF);
     text[1] = '-';
     text[2] = '0' + std::min((note_value >> 4) & 0xFF, 9);
@@ -143,8 +181,10 @@ char* note_param_to_str(u_int8_t note_value, char* text) {
     return text;
 }
 
+
 std::string
-describe_midi_sys(uint8_t* data) {
+describe_midi_sys(uint8_t* data) 
+{
     switch (data[0]) {
         case 0xf0:
             return "sys exclusive begin";
@@ -176,7 +216,8 @@ describe_midi_sys(uint8_t* data) {
 
 
 std::string
-describe_midi_voice(uint8_t* data, uint8_t size) {
+describe_midi_voice(uint8_t* data, uint8_t size) 
+{
     switch (data[0] & 0xf0) {
         case 0x80:
             return "note off(" + zzub::midi_chan(data[0]) + ") " + zzub::midi_note(data, size);
@@ -197,8 +238,10 @@ describe_midi_voice(uint8_t* data, uint8_t size) {
     }
 }
 
+
 std::string
-describe_midi(uint8_t* data, uint8_t size) {
+describe_midi(uint8_t* data, uint8_t size) 
+{
     if (lv2_midi_is_voice_message(data)) {
         return describe_midi_voice(data, size);
     } else {
@@ -206,17 +249,22 @@ describe_midi(uint8_t* data, uint8_t size) {
     }
 }
 
-bool is_distrho_event_out_port(lv2_port* port) {
+
+
+bool 
+is_distrho_event_out_port(lv2_port* port) 
+{
     return (port->type == PortType::Event && port->flow == PortFlow::Output && port->name == "Events Output" && port->symbol == "lv2_events_out");
 }
+
+
 
 uint8_t
 midi_msg_len(uint8_t cmd) {
     // this method only works for valid starting bytes of a short midi message
     assert(cmd >= 0x80 && cmd != 0xf0 && cmd != 0xf7);
 
-    static const char messageLengths[] =
-        {
+    static const char messageLengths[] = {
             3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
             3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
             3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -224,13 +272,15 @@ midi_msg_len(uint8_t cmd) {
             2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
             2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
             3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-            1, 2, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+            1, 2, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    };
 
     return messageLengths[cmd & 0x7f];
 }
 
 std::ostream&
-operator<<(std::ostream& stream, const midi_msg& msg) {
+operator<<(std::ostream& stream, const midi_msg& msg) 
+{
     char str[20];
 
     sprintf(str, "cmd: %x, data: %x%x", msg.bytes[0], msg.bytes[1], msg.bytes[2]);

@@ -84,7 +84,10 @@ void midi_track_manager::set_track_count(int new_num_tracks)
 
 
 // will handle the note length messages
-void midi_track_manager::process_samples(uint16_t numsamples, int mode) 
+void midi_track_manager::process_samples(
+    uint16_t numsamples, 
+    int mode
+) 
 {
     if(mode == zzub_process_mode_no_io) {
         return;
@@ -99,7 +102,12 @@ void midi_track_manager::process_samples(uint16_t numsamples, int mode)
 
 
 
-void midi_track_manager::parameter_update(int track, int column, int row, int value) {
+void midi_track_manager::parameter_update(
+    int track, 
+    int column, 
+    int row,
+    int value
+) {
     auto &prev = prev_tracks[track];
 
     if(column == zzub_midi_track_param_note_unit && value != zzub_note_unit_none) {
@@ -211,7 +219,11 @@ inline std::string describe_note_len_unit(int note_len_type) {
 
 
 
-std::string midi_track_manager::describe_value(int track, int param, int value) 
+std::string midi_track_manager::describe_value(
+    int track, 
+    int param, 
+    int value
+) 
 {
     param = param % 5;
     auto& state = prev_tracks[track];
@@ -246,7 +258,10 @@ std::string midi_track_manager::describe_value(int track, int param, int value)
 
 
 
-std::string midi_track_manager::describe_note_len(int note_len_unit, int value) 
+std::string midi_track_manager::describe_note_len(
+    int note_len_unit, 
+    int value
+) 
 {
     switch(note_len_unit) {
         case zzub_note_unit_beats:
@@ -302,7 +317,10 @@ uint64_t midi_track_manager::get_note_len_in_samples(midi_note_len note_len)
 
 
 
-const zzub_note_unit midi_track_manager::get_curr_unit(const midi_note_track *prev, const midi_note_track *curr) const 
+const zzub_note_unit midi_track_manager::get_curr_unit(
+    const midi_note_track *prev,
+    const midi_note_track *curr
+) const 
 {
     if (curr->unit != zzub_note_unit_none) {
         return static_cast<zzub_note_unit>(curr->unit);
@@ -313,7 +331,10 @@ const zzub_note_unit midi_track_manager::get_curr_unit(const midi_note_track *pr
     }
 }
 
-uint16_t midi_track_manager::get_curr_len(const midi_note_track *prev, const midi_note_track *curr) const
+uint16_t midi_track_manager::get_curr_len(
+    const midi_note_track *prev, 
+    const midi_note_track *curr
+) const
 {
     if (curr->length != zzub_note_len_none) {
         return curr->length;
@@ -325,7 +346,10 @@ uint16_t midi_track_manager::get_curr_len(const midi_note_track *prev, const mid
 }
 
 
-midi_note_len midi_track_manager::get_midi_note_len(const midi_note_track *prev, const midi_note_track *curr) const 
+midi_note_len midi_track_manager::get_midi_note_len(
+    const midi_note_track *prev, 
+    const midi_note_track *curr
+) const 
 {
     auto unit = get_curr_unit(prev, curr);
     auto length = get_curr_len(prev, curr);
@@ -391,6 +415,20 @@ void midi_track_manager::add_midi_track_info(zzub::info* info)
 
 
 
+
+
+
+// @param port_offset: how many ports does the plugin already have
+std::vector<zzub::port*> midi_track_manager::build_midi_zzub_ports(zzub::info* info, int port_offset) {
+    return {
+        new track_port(this, "Note", port_offset + 0, zzub_midi_track_param_note, offsetof(midi_note_track, note), info->track_parameters[zzub_midi_track_param_note]),
+        new track_port(this, "Volume", port_offset + 1, zzub_midi_track_param_volume, offsetof(midi_note_track, volume), info->track_parameters[zzub_midi_track_param_volume]),
+        new track_port(this, "Note unit", port_offset + 2, zzub_midi_track_param_note_unit, offsetof(midi_note_track, unit), info->track_parameters[zzub_midi_track_param_note_unit]),
+        new track_port(this, "Note length", port_offset + 3, zzub_midi_track_param_note_len, offsetof(midi_note_track, length), info->track_parameters[zzub_midi_track_param_note_len]),
+        new track_port(this, "Command", port_offset + 4, zzub_midi_track_param_command, offsetof(midi_note_track, command), info->track_parameters[zzub_midi_track_param_command]),
+        new track_port(this, "Data", port_offset + 5, zzub_midi_track_param_data, offsetof(midi_note_track, data), info->track_parameters[zzub_midi_track_param_data])
+    };
+}
 
 
 bool midi_track_manager::remove_matching_notes(std::function<bool(const active_note&)> note_matcher) {

@@ -4,6 +4,8 @@
 #include "zzub/plugin.h"
 
 
+
+
 struct vst_parameter {
     vst_parameter(VstParameterProperties*, zzub::parameter* zzub_param, uint16_t index);
 
@@ -47,3 +49,27 @@ struct vst_float_parameter : vst_parameter {
     float smallStep, largeStep;
     int range;
 };
+
+
+// struct vst_port : zzub::port {
+//     vst_port();
+// };
+
+
+// struct vst_audio_port : vst_port {
+//     vst_audio_port();
+
+// };
+
+// struct vst_cv_port : vst_port {
+
+// };
+
+
+// struct vst_parameter_port :vst_port {
+
+// };
+
+// struct vst_midi_port : vst_port {
+
+// };

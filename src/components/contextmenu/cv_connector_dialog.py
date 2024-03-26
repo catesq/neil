@@ -1,12 +1,12 @@
+import string
 from typing import List
-import itertools, zzub
 
 import gi
-gi.require_version("Gtk", "3.0")
+gi.require_version('Gtk', '3.0')
 
 from gi.repository import Gtk
 
-from zzub import Plugin
+import zzub
 
 
 
@@ -32,8 +32,6 @@ class PortWrapper:
 
 
 
-
-
 # The connect dialog builds a PortInfo structure for the source and target plugins
 # It builds a list of PortWrapper objects
 # only the lv2 plugin wrapper directly supports port's
@@ -41,10 +39,9 @@ class PortWrapper:
 class PortInfo:
     def __init__(self, plugin):
         if plugin.get_flags() & zzub.zzub_plugin_flag_has_ports:
-            ports = plugin.get_ports()
+            ports = list(plugin.get_ports())
         else:
             ports = self.make_ports(plugin)
-        # self.ports = ports
 
         def filter_ports(type, flow):
             return [port for port in ports if port.get_type() == type and port.get_flow() == flow]
@@ -61,6 +58,9 @@ class PortInfo:
         self.cv_in_ports = filter_ports(zzub.zzub_port_type_cv, zzub.zzub_port_flow_input)
         self.cv_out_ports = filter_ports(zzub.zzub_port_type_cv, zzub.zzub_port_flow_output)
 
+        self.track_in_ports = filter_ports(zzub.zzub_port_type_track, zzub.zzub_port_flow_input)
+        self.track_out_ports = []
+
     
     def make_ports(self, mp) -> List[PortWrapper]:
         ports = []
@@ -73,12 +73,16 @@ class PortInfo:
             ports.append(PortWrapper("Audio Out Left", zzub.zzub_port_flow_output, 0, zzub.zzub_port_type_audio))
             ports.append(PortWrapper("Audio Out Right", zzub.zzub_port_flow_output, 1, zzub.zzub_port_type_audio))
 
+        if mp.get_flags() & zzub.zzub_plugin_flag_has_midi_input:
+            ports.append(PortWrapper("Midi In", zzub.zzub_port_flow_input, 0, zzub.zzub_port_type_midi))
+        
+        if mp.get_flags() & zzub.zzub_plugin_flag_has_midi_output:
+            ports.append(PortWrapper("Midi Out", zzub.zzub_port_flow_output, 0, zzub.zzub_port_type_midi))
+
         for index, param in enumerate(mp.get_global_parameters()):
             ports.append(PortWrapper(param.get_name(), zzub.zzub_port_flow_input, index, zzub.zzub_port_type_parameter))
 
         return ports
-
-
 
 
 
@@ -90,6 +94,7 @@ class BoxyLabel(Gtk.EventBox):
         self.label = Gtk.Label(text)
         self.add(self.label)
     
+    
     def set_selected_value(self, value):
         if value:
             self.get_style_context().add_class("selected")
@@ -97,74 +102,156 @@ class BoxyLabel(Gtk.EventBox):
             self.get_style_context().remove_class("selected")
 
 
+# used to populate a grid with two columns and very variable number of rows
+# it uses/updates a row_counts property on the grid to 
+# the inital row_offset is read from the grid.row_counts property 
+# is_target is used as the column index
+# the build_rows function adds rows - starting from row_offset - and returns the number of new rows added
+class AbstractPortGroup:
+    def __init__(self, grid, is_target, port_type, name, *args):
+        self.row_offset = grid.row_counts[is_target]
+        self.name = name                                     # eg 'audio in', 'midi out'
+        self.full_css_name = name.replace(" ", "_")          # eg 'audio_in', 'midi_out'
+        self.type_css_name = name[0:name.find(" ")]          # eg 'audio', 'midi'
+
+        self.port_type = port_type
+        self.is_target = is_target
+        self.selected = 0
+        self.handler = None
+
+        self.row_count = self.build_rows(grid, self.is_target, self.row_offset, *args)
+
+        grid.row_counts[is_target] = self.row_offset + self.row_count
+
+
+    def build_rows(self, grid, column_id, first_row, *args):
+        return 0
+
+    def set_handler(self, handler):
+        self.handler = handler
+
+    def add_base_css(self, widget):
+        context = widget.get_style_context()
+        context.add_class(self.full_css_name)
+        context.add_class(self.type_css_name)
+
+    def set_selected_value(self, value):
+        self.selected = value
+        self.add_highlight(value)
+
+        if self.handler:
+            self.handler(self.port_type, self.is_target, value)
+
+    def remove_highlight(self, value):
+        pass
+
+    def add_highlight(self, value):
+        pass
+
+
+
+class DummyGroup():
+    def __init__(self, is_target, port_type):
+        self.port_type = port_type
+        self.is_target = is_target
+
+
+    def set_handler(self, handler):
+        pass
+
+    def remove_highlight(self, value):
+        pass
+
+    def add_highlight(self, value):
+        pass
+
+
+    def set_selected_value(self, value):
+        pass
+
+
+
+class TypedPorts(AbstractPortGroup):
+    def __init__(self, grid, is_target, name, ports, port_type):
+        AbstractPortGroup.__init__(self, grid, is_target, port_type, name, ports)
+
+    def build_rows(self, grid, column_id, first_row, ports):
+        self.labels = []
+
+        for index, port in enumerate(ports):
+            label = BoxyLabel(port.get_name())
+            label.connect("button-release-event", self.toggle_port, index)
+            grid.attach(label, column_id, first_row + index, 1, 1)
+            self.add_base_css(label)
+            self.labels.append(label)
+
+        return len(ports)
+
+
+    def toggle_port(self, widget, event, index):
+        self.set_selected_value(index)
+
+    def remove_highlight(self, value):
+        if value < len(self.labels):
+            self.labels[value].get_style_context().remove_class("selected")
+
+    def add_highlight(self, value):
+        if value < len(self.labels):
+            self.labels[value].get_style_context().add_class("selected")
+
 
 
 # there are two audiogrids in the connect dialog, the left side is ports on source source, right side is ports for target plugin
-class AudioGrid(Gtk.Grid):
-    def __init__(self, title, port_count):
-        Gtk.Grid.__init__(self)
-        self.port_count = port_count
+# int used as a bitflag of which channels are selected
+class AudioPorts(AbstractPortGroup):
+    def __init__(self, grid, is_target, name, port_count):
+        AbstractPortGroup.__init__(self, grid, is_target, zzub.zzub_port_type_audio, name, port_count)
 
-        # int used as a bitflag of which channels are selected
-        self.selected = 0
-        self.all_mask = (1 << port_count) - 1
-        self.handler = None
-        self.args = []
 
-        if port_count == 0:
-            return
-        
+    def build_rows(self, grid, column_id, first_row, port_count):
         if port_count == 1:
-            title = "mono " + title
-            self.attach(BoxyLabel("mono" + title), 0, 0, 1, 1)
+            channels = self.build_channel_list(["mono"])
         elif port_count == 2:
-            title = "stereo " + title
-            self.make_grid(["L", "R"])
-        elif port_count < 4:
-            title = "%s (%d)" % (title, port_count)
-            self.make_grid(range(port_count))
+            channels = self.build_channel_list(["L", "R"])
+        else:
+            channels = self.build_channel_list(range(max(port_count, 4)))
 
-        label = BoxyLabel(title)
-        # label.connect("button-release-event", self.toggle_all_channels)
-        self.attach(label, 0, 0, port_count, 1)
+        self.channels = channels
+        grid.attach(channels, column_id, first_row, 1, 1)
 
-    def make_grid(self, titles):
+        return 1
+    
+
+    # return number of columns created
+    def build_channel_list(self, titles) -> Gtk.Box:
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+
         for index, title in enumerate(titles):
             label = BoxyLabel(title)
             label.connect("button-release-event", self.toggle_channel, index)
-            self.attach(label, index, 1, 1, 1)
+            hbox.pack_start(label, True, True, 0)
+            self.add_base_css(label)
+
+        return hbox
+        
 
     # the "L" or "R" button was clicked. toggle: channel on <-> channel off
     def toggle_channel(self, widget, event, channel):
         self.set_selected_value(self.selected ^ (1 << channel))
 
-        if self.handler:
-            self.handler(self.selected, *self.args)
 
-    def set_selected_value(self, value):
-        self.selected = value
-        self.update_css_classes(value)
+    def remove_highlight(self, value):
+        for label in self.channels.get_children():
+            label.get_style_context().remove_class("selected")
 
-    def update_css_classes(self, value):
-        for index in range(self.port_count):
-            label = self.get_child_at(index, 1)
 
+    def add_highlight(self, value):
+        for index, label in enumerate(self.channels.get_children()):
             if value & (1 << index):
                 label.get_style_context().add_class("selected")
-            else:
-                label.get_style_context().remove_class("selected")
+            # else:
+            #     label.get_style_context().remove_class("selected")
 
-    def clear_all(self):
-        self.selected = 0
-
-        for index in range(self.port_count):
-            channel_label = self.get_child_at(index, 1)
-            channel_label.get_style_context().remove_class("selected")
-            channel_label.set_state(Gtk.StateFlags.NORMAL)
-
-    def set_handler(self, handler, *args):
-        self.handler = handler
-        self.args = args
 
 
 
@@ -172,15 +259,17 @@ class AudioGrid(Gtk.Grid):
 # store selected port info to create a cvnode
 # the connectdialog has two of these and they are update when user clicks a label in the dialog
 class Connector:
-    def __init__(self, plugin_id, is_source):
+    def __init__(self, plugin_id, is_target):
         self.type = None           # audio/parameter/cv
         self.value = None          # when parameter port it's the index of parameter. when audio port it's bitflag of audio channels where  1 = mono left, 2 = mono right, 3 = stereo
-        self.is_source = is_source # this is whether it's the source or target plugin
+        self.is_target = is_target # this is whether it's the source or target plugin
         self.plugin_id = plugin_id # this is plugin id
+
 
     def update(self, type, value):
         self.type = type
         self.value = value
+
 
     def as_node(self):
         return zzub.CvNode.create(
@@ -190,13 +279,11 @@ class Connector:
         )
 
 
-
-
 class ConnectDialog(Gtk.Dialog):
     def __init__(self, 
                  parent, 
-                 from_plugin: Plugin, 
-                 to_plugin: Plugin, 
+                 from_plugin: zzub.Plugin, 
+                 to_plugin: zzub.Plugin, 
                  source_node: zzub.CvNode = None, 
                  target_node: zzub.CvNode = None, 
                  cvdata: zzub.CvConnectorData = None
@@ -218,74 +305,65 @@ class ConnectDialog(Gtk.Dialog):
             name="connector"
         )
         
-        self.source = Connector(from_plugin.get_id(), True) 
-        self.target = Connector(to_plugin.get_id(), False) 
+        self.source = Connector(from_plugin.get_id(), False) 
+        self.target = Connector(to_plugin.get_id(), True) 
         self.cvdata = zzub.CvConnectorData.create() if cvdata is None else cvdata
 
-        def has_flag(plugin, flag):
-            return plugin.get_flags() & flag
+        self.target_ports = PortInfo(to_plugin)
+        self.source_ports = PortInfo(from_plugin)
 
-        self.target_ports = self.build_port_infos(to_plugin)
-        self.source_ports = self.build_port_infos(from_plugin)
+        self.grid = Gtk.Grid()
+        self.grid.set_column_spacing(1)
+        self.grid.set_column_homogeneous(True)
 
-        has_audio = has_flag(to_plugin, zzub.zzub_plugin_flag_has_audio_input) or has_flag(from_plugin, zzub.zzub_plugin_flag_has_audio_output)
+        # self.groups is list of TypedGroup, AudioGroup and DummyGroup
+        # all connectors for one plugin are added to a single column of the grid, 
+        # the group objects keep track of which cells of the grid hold audio/midi/param/cv connectors
+        # self.get_group() uses the port_type and is_target property of the group to locate them
+        self.groups = self.build_groups(self.grid, from_plugin, to_plugin)
 
-        # make gtk boxes for the sources and targets lists
-        #   first box will be for audio input/output
-        #   subsequent boxes for individual parameter + port
-        sources = self.make_connectors(True, self.source_ports, has_audio)
-        targets = self.make_connectors(False, self.target_ports, has_audio)
+        content = self.build_layout(self.grid)
+        self.get_content_area().add(content)
+        self.set_size_request(400, 500)
 
-        self.grid = grid = Gtk.Grid()
+        self.show_all()
+
+        if source_node and target_node:
+            self.get_group(source_node.get_type(), 0).set_selected_value(source_node.get_value())
+            self.get_group(target_node.get_type(), 1).set_selected_value(target_node.get_value())
+
+
+    def get_group(self, port_type, is_target):
+        for group in self.groups:
+            if group.port_type == port_type and group.is_target == is_target:
+                return group
+
+        return DummyGroup(is_target, port_type)
+
+
+    def build_layout(self, grid):
+        # add hbox to bottom of vbox
+        btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         
-        grid.attach(Gtk.Label("Source"), 0, 0, 1, 1)
-        grid.attach(Gtk.Label("Targets"), 1, 0, 1, 1)
-
-        for index, (source, target) in enumerate(itertools.zip_longest(sources, targets, fillvalue=False)):
-            if not source:
-                source = Gtk.Box()
-
-            if not target:
-                target = Gtk.Box()
-
-            grid.attach(source,  0, index + 1, 1, 1)
-            grid.attach(target, 1, index + 1, 1, 1)
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.add(grid)
 
         cancel = Gtk.Button("Cancel")
         ok = Gtk.Button("OK")
   
-        grid.attach(cancel, 0, index + 2, 1, 1)
-        grid.attach(ok, 1, index + 2, 1, 1)
+        btn_box.pack_end(cancel, False, False, 0)
+        btn_box.pack_end(ok, False, False, 0)
 
         cancel.connect("clicked", lambda *args: self.response(Gtk.ResponseType.CANCEL))
         ok.connect("clicked", lambda *args: self.response(Gtk.ResponseType.OK))
 
-        grid.set_column_spacing(1)
+        #add scroll grid and button to main content
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        main_box.pack_start(scroll, True, True, 0)
+        main_box.pack_end(btn_box, False, False, 0)
 
-        self.get_content_area().add(grid)
-        self.set_size_request(400, 500)
-        self.show_all()
-
-        if source_node and target_node:
-            self.init_connector(source_node.get_type(), source_node.get_value(), True)
-            self.init_connector(target_node.get_type(), target_node.get_value(), False)
-
-
-    def build_port_infos(self, plugin):
-        return PortInfo(plugin)
-
-
-    def init_connector(self, cv_type, cv_value, is_source):
-        connector = self.source if is_source else self.target
-        connector.update(cv_type, cv_value)
-        
-        if cv_type == zzub.zzub_cv_node_type_audio:
-            self.audio_channel_selected(cv_value, is_source)
-            self.get_audio_connector_gridbox(is_source).set_selected_value(cv_value)
-        elif cv_type ==  zzub.zzub_cv_node_type_global:
-            self.parameter_selected(None, None, cv_value, is_source)
-        else:
-            print("unknown connector type", cv_type, "value", cv_value, is_source)
+        return main_box
 
 
     def get_connectors(self):
@@ -295,91 +373,72 @@ class ConnectDialog(Gtk.Dialog):
         """
         return [self.source.as_node(), self.target.as_node()]
 
-		# def get_amp(): float
-		# def get_modulate_mode(): uint
-		# def get_offset_before(): float
-        # def get_offset_after(): float
 
+    # the zzub.CvConnectorData object
     def get_cv_data(self):
         return self.cvdata
-    
-    def get_audio_connector_gridbox(self, is_source):
-        return self.grid.get_child_at(0 if is_source else 1, 1)
-    
-    def get_parameter_gridbox(self, index, is_source):
-        return self.grid.get_child_at(0 if is_source else 1, 2 + index)
-    
-    # messages from AudioGrid channel selector received here
-    def audio_channel_selected(self, selected_channels, is_source):
-        connector = self.source if is_source else self.target
-        self.clear_selected(connector)
-        connector.update(zzub.zzub_port_type_audio, selected_channels)
 
 
+    def item_selected(self, port_type, is_target, index):
+        connector = self.target if is_target else self.source
 
-    # signals from button-release-event on a parameter 
-    def parameter_selected(self, widget, event, index, is_source):
-        (connector, column) = (self.source, 0) if is_source else (self.target, 1)
-
-        self.clear_selected(connector, True)
-        connector.update(zzub.zzub_port_type_parameter, index)
-        self.get_parameter_gridbox(index, is_source).set_selected_value(True)
-
-
-    # remove "selected" css class from the previously selected port        
-    def clear_selected(self, prev_connector, clear_audio_selection=False):
-        if prev_connector.value is None:
-            return
+        if connector.type is not None:
+            group = self.get_group(connector.type, connector.is_target)
+            group.remove_highlight(connector.value)
         
-        # column 0 is source connector. column 1 is target connector.
-        col = 0 if prev_connector.is_source else 1
-
-        if prev_connector.type == zzub.zzub_port_type_audio and clear_audio_selection:
-
-            audio_grid = self.grid.get_child_at(col, 1)
-            audio_grid.clear_all()
-
-        elif prev_connector.type == zzub.zzub_port_type_parameter:
-
-            row = 2 + prev_connector.value
-            param = self.grid.get_child_at(col, row)
-            param.get_style_context().remove_class("selected")
+        connector.update(port_type, index)
 
 
-    # make a list of boxes for the plugin's audio and parameter ports 
-    def make_connectors(self, is_source, ports: PortInfo, has_audio: bool) -> List[Gtk.ListBoxRow]:
-        items = []
+    # builds two sets of grids and add them to the main grid. one on left for source connectors
+    def build_groups(self, grid: Gtk.Grid, from_plugin: zzub.Plugin, to_plugin: zzub.Plugin):
+        grid.attach(Gtk.Label(from_plugin.get_name()), 0, 0, 1, 1)
+        grid.attach(Gtk.Label(to_plugin.get_name()), 1, 0, 1, 1)
 
-        if has_audio:
-            if is_source:
-                widget = self.make_audio_connectors("audio out", is_source, ports.audio_out_ports)
-            else:
-                widget = self.make_audio_connectors("audio in", is_source, ports.audio_in_ports)
+        # the number of rows in left and right columns
+        grid.row_counts = [1, 1]
 
-            items.append(widget)
+        source_column = self.build_column(grid, self.source_ports, 0, "out")
+        target_column = self.build_column(grid, self.target_ports, 1, "in")
 
-        for param in ports.parameter_in_ports:
-            items.append(self.make_param_connector(is_source, param))
+        return source_column + target_column
 
-        return items
-    
+
+    # build the audio/midi/paramater connectors grids. 
+    # and returns a list of grids 
+    def build_column(self, grid, ports: List[PortWrapper], is_target, suffix):
+        sub_grids = []
+
+        if is_target:
+            [audio_ports, midi_ports, parameter_ports, track_ports] = [ports.audio_in_ports, ports.midi_in_ports, ports.parameter_in_ports, ports.track_in_ports]
+        else:
+            [audio_ports, midi_ports, parameter_ports, track_ports] = [ports.audio_out_ports, ports.midi_out_ports, ports.parameter_in_ports, ports.track_in_ports]
+
+        if len(audio_ports) > 0:
+            sub_grids.append(self.build_audio_group(grid, audio_ports, is_target, "audio %s" % suffix))
+
+        if len(midi_ports) > 0:
+            sub_grids.append(self.build_port_group(grid, midi_ports, is_target, "midi %s" % suffix, zzub.zzub_port_type_midi))
+
+        if len(parameter_ports) > 0:
+            sub_grids.append(self.build_port_group(grid, parameter_ports, is_target, "param", zzub.zzub_port_type_parameter))
+
+        if len(track_ports) > 0:
+            sub_grids.append(self.build_port_group(grid, track_ports, is_target, "track", zzub.zzub_port_type_track))
+
+        return sub_grids
+
+
     # 
-    def make_audio_connectors(self, title, is_source, ports: List[PortWrapper]):
-        # pad the connectors so there's always the same number of items in the source and target lists
-        # and the audio in/out/parameters line up visually
-        if len(ports) == 0:
-            return Gtk.Box()
-
-        grid = AudioGrid(title, len(ports))
-        grid.set_handler(self.audio_channel_selected, is_source)
-        grid.get_style_context().add_class(title.replace(" ", "_"))
-
-        return grid
+    def build_audio_group(self, grid, ports: List[PortWrapper], is_target, title):
+        group = AudioPorts(grid, is_target, title, len(ports))
+        group.set_handler(self.item_selected)
+        return group
 
 
-    def make_param_connector(self, is_source, param: PortWrapper):
-        box = BoxyLabel(param.get_name())
-        box.connect("button-press-event", self.parameter_selected, param.get_index(), is_source)
-        return box
-    
+
+    def build_port_group(self, grid, ports: List[PortWrapper], is_target, title, port_type):
+        group = TypedPorts(grid, is_target, title, ports, port_type)
+        group.set_handler(self.item_selected)
+        return group
+
 

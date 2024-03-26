@@ -42,11 +42,12 @@
 #include "zzub/plugin.h"
 #include "libzzub/tools.h"
 
+
 lv2_adapter::lv2_adapter(lv2_zzub_info *info)
     : info(info),
       cache(info->cache),
       midi_track_manager(*this) {
-    printf("try to build plugin\n");
+
     if (info->zzubTotalDataSize) {
         global_values = malloc(info->zzubTotalDataSize);
         memset(global_values, 0, info->zzubTotalDataSize);
@@ -69,6 +70,7 @@ lv2_adapter::lv2_adapter(lv2_zzub_info *info)
         printf("Construted buffers. audio & cv buflen: %u, event buflen: %i.\n", ZZUB_BUFLEN, cache->hostParams.bufSize);
     }
 }
+
 
 lv2_adapter::~lv2_adapter() {
     halting = true;
@@ -94,6 +96,7 @@ lv2_adapter::~lv2_adapter() {
     free(global_values);
 }
 
+
 inline std::vector<float*> collect_buffer_pointers(std::vector<audio_buf_port*>& audio_ports, bool max_limit_is_stereo = true) {
     std::vector<float*> bufs {};
 
@@ -114,8 +117,9 @@ inline std::vector<float*> collect_buffer_pointers(std::vector<audio_buf_port*>&
 
 
 void lv2_adapter::init_ports()   {
-    // build buffers for audio samples, midi events, control value samples etc.
-    // also store each port in a vector for that port type, mainly so it's easier to use them in the process_stereo()
+    // build buffers for audio, midi, cv
+    // the ports in the plugin_info are placeholders/descriptive.
+    // the clone of those ports in the plugin are actively used with access to live data
     for (lv2_port *port : info->ports) {
         switch (port->type) {
             case PortType::Control: {
@@ -126,6 +130,7 @@ void lv2_adapter::init_ports()   {
 
             case PortType::Param: {
                 auto par_port = new param_port(*static_cast<param_port *>(port));
+                par_port->set_zzub_globals((uint8_t*) global_values);
                 par_port->set_value(par_port->defaultValue);
 
                 paramPorts.emplace_back(par_port);
@@ -192,26 +197,30 @@ void lv2_adapter::init_ports()   {
         }
     }
 
+
     in_buffers = collect_buffer_pointers(audioInPorts, false);
     out_buffers = collect_buffer_pointers(audioOutPorts, false);
 
+    // helper functions to copy audio to/from stereo and a variable number of channels
     copy_in = zzub::tools::CopyChannels::build(2, in_buffers.size());
     copy_out = zzub::tools::CopyChannels::build(out_buffers.size(), 2);
 }
 
+
 void lv2_adapter::add_note_on(uint8_t note, uint8_t volume) {
-    printf("add note on\n");
     midiEvents.noteOn(0, note, volume);
 }
 
+
 void lv2_adapter::add_note_off(uint8_t note) {
-    printf("add note off\n");
     midiEvents.noteOff(0, note);
 }
+
 
 void lv2_adapter::add_aftertouch(uint8_t note, uint8_t volume) {
     midiEvents.aftertouch(0, note, volume);
 }
+
 
 void lv2_adapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
     midiEvents.add(0, cmd, data1, data2);
@@ -222,40 +231,44 @@ void lv2_adapter::init(zzub::archive *arc) {
     sample_rate = _master_info->samples_per_second;
     ui_scale = gtk_widget_get_scale_factor((GtkWidget *)_host->get_host_info()->host_ptr);
 
-    if (info->flags & zzub_plugin_flag_is_instrument)
+    if (info->flags & zzub_plugin_flag_is_instrument) {
         midi_track_manager.init(sample_rate);
+        track_ports = midi_track_manager.build_midi_zzub_ports(info, ports.size());
+        ports.insert(ports.end(), track_ports.begin(), track_ports.end());
+    }
 
-    LV2_Options_Option options[] =
-        {
-            {LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.param_sampleRate,
-             sizeof(float), cache->urids.atom_Float,
-             &sample_rate},
-            {LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.minBlockLength,
-             sizeof(int32_t), cache->urids.atom_Int,
-             &cache->hostParams.minBlockLength},
-            {LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.maxBlockLength,
-             sizeof(int32_t), cache->urids.atom_Int,
-             &cache->hostParams.blockLength},
-            {LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.bufSeqSize,
-             sizeof(int32_t), cache->urids.atom_Int,
-             &cache->hostParams.bufSize},
-            {LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.ui_updateRate,
-             sizeof(float), cache->urids.atom_Float,
-             &update_rate},
-            {LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.ui_scaleFactor,
-             sizeof(float), cache->urids.atom_Float,
-             &ui_scale},
-            {LV2_OPTIONS_INSTANCE, 0,
-             cache->urids.ui_transientWindowId,
-             sizeof(long), cache->urids.atom_Long,
-             &transient_wid},
-            {LV2_OPTIONS_INSTANCE, 0, 0, 0, 0, NULL}};
+
+    LV2_Options_Option options[] = {
+        {LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.param_sampleRate,
+            sizeof(float), cache->urids.atom_Float,
+            &sample_rate},
+        {LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.minBlockLength,
+            sizeof(int32_t), cache->urids.atom_Int,
+            &cache->hostParams.minBlockLength},
+        {LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.maxBlockLength,
+            sizeof(int32_t), cache->urids.atom_Int,
+            &cache->hostParams.blockLength},
+        {LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.bufSeqSize,
+            sizeof(int32_t), cache->urids.atom_Int,
+            &cache->hostParams.bufSize},
+        {LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.ui_updateRate,
+            sizeof(float), cache->urids.atom_Float,
+            &update_rate},
+        {LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.ui_scaleFactor,
+            sizeof(float), cache->urids.atom_Float,
+            &ui_scale},
+        {LV2_OPTIONS_INSTANCE, 0,
+            cache->urids.ui_transientWindowId,
+            sizeof(long), cache->urids.atom_Long,
+            &transient_wid},
+        {LV2_OPTIONS_INSTANCE, 0, 0, 0, 0, NULL}
+    };
 
     features.options = malloc(sizeof(options));
     memcpy(features.options, options, sizeof(options));
@@ -281,16 +294,16 @@ void lv2_adapter::init(zzub::archive *arc) {
     features.worker_schedule.handle = &worker;
     features.worker_schedule.schedule_work = &lv2_worker_schedule;
 
-    const LV2_Feature *feature_list[] =
-        {
-            &features.map_feature,
-            &features.unmap_feature,
-            &features.program_host_feature,
-            &features.options_feature,
-            &features.bounded_buf_feature,
-            &features.data_access_feature,
-            &features.worker_feature,
-            NULL};
+    const LV2_Feature *feature_list[] = {
+        &features.map_feature,
+        &features.unmap_feature,
+        &features.program_host_feature,
+        &features.options_feature,
+        &features.bounded_buf_feature,
+        &features.data_access_feature,
+        &features.worker_feature,
+        NULL
+    };
 
     zix_sem_init(&worker.sem, 0);
     zix_sem_init(&work_lock, 1);
@@ -311,8 +324,15 @@ void lv2_adapter::init(zzub::archive *arc) {
         lv2_worker_init(this, &worker, (const LV2_Worker_Interface *)iface, true);
     }
 
-    for (auto &port : ports) 
-        lilv_instance_connect_port(lilvInstance, port->get_index(), static_cast<lv2_port*>(port)->data_pointer());
+    for (auto &port : ports) {
+        if(port->get_type() != zzub::port_type::track) {
+            lilv_instance_connect_port(
+                lilvInstance, 
+                port->get_index(), 
+                static_cast<lv2_port*>(port)->data_pointer()
+            );
+        }
+    }
 
     lilv_instance_activate(lilvInstance);
 
@@ -350,9 +370,11 @@ zzub::port* lv2_adapter::get_port(int index) {
     return index < ports.size() ? ports[index] : nullptr;
 }
 
+
 int lv2_adapter::get_port_count() {
     return ports.size();
 }
+
 
 bool lv2_adapter::invoke(zzub_event_data_t &data) {
     if (data.type != zzub::event_type_double_click || (ui_is_open && !ui_is_hidden) || !(info->flags & zzub_plugin_flag_has_custom_gui)) {
@@ -366,6 +388,7 @@ bool lv2_adapter::invoke(zzub_event_data_t &data) {
     return true;
 }
 
+
 void program_changed(LV2_Programs_Handle handle, int32_t index) {
     // printf("program changed\n");
     printf("PluginAdapter::program_changed\n");
@@ -375,9 +398,11 @@ void program_changed(LV2_Programs_Handle handle, int32_t index) {
     adapter->program_change = true;
 }
 
+
 void lv2_adapter::destroy() {
     delete this;
 }
+
 
 void lv2_adapter::read_archive_params(zzub::instream *instream) {
     printf("PluginAdapter::read_archive_params\n");
@@ -394,6 +419,7 @@ void lv2_adapter::read_archive_params(zzub::instream *instream) {
         instream->read(param_port->value);
 }
 
+
 void lv2_adapter::save_archive_params(zzub::outstream *outstream) {
     outstream->write((uint32_t)ARCHIVE_USES_PARAMS);
     outstream->write((uint32_t)paramPorts.size());
@@ -401,6 +427,7 @@ void lv2_adapter::save_archive_params(zzub::outstream *outstream) {
     for (auto &param_port : paramPorts)
         outstream->write(param_port->value);
 }
+
 
 void lv2_adapter::read_archive_state(zzub::instream *instream, uint32_t length) {
     printf("PluginAdapter::read_archive_state\n");
@@ -415,6 +442,7 @@ void lv2_adapter::read_archive_state(zzub::instream *instream, uint32_t length) 
 
     lilv_state_restore(lilvState, lilvInstance, &set_port_value, this, LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE, nullptr);
 }
+
 
 void lv2_adapter::save_archive_state(zzub::outstream *outstream) {
     const char *dir = cache->hostParams.tempDir.c_str();
@@ -441,6 +469,8 @@ void lv2_adapter::save_archive_state(zzub::outstream *outstream) {
     outstream->write(state_str, strlen(state_str));
 }
 
+
+
 void lv2_adapter::save(zzub::archive *arc) {
     if (verbose)
         printf("PluginAdapter: in save()!\n");
@@ -453,18 +483,24 @@ void lv2_adapter::save(zzub::archive *arc) {
     // }
 }
 
+
+
 const char *
 lv2_adapter::describe_value(int param, int value) {
     static char text[256];
     if (param < paramPorts.size())
-        return paramPorts[param]->describeValue(value, text);
+        return paramPorts[param]->describe_value(value, text);
     return 0;
 }
+
+
 
 void lv2_adapter::set_track_count(int new_num) {
     trackCount = new_num;
     midi_track_manager.set_track_count(new_num);
 }
+
+
 
 param_port *
 lv2_adapter::get_param_port(std::string symbol) {
@@ -480,7 +516,8 @@ void lv2_adapter::stop() {
 
 void lv2_adapter::update_port(param_port *port, float float_val) {
     printf("Update port: index=%d, name='%s', value=%f\r", port->paramIndex, port->name.c_str(), float_val);
-    port->value = float_val;
+    port->set_value(float_val);
+    // port->value = float_val;
 
     //    int zzub_val = port->lilv_to_zzub_value(float_val);
     //    values[port->paramIndex] = float_val;
@@ -524,7 +561,7 @@ void lv2_adapter::process_events() {
         globals += paramPort->zzubValSize;
 
         if (value != paramPort->zzubParam.value_none)
-            paramPort->value = paramPort->zzub_to_lilv_value(value);
+            paramPort->set_value(value);
     }
 
     if (info->flags & zzub_plugin_flag_is_instrument)

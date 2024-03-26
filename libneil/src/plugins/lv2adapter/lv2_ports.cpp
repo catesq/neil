@@ -144,9 +144,9 @@ param_port::param_port(const LilvPort* lilvPort,
         zzubParam.value_default = (int)defaultValue;
         zzubParam.value_max = scale_points_size;
     } else if (LV2_IS_PORT_INTEGER(properties)) {
-        (maximumValue - minimumValue <= 128) ? zzubParam.set_byte() : zzubParam.set_word();
-        zzubParam.value_min = 0;
-        zzubParam.value_max = std::min((int)(maximumValue - minimumValue), 32768);
+        (maximumValue <= 254) ? zzubParam.set_byte() : zzubParam.set_word();
+        zzubParam.value_min = minimumValue;
+        zzubParam.value_max = std::min((int)maximumValue, 32768);
         zzubParam.value_default = lilv_to_zzub_value(defaultValue);;
     } else {
         zzubParam.set_word();
@@ -458,11 +458,6 @@ get_port_designation(const lv2_lilv_world* cache, const LilvPlugin* lilvPlugin, 
 // }
 
 int param_port::lilv_to_zzub_value(float lilv_val) {
-    //        if(strcmp(zzubParam.name, "pan_one") == 0 || strcmp(zzubParam.name, "kit_num") == 0 || strcmp(zzubParam.name, "base_note") == 0) {
-    //            printf("%s zzubmax %i min %f max %f from curr %f to zzub %i",
-    //                   zzubParam.name, zzubParam.value_max, minimumValue, maximumValue, lilv_val, (int)(((lilv_val - minimumValue) / (maximumValue - minimumValue)) * zzubParam.value_max));
-    //        }
-
     switch (zzubParam.type) {
         case zzub::parameter_type_note:
             return (int)lilv_val;
@@ -475,6 +470,8 @@ int param_port::lilv_to_zzub_value(float lilv_val) {
             return zzubParam.value_min +
                    (int)(((lilv_val - minimumValue) / (maximumValue - minimumValue)) * (zzubParam.value_max - zzubParam.value_min));
     }
+
+    return 0;
 }
 
 float param_port::zzub_to_lilv_value(int zzub_val) {
@@ -484,29 +481,42 @@ float param_port::zzub_to_lilv_value(int zzub_val) {
             return minimumValue + ((zzub_val - zzubParam.value_min) /
                                    (float)(zzubParam.value_max - zzubParam.value_min)) *
                                       (maximumValue - minimumValue);
-
         case zzub::parameter_type_note:
             return (float)zzub_val;
 
         case zzub::parameter_type_switch:
             return zzub_val == zzub::switch_value_off ? 0.f : 1.f;
     }
+    return 0.f;
 }
 
-int param_port::getData(uint8_t* globals) {
+void param_port::set_zzub_globals(uint8_t* globals) {
+    this->zzubGlobals = globals;
+}
+
+
+void param_port::set_value(int value) {
+    this->value = zzub_to_lilv_value(value);
+}
+
+// get the current value frmo zzub_globals - these values change every tick and can not be relied on
+int param_port::get_data() {
     switch (zzubParam.type) {
         case zzub::parameter_type_word:
-            return *((unsigned short*)(globals + zzubValOffset));
+            return *((unsigned short*)(zzubGlobals + zzubValOffset));
 
         case zzub::parameter_type_byte:
         case zzub::parameter_type_note:
         case zzub::parameter_type_switch:
-            return *(globals + zzubValOffset);
+            return *(zzubGlobals + zzubValOffset);
     }
+
+    return 0;
 }
 
-void param_port::putData(uint8_t* globals, int value) {
-    uint8_t* dest = &globals[zzubValOffset];
+// copy data to zzub globals
+void param_port::put_data(int value) {
+    uint8_t* dest = &zzubGlobals[zzubValOffset];
     switch (zzubParam.type) {
         case zzub::parameter_type_word: {
             auto be = BodgeEndian{(uint16_t)value};
@@ -527,7 +537,7 @@ void param_port::putData(uint8_t* globals, int value) {
 }
 
 const char*
-param_port::describeValue(const int value, char* text) {
+param_port::describe_value(const int value, char* text) {
     printf("param_port::describeValue(%s)\n", name.c_str());
 
     if (zzubParam.type == zzub::parameter_type_note) {

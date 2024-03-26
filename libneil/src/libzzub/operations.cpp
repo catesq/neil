@@ -479,11 +479,7 @@ bool op_plugin_connect::prepare(zzub::song& song) {
 
     // check for duplicate connection
     if (song.plugin_get_input_connection_index(to_id, from_id, type) != -1) {
-<<<<<<< HEAD
         cerr << "duplicate connection: " << song.plugin_get_input_connection_count(to_id) << endl;
-=======
-        cerr << "duplicate input connection not allowed: [" << from_id << " -> " << to_id << "] at index: " << song.plugin_get_input_connection_index(to_id, from_id, type) << endl;
->>>>>>> feature/cv_connection
         return false;
     }
 
@@ -574,12 +570,9 @@ bool op_plugin_connect::prepare(zzub::song& song) {
     case connection_type_event:
         ((event_connection*)conn)->bindings = bindings;
         break;
-<<<<<<< HEAD
-=======
     case connection_type_cv:
         ((cv_connection*)conn)->connectors = connectors;
         break;
->>>>>>> feature/cv_connection
     case connection_type_audio:
     default:
         break;
@@ -813,8 +806,8 @@ bool op_plugin_add_cv_connector::operate(zzub::song& song) {
     if(!conn)    
         return false;
     
-    static_cast<cv_connection*>(conn)->add_connector(connector);
-
+    static_cast<cv_connection*>(conn)->add_connector(connector, song);
+    
     return true;
 }
 

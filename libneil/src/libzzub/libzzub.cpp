@@ -1078,7 +1078,6 @@ int zzub_plugin_get_parameter_count(zzub_plugin_t *plugin, int group, int track)
 }
 
 zzub_parameter_t* zzub_plugin_get_parameter(zzub_plugin_t *plugin, int group, int track, int column) {
-
     operation_copy_flags flags;
     flags.copy_graph = true;
     flags.copy_plugins = true;
@@ -1724,7 +1723,7 @@ int zzub_plugin_set_instrument(zzub_plugin_t *plugin, const char *name) {
 
 
 const char* zzub_port_get_name(zzub_port_t* port) {
-    return port->get_name().c_str();
+    return port->get_name();
  }
 
 int zzub_port_get_flow(zzub_port_t* port) {

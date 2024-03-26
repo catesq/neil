@@ -31,8 +31,9 @@ if __name__ == '__main__':
 
 import gi
 gi.require_version("Gtk", "3.0")
-import neil.com as com
 from gi.repository import Gtk, Gdk, GObject, Pango, PangoCairo
+
+import neil.com as com
 import cairo
 import math
 
@@ -1496,27 +1497,25 @@ class RouteView(Gtk.DrawingArea):
             return
 
         cfg = config.get_config()
-<<<<<<< HEAD
-        rect = self.get_allocation()
-        w, h = rect.width, rect.height
 
-        arrowcolors = {
-                zzub.zzub_connection_type_audio: [
-                        cfg.get_float_color("MV Arrow"),
-                        cfg.get_float_color("MV Arrow Border In"),
-                        cfg.get_float_color("MV Arrow Border Out"),
-                ],
-                zzub.zzub_connection_type_event: [
-                        cfg.get_float_color("MV Controller Arrow"),
-                        cfg.get_float_color("MV Controller Arrow Border In"),
-                        cfg.get_float_color("MV Controller Arrow Border Out"),
-                ],
-        }
+        # rect = self.get_allocation()
+        # w, h = rect.width, rect.height
 
-        cx, cy = w * 0.5, h * 0.5
+        # arrowcolors = {
+        #         zzub.zzub_connection_type_audio: [
+        #                 cfg.get_float_color("MV Arrow"),
+        #                 cfg.get_float_color("MV Arrow Border In"),
+        #                 cfg.get_float_color("MV Arrow Border Out"),
+        #         ],
+        #         zzub.zzub_connection_type_event: [
+        #                 cfg.get_float_color("MV Controller Arrow"),
+        #                 cfg.get_float_color("MV Controller Arrow Border In"),
+        #                 cfg.get_float_color("MV Controller Arrow Border Out"),
+        #         ],
+        # }
 
-=======
->>>>>>> feature/cv_connection
+        # cx, cy = w * 0.5, h * 0.5
+
 
         pango_layout = Pango.Layout(self.get_pango_context())
         #~ layout.set_font_description(self.fontdesc)
@@ -1546,15 +1545,11 @@ class RouteView(Gtk.DrawingArea):
             rx, ry = self.connectpos
             linepen = cfg.get_float_color("MV Line")
 
-<<<<<<< HEAD
-        self.draw_leds(ctx, pango_layout)
-=======
             if self.connecting_alt:
                 draw_wavy_line(ctx, linepen, int(crx), int(cry), int(rx), int(ry))
             else:
                 draw_line(ctx, linepen, int(crx), int(cry), int(rx), int(ry))
 
->>>>>>> feature/cv_connection
 
     # This method is not *just* for key-jazz, it handles all key-events in router. Rename?
     def on_key_jazz(self, widget, event, plugin):

@@ -265,40 +265,43 @@ namespace zzub:
 		set state	        = bit 1
 		set event_on_edit	= bit 2
 
+	#   free flags: 12, 13, 14, 15, 30 
+	# can be freed: 0, 1, 2, 3, 5, 7? 
+
 	enum PluginFlag:
 		# plugin flags
-		set mono_to_stereo	= bit 0
-		set plays_waves	= bit 1
-		set uses_lib_interface	= bit 2
-		set uses_instruments	= bit 3
-		set does_input_mixing	= bit 4
-		set no_output	= bit 5 # deprecated
+		set mono_to_stereo	= bit 0       # unused
+		set plays_waves	= bit 1           # only used in as a marker flag maybe deprecate
+		set uses_lib_interface	= bit 2   # unused
+		set uses_instruments	= bit 3   # only used in ccm_write - not even in ccm_read 
+		set does_input_mixing	= bit 4  
+		set no_output	= bit 5           # deprecated
 		set control_plugin	= bit 6
-		set auxiliary	= bit 7
+		set auxiliary	= bit 7           # auxiliary buffers are used but this flag isnt?
 		set is_effect = bit 8
 		set is_instrument = bit 9
 
 		# with the next two flags: plugin must implement preset_file_extensions() and load_preset_file() and/or save_preset_file()
-		set load_presets = bit 10 # the ui will open a file picoker to load a preset/bank file
-		set save_presets = bit 11 # the ui will open a file browser to save a preset/bank file
+		set load_presets = bit 10         # the ui will open a file picker to load a preset/bank file
+		set save_presets = bit 11         # the ui will open a file browser to save a preset/bank file
 	
-		set is_root = bit 16 # master plugin only
-		set has_audio_input = bit 17 # for audio effects
-		set has_audio_output = bit 18 # for audio generators and effects
-		set has_event_input = bit 19 # for event effects
-		set has_event_output = bit 20 # for event generators and effects
+		set is_root = bit 16              # master plugin only
+		set has_audio_input = bit 17      # for audio effects
+		set has_audio_output = bit 18     # for audio generators and effects
+		set has_event_input = bit 19      # for event effects
+		set has_event_output = bit 20     # for event generators and effects
 	
-		set offline = bit 21 # works on fixed ranges of data no realtime processing
-		set stream = bit 22 # stream plugin
-		set import = bit 25 # import plugin
+		set offline = bit 21              # works on fixed ranges of data no realtime processing
+		set stream = bit 22               # stream plugin
+		set import = bit 25               # import plugin
 
-		set has_midi_input = bit 23 # for midi effects
-		set has_midi_output = bit 24 # for midi generators and effects
+		set has_midi_input = bit 23       # for midi effects
+		set has_midi_output = bit 24      # for midi generators and effects
 		
-		set no_undo = bit 25 # do not add changes to the history
-		set no_save = bit 26 # do not save this plugin in songs
+		set no_undo = bit 25              # do not add changes to the history
+		set no_save = bit 26              # do not save this plugin in songs
 		
-		set has_custom_gui = bit 27 # machine draws its own GUI
+		set has_custom_gui = bit 27       # machine can draw a GUI
 
 		set has_cv_input = bit 28 # for event effects
 		set has_cv_output = bit 29 # for event generators and effects
@@ -603,6 +606,7 @@ namespace zzub:
 		set parameter = 2
 		set cv = 3
 		set midi = 4
+		set track = 5
 
 	class Port:
 		def get_index(): int

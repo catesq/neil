@@ -113,7 +113,7 @@ event_connection::event_connection() {
     connection_values = 0;
 }
 
-// only used in commented out code in event_connection - replaed by player.get_parameter
+// only used in commented out code in event_connection - replaced by player.get_parameter
 // const zzub::parameter *event_connection::getParam(struct metaplugin *mp, int group, int index)
 // {
 //     switch (group) {
@@ -241,6 +241,11 @@ void cv_connector::work(zzub::song& player, zzub::metaplugin& from, zzub::metapl
     output->work(from, to, sample_count);
 }
 
+void cv_connector::connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {
+    input->connected(from_plugin, to_plugin);
+    output->connected(from_plugin, to_plugin);
+}
+
 
 /*************************************************************************
  * 
@@ -278,13 +283,18 @@ bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& 
 }
 
 
-void cv_connection::add_connector(const cv_connector& link) {
+void cv_connection::add_connector(const cv_connector& link, zzub::song& player) {
     for(auto& it : connectors) {
         if(it == link)
             return;
     }
 
     connectors.push_back(link);
+
+    auto& to = player.get_plugin(link.source.plugin_id);
+    auto& from = player.get_plugin(link.target.plugin_id);
+    
+    connectors.back().connected(from, to);
 }
 
 

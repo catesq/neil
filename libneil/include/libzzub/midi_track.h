@@ -124,7 +124,9 @@ struct midi_note_track {
 
 #pragma pack()
 
-    
+
+
+
 // the midi_track_manager holds a list of active notes
 struct active_note {
     uint16_t note;      // zzub::note
@@ -184,6 +186,11 @@ inline std::string describe_note_len(int note_len_type) {
 
 
 
+struct track_port;
+
+
+
+    
 
 // used by the lv2 and vst plugins to process midi notes, volume, note length and midi data/commands
 struct midi_track_manager {
@@ -230,6 +237,9 @@ public:
     // called in zzub::info for the vst/lv2 adapter - adds the track parameters to the plugin
     static void add_midi_track_info(zzub::info *info);
 
+
+    // called just after ports created by lv2/vst adapter, add ports for midi tracks etc
+    std::vector<zzub::port*> build_midi_zzub_ports(zzub::info* info, int port_offset);
 
 
     void init(uint32_t rate) ;
@@ -316,4 +326,54 @@ inline std::string midi_note(uint8_t* data, uint8_t size) {
         return midi_note(data[1]);
 }
 
-}
+
+
+struct track_port : public zzub::port {
+    track_port(
+        midi_track_manager* track_manager,
+        std::string name,
+        int port_index,         //
+        int track_param_index,  //
+        int data_offset,        //
+        const zzub::parameter* zzub_param
+    ) : track_manager(track_manager),
+        name(name), 
+        port_index(port_index), 
+        track_param_index(track_param_index), 
+        data_offset(data_offset), 
+        zzub_param(zzub_param) 
+    {
+        value = 0;
+    }
+
+    midi_track_manager* track_manager;
+    float value;
+    std::string name;
+    int port_index;
+    int track_param_index;
+    int data_offset;
+    const zzub::parameter* zzub_param;
+
+    void set_track_value(int value, int trackMask);
+    void set_zzub_pointer(void* track_values, unsigned track_size);
+
+    virtual const char* get_name() override { return name.c_str(); }
+    virtual zzub::port_flow get_flow() override { return zzub::port_flow::input; }
+    virtual int get_index() override { return port_index; }
+
+    virtual zzub::port_type get_type() override {
+        return zzub::port_type::track;
+    }
+
+    // the subtypes of port use one of the other of these two
+    virtual float get_value() override { return value; }
+
+    virtual void set_value(float val) override { };
+    virtual void set_value(int val) override { };
+    virtual void set_value(float *buf, int count) override { }
+};
+    
+
+
+
+} // namespace zzub

@@ -168,7 +168,8 @@ struct cv_connector {
     void work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, int sample_count);
 
     bool operator==(const cv_connector& other) const { return source == other.source && target == other.target; }
-
+    void connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
+    
 private:
     std::shared_ptr<cv_input> input;
     std::shared_ptr<cv_output> output;
@@ -193,7 +194,7 @@ struct cv_connection : connection {
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
     virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count);
 
-    void  add_connector(const cv_connector& link);
+    void  add_connector(const cv_connector& link, zzub::song& song);
     bool  remove_connector(const cv_connector& link);
     bool  has_connector(const cv_connector& link);
     int   get_connector_count() const { return connectors.size(); }

@@ -62,18 +62,23 @@ enum class port_flow {
 };
 
 enum class port_type {
-    audio = 1,
-    parameter = 2,
-    cv = 3,
-    midi = 4,
+    audio = 1,     // audio in/out
+    parameter = 2, // plugin parameter in/out
+    cv = 3,        // cv stream in/out
+    midi = 4,      // midi in/out
+    track = 5,     // track parameter in/out
 };
 
 struct port {
-    virtual std::string get_name() = 0;
+    virtual const char* get_name() = 0;
     virtual port_flow get_flow() = 0;
     virtual int get_index() = 0;
     virtual port_type get_type() = 0;
     virtual float get_value() = 0;
+
+    virtual void set_value(float val) = 0;
+    virtual void set_value(int val) = 0;
+    virtual void set_value(float *buf, int count) = 0;
 };
 
 

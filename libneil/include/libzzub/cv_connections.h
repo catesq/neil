@@ -124,6 +124,7 @@ struct cv_node {
 struct cv_io {
     virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) = 0;
     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) = 0;
+    virtual void connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {}
 };
 
 
@@ -254,13 +255,14 @@ private:
 };
 
 
-
-
 struct cv_output_ext_port : cv_output {
     using cv_output::cv_output;
-
+    float buf[256];
+    zzub::port_type output_type; 
+    
     virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
+    virtual void connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
 };
 
 
@@ -277,7 +279,7 @@ struct cv_output_ext_port : cv_output {
 struct cv_output_audio  : cv_output {
     using cv_output::cv_output;
 
-    // some types of cv_input need a buffer to copy a single value up to 256 times  
+    // some types of cv_input need a buffer to duplicate a single value   
     float buf[256];
 
     virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
