@@ -27,7 +27,7 @@ import sys
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GObject
+from gi.repository import Gtk, GObject, Gdk
 
 
 import neil.contextlog as contextlog
@@ -58,6 +58,7 @@ def run(argv, initfunc = init_neil):
 
 #    print([(key, os.environ[key]) for key in sorted(os.environ.keys())]);
 #    sys.exit();
+    Gdk.set_allowed_backends('x11')
     GObject.threads_init()
     Gtk.init(argv)
 
