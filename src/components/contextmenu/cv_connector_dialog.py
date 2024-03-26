@@ -106,6 +106,8 @@ class BoxyLabel(Gtk.EventBox):
             self.get_style_context().remove_class("selected")
 
 
+
+
 # used to populate a grid with two columns and very variable number of rows
 # it uses/updates a row_counts property on the grid to
 # the inital row_offset is read from the grid.row_counts property
@@ -289,6 +291,7 @@ class Connector:
             self.type if self.type is not None else zzub.zzub_port_type_parameter,
             self.value if self.value is not None else 0
         )
+
 
 
 class ConnectDialog(Gtk.Dialog):

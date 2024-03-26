@@ -609,7 +609,6 @@ namespace zzub:
 		set track = 5
 
 	class Port:
-		def get_index(): int
 		def get_name(): string
 		def get_flow(): int
 		def get_type(): int

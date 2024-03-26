@@ -81,10 +81,13 @@ struct lv2_adapter : zzub::plugin,
 
     std::vector<audio_buf_port*> audioInPorts;
     std::vector<audio_buf_port*> audioOutPorts;
-    std::vector<audio_buf_port*> cvPorts;
+    std::vector<audio_buf_port*> cvInPorts;
+    std::vector<audio_buf_port*> cvOutPorts;
 
     std::vector<event_buf_port*> eventPorts;
-    std::vector<event_buf_port*> midiPorts;
+
+    std::vector<event_buf_port*> midiInPorts;
+    std::vector<event_buf_port*> midiOutPorts;
 
     std::vector<control_port*> controlPorts;
     std::vector<param_port*> paramPorts;
@@ -161,6 +164,9 @@ struct lv2_adapter : zzub::plugin,
 
     virtual zzub::port* get_port(int index) override;
     virtual int get_port_count() override;
+
+    virtual zzub::port* get_port(zzub::port_type, zzub::port_flow, int index) override;
+    virtual int get_port_count(zzub::port_type, zzub::port_flow) override;
 
 private:
     GtkWidget* ui_open_window(GtkWidget** root_container, GtkWidget** parent_container);

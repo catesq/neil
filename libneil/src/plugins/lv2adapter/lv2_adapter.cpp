@@ -160,7 +160,11 @@ void lv2_adapter::init_ports()   {
 
                 memset(cv_port->data_pointer(), 0, sizeof(float) * ZZUB_BUFLEN);
 
-                cvPorts.push_back(cv_port);
+                if(port->flow == PortFlow::Input)
+                    cvInPorts.push_back(cv_port);
+                else
+                    cvOutPorts.push_back(cv_port);
+
                 ports.push_back(cv_port);
                 break;
             }
@@ -185,7 +189,11 @@ void lv2_adapter::init_ports()   {
 
                 midi_port->set_buffer(event_buf);
 
-                midiPorts.push_back(midi_port);
+                if(port->flow == PortFlow::Input)
+                    midiInPorts.push_back(midi_port);
+                else
+                    midiOutPorts.push_back(midi_port);
+
                 ports.push_back(midi_port);
                 break;
             }
@@ -325,10 +333,11 @@ void lv2_adapter::init(zzub::archive *arc) {
     }
 
     for (auto &port : ports) {
+        // tracks are internal zzub structures - not an actual lv2 port - to provide send data to lv2's midi port
         if(port->get_type() != zzub::port_type::track) {
             lilv_instance_connect_port(
                 lilvInstance, 
-                port->get_index(), 
+                static_cast<lv2_port*>(port)->get_lv2_index(), 
                 static_cast<lv2_port*>(port)->data_pointer()
             );
         }
@@ -365,7 +374,6 @@ void lv2_adapter::created() {
 
 
 
-// bool lv2_adapter::is_param_continuous(int index) { }
 zzub::port* lv2_adapter::get_port(int index) {
     return index < ports.size() ? ports[index] : nullptr;
 }
@@ -374,6 +382,48 @@ zzub::port* lv2_adapter::get_port(int index) {
 int lv2_adapter::get_port_count() {
     return ports.size();
 }
+
+
+zzub::port* lv2_adapter::get_port(zzub::port_type port_type, zzub::port_flow port_flow, int index) {
+    switch(port_type) {
+        case zzub::port_type::audio:
+            if(port_flow == zzub::port_flow::input)
+                return audioInPorts[index];
+            else
+                return audioOutPorts[index];
+
+        case zzub::port_type::parameter:
+            if(port_flow == zzub::port_flow::input)
+                return paramPorts[index];
+            else
+                return nullptr;
+
+        case zzub::port_type::cv:
+            if(port_flow == zzub::port_flow::input)
+                return cvInPorts[index];
+            else
+                return cvOutPorts[index];
+
+        case zzub::port_type::midi:
+            if(port_flow == zzub::port_flow::input)
+                return midiInPorts[index];
+            else
+                return midiOutPorts[index];
+
+        case zzub::port_type::track:
+            return track_ports[index];
+    }
+}
+
+
+int lv2_adapter::get_port_count(zzub::port_type port_type, zzub::port_flow port_flow) {
+    return std::count_if(ports.begin(), ports.end(), [&](zzub::port *port) {
+        return port->get_type() == port_type && port->get_flow() == port_flow;
+    });
+}
+
+
+
 
 
 bool lv2_adapter::invoke(zzub_event_data_t &data) {
@@ -672,9 +722,8 @@ bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int 
         }
     }
 
-    for (event_buf_port *port : midiPorts)
-        if (port->flow == PortFlow::Input)
-            lv2_evbuf_reset(port->get_lv2_evbuf(), true);
+    for (event_buf_port *port : midiInPorts)
+        lv2_evbuf_reset(port->get_lv2_evbuf(), true);
 
     return true;
 }

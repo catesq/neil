@@ -1143,6 +1143,7 @@ int zzub_plugin_save_preset_file(zzub_plugin_t *plugin, const char* filename) {
     return plugin->_player->back.plugins[plugin->id]->plugin->save_preset_file(filename) ? 1 : 0;
 }
 
+
 int zzub_plugin_get_parameter_value(zzub_plugin_t *plugin, int group, int track, int column) {
 
     operation_copy_flags flags;
@@ -1153,14 +1154,17 @@ int zzub_plugin_get_parameter_value(zzub_plugin_t *plugin, int group, int track,
     return plugin->_player->back.plugin_get_parameter(plugin->id, group, track, column);
 }
 
+
 void zzub_plugin_set_parameter_value(zzub_plugin_t *plugin, int group, int track, int column, int value, int record) {
     // NOTE: users of zzub have no way to set a parameter with undo
     plugin->_player->plugin_set_parameter(plugin->id, group, track, column, value, record?true:false, false, false);
 }
 
+
 void zzub_plugin_set_parameter_value_direct(zzub_plugin_t *plugin, int group, int track, int column, int value, int record) {
     plugin->_player->plugin_set_parameter(plugin->id, group, track, column, value, record?true:false, true, false);
 }
+
 
 void zzub_plugin_get_position(zzub_plugin_t *plugin, float* x, float *y) {
 
@@ -1172,10 +1176,12 @@ void zzub_plugin_get_position(zzub_plugin_t *plugin, float* x, float *y) {
     *y = plugin->_player->back.plugins[plugin->id]->y;
 }
 
+
 void zzub_plugin_set_position(zzub_plugin_t *plugin, float x, float y) {
 
     plugin->_player->plugin_set_position(plugin->id, x, y);
 }
+
 
 void zzub_plugin_set_position_direct(zzub_plugin_t *plugin, float x, float y) {
 
@@ -1187,6 +1193,7 @@ void zzub_plugin_set_position_direct(zzub_plugin_t *plugin, float x, float y) {
     plugin->_player->back.plugins[plugin->id]->y = y;
 }
 
+
 int zzub_plugin_get_input_connection_count(zzub_plugin_t *plugin) {
 
     operation_copy_flags flags;
@@ -1196,6 +1203,7 @@ int zzub_plugin_get_input_connection_count(zzub_plugin_t *plugin) {
 
     return plugin->_player->back.plugin_get_input_connection_count(plugin->id);
 }
+
 
 int zzub_plugin_get_input_connection_by_type(zzub_plugin_t *to_plugin, zzub_plugin_t* from_plugin, int type) {
 
@@ -1207,6 +1215,7 @@ int zzub_plugin_get_input_connection_by_type(zzub_plugin_t *to_plugin, zzub_plug
     return to_plugin->_player->back.plugin_get_input_connection_index(to_plugin->id, from_plugin->id, (connection_type)type);
 }
 
+
 int zzub_plugin_get_input_connection_type(zzub_plugin_t *plugin, int index) {
 
     operation_copy_flags flags;
@@ -1216,6 +1225,7 @@ int zzub_plugin_get_input_connection_type(zzub_plugin_t *plugin, int index) {
 
     return plugin->_player->back.plugin_get_input_connection_type(plugin->id, index);
 }
+
 
 zzub_connection_t* zzub_plugin_get_input_connection(zzub_plugin_t *plugin, int index) {
     operation_copy_flags flags;
@@ -1238,6 +1248,7 @@ zzub_plugin_t* zzub_plugin_get_input_connection_plugin(zzub_plugin_t *plugin, in
     return plugin->_player->back.plugins[id]->proxy;
 }
 
+
 zzub_connection_t* zzub_plugin_get_output_connection(zzub_plugin_t *plugin, int index) {
     operation_copy_flags flags;
     flags.copy_graph = true;
@@ -1247,14 +1258,15 @@ zzub_connection_t* zzub_plugin_get_output_connection(zzub_plugin_t *plugin, int 
     return plugin->_player->back.plugin_get_output_connection(plugin->id, index);
 }
 
+
 zzub_port_t* zzub_plugin_get_port(zzub_plugin_t *plugin, int index) {
     return plugin->_player->back.plugin_get_port(plugin->id, index);
 }
 
+
 int zzub_plugin_get_port_count(zzub_plugin_t *plugin) {
     return plugin->_player->back.plugin_get_port_count(plugin->id);
 }
-
 
 
 int zzub_plugin_get_output_connection_count(zzub_plugin_t *plugin) {
@@ -1267,6 +1279,7 @@ int zzub_plugin_get_output_connection_count(zzub_plugin_t *plugin) {
     return plugin->_player->back.plugin_get_output_connection_count(plugin->id);
 }
 
+
 int zzub_plugin_get_output_connection_by_type(zzub_plugin_t *to_plugin, zzub_plugin_t* from_plugin, int type) {
 
     operation_copy_flags flags;
@@ -1277,6 +1290,7 @@ int zzub_plugin_get_output_connection_by_type(zzub_plugin_t *to_plugin, zzub_plu
     return to_plugin->_player->back.plugin_get_output_connection_index(to_plugin->id, from_plugin->id, (connection_type)type);
 }
 
+
 int zzub_plugin_get_output_connection_type(zzub_plugin_t *plugin, int index) {
 
     operation_copy_flags flags;
@@ -1286,6 +1300,7 @@ int zzub_plugin_get_output_connection_type(zzub_plugin_t *plugin, int index) {
 
     return plugin->_player->back.plugin_get_output_connection_type(plugin->id, index);
 }
+
 
 zzub_plugin_t* zzub_plugin_get_output_connection_plugin(zzub_plugin_t *plugin, int index) {
 
@@ -1298,9 +1313,11 @@ zzub_plugin_t* zzub_plugin_get_output_connection_plugin(zzub_plugin_t *plugin, i
     return plugin->_player->back.plugins[id]->proxy;
 }
 
+
 int zzub_event_connection_binding_get_group(zzub_event_connection_binding_t* binding) {
     return binding->target_group_index;
 }
+
 
 int zzub_event_connection_get_binding_count(zzub_event_connection_t* conn) {
     return conn->bindings.size();
@@ -1311,13 +1328,16 @@ zzub_event_connection_t* zzub_connection_as_event_connection(zzub_connection_t* 
     return conn->type == zzub::connection_type_event ? (zzub_event_connection_t*) conn : nullptr;
 }
 
+
 zzub_cv_connection_t* zzub_connection_as_cv_connection(zzub_connection_t* conn) {
     return conn->type == zzub::connection_type_cv ? (zzub_cv_connection_t*) conn : nullptr;
 }
 
+
 zzub_event_connection_binding_t* zzub_event_connection_get_binding(zzub_event_connection_t* conn, int index) {
     return &conn->bindings[index];
 }
+
 
 int zzub_connection_get_type(zzub_connection_t* conn) {
     return conn->type;
@@ -1339,6 +1359,7 @@ int zzub_cv_connection_get_connector_count(zzub_cv_connection_t* conn) {
     return conn->get_connector_count();
 }
 
+
 zzub_cv_node_t* zzub_cv_node_create(int plugin_id, unsigned int type, unsigned int value) {
     return new zzub::cv_node{plugin_id, type, value};
 }
@@ -1348,13 +1369,16 @@ int zzub_cv_node_get_plugin_id(zzub_cv_node_t* node) {
     return node->plugin_id;
 }
 
+
 uint zzub_cv_node_get_type(zzub_cv_node_t* node) {
     return node->type;
 }
 
+
 uint zzub_cv_node_get_value(zzub_cv_node_t* node) {
     return node->value;
 }
+
 
 zzub_cv_connector_data_t* zzub_cv_connector_data_create() {
     return new zzub::cv_connector_data();
@@ -1370,6 +1394,7 @@ zzub_cv_node_t* zzub_cv_connector_get_target(zzub_cv_connector_t* connector) {
     return static_cast<zzub_cv_node_t*>(&connector->target);
 }
 
+
 zzub_cv_connector_data_t* zzub_cv_connector_get_data(zzub_cv_connector_t* connector) {
     return static_cast<zzub_cv_connector_data_t*>(&connector->data);
 }
@@ -1379,20 +1404,24 @@ int zzub_event_connection_get_type(zzub_event_connection_t* conn) {
     return conn->type;
 }
 
+
 int zzub_connection_get_parameter_count(zzub_player_t *player, int plugin, int from_plugin) {
     assert(false);
     return 0;
 }
+
 
 const zzub_parameter_t* zzub_connection_get_parameter(zzub_player_t *player, int plugin, int from_plugin, int index) {
     assert(false);
     return 0;
 }
 
+
 void zzub_plugin_get_last_peak(zzub_plugin_t *plugin, float *maxL, float *maxR) {
     *maxL = plugin->_player->front.plugins[plugin->id]->last_work_max_left;
     *maxR = plugin->_player->front.plugins[plugin->id]->last_work_max_right;
 }
+
 
 int zzub_plugin_add_input(zzub_plugin_t *to_plugin, zzub_plugin_t* from_plugin, int type) {
 
@@ -1400,10 +1429,12 @@ int zzub_plugin_add_input(zzub_plugin_t *to_plugin, zzub_plugin_t* from_plugin, 
     return result ? 0 : -1;
 }
 
+
 void zzub_plugin_delete_input(zzub_plugin_t *to_plugin, zzub_plugin_t* from_plugin, int type) {
 
     to_plugin->_player->plugin_delete_input(to_plugin->id, from_plugin->id, (zzub::connection_type)type);
 }
+
 
 int zzub_plugin_get_track_count(zzub_plugin_t *plugin) {
 
@@ -1413,10 +1444,12 @@ int zzub_plugin_get_track_count(zzub_plugin_t *plugin) {
     return plugin->_player->back.plugins[plugin->id]->tracks;
 }
 
+
 void zzub_plugin_set_track_count(zzub_plugin_t *plugin, int tracks) {
 
     plugin->_player->plugin_set_track_count(plugin->id, tracks);
 }
+
 
 int zzub_plugin_get_group_track_count(zzub_plugin_t *plugin, int group) {
     switch (group) {
@@ -1427,6 +1460,7 @@ int zzub_plugin_get_group_track_count(zzub_plugin_t *plugin, int group) {
     }
     return 0;
 }
+
 
 int zzub_plugin_pattern_to_linear_no_connections(zzub_plugin_t *plugin, int group, int track, int column, int* index) {
 
@@ -1456,6 +1490,7 @@ int zzub_plugin_pattern_to_linear_no_connections(zzub_plugin_t *plugin, int grou
     }
     //return player->plugin_pattern_to_linear(plugin, group, track, column, *index);
 }
+
 
 int zzub_plugin_describe_value(zzub_plugin_t *plugin, int group, int column, int value, char* name, int maxlen) {
     if (group == 0) {
@@ -1511,50 +1546,60 @@ int zzub_plugin_describe_value(zzub_plugin_t *plugin, int group, int column, int
     return 0;
 }
 
+
 int zzub_plugin_get_mute(zzub_plugin_t *plugin) {
     if (plugin->id >= plugin->_player->front.plugins.size() || plugin->_player->front.plugins[plugin->id] == 0) return 0;
     return plugin->_player->front.plugins[plugin->id]->is_muted?1:0;
 }
+
 
 void zzub_plugin_set_mute(zzub_plugin_t *plugin, int muted) {
     if (plugin->id >= plugin->_player->front.plugins.size() || plugin->_player->front.plugins[plugin->id] == 0) return ;
     plugin->_player->front.plugins[plugin->id]->is_muted = muted?true:false;
 }
 
+
 int zzub_plugin_get_bypass(zzub_plugin_t *plugin) {
     if (plugin->id >= plugin->_player->front.plugins.size() || plugin->_player->front.plugins[plugin->id] == 0) return 0;
     return plugin->_player->front.plugins[plugin->id]->is_bypassed?1:0;
 }
+
 
 void zzub_plugin_set_bypass(zzub_plugin_t *plugin, int muted) {
     if (plugin->id >= plugin->_player->front.plugins.size() || plugin->_player->front.plugins[plugin->id] == 0) return ;
     plugin->_player->front.plugins[plugin->id]->is_bypassed = muted?true:false;
 }
 
+
 int zzub_plugin_invoke_event(zzub_plugin_t *plugin, zzub_event_data_t *data, int immediate) {
     assert(plugin->id < plugin->_player->front.plugins.size() && plugin->_player->front.plugins[plugin->id] != 0);
     return plugin->_player->front.plugin_invoke_event(plugin->id, *data, immediate?true:false)?0:-1;
 }
+
 
 double zzub_plugin_get_last_worktime(zzub_plugin_t *plugin) {
     if (plugin->id >= plugin->_player->front.plugins.size() || plugin->_player->front.plugins[plugin->id] == 0) return 0.0f;
     return plugin->_player->front.plugins[plugin->id]->last_work_time;
 }
 
+
 double zzub_plugin_get_last_cpu_load(zzub_plugin_t *plugin) {
     if (plugin->id >= plugin->_player->front.plugins.size() || plugin->_player->front.plugins[plugin->id] == 0) return 0.0f;
     return plugin->_player->front.plugins[plugin->id]->cpu_load;
 }
+
 
 int zzub_plugin_get_last_audio_result(zzub_plugin_t *plugin) {
     if (plugin->id >= plugin->_player->front.plugins.size() || plugin->_player->front.plugins[plugin->id] == 0) return 0;
     return plugin->_player->front.plugins[plugin->id]->last_work_audio_result?1:0;
 }
 
+
 int zzub_plugin_get_last_midi_result(zzub_plugin_t *plugin) {
     if (plugin->id >= plugin->_player->front.plugins.size() || plugin->_player->front.plugins[plugin->id] == 0) return 0;
     return plugin->_player->front.plugins[plugin->id]->last_work_midi_result?1:0;
 }
+
 
 void zzub_plugin_tick(zzub_plugin_t *plugin) {
     operation_copy_flags flags;
@@ -1567,6 +1612,7 @@ void zzub_plugin_tick(zzub_plugin_t *plugin) {
     plugin->_player->flush_operations(0, 0, 0);
 }
 
+
 int zzub_plugin_get_attribute_value(zzub_plugin_t *plugin, int index) {
 
     operation_copy_flags flags;
@@ -1575,6 +1621,7 @@ int zzub_plugin_get_attribute_value(zzub_plugin_t *plugin, int index) {
 
     return plugin->_player->back.plugins[plugin->id]->plugin->attributes[index];//machine->getAttributeValue((size_t)index);
 }
+
 
 void zzub_plugin_set_attribute_value(zzub_plugin_t *plugin, int index, int value) {
 
@@ -1587,18 +1634,22 @@ void zzub_plugin_set_attribute_value(zzub_plugin_t *plugin, int index, int value
     m.plugin->attributes_changed();
 }
 
+
 int zzub_plugin_get_mixbuffer(zzub_plugin_t *plugin, float *leftbuffer, float *rightbuffer, int *size, long long *samplepos) {
     assert(false);
     return -1;
 }
 
+
 void zzub_plugin_play_midi_note(zzub_plugin_t *plugin, int note, int prevNote, int velocity) {
     plugin->_player->play_plugin_note(plugin->id, note, prevNote, velocity);
 }
 
+
 void zzub_plugin_play_pattern_row_ref(zzub_plugin_t *plugin, int pattern, int row) {
     zzub_plugin_play_pattern_row(plugin, plugin->_player->front.plugins[plugin->id]->patterns[pattern], row);
 }
+
 
 void zzub_plugin_play_pattern_row(zzub_plugin_t *plugin, zzub_pattern_t* pattern, int row) {
     if (pattern->rows == 0) return ;
@@ -1657,6 +1708,7 @@ int zzub_plugin_linear_to_pattern(zzub_plugin_t *plugin, int index, int* group, 
     return 1;
 }
 
+
 int zzub_plugin_pattern_to_linear(zzub_plugin_t *plugin, int group, int track, int column, int* index) {
     operation_copy_flags flags;
     flags.copy_plugins = true;
@@ -1712,6 +1764,7 @@ int zzub_plugin_get_pattern_column_count(zzub_plugin_t *plugin) {
     return numconnparams + info->global_parameters.size() + info->track_parameters.size() * plugin->_player->back.plugins[plugin->id]->tracks;
 }
 
+
 int zzub_plugin_set_instrument(zzub_plugin_t *plugin, const char *name) {
 
     operation_copy_flags flags;
@@ -1726,13 +1779,11 @@ const char* zzub_port_get_name(zzub_port_t* port) {
     return port->get_name();
  }
 
+
 int zzub_port_get_flow(zzub_port_t* port) {
     return (int) port->get_flow();
 }
 
-int zzub_port_get_index(zzub_port_t* port) {
-    return port->get_index();
-}
 
 int zzub_port_get_type(zzub_port_t* port) {
     return (int) port->get_type();

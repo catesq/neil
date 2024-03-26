@@ -72,7 +72,6 @@ enum class port_type {
 struct port {
     virtual const char* get_name() = 0;
     virtual port_flow get_flow() = 0;
-    virtual int get_index() = 0;
     virtual port_type get_type() = 0;
     virtual float get_value() = 0;
 
@@ -131,6 +130,11 @@ struct plugin {
     // used by cv_connections
     virtual zzub::port* get_port(int index) { return nullptr; }
     virtual int get_port_count() { return 0; }
+
+    virtual zzub::port* get_port(zzub::port_type, zzub::port_flow, int index) { return nullptr; }
+    virtual int get_port_count(zzub::port_type, zzub::port_flow) { return 0; }
+
+    
 
     // used in cv connections
     virtual bool has_tracks() { return false; }

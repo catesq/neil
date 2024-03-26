@@ -92,7 +92,7 @@ struct lv2_port : public zzub::port {
     
     virtual const char* get_name() override { return name.c_str(); }
     virtual zzub::port_flow get_flow() override { return flow == PortFlow::Input ? zzub::port_flow::input : zzub::port_flow::output ; }
-    virtual int get_index() override { return index; }
+    virtual int get_lv2_index() { return index; }
 
     virtual zzub::port_type get_type() override {
         switch (type) {
