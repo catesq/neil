@@ -28,7 +28,7 @@ from .toolbar import PatternToolBar
 from .panel import PatternPanel
 from .views import PatternView, PatternDialog, show_pattern_dialog, DLGMODE_NEW, DLGMODE_COPY, DLGMODE_CHANGE
 from .patternstatus import PatternStatus
-from .utils import key_to_note #, get_str_from_param, get_subindexcount_from_param, get_subindexoffsets_from_param
+from .utils import key_to_note
 
 
 __all__ = [
@@ -36,13 +36,14 @@ __all__ = [
     'PatternToolBar',
     'PatternPanel',
     'PatternView',
-    'PatternStatusBar',
+    'PatternStatus',
     'key_to_note'
     'show_pattern_dialog',
     'DLGMODE_NEW',
     'DLGMODE_COPY',
     'DLGMODE_CHANGE',
 ]
+
 
 __neil__ = dict(
     classes = [
@@ -53,6 +54,7 @@ __neil__ = dict(
         PatternStatus,
     ],
 )
+
 
 if __name__ == '__main__':
     import os, sys
