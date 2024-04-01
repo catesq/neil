@@ -24,64 +24,67 @@ Organizes finding Neils resources across the system.
 
 from configparser import ConfigParser
 import sys, os
-import platform
 
 
-def get_settings_dir():
+def settingspath():
     if os.name == 'nt':
         return os.path.expanduser('~/neil')
     elif os.name == 'posix':
         return os.path.expanduser('~/.neil')
     else:
-        return None
+        print("Unsupported OS")
+        sys.exit(1)
 
-
-# HOME_CONFIG_DIR = '~/.neil'
-
-if 'NEIL_PATHCONFIG' in os.environ:
-    PATHCONFIG = os.environ['NEIL_PATHCONFIG']
-else:
-    PATHCONFIG = 'etc/debugpath.cfg'
 
 if 'NEIL_BASE_PATH' in os.environ:
     BASE_PATH = os.environ['NEIL_BASE_PATH']
 else:
     BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 
-class PathConfig(ConfigParser):
-    CFG_PATHS = [
-            PATHCONFIG, # assume we are in the repository
-            os.path.join(get_settings_dir(), 'path.cfg'), # is it in home dir config folder?
-            '/etc/neil/path.cfg', # take the absolute path
-    ]
 
+
+class PathConfig(ConfigParser):
     def __init__(self):
         ConfigParser.__init__(self)
-        CFG_PATH = None
-        for path in self.CFG_PATHS:
-            path = os.path.expanduser(path)
-            if not os.path.isabs(path):
-                path = os.path.normpath(os.path.join(BASE_PATH,path))
-            print("searching " + path)
-            if os.path.isfile(path):
-                print("using " + path)
-                CFG_PATH = path
-                break
-        assert CFG_PATH, "Unable to find path.cfg"
-        self.read([CFG_PATH])
+        self.settings_dir = settingspath()
+
+        try_paths = [
+            os.path.join(settingspath(), 'path.cfg'), 
+            os.environ['NEIL_PATH_CFG'] if 'NEIL_PATH_CFG' in os.environ else os.path.join(BASE_PATH, 'share/neil/path.cfg')
+        ]
+
+        path = self.get_cfg_path(try_paths)
+        
+        assert path, "Unable to find path.cfg"
+
+        print("Using path config: " + path)
+
+        self.read([path])
+
         site_packages = self.get_path('site_packages')
         if not site_packages in sys.path:
             print(site_packages + "  missing in sys.path, prepending")
-            sys.path = [site_packages] + sys.path
+            sys.exit(0)
+            # sys.path = [site_packages] + sys.path
+
+
+    def get_cfg_path(self, paths):
+        for path in paths:
+            path = os.path.expanduser(path)
+            # if not os.path.isabs(path):
+            #     path = os.path.normpath(os.path.join(BASE_PATH,path))
+            # print("searching " + path)
+            if os.path.isfile(path):
+                return path
+
 
     def get_paths(self, pathid, append=''):
         paths = []
         default_path = self.get_path(pathid, append)
         if default_path:
             paths.append(default_path)
-        paths.append(os.path.expanduser(os.path.join(HOME_CONFIG_DIR, pathid)))
+        paths.append(os.path.expanduser(os.path.join(self.settings_dir, pathid)))
         return paths
-    
     
 
     def get_path(self, pathid, append=''):
@@ -93,5 +96,6 @@ class PathConfig(ConfigParser):
         if append:
             value = os.path.join(value, append)
         return value
+
 
 path_cfg = PathConfig()

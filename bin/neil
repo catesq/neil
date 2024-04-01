@@ -18,11 +18,11 @@ paths = {
 
     "xplatform": {
         "NEIL_BASE_PATH": "{DEST}",
-        "NEIL_PATHCONFIG": "{DEST}/etc/neil/path.cfg"
+        "NEIL_PATH_CFG": "{DEST}/share/neil/path.cfg"
     }
 }
 
-updated_env = False
+# updated_env = False
 
 
 # manjaro symlinks /usr/lib64 to /usr/lib making each lv2 in there plugin show a warning about a duplicate plugin
@@ -43,7 +43,7 @@ def remove_symlinks(pathstr, separator=':'):
 
 for key, path in paths['xplatform'].items():
     if key not in os.environ:
-        updated_env = True
+        # updated_env = True
         os.environ[key] = path.format(DEST=dest, HOME=home)
 
 
@@ -51,7 +51,7 @@ for key, path in paths['xplatform'].items():
 if sys.platform.startswith('linux'):
     for key, path in paths['linux'].items():
         if key not in os.environ:
-            updated_env = True
+            # updated_env = True
             paths = path.format(DEST=dest, HOME=home)
             os.environ[key] = remove_symlinks(path.format(DEST=dest, HOME=home))
 

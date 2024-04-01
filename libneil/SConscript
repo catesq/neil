@@ -590,6 +590,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     print("Prefix:".rjust(30),env['PREFIX'])
     print("Install into:".rjust(30),env.Dir("${DESTDIR}${PREFIX}"))
     print("Library directory:".rjust(30),env.Dir("${PREFIX}${LIBDIR}"))
+
     print()
     print("Generate debug info:".rjust(30),env['DEBUG'])
 

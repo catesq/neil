@@ -21,7 +21,7 @@ Provides utility functions needed all over the place,
 which have no specific module or class they belong to.
 """
 
-import sys, math, os, zzub, time
+import zzub, sys, math, os, time
 from string import ascii_letters, digits
 import struct
 
@@ -32,9 +32,9 @@ from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject
 import weakref
 import neil.com as com
 import ctypes
-#from datetime import datetime, timedelta
 
 from enum import Enum
+
 from .pathconfig import path_cfg
 
 
@@ -169,7 +169,18 @@ def get_root_folder_path():
 basedir = get_root_folder_path()
 
 
-def etcpath(path):
+def settingspath():
+    if os.name == 'nt':
+        return os.path.expanduser('~/neil')
+    elif os.name == 'posix':
+        return os.path.expanduser('~/.neil')
+    else:
+        print("Unsupported OS")
+        sys.exit(1)
+
+
+
+def sharepath(path):
     """
     Translates a path relative to the config directory into an absolute
     path.
@@ -179,7 +190,7 @@ def etcpath(path):
     @return: Absolute path to file.
     @rtype: str
     """
-    return path_cfg.get_path('etc', path)
+    return path_cfg.get_path('share', path)
 
 
 def iconpath(path):

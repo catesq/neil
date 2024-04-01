@@ -55,7 +55,7 @@ opts_file = os.path.join(root_build_dir, 'options.conf')
 opts = Variables(opts_file, ARGUMENTS)
 opts.Add("PREFIX", 'Set the install "prefix" ( /path/to/PREFIX )', "/usr/local")
 opts.Add("DESTDIR", 'Set the root directory to install into ( /path/to/DESTDIR )', "")
-opts.Add("ETCDIR", 'Set the configuration dir "prefix" ( /path/to/ETC )', "/etc")
+# opts.Add("ETCDIR", 'Set the configuration dir "prefix" ( /path/to/ETC )', "/etc")
 opts.Add("DEBUG", "Compile everything in debug mode if true", False, None, bool_converter)
 
 if posix:
@@ -92,7 +92,7 @@ env['APPLICATIONS_PATH'] = '${DESTDIR}${PREFIX}/share/applications'
 env['BIN_PATH'] = '${DESTDIR}${PREFIX}/bin'
 env['SHARE_PATH'] = '${DESTDIR}${PREFIX}/share/neil'
 env['DOC_PATH'] = '${DESTDIR}${PREFIX}/share/doc/neil'
-env['ETC_PATH'] = '${DESTDIR}${ETCDIR}/neil'
+# env['ETC_PATH'] = '${DESTDIR}${ETCDIR}/neil'
 env['ICONS_NEIL_PATH'] = '${DESTDIR}${PREFIX}/share/icons/neil'
 env['ICONS_HICOLOR_PATH'] = '${DESTDIR}${PREFIX}/share/icons/hicolor'
 env['PIXMAPS_PATH'] = '${DESTDIR}${PREFIX}/share/pixmaps/neil'
@@ -107,7 +107,7 @@ CONFIG_PATHS = dict(
     icons_neil = 'ICONS_NEIL_PATH',
     icons_hicolor = 'ICONS_HICOLOR_PATH',
     pixmaps = 'PIXMAPS_PATH',
-    etc = 'ETC_PATH',
+    # etc = 'ETC_PATH',
     settings = 'SETTINGS_PATH',
 )
 

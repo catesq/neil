@@ -26,6 +26,7 @@ import player
 
 
 SECTION_NAME = 'Neil COM'
+
 OPTIONS = [
     'Module',
     'Name',
@@ -35,6 +36,7 @@ OPTIONS = [
     'Copyright',
     'Website',
 ]
+
 
 
 class Package(ConfigParser):
@@ -56,10 +58,12 @@ class Package(ConfigParser):
         return True
 
 
+
 # neil component object model
 class ComponentManager:
     def __init__(self):
         self.clear()
+
 
     def clear(self):
         self.is_loaded = False
@@ -67,6 +71,7 @@ class ComponentManager:
         self.factories = {}
         self.categories = {}
         self.packages = []
+
 
     def load_packages(self):
         self.is_loaded = True
@@ -104,6 +109,7 @@ class ComponentManager:
                 from . import errordlg
                 errordlg.print_exc()
 
+
     def register(self, pkginfo, modulename=None):
         # enumerate class factories
         for class_ in pkginfo.get('classes', []):
@@ -120,9 +126,11 @@ class ComponentManager:
                 catlist.append(classid)
                 self.categories[category] = catlist
 
+
     def throw(self, id, arg):
         class_ = self.factory(id)
         raise class_(arg)
+
 
     def factory(self, id):
         # get metainfo for object
@@ -136,8 +144,10 @@ class ComponentManager:
             return None
         return class_
 
+
     def exception(self, id):
         return self.factory(id)
+
 
     def singleton(self, id):
         # try to get a singleton first
@@ -146,6 +156,7 @@ class ComponentManager:
             assert instance, "got empty instance for classid '%s'. recursive loop?" % id
             return instance
         return None
+
 
     def get(self, id, *args, **kwargs):
         instance = self.singleton(id)
@@ -175,24 +186,31 @@ class ComponentManager:
                 self.singletons[id] = obj  # register as singleton
         return obj
 
+
     def get_ids_from_category(self, category):
         return self.categories.get(category, [])
+
 
     def category(self, cat, *args, **kwargs):
         return self.get_from_category(cat, *args, **kwargs)
 
+
     def get_from_category(self, category, *args, **kwargs):
         return [self.get(classid, *args, **kwargs) for classid in self.categories.get(category, [])]
+
 
     def get_player(self) -> player.NeilPlayer:
         return self.get('neil.core.player')
     
+
     def get_categories() -> Dict[str, List[str]]:
         return com.categories
     
+
     def get_factories() -> Dict[str, Dict[str, str]]:
         return com.factories
-        
+
+
 
 com = ComponentManager()
 get = com.get
@@ -206,6 +224,7 @@ clear = com.clear
 
 def get_player() -> player.NeilPlayer:
     return com.get('neil.core.player')
+
 
 def get_packages():
     return com.packages
