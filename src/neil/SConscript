@@ -19,12 +19,18 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 Import('install', 'pip')
-import glob
+import glob, os
 
 for filename in glob.glob('*.py'):
 	install('${SITE_PACKAGE_PATH}/neil', filename, 0o644)
 
 for filename in glob.glob('*.xml'):
 	install('${SITE_PACKAGE_PATH}/neil', filename, 0o444)
+
+# install subfolders
+for filename in glob.glob('*/*.py'):
+	(subdir, file) = os.path.split(filename)
+	print("install python - neil:", subdir, file)
+	install('${SITE_PACKAGE_PATH}/neil/' + subdir, filename, 0o644)
 
 pip('rdflib')
