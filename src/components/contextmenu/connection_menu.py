@@ -12,6 +12,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
+
 # in the plugin router view, when right mouse button clicked on one of the connections
 class ConnectionMenu(Menu):
     __neil__ = dict(
@@ -19,6 +20,7 @@ class ConnectionMenu(Menu):
         singleton = False,
         categories = [],
     )
+
 
     # connections is a list of 3 item tuples (metaplugin, connection_index, connection_type)
     # the list is often one item long 
@@ -89,6 +91,7 @@ class ConnectionMenu(Menu):
 
         return menu
 
+
     def describe_cv_link(self, from_plugin, to_plugin, connector):
         """
         build a label like: "cv audio/cv paramater data from 'port name' of 'plugin_name'"
@@ -113,9 +116,11 @@ class ConnectionMenu(Menu):
         else:
             return "unknown link"
 
+
     def describe_cv_parameter_node(self, plugin, node, parameter_group):
         return plugin.get_pluginloader().get_parameter(parameter_group, node.value).get_name()
     
+
     def describe_cv_audio_node(self, node):
         if node.value == 1:
             return "left channel"

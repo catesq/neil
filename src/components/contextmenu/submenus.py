@@ -5,7 +5,7 @@ from neil.utils import (Menu, iconpath, prepstr)
 from .actions import on_store_selection, on_restore_selection
 import os.path
 import json
-from neil.pathconfig import get_settings_dir
+from neil.pathconfig import settingspath
 
 #used by on_store_selection in actions.py
 def store_selection_submenu(metaplugins):
@@ -31,7 +31,7 @@ def restore_selection_submenu():
 
 #used by machine_tree_submenu below
 def load_plugin_list(filename):
-    for dirname in ["", os.path.dirname(os.path.realpath(__file__)), get_settings_dir]:
+    for dirname in ["", os.path.dirname(os.path.realpath(__file__)), settingspath]:
         if os.path.isfile(os.path.join(dirname, filename)):
             with open(os.path.join(dirname, filename), "r") as jsonfile:
                 return json.load(jsonfile)

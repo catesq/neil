@@ -2,7 +2,7 @@ from gi.repository import Gtk
 from neil.com import com
 from functools import reduce
 from neil.utils import gettext, prepstr, filenameify, show_machine_manual, is_root, clone_plugin, clone_plugin_patterns, clone_preset
-from .cv_connector_dialog import ConnectDialog
+from .connector_dialog import ConnectorDialog
 
 
 def on_popup_mute_selected(widget, plugins):
@@ -110,7 +110,7 @@ def on_popup_edit_cv_connector(widget, to_plugin, connection_id, connector_id):
     connector = connection.get_connector(connector_id)
     source, target, data = (connector.get_source(), connector.get_target(), connector.get_data())
 
-    dialog = ConnectDialog(widget, from_plugin, to_plugin, source, target, data)
+    dialog = ConnectorDialog(widget, from_plugin, to_plugin, source, target, data)
     
     res = dialog.run()
 

@@ -1,5 +1,6 @@
 
 import zzub
+from typing import List
 
 
 # used to store port information, matches api of ports on the lv2 plugin

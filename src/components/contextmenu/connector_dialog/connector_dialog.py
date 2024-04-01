@@ -1,13 +1,13 @@
-from typing import List
-
 import gi
 gi.require_version('Gtk', '3.0')
-
 from gi.repository import Gtk
 
+from typing import List
 import zzub
 
-
+from .port_info import PortInfo, PortWrapper
+from .options_ui import OptionsBox
+from .port_ui import AudioPorts, TypedPorts
 
 
 # store selected port info to create a cvnode
@@ -38,7 +38,7 @@ class Connector:
 
 
 
-class ConnectDialog(Gtk.Dialog):
+class ConnectorDialog(Gtk.Dialog):
     def __init__(self,
                  parent,
                  from_plugin: zzub.Plugin,

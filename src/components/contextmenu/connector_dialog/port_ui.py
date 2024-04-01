@@ -1,4 +1,8 @@
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
 
+import zzub
 
 # a toggle switch which display port name and changes colour when clicked
 # would prefer to use a gtk.label but they inherit background color from enclosing widget which makes changing colour messy

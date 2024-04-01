@@ -33,7 +33,7 @@ import neil.com
 import neil.preset as preset
 import neil.pathconfig as pathconfig
 
-from neil.utils import (camelcase_to_unixstyle, etcpath, filenameify, filepath, iconpath, sharedpath)
+from neil.utils import (camelcase_to_unixstyle, filenameify, filepath, iconpath, sharedpath)
 
 CONFIG_OPTIONS = dict(
     # insert all sections at this level, in the format
@@ -468,7 +468,7 @@ class NeilConfig(configparser.ConfigParser):
         """
         Returns the users settings folder.
         """
-        settingsfolder = pathconfig.get_settings_dir()
+        settingsfolder = pathconfig.settingspath()
         if not os.path.isdir(settingsfolder):
             os.makedirs(settingsfolder)
         return settingsfolder
@@ -615,7 +615,7 @@ class NeilConfig(configparser.ConfigParser):
         @return: Path to the index file.
         @rtype: str
         """
-        indexpath = etcpath('index.xml')
+        indexpath = sharedpath('index.xml')
         userindexpath = os.path.join(self.get_settings_folder(), 'index.xml')
         if userindexpath and os.path.isfile(userindexpath):
             return userindexpath
