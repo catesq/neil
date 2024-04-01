@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from typing import Dict, List
-from .pathconfig import path_cfg
+from .utils.path_config import path_cfg
 import os,sys,glob
 from configparser import ConfigParser
 import player

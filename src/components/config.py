@@ -31,9 +31,8 @@ from gi.repository import Gtk
 
 import neil.com
 import neil.preset as preset
-import neil.pathconfig as pathconfig
 
-from neil.utils import (camelcase_to_unixstyle, filenameify, filepath, iconpath, sharedpath)
+from neil.utils import (camelcase_to_unixstyle, filenameify, filepath, iconpath, sharedpath, settingspath)
 
 CONFIG_OPTIONS = dict(
     # insert all sections at this level, in the format
@@ -468,10 +467,10 @@ class NeilConfig(configparser.ConfigParser):
         """
         Returns the users settings folder.
         """
-        settingsfolder = pathconfig.settingspath()
-        if not os.path.isdir(settingsfolder):
-            os.makedirs(settingsfolder)
-        return settingsfolder
+        path = settingspath()
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        return path
 
     def select_theme(self, name):
         """

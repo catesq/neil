@@ -74,6 +74,7 @@ if '--pydebug' in sys.argv:
     raise SystemExit(0)
 
 
+
 package_path = str(next(dest.glob("**/*lib/python*/**/zzub")).resolve().parent)
 components_path = str(next(dest.glob("**/neil/components")).resolve())
 sys.path = [package_path, components_path] + sys.path

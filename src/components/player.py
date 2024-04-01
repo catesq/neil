@@ -16,9 +16,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from neil.utils import is_generator, is_effect, is_streamer, PropertyEventHandler, refresh_gui
-from zzub import Player
 from gi.repository import GLib
+
+from neil.utils import is_generator, is_effect, is_streamer
+from neil.utils.ui import PropertyEventHandler, refresh_gui
+
+from zzub import Player
+
 import neil.com as com
 import neil.common as common
 import os

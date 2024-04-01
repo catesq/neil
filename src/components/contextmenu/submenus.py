@@ -1,11 +1,10 @@
 from gi.repository import Gtk
 
 from neil.com import com
-from neil.utils import (Menu, iconpath, prepstr)
+from neil.utils import (Menu, iconpath, prepstr, settingspath)
 from .actions import on_store_selection, on_restore_selection
 import os.path
 import json
-from neil.pathconfig import settingspath
 
 #used by on_store_selection in actions.py
 def store_selection_submenu(metaplugins):

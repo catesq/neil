@@ -1,7 +1,8 @@
 from gi.repository import Gtk
 from neil.com import com
 from functools import reduce
-from neil.utils import gettext, prepstr, filenameify, show_machine_manual, is_root, clone_plugin, clone_plugin_patterns, clone_preset
+from neil.utils import gettext, prepstr, filenameify, show_machine_manual, is_root, \
+                       clone_plugin, clone_plugin_patterns, clone_preset
 from .connector_dialog import ConnectorDialog
 
 

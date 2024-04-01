@@ -22,16 +22,13 @@
 Contains dialogs related to controller enumeration and pick up.
 """
 
-import sys, os
-from gi.repository import Gtk
-import zzub
-import webbrowser
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, GObject
 
-import neil.com as com
+from neil import com
+
 from .utils import prepstr, buffersize_to_latency, filepath, error, add_scrollbars, new_listview
-from . import utils
-import config
-from . import common
 from .common import MARGIN, MARGIN2, MARGIN3
 
 class SelectControllerDialog(Gtk.Dialog):

@@ -22,12 +22,10 @@
 Provides dialogs, classes and controls to edit samples.
 """
 import gi
-gi.require_version('PangoCairo', '1.0')
 gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, Pango, PangoCairo
 
-from gi.repository import Gtk, Gdk
-from gi.repository import Pango, PangoCairo
-import os, sys
+import os
 from .utils import prepstr, db2linear, linear2db, note2str, file_filter
 from .utils import read_int, write_int, add_scrollbars, new_image_button,\
      filepath, add_hscrollbar, error, message, Menu, wave_names_generator

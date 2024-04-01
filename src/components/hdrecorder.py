@@ -26,10 +26,9 @@ import os, stat
 import gi
 gi.require_version("Gtk", "3.0")
 
-from gi.repository import Gtk
-from gi.repository import GLib
+from gi.repository import Gtk, GLib
 
-from neil.utils import filepath, new_stock_image_toggle_button, ObjectHandlerGroup
+from neil.utils import filepath, new_stock_image_toggle_button, ui
 from neil import common, com
 
 import zzub
@@ -71,7 +70,7 @@ class HDRecorderDialog(Gtk.Dialog):
         btnsaveas = Gtk.Button.new_with_mnemonic("_Save As")
         btnsaveas.connect("clicked", self.on_saveas)
         textposition = Gtk.Label(label="")
-        self.hgroup = ObjectHandlerGroup()
+        self.hgroup = ui.ObjectHandlerGroup()
         self.btnrecord = new_stock_image_toggle_button(Gtk.STOCK_MEDIA_RECORD)
         self.hgroup.connect(self.btnrecord, 'clicked', self.on_toggle_record)
         chkauto = Gtk.CheckButton.new_with_mnemonic("_Auto start/stop")

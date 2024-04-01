@@ -21,9 +21,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gi.repository import Gtk
-from gi.repository import Pango
-from .utils import get_root_folder_path
+from gi.repository import Gtk, Pango
+from .utils import basepath
 import re
 import sys
 import os.path
@@ -60,7 +59,7 @@ DEFAULT_STYLES = {
 
 # defines default-search paths for syntax-files
 SYNTAX_PATH = [ os.path.join('.', 'syntax'),
-                get_root_folder_path(),
+                basepath(),
                 os.path.join(os.path.expanduser('~'),".pygtkcodebuffer"),
                 os.path.join(sys.prefix,"share","pygtkcodebuffer","syntax")]
 

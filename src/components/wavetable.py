@@ -22,19 +22,15 @@ Contains all classes and functions needed to render the wavetable editor and
 the envelope viewer.
 """
 
-if __name__ == '__main__':
-    import os
-    os.system('../../bin/neil-combrowser neil.core.wavetablepanel')
-    raise SystemExit
 
-from gi.repository import Gtk, Gdk
-from gi.repository import GObject
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GObject
+
 import os, sys, stat
-from neil.utils import prepstr, db2linear, linear2db, note2str, filepath, \
-     new_listview, new_image_button, add_scrollbars, file_filter, question, \
-     format_filesize, error, new_stock_image_button, \
-     ObjectHandlerGroup, imagepath
-import neil.utils as utils
+from neil.utils import prepstr, db2linear, linear2db, note2str, format_filesize, ui
+
 import zzub
 import config
 from neil.envelope import EnvelopeView
@@ -72,7 +68,7 @@ class WavetablePanel(Gtk.VBox):
         """
         Initialization.
         """
-        self.ohg = ObjectHandlerGroup()
+        self.ohg = ui.ObjectHandlerGroup()
         self.working_directory = ''
         self.files = []
         self.needfocus = True
@@ -113,9 +109,9 @@ class WavetablePanel(Gtk.VBox):
         #self.libpanel.set_extra_widget(hbox)
         self.previewdesc = Gtk.Label()
         self.previewdesc.set_alignment(0, 0)
-        btnpreviewplay = new_stock_image_button(Gtk.STOCK_MEDIA_PLAY, "Preview Sample")
+        btnpreviewplay = ui.new_stock_image_button(Gtk.STOCK_MEDIA_PLAY, "Preview Sample")
         self.ohg.connect(btnpreviewplay, 'clicked', self.on_play_filelist_wave)
-        btnpreviewstop = new_stock_image_button(Gtk.STOCK_MEDIA_STOP, "Stop Preview")
+        btnpreviewstop = ui.new_stock_image_button(Gtk.STOCK_MEDIA_STOP, "Stop Preview")
         self.ohg.connect(btnpreviewstop, 'clicked', self.on_stop_wave)
 
         hbox = Gtk.HBox(False, MARGIN)
@@ -129,38 +125,38 @@ class WavetablePanel(Gtk.VBox):
         self.libpanel.set_preview_widget(preview)
         #self.libpanel.set_border_width(MARGIN2)
         #self.libpanel.add_shortcut_folder(config.get_config().get_freesound_samples_folder())
-        self.libpanel.add_filter(file_filter('All Supported Formats',
+        self.libpanel.add_filter(ui.file_filter('All Supported Formats',
                                              '*.mp3', '*.wav', '*.aif',
                                              '*.aifc', '*.aiff', '*.flac', '*.xi',
                                              '*.au', '*.paf', '*.snd', '*.voc',
                                              '*.smp', '*.iff', '*.8svx', '*.16svx',
                                              '*.w64', '*.mat4', '*.mat5', '*.pvf',
                                              '*.htk', '*.caf', '*.sd2', '*.raw'))
-        self.libpanel.add_filter(file_filter('All Files', '*'))
-        self.libpanel.add_filter(file_filter('Wave Audio File Format (*.wav)', '*.wav'))
-        self.libpanel.add_filter(file_filter('Audio Interchange File Format (*.aif, *.aiff, *.aifc)', '*.aif', '*.aiff', '*.aifc'))
-        self.libpanel.add_filter(file_filter('Free Lossless Audio Codec (*.flac)', '*.flac'))
-        self.libpanel.add_filter(file_filter('Fasttracker 2 Extended Instrument File (*.xi)', '*.xi'))
-        self.libpanel.add_filter(file_filter('Sun Microsystems Audio File Format (*.au, *.snd)', '*.au', '*.snd'))
-        self.libpanel.add_filter(file_filter('Ensoniq PARIS Audio Format (*.paf)', '*.paf'))
-        self.libpanel.add_filter(file_filter('Creative Labs Audio File (*.voc)', '*.voc'))
-        self.libpanel.add_filter(file_filter('SampleVision Audio Sample Format (*.smp)', '*.smp'))
-        self.libpanel.add_filter(file_filter('Interchange File Format (*.iff, *.8svx, *.16svx)', '*.iff', '*.8svx', '*.16svx'))
-        self.libpanel.add_filter(file_filter('Sony Wave64 Audio Format (*.w64)', '*.w64'))
-        self.libpanel.add_filter(file_filter('Matlab Audio Format (*.mat4, *.mat5)', '*.mat4', '*.mat5'))
-        self.libpanel.add_filter(file_filter('Portable Voice Format (*.pvf)', '*.pvf'))
-        self.libpanel.add_filter(file_filter('Hidden Markov Model Toolkit Format (*.htk)', '*.htk'))
-        self.libpanel.add_filter(file_filter('Core Audio Format (*.caf)', '*.caf'))
-        self.libpanel.add_filter(file_filter('Sound Designer II File (*.sd2)', '*.sd2'))
-        self.libpanel.add_filter(file_filter('Raw Data Audio Format (*.raw)', '*.raw'))
-        self.libpanel.add_filter(file_filter('MPEG Layer 3 (*.mp3)', '*.mp3'))
+        self.libpanel.add_filter(ui.file_filter('All Files', '*'))
+        self.libpanel.add_filter(ui.file_filter('Wave Audio File Format (*.wav)', '*.wav'))
+        self.libpanel.add_filter(ui.file_filter('Audio Interchange File Format (*.aif, *.aiff, *.aifc)', '*.aif', '*.aiff', '*.aifc'))
+        self.libpanel.add_filter(ui.file_filter('Free Lossless Audio Codec (*.flac)', '*.flac'))
+        self.libpanel.add_filter(ui.file_filter('Fasttracker 2 Extended Instrument File (*.xi)', '*.xi'))
+        self.libpanel.add_filter(ui.file_filter('Sun Microsystems Audio File Format (*.au, *.snd)', '*.au', '*.snd'))
+        self.libpanel.add_filter(ui.file_filter('Ensoniq PARIS Audio Format (*.paf)', '*.paf'))
+        self.libpanel.add_filter(ui.file_filter('Creative Labs Audio File (*.voc)', '*.voc'))
+        self.libpanel.add_filter(ui.file_filter('SampleVision Audio Sample Format (*.smp)', '*.smp'))
+        self.libpanel.add_filter(ui.file_filter('Interchange File Format (*.iff, *.8svx, *.16svx)', '*.iff', '*.8svx', '*.16svx'))
+        self.libpanel.add_filter(ui.file_filter('Sony Wave64 Audio Format (*.w64)', '*.w64'))
+        self.libpanel.add_filter(ui.file_filter('Matlab Audio Format (*.mat4, *.mat5)', '*.mat4', '*.mat5'))
+        self.libpanel.add_filter(ui.file_filter('Portable Voice Format (*.pvf)', '*.pvf'))
+        self.libpanel.add_filter(ui.file_filter('Hidden Markov Model Toolkit Format (*.htk)', '*.htk'))
+        self.libpanel.add_filter(ui.file_filter('Core Audio Format (*.caf)', '*.caf'))
+        self.libpanel.add_filter(ui.file_filter('Sound Designer II File (*.sd2)', '*.sd2'))
+        self.libpanel.add_filter(ui.file_filter('Raw Data Audio Format (*.raw)', '*.raw'))
+        self.libpanel.add_filter(ui.file_filter('MPEG Layer 3 (*.mp3)', '*.mp3'))
         self.libpanel.set_local_only(True)
         self.libpanel.set_select_multiple(True)
         #self.append_page(self.instrpanel, Gtk.Label(label="Instruments"))
         #self.append_page(self.libpanel, Gtk.Label(label="Library"))
         #self.set_current_page(0)
         self.pack_start(self.instrpanel, True, True, 0)
-        self.samplelist, self.samplestore, columns = new_listview([
+        self.samplelist, self.samplestore, columns = ui.new_listview([
             ('#', str),
             ('Name', str),
             (None, GObject.TYPE_PYOBJECT),
@@ -170,12 +166,12 @@ class WavetablePanel(Gtk.VBox):
         #~ imglist = wx.ImageList(16,16)
         #~ self.IMG_SAMPLE_WAVE = imglist.Add(wx.Bitmap(filepath("res/wave.png"), wx.BITMAP_TYPE_ANY))
         #~ self.samplelist.AssignImageList(imglist, wx.IMAGE_LIST_SMALL)
-        self.btnloadsample = new_stock_image_button(Gtk.STOCK_OPEN, "Load Sample")
-        self.btnstoresample = new_stock_image_button(Gtk.STOCK_SAVE_AS, "Save Sample")
-        self.btnstop = new_stock_image_button(Gtk.STOCK_MEDIA_STOP, "Stop Preview")
-        self.btnplay = new_stock_image_button(Gtk.STOCK_MEDIA_PLAY, "Preview Sample")
-        self.btnrename = new_stock_image_button(Gtk.STOCK_BOLD, "Rename Instrument")
-        self.btnclear = new_stock_image_button(Gtk.STOCK_REMOVE, "Remove Instrument")
+        self.btnloadsample = ui.new_stock_image_button(Gtk.STOCK_OPEN, "Load Sample")
+        self.btnstoresample = ui.new_stock_image_button(Gtk.STOCK_SAVE_AS, "Save Sample")
+        self.btnstop = ui.new_stock_image_button(Gtk.STOCK_MEDIA_STOP, "Stop Preview")
+        self.btnplay = ui.new_stock_image_button(Gtk.STOCK_MEDIA_PLAY, "Preview Sample")
+        self.btnrename = ui.new_stock_image_button(Gtk.STOCK_BOLD, "Rename Instrument")
+        self.btnclear = ui.new_stock_image_button(Gtk.STOCK_REMOVE, "Remove Instrument")
         #self.btnfitloop = new_image_button(imagepath("fitloop.png"), "Fit Loop", self.tooltips)
         #self.btnstrloop = new_image_button(imagepath("fitloop.png"), "Stretch Loop", self.tooltips)
         self.samplename = Gtk.Label(label="")
@@ -206,7 +202,7 @@ class WavetablePanel(Gtk.VBox):
         samplebuttons.pack_start(self.btnrename, False, True, 0)
         samplebuttons.pack_start(self.btnclear, False, True, 0)
         samplesel = Gtk.VBox(False, MARGIN)
-        scrollbars = add_scrollbars(self.samplelist)
+        scrollbars = ui.add_scrollbars(self.samplelist)
         samplesel.pack_start(samplebuttons, False, True, 0)
         samplesel.pack_end(scrollbars, True, True, 0)
         loopprops = Gtk.HBox(False, MARGIN)
@@ -233,7 +229,7 @@ class WavetablePanel(Gtk.VBox):
         envsection = Gtk.VBox(False, MARGIN)
         envsection.set_border_width(MARGIN)
         envsection.pack_start(envprops, False, True, 0)
-        self.envscrollwin = add_scrollbars(self.envelope)
+        self.envscrollwin = ui.add_scrollbars(self.envelope)
         envsection.pack_start(self.envscrollwin, True, True, 0)
         self.waveedit.set_size_request(-1, 300)
         nbsampleprops.add1(self.waveedit)
@@ -380,7 +376,7 @@ class WavetablePanel(Gtk.VBox):
         if not files:
             return
         sel = self.get_sample_selection()
-        if question(self, '<b><big>Really delete selected files?</big></b>', False) != Gtk.ResponseType.YES:
+        if ui.question(self, '<b><big>Really delete selected files?</big></b>', False) != Gtk.ResponseType.YES:
             return
         for file in files:
             os.remove(file)
@@ -614,9 +610,9 @@ class WavetablePanel(Gtk.VBox):
         """
         sel = self.get_sample_selection()
         if len(sel) > 1:
-            if question(self, '<b><big>Really delete %s instruments?</big></b>' % len(sel), False) != Gtk.ResponseType.YES:
+            if ui.question(self, '<b><big>Really delete %s instruments?</big></b>' % len(sel), False) != Gtk.ResponseType.YES:
                 return
-        elif question(self, '<b><big>Really delete instrument?</big></b>', False) != Gtk.ResponseType.YES:
+        elif ui.question(self, '<b><big>Really delete instrument?</big></b>', False) != Gtk.ResponseType.YES:
             return
         player = com.get('neil.core.player')
         for i in sel:
@@ -694,7 +690,7 @@ class WavetablePanel(Gtk.VBox):
                     buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
             dlg.set_current_name(filename)
             dlg.set_do_overwrite_confirmation(True)
-            dlg.add_filter(file_filter('Wave Files (*.wav)', '*.wav'))
+            dlg.add_filter(ui.file_filter('Wave Files (*.wav)', '*.wav'))
             response = dlg.run()
             filepath = dlg.get_filename()
             dlg.destroy()
@@ -711,7 +707,7 @@ class WavetablePanel(Gtk.VBox):
             return
         selects = self.get_sample_selection()
         if not selects:
-            error(self, "<b><big>Can't load sample.</big></b>\n\nNo target instrument slot is selected.")
+            ui.error(self, "<b><big>Can't load sample.</big></b>\n\nNo target instrument slot is selected.")
             return
         # if sample selection less than files, increase sample selection
         if len(selects) < len(samplepaths):
@@ -728,7 +724,7 @@ class WavetablePanel(Gtk.VBox):
             w.set_volume(1.0)
             if not player.load_wave(w, source):
                 player.history_flush()
-                error(self, "<b><big>Unable to load <i>%s</i>.</big></b>\n\nThe file may be corrupt or the file type is not supported." % source)
+                ui.error(self, "<b><big>Unable to load <i>%s</i>.</big></b>\n\nThe file may be corrupt or the file type is not supported." % source)
                 return
             else:
                 w.set_name(os.path.splitext(os.path.basename(source))[0])
@@ -805,7 +801,7 @@ class WavetablePanel(Gtk.VBox):
         player = com.get('neil.core.player')
         # (4 << 4) + 1 ?
         if not player.preview_file(path):
-            error(self, "<b><big>Unable to preview <i>%s</i>.</big></b>\n\nThe file may be corrupt or the file type is not supported." % path)
+            ui.error(self, "<b><big>Unable to preview <i>%s</i>.</big></b>\n\nThe file may be corrupt or the file type is not supported." % path)
             return
 
     def goto_subfolder(self):

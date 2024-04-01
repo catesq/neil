@@ -8,11 +8,11 @@ import neil.com as com
 import neil.common as common
 
 from neil.utils import \
-            AcceleratorMap, Menu, \
+            AcceleratorMap, ui, \
             get_new_pattern_name, error, \
             get_clipboard_text, set_clipboard_text, \
             fixbn, bn2mn, mn2bn, \
-            prepstr, roundint
+            prepstr, roundint, ui
 
 from .utils import \
             key_to_note, \
@@ -513,7 +513,7 @@ class PatternView(Gtk.DrawingArea):
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.set_property('can-focus', True)
 
-        self.accel_map = AcceleratorMap()
+        self.accel_map = ui.AcceleratorMap()
         self.accel_map.add_accelerator('<Control><Shift>Return',
                                        self.on_popup_create_copy)
         self.accel_map.add_accelerator('<Shift>ISO_Left_Tab', self.tab_left)
@@ -723,7 +723,7 @@ class PatternView(Gtk.DrawingArea):
         sel_sensitive = (self.selection.begin < self.selection.end)
         paste_sensitive = (get_clipboard_text().startswith(self.CLIPBOARD_MAGIC))
 
-        menu = Menu()
+        menu = ui.Menu()
         menu.add_item("Add track", self.on_popup_add_track)
         menu.add_item("Remove last track", self.on_popup_delete_track)
         menu.add_separator()

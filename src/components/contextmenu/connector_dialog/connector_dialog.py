@@ -7,7 +7,7 @@ import zzub
 
 from .port_info import PortInfo, PortWrapper
 from .options_ui import OptionsBox
-from .port_ui import AudioPorts, TypedPorts
+from .port_ui import AudioPorts, TypedPorts, DummyGroup
 
 
 # store selected port info to create a cvnode

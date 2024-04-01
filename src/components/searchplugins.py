@@ -19,14 +19,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GdkPixbuf
 
 
 from functools import cmp_to_key
 
-#                       is_debug, \
-from neil.utils import \
-                        is_root, is_generator, is_effect, is_controller, is_other, \
+from neil.utils import  is_root, is_generator, is_effect, is_controller, is_other, \
                         prepstr, add_scrollbars, new_liststore, get_adapter_name
 
 from neil import com, common
