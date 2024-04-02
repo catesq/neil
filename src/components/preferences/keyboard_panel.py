@@ -1,4 +1,7 @@
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
+
 from neil.common import MARGIN
 from config import get_config
 

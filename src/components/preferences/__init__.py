@@ -20,6 +20,8 @@
 Contains panels and dialogs related to application preferences.
 """
 
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 from .general_panel import GeneralPanel

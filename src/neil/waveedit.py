@@ -26,13 +26,10 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, Pango, PangoCairo
 
 import os
-from .utils import prepstr, db2linear, linear2db, note2str, file_filter
-from .utils import read_int, write_int, add_scrollbars, new_image_button,\
-     filepath, add_hscrollbar, error, message, Menu, wave_names_generator
+from .utils import ui
 import zzub
 import config
-from . import common
-from .common import MARGIN, MARGIN2, MARGIN3
+from .common import MARGIN
 
 import neil.com as com
 
@@ -43,6 +40,8 @@ DOTSIZE = 8
 # matches existing points exactly or approximately
 EXACT = 0
 NEXT = 1
+
+
 
 class WaveEditPanel(Gtk.VBox):
     def __init__(self, wavetable):
@@ -77,7 +76,7 @@ class WaveEditPanel(Gtk.VBox):
     def on_xfade_range(self, widget):
         player = com.get('neil.core.player')
         if self.view.selection == None:
-            message(self, "Select a region of the wave first.")
+            ui.message(self, "Select a region of the wave first.")
             return
         begin, end = self.view.selection
         if (end - begin) < begin:
@@ -85,7 +84,7 @@ class WaveEditPanel(Gtk.VBox):
             self.update()
             self.wavetable.update_sampleprops()
         else:
-            message(self, "Not enough data at the start of selection.")
+            ui.message(self, "Not enough data at the start of selection.")
 
     def on_normalize(self, widget):
         player = com.get('neil.core.player')
@@ -127,7 +126,7 @@ class WaveEditView(Gtk.DrawingArea):
         self.connect('scroll-event', self.on_mousewheel)
         self.connect("draw", self.on_draw)
 
-        self.context_menu = Menu()
+        self.context_menu = ui.Menu()
 
         self.menu_delete = self.context_menu.add_item("Delete", self.on_delete_range)
         self.menu_loop = self.context_menu.add_item("Loop", self.on_loop_range)
@@ -252,7 +251,7 @@ class WaveEditView(Gtk.DrawingArea):
             buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
         dlg.set_current_name(filename)
         dlg.set_do_overwrite_confirmation(True)
-        dlg.add_filter(file_filter('Wave Files (*.wav)', '*.wav'))
+        dlg.add_filter(ui.file_filter('Wave Files (*.wav)', '*.wav'))
         response = dlg.run()
         filepath = dlg.get_filename()
         dlg.destroy()
@@ -379,14 +378,14 @@ class WaveEditView(Gtk.DrawingArea):
                     sensitive.set_sensitive(True)
                 for i in self.store_submenu.get_children():
                     self.store_submenu.remove(i)
-                for index, name in enumerate(wave_names_generator()):
+                for index, name in enumerate(ui.wave_names_generator()):
                     self.store_submenu.add_item_no_underline(name, self.on_copy_range, index)
             self.context_menu.popup(self, event)
 
     def on_copy_range(self, widget, index):
         player = com.get('neil.core.player')
         if self.selection == None:
-            message(self, "Select a region of the wave first.")
+            ui.message(self, "Select a region of the wave first.")
             return
         begin, end = self.selection
         w = player.get_wave(index)
@@ -413,13 +412,13 @@ class WaveEditView(Gtk.DrawingArea):
     def on_xfade_range(self, widget):
         player = com.get('neil.core.player')
         if self.selection == None:
-            message(self, "Select a region of the wave first.")
+            ui.message(self, "Select a region of the wave first.")
             return
         begin, end = self.selection
         if (end - begin) < begin:
             self.level.xfade(begin, end)
         else:
-            message(self, "Not enough data at the start of selection.")
+            ui.message(self, "Not enough data at the start of selection.")
         self.sample_changed()
 
     def on_normalize(self, widget):

@@ -1,8 +1,11 @@
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 from neil.common import MARGIN
 from neil.controller import learn_controller
-from neil.utils import add_scrollbars, new_listview
+from neil.utils import ui
+
 from config import get_config
 
 class ControllerPanel(Gtk.VBox):
@@ -29,13 +32,13 @@ class ControllerPanel(Gtk.VBox):
         sizer1 = Gtk.VBox(False, MARGIN)
         sizer1.set_border_width(MARGIN)
         frame1.add(sizer1)
-        self.controllers, self.store, columns = new_listview([
+        self.controllers, self.store, columns = ui.new_listview([
                 ('Name', str),
                 ('Channel', str),
                 ('Controller', str),
         ])
         self.controllers.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
-        sizer1.add(add_scrollbars(self.controllers))
+        sizer1.add(ui.add_scrollbars(self.controllers))
         self.btnadd = Gtk.Button(stock=Gtk.STOCK_ADD)
         self.btnremove = Gtk.Button(stock=Gtk.STOCK_REMOVE)
         hsizer = Gtk.HButtonBox()

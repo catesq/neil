@@ -24,7 +24,7 @@ Provides a test player for testcases.
 
 from gi.repository import Gtk
 from gi.repository import GLib
-import config
+
 from config import get_plugin_aliases, get_plugin_blacklist
 from . import common
 import neil.com as com

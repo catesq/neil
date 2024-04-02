@@ -1,20 +1,16 @@
 
 
-import time
 import gi
-gi.require_version('PangoCairo', '1.0')
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, Pango, PangoCairo
 
-from gi.repository import Gtk, Gdk
-from gi.repository import Pango, PangoCairo
+import time
 import cairo
 import sys
 
 from neil.utils import (
-    prepstr, get_item_count, get_new_pattern_name,
-    is_effect, is_generator, is_controller, is_root,
-    get_clipboard_text, set_clipboard_text,
-    wave_names_generator,
-    Menu,
+    prepstr, get_new_pattern_name, ui,
+    is_effect, is_generator, is_controller, is_root
 )
 
 import random
@@ -100,7 +96,7 @@ class SequencerView(Gtk.DrawingArea):
         eventbus.zzub_sequencer_changed += self.redraw
         eventbus.zzub_set_sequence_event += self.redraw
         eventbus.document_loaded += self.redraw
-        set_clipboard_text("invalid_clipboard_data")
+        ui.set_clipboard_text("invalid_clipboard_data")
 
     def track_row_to_pos(self, xxx_todo_changeme):
         """
@@ -299,7 +295,7 @@ class SequencerView(Gtk.DrawingArea):
         startrow = min(self.selection_start[1], self.selection_end[1])
         for track, row, value in self.selection_range():
             data += "%04x%08x%04x" % (track, row - startrow, value)
-        set_clipboard_text(data)
+        ui.set_clipboard_text(data)
 
     def on_popup_create_pattern(self, *args):
         player = com.get('neil.core.player')
@@ -410,7 +406,7 @@ class SequencerView(Gtk.DrawingArea):
         player = com.get('neil.core.player')
         player.set_callback_state(False)
         seq = player.get_current_sequencer()
-        data = get_clipboard_text()
+        data = ui.get_clipboard_text()
         try:
             for track, row, value in self.unpack_clipboard_data(data.strip()):
                 t = seq.get_sequence(track)
@@ -535,16 +531,16 @@ class SequencerView(Gtk.DrawingArea):
             sel_sensitive = True
         else:
             sel_sensitive = False
-        if get_clipboard_text().startswith(self.CLIPBOARD_SEQUENCER):
+        if ui.get_clipboard_text().startswith(self.CLIPBOARD_SEQUENCER):
             paste_sensitive = True
         else:
             paste_sensitive = False
-        menu = Menu()
-        pmenu = Menu()
-        wavemenu = Menu()
+        menu = ui.Menu()
+        pmenu = ui.Menu()
+        wavemenu = ui.Menu()
         for plugin in sorted(list(player.get_plugin_list()), key=lambda plugin: plugin.get_name().lower()):
             pmenu.add_item(prepstr(plugin.get_name().replace("_", "__")), self.on_popup_add_track, plugin)
-        for i, name in enumerate(wave_names_generator()):
+        for i, name in enumerate(ui.wave_names_generator()):
             wavemenu.add_item_no_underline(name, self.on_popup_record_to_wave, i + 1)
         menu.add_submenu("Add track", pmenu)
         menu.add_item("Delete track", self.on_popup_delete_track)
@@ -720,7 +716,7 @@ class SequencerView(Gtk.DrawingArea):
             spl = self.panel.seqpatternlist
             store, row = spl.get_selection().get_selected_rows()
             row = (row and row[0][0]) or 0
-            sel = min(max(row, 0), get_item_count(spl.get_model()) - 1)
+            sel = min(max(row, 0), ui.get_item_count(spl.get_model()) - 1)
             if sel >= 2:
                 sel = sel - 2 + 0x10
             self.insert_at_cursor(sel)
@@ -757,13 +753,13 @@ class SequencerView(Gtk.DrawingArea):
             spl = self.panel.seqpatternlist
             store, sel = spl.get_selection().get_selected_rows()
             sel = (sel and sel[0][0]) or 0
-            sel = min(max(sel - 1, 0), get_item_count(spl.get_model()) - 1)
+            sel = min(max(sel - 1, 0), ui.get_item_count(spl.get_model()) - 1)
             spl.get_selection().select_path((sel,))
         elif k == 'Page_Down' or k == 'KP_Page_Down':
             spl = self.panel.seqpatternlist
             store, sel = spl.get_selection().get_selected_rows()
             sel = (sel and sel[0][0]) or 0
-            sel = min(max(sel + 1, 0), get_item_count(spl.get_model()) - 1)
+            sel = min(max(sel + 1, 0), ui.get_item_count(spl.get_model()) - 1)
             spl.get_selection().select_path((sel,))
         elif k == 'Return':
             m, index, bp = self.get_pattern_at(self.track, self.row)

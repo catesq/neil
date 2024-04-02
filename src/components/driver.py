@@ -26,7 +26,7 @@ import config
 import zzub
 
 import neil.com as com
-from neil.utils import error
+from neil.utils import ui
 
 class MidiDriver:
     __neil__ = dict(
@@ -48,7 +48,7 @@ class MidiDriver:
             self.init()
         except self.MidiInitException:
             self.init_failed = True
-            error(self, "<b><big>Neil was unable to initialize MIDI output.</big></b>\n\nPlease check your MIDI settings.")
+            ui.error(self, "<b><big>Neil was unable to initialize MIDI output.</big></b>\n\nPlease check your MIDI settings.")
 
     def destroy(self):
         if not self.enabled:
@@ -99,7 +99,7 @@ class AudioDriver:
             self.init()
         except self.AudioInitException:
             self.init_failed = True
-            error(None, "<b><big>Neil was unable to initialize audio output.</big></b>\n\nPlease check your audio settings in the preferences dialog.")
+            ui.error(None, "<b><big>Neil was unable to initialize audio output.</big></b>\n\nPlease check your audio settings in the preferences dialog.")
 
     def destroy(self):
         if not self.enabled:

@@ -21,11 +21,11 @@ Provides a preference tab to organize components.
 """
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
-from gi.repository import GObject
+from gi.repository import Gtk, GObject
+
 import neil.com as com
 from neil.common import MARGIN
-from neil.utils import new_listview, add_scrollbars
+from neil.utils import ui
 
 #OPTIONS = [
 #       'Module',
@@ -65,7 +65,7 @@ class ComponentPanel(Gtk.VBox):
         fssizer.set_size_request(700, 880)
         frame1.add(fssizer)
 
-        self.compolist, store, columns = new_listview([
+        self.compolist, store, columns = ui.new_listview([
             ('Use', bool),
             ('Icon', str, dict(icon=True)),
             ('Name', str, dict(markup=True)),
@@ -79,7 +79,7 @@ class ComponentPanel(Gtk.VBox):
             text += package.description
             store.append([True, package.icon, text, package])
 
-        scrollbars = add_scrollbars(self.compolist)
+        scrollbars = ui.add_scrollbars(self.compolist)
         fssizer.pack_start(scrollbars, True, True, 0)
         self.add(frame1)
 

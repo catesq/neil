@@ -23,8 +23,9 @@ Provides dialogs, classes and controls to display/load/save envelopes
 """
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GObject
-import os, sys
+from gi.repository import Gtk, Gdk
+
+import sys
 import math
 from .utils import prepstr, db2linear, linear2db, note2str
 from .utils import read_int, write_int, box_contains

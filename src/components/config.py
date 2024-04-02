@@ -22,12 +22,15 @@
 Provides an object which eases access to the applications configuration.
 """
 
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
 import configparser
 import glob
 import os
 import re
-
-from gi.repository import Gtk
 
 import neil.com
 import neil.preset as preset

@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 """
 Supplies all user interface modules with a common bus
 to handle status updates.

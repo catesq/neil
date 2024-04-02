@@ -24,10 +24,13 @@ A view that allows browsing available extension interfaces and documentation.
 This module can also be executed standalone.
 """
 
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import GObject, Gtk, Pango
+
 import code
 import fnmatch
-
-from gi.repository import GObject, Gtk, Pango
 
 import neil.com as com
 import neil.contextlog as contextlog

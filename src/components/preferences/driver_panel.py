@@ -1,12 +1,21 @@
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
+
 from neil.common import MARGIN
 from config import get_config
-from neil.utils import prepstr, buffersize_to_latency, error
+from neil.utils import prepstr, buffersize_to_latency, ui
 import neil.com as com
 import traceback
 
+
+
+
 samplerates = [96000, 48000, 44100, 22050]
 buffersizes = [32768, 16384, 8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16]
+
+
+
 
 class DriverPanel(Gtk.VBox):
     """
@@ -79,18 +88,18 @@ class DriverPanel(Gtk.VBox):
         """
         sr = self.cbsamplerate.get_active()
         if sr == -1:
-            error(self, "You did not pick a valid sample rate.")
+            ui.error(self, "You did not pick a valid sample rate.")
             raise com.exception('neil.exception.cancel')
         sr = samplerates[sr]
         bs = self.cblatency.get_active()
         if bs == -1:
-            error(self, "You did not pick a valid latency.")
+            ui.error(self, "You did not pick a valid latency.")
             raise com.exception('neil.exception.cancel')
 
         bs = buffersizes[bs]
         o = self.cboutput.get_active()
         if o == -1:
-            error(self, "You did not select a valid output device.")
+            ui.error(self, "You did not select a valid output device.")
             raise com.exception('neil.exception.cancel')
 
         iname = ""
@@ -104,5 +113,5 @@ class DriverPanel(Gtk.VBox):
 
             except audiodriver.AudioInitException:
                 traceback.print_exc()
-                error(self, "<b><big>There was an error initializing the audio driver.</big></b>\n\nThis can happen when the specified sampling rate or latency is not supported by a particular audio device. Change settings and try again.")
+                ui.error(self, "<b><big>There was an error initializing the audio driver.</big></b>\n\nThis can happen when the specified sampling rate or latency is not supported by a particular audio device. Change settings and try again.")
                 raise com.exception('neil.exception.cancel')

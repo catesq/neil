@@ -1,15 +1,11 @@
 
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GObject
+from gi.repository import Gtk
 
 import neil.com as com
 from neil.common import MARGIN
-from neil.utils import (
-    new_stock_image_button,
-    show_machine_manual,
-    filenameify,
-)
+from neil.utils import ui, show_machine_manual, filenameify
 
 
 
@@ -28,6 +24,7 @@ class eventbus_handler:
 
     def get_func(self):
         return self.func
+
 
 
 class gtk_widget_handler:
@@ -49,6 +46,7 @@ class gtk_widget_handler:
     def get_func(self):
         return self.func
     
+
 
 class PatternToolBar(Gtk.HBox):
     """
@@ -112,7 +110,7 @@ class PatternToolBar(Gtk.HBox):
         self.playnotes.set_active(True)
         self.playnotes.set_tooltip_text("If checked, the notes will be played as you enter them in the editor")
 
-        self.btnhelp = new_stock_image_button(Gtk.STOCK_HELP)
+        self.btnhelp = ui.new_stock_image_button(Gtk.STOCK_HELP)
         self.btnhelp.set_tooltip_text("Machine help page")
 
         vsep_a = Gtk.VSeparator()

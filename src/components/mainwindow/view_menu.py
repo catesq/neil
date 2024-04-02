@@ -1,24 +1,22 @@
 
 import gi
 gi.require_version("Gtk", "3.0")
-gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, Gdk, GLib
 
 from functools import cmp_to_key
 
 
-from neil import com, errordlg, common
+from neil import com
 
 import config
 
 
-from neil.utils import \
-    Menu, new_theme_image, make_submenu_item
+from neil.utils import ui 
 
 from .cmp import cmp_view
 
 # auto fills the view menu - find any components with a "__neil__" property which have the category "view". Example in "src/components/patterns/panel.py"
-class ViewMenu(Menu):
+class ViewMenu(ui.Menu):
     __neil__ = dict(
         id = 'neil.core.viewmenu',
         singleton = True,
@@ -45,7 +43,7 @@ class ViewMenu(Menu):
             view.show_all()
 
     def __init__(self):
-        Menu.__init__(self)
+        ui.Menu.__init__(self)
         views = sorted(com.get_from_category('view'), key=cmp_to_key(cmp_view))
         com.get("neil.core.icons") # make sure theme icons are loaded
         accel = com.get('neil.core.accelerators')
@@ -63,7 +61,7 @@ class ViewMenu(Menu):
                 item = self.add_check_item(label, False, self.on_check_item, view)
                 self.connect('show', self.on_activate, item, view)
             elif stockid:
-                theme_image = new_theme_image(stockid, Gtk.IconSize.MENU)
+                theme_image = ui.new_theme_image(stockid, Gtk.IconSize.MENU)
                 item = self.add_image_item(label, theme_image, self.on_activate_item, view)
             else:
                 item = self.add_item(label, self.on_activate_item)
@@ -89,4 +87,4 @@ class ViewMenu(Menu):
                     item.set_active(True)
                 item.connect('toggled', neil_frame.on_select_theme, name)
                 tempsubmenu.append(item)
-            self.append(make_submenu_item(tempsubmenu, "Themes"))
+            self.append(ui.make_submenu_item(tempsubmenu, "Themes"))

@@ -28,7 +28,7 @@ from gi.repository import Gtk, GObject
 
 from neil import com
 
-from .utils import prepstr, buffersize_to_latency, filepath, error, add_scrollbars, new_listview
+from .utils import prepstr, buffersize_to_latency, filepath
 from .common import MARGIN, MARGIN2, MARGIN3
 
 class SelectControllerDialog(Gtk.Dialog):

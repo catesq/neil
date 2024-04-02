@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -24,14 +22,18 @@ A view that allows browsing available extension interfaces and documentation.
 This module can also be executed standalone.
 """
 
-from neil.utils import Menu, test_view
-from gi.repository import GObject
-from gi.repository import Gtk
-import inspect
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import GObject, Gtk, Pango
+
+import inspect, os
+
 import neil.com as com
 import neil.contextlog as contextlog
-import os
-from gi.repository import Pango
+
+from neil.utils import ui
+
 
 MARGIN = 6
 
@@ -136,13 +138,13 @@ class PackageBrowserDialog(Gtk.Dialog):
         if not obj:
             return
         if event.button == 3:
-            menu = Menu()
+            menu = ui.Menu()
             classname = obj.__neil__['id']
             menu.add_item("Test '" + classname + "'", self.test_view, classname)
             menu.popup(self, event)
 
     def test_view(self, menuitem, classname):
-        test_view(classname)
+        ui.test_view(classname)
 
     def cleanup_docstr(self, docstr):
         """

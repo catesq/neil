@@ -23,11 +23,15 @@ Contains all classes and functions needed to render the sequence
 editor and its associated components.
 """
 
-import random
 
+
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo
 
+import random
 import config
+
 import neil.com as com
 import neil.common as common
 from neil.utils import (from_hsb, prepstr, synchronize_list, to_hsb)

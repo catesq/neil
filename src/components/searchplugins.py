@@ -23,15 +23,19 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GdkPixbuf
 
-
 from functools import cmp_to_key
 
-from neil.utils import  is_root, is_generator, is_effect, is_controller, is_other, \
-                        prepstr, add_scrollbars, new_liststore, get_adapter_name
+from neil.utils import  (
+    is_generator, is_effect, is_controller, is_other, 
+    prepstr, get_adapter_name, ui
+)
 
 from neil import com, common
 
 import zzub
+
+
+
 
 # build checkboxes for all machine types and plugin adapters
 def build_checkbox(container, name, callback):
@@ -45,8 +49,7 @@ def build_checkbox(container, name, callback):
     # plugin adapter: 'lv2', 'vst2', 'vst3', 'ladspa', 'dssi', 'zzub'
     # machine type  : "generators", "effects", "controllers", "others"
 
-# toggling the checkbox will set/unset a config variable 
-# using magic monkeypatched methods in components/config.py 
+# toggling the checkbox will set/unset a config variable using components/config.py 
 
     # config.pluginlistbrowser_show_lv2
     # config.pluginlistbrowser_show_vst2
@@ -109,7 +112,7 @@ class SearchPluginsDialog(Gtk.Window):
         self.searchterms = []          # the search box entry split into words
 
         # the store is a gtk.liststore and will contain every plugin. it is filtered so only matching plugins are shown in the treeview
-        (liststore, column_controls) = new_liststore(self.treeview, [
+        (liststore, column_controls) = ui.new_liststore(self.treeview, [
             ('Icon', GdkPixbuf.Pixbuf),
             ('Name', str, dict(markup=True)),
             (None, object),
@@ -153,7 +156,7 @@ class SearchPluginsDialog(Gtk.Window):
         self.treeview.set_tooltip_column(3)
         self.treeview.drag_source_set( Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK, common.DRAG_TARGETS, Gdk.DragAction.COPY )
 
-        scrollbars = add_scrollbars(self.treeview)
+        scrollbars = ui.add_scrollbars(self.treeview)
         self.vbox.pack_start(scrollbars, True, True, 0)
         self.vbox.pack_end(self.searchbox, False, False, 0)
 

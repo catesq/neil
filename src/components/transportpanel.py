@@ -18,18 +18,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-if __name__ == '__main__':
-    import os
-    os.system('../../bin/neil-combrowser neil.core.panel.transport')
-    raise SystemExit()
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import GObject, Gtk, Gdk
 
 from neil.common import MARGIN, MARGIN0
-from neil.utils import new_image_button, new_image_toggle_button, imagepath
-from neil.utils import ObjectHandlerGroup
-import config
-from gi.repository import GObject
-from gi.repository import Gtk, Gdk
+from neil.utils import ui, imagepath
 import neil.com as com
+
+import config
+
 import zzub
 
 
@@ -70,7 +68,7 @@ class TransportControls:
         eventbus.document_loaded += self.update_all
 
         # when one button is clicked it blocks all other buttons added to the hgroup until the button's action is complete
-        self.hgroup = ObjectHandlerGroup()
+        self.hgroup = ui.ObjectHandlerGroup()
         # the play,pause,loop,mute,panic buttons
         self.play_buttons = self.build_play_buttons()
         self.play_info = self.build_play_info()
@@ -126,12 +124,12 @@ class TransportControls:
     def build_play_buttons(self):
         box = Gtk.HBox(False, MARGIN0)
 
-        self.btnplay = new_image_toggle_button(imagepath("playback_play.svg"), "Play (F5/F6)")
-        self.btnrecord = new_image_toggle_button(imagepath("playback_record.svg"), "Record (F7)")
-        self.btnstop = new_image_button(imagepath("playback_stop.svg"), "Stop (F8)")
-        self.btnloop = new_image_toggle_button(imagepath("playback_repeat.svg"), "Repeat")
-        self.btnpanic = new_image_toggle_button(imagepath("playback_panic.svg"), "Panic (F12)")
-        self.volume_button = new_image_toggle_button(imagepath("speaker.svg"), "Volume")
+        self.btnplay = ui.new_image_toggle_button(imagepath("playback_play.svg"), "Play (F5/F6)")
+        self.btnrecord = ui.new_image_toggle_button(imagepath("playback_record.svg"), "Record (F7)")
+        self.btnstop = ui.new_image_button(imagepath("playback_stop.svg"), "Stop (F8)")
+        self.btnloop = ui.new_image_toggle_button(imagepath("playback_repeat.svg"), "Repeat")
+        self.btnpanic = ui.new_image_toggle_button(imagepath("playback_panic.svg"), "Panic (F12)")
+        self.volume_button = ui.new_image_toggle_button(imagepath("speaker.svg"), "Volume")
 
         self.btnrecord.modify_bg(Gtk.StateType.ACTIVE, Gdk.color_parse("red"))
         self.btnloop.modify_bg(Gtk.StateType.ACTIVE, Gdk.color_parse("green"))
@@ -344,7 +342,7 @@ class TransportControls:
 
 __neil__ = dict(
     classes = [
-            TransportControls,
+        TransportControls,
     ],
 )
 
@@ -352,19 +350,10 @@ __neil__ = dict(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+if __name__ == '__main__':
+    import os
+    os.system('../../bin/neil-combrowser neil.core.panel.transport')
+    raise SystemExit()
 
 
 

@@ -1,10 +1,15 @@
-import config
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+
 import os
-from gi.repository import Gtk, Pango
+
+import neil.com
+
 from neil.common import MARGIN
 from config import get_config
 from neil.utils import sharedpath
-import neil.com
 
 class GeneralPanel(Gtk.VBox):
     """
@@ -36,11 +41,11 @@ class GeneralPanel(Gtk.VBox):
         fssizer.set_border_width(MARGIN)
         frame1.add(fssizer)
         incsave = get_config().get_incremental_saving()
-        #rackpanel = config.get_config().get_experimental('RackPanel')
+        #rackpanel = get_config().get_experimental('RackPanel')
         leddraw = get_config().get_led_draw()
         curvearrows = get_config().get_curve_arrows()
         patnoteoff = get_config().get_pattern_noteoff()
-        self.patternfont = Gtk.FontButton.new_with_font(config.get_config().get_pattern_font())
+        self.patternfont = Gtk.FontButton.new_with_font(get_config().get_pattern_font())
         self.patternfont.set_use_font(True)
         self.patternfont.set_use_size(True)
         self.patternfont.set_show_style(True)
@@ -65,7 +70,7 @@ class GeneralPanel(Gtk.VBox):
         for i, theme in enumerate(themes):
             name = os.path.splitext(theme)[0]
             self.theme.append_text(name);
-            if name == config.get_config().active_theme:
+            if name == get_config().active_theme:
                 self.theme.set_active(i)
 
         sg1 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
@@ -94,19 +99,19 @@ class GeneralPanel(Gtk.VBox):
         Writes general config settings to file.
         """
         if self.patternfont.get_font_name():
-            config.get_config().set_pattern_font(self.patternfont.get_font_name())
+            get_config().set_pattern_font(self.patternfont.get_font_name())
 
-        config.get_config().set_incremental_saving(self.incsave.get_active())
-        config.get_config().set_led_draw(self.leddraw.get_active())
-        config.get_config().set_pattern_noteoff(self.patnoteoff.get_active())
-        config.get_config().set_curve_arrows(self.curvearrows.get_active())
-        #config.get_config().set_experimental('RackPanel', self.rackpanel.get_active())
+        get_config().set_incremental_saving(self.incsave.get_active())
+        get_config().set_led_draw(self.leddraw.get_active())
+        get_config().set_pattern_noteoff(self.patnoteoff.get_active())
+        get_config().set_curve_arrows(self.curvearrows.get_active())
+        #get_config().set_experimental('RackPanel', self.rackpanel.get_active())
         theme_name = self.theme.get_active_text()
-        if config.get_config().active_theme != theme_name:
+        if get_config().active_theme != theme_name:
             if theme_name == 'Default':
-                config.get_config().select_theme(None)
+                get_config().select_theme(None)
             else:
-                config.get_config().select_theme(self.theme.get_active_text())
+                get_config().select_theme(self.theme.get_active_text())
 
         neil.com.get('neil.core.patternpanel').update_all()
         neil.com.get('neil.core.router.view').update_all()

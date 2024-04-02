@@ -1,8 +1,10 @@
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
+
 from neil import com
 from neil.common import MARGIN
-from neil.utils import new_listview, add_scrollbars
-
+from neil.utils import ui
 
 def key_prefpanel(a):
     return (hasattr(a, '__prefpanel__') and a.__prefpanel__.get('label','')) or ''
@@ -48,7 +50,7 @@ class PreferencesDialog(Gtk.Dialog):
                 starting_tab_index = i
             self.nb.append_page(panel, Gtk.Label(label=label))
 
-        self.tab_list, self.tab_list_store, columns = new_listview([('Name', str),])
+        self.tab_list, self.tab_list_store, columns = ui.new_listview([('Name', str),])
         self.tab_list.set_headers_visible(False)
         self.tab_list.set_size_request(200, 600)
 
@@ -59,7 +61,7 @@ class PreferencesDialog(Gtk.Dialog):
 
         self.tab_list.connect('cursor-changed', self.on_tab_list_change)
         self.splitter = Gtk.HPaned()
-        self.splitter.pack1(add_scrollbars(self.tab_list))
+        self.splitter.pack1(ui.add_scrollbars(self.tab_list))
         self.splitter.pack2(self.nb)
         self.vbox.add(self.splitter)
 

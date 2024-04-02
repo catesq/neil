@@ -28,17 +28,15 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GObject
 
-import os, sys, stat
+import os, stat
 from neil.utils import prepstr, db2linear, linear2db, note2str, format_filesize, ui
 
 import zzub
 import config
 from neil.envelope import EnvelopeView
 from neil.waveedit import WaveEditPanel
-import neil.common as common
 from neil.common import MARGIN, MARGIN2, MARGIN3
 import neil.com as com
-from neil.utils import Menu
 
 class WavetablePanel(Gtk.VBox):
     """
@@ -783,7 +781,7 @@ class WavetablePanel(Gtk.VBox):
             #self.on_load_sample(widget)
         #  Open context menu
         elif (event.button == 3):
-            menu = Menu()
+            menu = ui.Menu()
             menu.add_item("Load Sample", self.on_load_sample)
             menu.add_item("Save Sample", self.on_save_sample)
             menu.add_item("Remove Instrument", self.on_clear)

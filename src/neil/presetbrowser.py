@@ -22,17 +22,16 @@
 Contains all classes and functions needed to render the preset browser.
 """
 
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
-from gi.repository import GObject
-import cairo
-from .utils import prepstr, filepath, db2linear, linear2db, filenameify, \
-        get_item_count, question, error, new_listview, add_scrollbars, get_clipboard_text, set_clipboard_text, \
-        gettext, new_stock_image_button, diff, file_filter
+
+from .utils import (
+    prepstr, ui
+)
+
 import config
-import zzub
-import sys,os
-from .preset import PresetCollection, Preset
-from . import common
+from .preset import PresetCollection
 import neil.com as com
 
 class PresetView(Gtk.VBox):
@@ -53,7 +52,7 @@ class PresetView(Gtk.VBox):
         self.panels = {}
         scrollwindow = Gtk.ScrolledWindow()
         scrollwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        self.presetlist, self.presetstore, columns = new_listview([('Name', str),])
+        self.presetlist, self.presetstore, columns = ui.new_listview([('Name', str),])
         self.presetlist.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.update_presets()
         scrollwindow.add_with_viewport(self.presetlist)
@@ -79,7 +78,7 @@ class PresetView(Gtk.VBox):
                 buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
         self.import_dlg = Gtk.FileChooserDialog(title="Import", parent=parent, action=Gtk.FileChooserAction.OPEN,
                 buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-        filter = file_filter("Preset files (*.prs)", "*.prs")
+        filter = ui.file_filter("Preset files (*.prs)", "*.prs")
         self.export_dlg.add_filter(filter)
         self.import_dlg.add_filter(filter)
         self.export_dlg.set_do_overwrite_confirmation(True)
@@ -94,9 +93,9 @@ class PresetView(Gtk.VBox):
         model, rows = self.presetlist.get_selection().get_selected_rows()
         if rows:
             if len(rows) > 1:
-                if question(self, '<b><big>Really delete %s presets?</big></b>' % len(rows),False) != Gtk.ResponseType.YES:
+                if ui.question(self, '<b><big>Really delete %s presets?</big></b>' % len(rows),False) != Gtk.ResponseType.YES:
                     return
-            elif question(self, '<b><big>Really delete preset?</big></b>',False) != Gtk.ResponseType.YES:
+            elif ui.question(self, '<b><big>Really delete preset?</big></b>',False) != Gtk.ResponseType.YES:
                 return
             selected = [self.presets.presets[row[0]] for row in rows]
             for preset in selected:
@@ -131,7 +130,7 @@ class PresetView(Gtk.VBox):
                     except AssertionError:
                         txt = "This preset file seems intended for a different plugin."
                         print(txt)
-                        error(self, txt)
+                        ui.error(self, txt)
                         return
                 # If they're all ok, add them
                 for preset in new_presets.presets:

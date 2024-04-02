@@ -24,11 +24,13 @@ Provides controls usually found on front panels of audio hardware.
 See the bottom for some examples.
 """
 
-from gi.repository import Gtk, Gdk
-from gi.repository import Pango
-from gi.repository import GObject
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GObject
+
 import cairo
 import math
+
 from colorsys import hls_to_rgb
 
 def map_coords_linear(x,y):

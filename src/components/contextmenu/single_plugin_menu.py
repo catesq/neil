@@ -1,31 +1,33 @@
-import os.path
 
 import zzub
 from neil.com import com
 import neil.common as common
-from neil.utils import Menu, is_generator, is_root, is_effect, prepstr
+from neil.utils import is_generator, is_root, is_effect, prepstr, ui
+
 
 from .submenus import restore_selection_submenu
 
-from .actions import ( on_popup_mute,
-                       on_popup_solo,
-                       on_popup_bypass,
-                       on_popup_show_params,
-                       on_popup_show_attribs,
-                       on_popup_show_presets,
-                       on_popup_rename,
-                       on_popup_delete,
-                       on_popup_clone_plugin,
-                       on_popup_clone_chain,
-                       on_popup_set_target,
-                       on_popup_command,
-                       on_machine_help,
-                       on_load_preset,
-                       on_save_preset
-                       )
+
+from .actions import ( 
+    on_popup_mute,
+    on_popup_solo,
+    on_popup_bypass,
+    on_popup_show_params,
+    on_popup_show_attribs,
+    on_popup_show_presets,
+    on_popup_rename,
+    on_popup_delete,
+    on_popup_clone_plugin,
+    on_popup_clone_chain,
+    on_popup_set_target,
+    on_popup_command,
+    on_machine_help,
+    on_load_preset,
+    on_save_preset
+)
 
 
-class SinglePluginMenu(Menu):
+class SinglePluginMenu(ui.Menu):
     __neil__ = dict(
         id = 'neil.core.contextmenu.singleplugin',
         singleton = False,
@@ -33,7 +35,7 @@ class SinglePluginMenu(Menu):
     )
 
     def __init__(self, metaplugin):
-        Menu.__init__(self)
+        ui.Menu.__init__(self)
         player = com.get('neil.core.player')
 
         self.add_check_item("_Mute", player.plugin_is_muted(metaplugin), on_popup_mute, metaplugin)

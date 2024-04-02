@@ -18,20 +18,25 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
 """
 Provides dialog class for cpu monitor.
 """
 
-from gi.repository import Gtk
-from gi.repository import GObject
-from gi.repository import Pango
 
-import neil.common as common
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, GObject, Pango
+
+
+import time
+
+
 from neil.common import MARGIN, MARGIN2, MARGIN3
 import neil.com as com
-import time
-from neil.utils import format_time, ticks_to_time, new_theme_image_toggle_button
-from neil.utils import new_image_button, new_image_toggle_button, imagepath
+from neil.utils import format_time, ticks_to_time
+
+
 
 class PlaybackInfo(Gtk.Dialog):
     """
@@ -47,11 +52,13 @@ class PlaybackInfo(Gtk.Dialog):
             ]
         )
 
+
     __view__ = dict(
         label = "Playback Info",
         order = 0,
         toggle = True,
         )
+
 
     def __init__(self):
         """
@@ -85,12 +92,14 @@ class PlaybackInfo(Gtk.Dialog):
         self.set_resizable(False)
         GObject.timeout_add(100, self.on_timer)
 
+
     def on_timer(self):
         """
         Called by timer event. Updates CPU usage statistics.
         """
         self.update_label()
         return True
+
 
     def update_label(self):
         """
@@ -114,12 +123,11 @@ class PlaybackInfo(Gtk.Dialog):
             control.set_markup("%s" % text)
         return True
 
-__all__ = [
-    'PlaybackInfo',
-    ]
+
+
 
 __neil__ = dict(
     classes = [
         PlaybackInfo,
-        ],
-    )
+    ],
+)

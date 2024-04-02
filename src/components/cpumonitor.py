@@ -26,7 +26,7 @@ from gi.repository import GLib, Gtk
 
 import neil.com as com
 from neil.common import MARGIN
-from neil.utils import add_scrollbars, prepstr
+from neil.utils import ui, prepstr
 
 
 class CPUMonitorDialog(Gtk.Dialog):
@@ -79,7 +79,7 @@ class CPUMonitorDialog(Gtk.Dialog):
         self.labeltotal = Gtk.Label(label="100%")
         self.gaugetotal = Gtk.ProgressBar()
 
-        scrollbars = add_scrollbars(self.pluginlistview)
+        scrollbars = ui.add_scrollbars(self.pluginlistview)
         sizer = Gtk.VBox(False, MARGIN)
         sizer.set_border_width(MARGIN)
         sizer.pack_start(scrollbars, True, True, 0)

@@ -1,6 +1,8 @@
 
-from gi.repository import Gtk
-from gi.repository import GObject
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, GObject
+
 from traceback import format_exception, print_exc as traceback_print_exc
 import sys
 

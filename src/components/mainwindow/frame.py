@@ -20,7 +20,6 @@
 
 import gi
 gi.require_version("Gtk", "3.0")
-gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, Gdk, GLib, Gio
 
 import os
@@ -28,8 +27,10 @@ import re
 import ctypes
 from functools import cmp_to_key
 
-from neil.utils import hicoloriconpath, CancelException, \
-                       settingspath, filepath, show_manual, ui
+from neil.utils import (
+    hicoloriconpath, CancelException, 
+    settingspath, filepath, show_manual, ui
+)
 
 
 from neil import com, errordlg, common
@@ -73,7 +74,7 @@ class FramePanel(Gtk.Notebook):
                 defaultpanel = panel
             panel.show_all()
 
-            theme_img = new_theme_image(stockid, Gtk.IconSize.MENU)
+            theme_img = ui.new_theme_image(stockid, Gtk.IconSize.MENU)
             header = Gtk.VBox()
             labelwidget = Gtk.Label(label=label)
             labelwidget.set_angle(90)

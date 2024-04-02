@@ -18,6 +18,7 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GObject, GLib
+
 import cairo
 
 from statistics import pstdev
@@ -178,7 +179,7 @@ class MasterPanel(Gtk.VBox):
     def __init__(self):
         Gtk.VBox.__init__(self)
         self.latency = 0
-        self.ohg = utils.ObjectHandlerGroup()
+        self.ohg = utils.ui.ObjectHandlerGroup()
         eventbus = com.get('neil.core.eventbus')
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         eventbus.document_loaded += self.update_all

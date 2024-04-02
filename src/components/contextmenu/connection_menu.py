@@ -1,20 +1,22 @@
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
 import zzub
 
 from neil.com import com
-from neil.utils import Menu
+from neil.utils import ui
 
 from .actions import on_popup_disconnect, on_popup_disconnect_all, \
                      on_popup_edit_cv_connector, on_popup_remove_cv_connector
 
 from .submenus import machine_tree_submenu
 
-import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
 
 
 # in the plugin router view, when right mouse button clicked on one of the connections
-class ConnectionMenu(Menu):
+class ConnectionMenu(ui.Menu):
     __neil__ = dict(
         id = 'neil.core.contextmenu.connection',
         singleton = False,
@@ -25,7 +27,7 @@ class ConnectionMenu(Menu):
     # connections is a list of 3 item tuples (metaplugin, connection_index, connection_type)
     # the list is often one item long 
     def __init__(self, connections):
-        Menu.__init__(self)
+        ui.Menu.__init__(self)
 
         if len(connections) == 1:
             self.build_connections_submenu(self, connections)

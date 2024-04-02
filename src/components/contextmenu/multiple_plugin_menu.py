@@ -1,6 +1,6 @@
 
 from neil.com import com
-from neil.utils import Menu
+from neil.utils import ui
 
 
 from .submenus import store_selection_submenu, restore_selection_submenu
@@ -17,7 +17,7 @@ from .actions import (
 )
 
 
-class MultiplePluginMenu(Menu):
+class MultiplePluginMenu(ui.Menu):
     __neil__ = dict(
         id = 'neil.core.contextmenu.multipleplugins',
         singleton = False,
@@ -25,7 +25,7 @@ class MultiplePluginMenu(Menu):
     )
 
     def __init__(self, plugins):
-        Menu.__init__(self)
+        ui.Menu.__init__(self)
         player = com.get('neil.core.player')
         router = com.get('neil.core.router.view')
 

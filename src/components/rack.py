@@ -22,24 +22,24 @@
 Contains all classes and functions needed to render the rack view.
 """
 
-from gi.repository import Gtk, Gdk
-from gi.repository import GObject
-import cairo
-from neil.utils import prepstr, filepath, db2linear, linear2db, filenameify, \
-        get_item_count, question, error, new_listview, add_scrollbars, get_clipboard_text, set_clipboard_text, \
-        gettext, new_stock_image_button, diff, show_machine_manual
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GObject
+
+from neil.utils import (
+    prepstr, filenameify, 
+    diff, show_machine_manual, ui
+ )
+
+import pickle
+import config
+
 import zzub
-import sys,os
-import fnmatch
-import ctypes
-import time
-import queue
 
 import neil.common as common
 import neil.preset as preset_module
 from neil.common import MARGIN
-import pickle
-import config
+
 import neil.com as com
 
 class ParameterView(Gtk.VBox):
@@ -82,15 +82,15 @@ class ParameterView(Gtk.VBox):
         self.presetbox = Gtk.ComboBoxText.new_with_entry()
         self.presetbox.set_size_request(100,-1)
         self.presetbox.set_wrap_width(4)
-        self.btnadd = new_stock_image_button(Gtk.STOCK_ADD)
+        self.btnadd = ui.new_stock_image_button(Gtk.STOCK_ADD)
         self.btnadd.set_tooltip_text("Write Values to Preset")
-        self.btnremove = new_stock_image_button(Gtk.STOCK_REMOVE)
+        self.btnremove = ui.new_stock_image_button(Gtk.STOCK_REMOVE)
         self.btnremove.set_tooltip_text("Delete Preset")
-        self.btncopy = new_stock_image_button(Gtk.STOCK_COPY)
+        self.btncopy = ui.new_stock_image_button(Gtk.STOCK_COPY)
         self.btncopy.set_tooltip_text("Copy Values to Clipboard (to Paste in Pattern)")
         self.btnrandom = Gtk.Button("_Random")
         self.btnrandom.set_tooltip_text("Randomise Values")
-        self.btnhelp = new_stock_image_button(Gtk.STOCK_HELP)
+        self.btnhelp = ui.new_stock_image_button(Gtk.STOCK_HELP)
         self.btnhelp.set_tooltip_text("Help")
         menugroup = Gtk.HBox(False, MARGIN)
         menugroup.pack_start(self.presetbox, True, True, 0)
@@ -362,7 +362,7 @@ class ParameterView(Gtk.VBox):
             self.plugin.add_input(source, zzub.zzub_connection_type_event)
             conn = self.find_event_connection(source)
             if not conn: # we can't make one
-                error(self, "<big><b>Cannot connect parameters.</b></big>")
+                ui.error(self, "<big><b>Cannot connect parameters.</b></big>")
                 return
         self.plugin.add_event_connection_binding(source, si,tg,tt,ti)
         self.update_namelabel(tg,tt,ti)
@@ -712,7 +712,7 @@ class ParameterView(Gtk.VBox):
                     if p.get_flags() & zzub.zzub_parameter_flag_state:
                         v = self.plugin.get_parameter_value(g,t,i)
                         data += "%04x%01x%02x%02x%04x" % (0,g,t,i,v)
-        set_clipboard_text(data)
+        ui.set_clipboard_text(data)
 
     def on_button_random(self, event):
         """

@@ -21,10 +21,8 @@ Provides an info view which allows to enter text.
 """
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
-from gi.repository import Pango
-import neil.common as common
-from neil.utils import add_scrollbars
+from gi.repository import Gtk, Pango
+
 from neil.common import MARGIN
 import neil.com as com
 
@@ -53,7 +51,7 @@ class InfoPanel(Gtk.VBox):
         Initializer.
         """
         Gtk.VBox.__init__(self, False, MARGIN)
-        # scrollbars = add_scrollbars(self.view)
+        # scrollbars = ui.add_scrollbars(self.view)
         self.set_border_width(MARGIN)
         self.info_view = InfoView()
         self.pack_start(self.info_view, True, True, 0)

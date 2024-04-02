@@ -24,27 +24,25 @@ Provides dialogs and controls to render the plugin view/router and its
 associated components.
 """
 
-if __name__ == '__main__':
-    import os
-    os.system('../../bin/neil-combrowser neil.core.routerpanel')
-    raise SystemExit
 
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GObject, Pango, PangoCairo
 
-import neil.com as com
-import cairo
-import math
 
+import cairo
+import zzub
+
+import config
 
 from neil.utils import PluginType
-from neil.utils import get_plugin_type
-from neil.utils import is_effect, is_generator, is_controller, is_root
-from neil.utils import prepstr, db2linear, linear2db, error, new_listview, add_scrollbars
-from neil.utils import blend_float, box_contains, distance_from_line
-import config
-import zzub
+from neil.utils import (
+    get_plugin_type, is_effect, is_generator, is_controller, is_root,
+    blend_float, box_contains, distance_from_line, 
+    prepstr, db2linear, linear2db, ui
+)
+
+import neil.com as com
 import neil.common as common
 from neil.common import MARGIN, DRAG_TARGETS
 from rack import ParameterView
@@ -249,14 +247,14 @@ class AttributesDialog(Gtk.Dialog):
         self.plugin = plugin
         self.pluginloader = plugin.get_pluginloader()
         self.resize(300, 200)
-        self.attriblist, self.attribstore, columns = new_listview([
+        self.attriblist, self.attribstore, columns = ui.new_listview([
                 ('Attribute', str),
                 ('Value', str),
                 ('Min', str),
                 ('Max', str),
                 ('Default', str),
         ])
-        vbox.add(add_scrollbars(self.attriblist))
+        vbox.add(ui.add_scrollbars(self.attriblist))
         hsizer = Gtk.HButtonBox()
         hsizer.set_spacing(MARGIN)
         hsizer.set_layout(Gtk.ButtonBoxStyle.START)
@@ -319,7 +317,7 @@ class AttributesDialog(Gtk.Dialog):
             assert v >= attrib.get_value_min()
             assert v <= attrib.get_value_max()
         except:
-            error(self, "<b><big>The number you entered is invalid.</big></b>\n\nThe number must be in the proper range.")
+            ui.error(self, "<b><big>The number you entered is invalid.</big></b>\n\nThe number must be in the proper range.")
             return
         self.attribs[i] = v
         iter = self.attribstore.get_iter((i,))
@@ -1630,11 +1628,11 @@ __neil__ = dict(
 )
 
 if __name__ == '__main__':
-    import testplayer
-    import utils
-    player = testplayer.get_player()
-    player.load_ccm(utils.filepath('demosongs/paniq-knark.ccm'))
-    window = testplayer.TestWindow()
+    import neil.testplayer
+    import neil.utils
+    player = neil.testplayer.get_player()
+    player.load_ccm(neil.utils.filepath('demosongs/paniq-knark.ccm'))
+    window = neil.testplayer.TestWindow()
     window.add(RoutePanel(window))
     window.PAGE_ROUTE = 1
     window.index = 1

@@ -21,9 +21,9 @@ Contains the information displayed in the about box.
 """
 
 import gi
-
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
+
 from neil.utils import imagepath
 
 NAME = "Neil"

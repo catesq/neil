@@ -1,8 +1,15 @@
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
-from neil.com import com
+
 from functools import reduce
-from neil.utils import gettext, prepstr, filenameify, show_machine_manual, is_root, \
-                       clone_plugin, clone_plugin_patterns, clone_preset
+
+from neil.com import com
+from neil.utils import (
+    prepstr, filenameify, show_machine_manual, is_root, 
+    clone_plugin, clone_plugin_patterns, clone_preset, ui
+)
+
 from .connector_dialog import ConnectorDialog
 
 

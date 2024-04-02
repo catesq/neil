@@ -24,13 +24,12 @@ A view that allows browsing available extension interfaces and documentation.
 This module can also be executed standalone.
 """
 
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, GObject
+
 import neil.com as com
-import zzub
-from gi.repository import Gtk
-from gi.repository import GObject
-import time
-import os
-from neil.utils import prepstr, new_listview, is_generator, message
+from neil.utils import ui
 
 class TickDoublerDialog(Gtk.Dialog):
     __neil__ = dict(
@@ -133,7 +132,7 @@ class TickDoublerDialog(Gtk.Dialog):
         player.set_callback_state(True)
         eventbus = com.get('neil.core.eventbus')
         eventbus.document_loaded()
-        message(self, "Resizing complete")
+        ui.message(self, "Resizing complete")
 
     def on_left_down(self, widget, event, data=None):
         self.grab_focus()

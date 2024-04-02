@@ -1,11 +1,13 @@
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+
 import os
 import pickle
 
-import gi
-from gi.repository import Gtk
-
 from neil.gtkcodebuffer import CodeBuffer, SyntaxLoader
-from neil.utils import error, gettext, new_stock_image_button
+from neil.utils import ui
 
 gi.require_version("Gtk", "3.0")
 
@@ -37,7 +39,7 @@ class Expression():
             old_name = model.get_value(active, 0)
         else:
             old_name = ''
-        name = gettext(self.dialog, "Enter the name of your expression",
+        name = ui.gettext(self.dialog, "Enter the name of your expression",
                        old_name)
         if name is not None:
             name = name.replace(',', ' ')
@@ -68,7 +70,7 @@ class Expression():
             old_name = model.get_value(active, 0)
         else:
             return
-        new_name = gettext(self.dialog, "Enter new name for your expression",
+        new_name = ui.gettext(self.dialog, "Enter new name for your expression",
                            old_name)
         if new_name is not None:
             new_name = new_name.replace(',', ' ')
@@ -102,10 +104,10 @@ class Expression():
         model = self.selector.get_model()
         for name, expression in self.expressions.items():
             model.append([name])
-        add_button = new_stock_image_button(Gtk.STOCK_OPEN, "Add Expression")
-        del_button = new_stock_image_button(Gtk.STOCK_REMOVE, "Remove Expression")
-        mov_button = new_stock_image_button(Gtk.STOCK_BOLD, "Rename Expression")
-        hlp_button = new_stock_image_button(Gtk.STOCK_HELP, "Help")
+        add_button = ui.new_stock_image_button(Gtk.STOCK_OPEN, "Add Expression")
+        del_button = ui.new_stock_image_button(Gtk.STOCK_REMOVE, "Remove Expression")
+        mov_button = ui.new_stock_image_button(Gtk.STOCK_BOLD, "Rename Expression")
+        hlp_button = ui.new_stock_image_button(Gtk.STOCK_HELP, "Help")
         add_button.connect('clicked', self.add_expression)
         del_button.connect('clicked', self.del_expression)
         mov_button.connect('clicked', self.mov_expression)
@@ -163,7 +165,7 @@ class Expression():
                     }
                 exec(expr, new_global) #pylint: disable=exec-used
             except Exception as e:
-                error(self.dialog, "There was a problem with your expression!", details=str(e))
+                ui.error(self.dialog, "There was a problem with your expression!", details=str(e))
 
 
 __all__ = [

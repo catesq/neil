@@ -1,6 +1,4 @@
 
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -20,12 +18,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import glob
-import os
-
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gdk, GdkPixbuf, Gtk
+
+import glob
+import os
 
 import neil.com as com
 from neil.utils import iconpath, imagepath

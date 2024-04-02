@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # LCDFont
 # Font table for LCD screens.
 # Copyright (C) 2006 Leonard Ritter <contact@leonard-ritter.com>

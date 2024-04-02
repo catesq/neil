@@ -7,6 +7,15 @@ import neil.com
 import weakref
 
 
+def set_clipboard_text(data):
+    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+    clipboard.set_text(data, len(data))
+    clipboard.store()
+
+def get_clipboard_text():
+    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+    return clipboard.wait_for_text()
+
 def refresh_gui():
     main_context = GLib.MainContext.default()
     while main_context.pending():

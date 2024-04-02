@@ -1,7 +1,7 @@
 import zzub
 
 from neil.com import com
-from neil.utils import Menu, is_generator, is_root, is_effect
+from neil.utils import ui
 from neil.preset import Preset
 
 from .actions import on_popup_unmute_all, on_popup_clone_chains
@@ -9,7 +9,7 @@ from .actions import on_popup_unmute_all, on_popup_clone_chains
 from .submenus import machine_tree_submenu, restore_selection_submenu, store_selection_submenu
 
 
-class RouterMenu(Menu):
+class RouterMenu(ui.Menu):
     __neil__ = dict(
         id = 'neil.core.contextmenu.router',
         singleton = False,
@@ -17,7 +17,7 @@ class RouterMenu(Menu):
     )
 
     def __init__(self, x, y):
-        Menu.__init__(self)
+        ui.Menu.__init__(self)
 
         router = com.get("neil.core.router.view")
         player = com.get_player()

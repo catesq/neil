@@ -22,7 +22,6 @@
 Provides information used by all ui sections.
 """
 
-import zzub
 import neil.com as com
 import gi
 gi.require_version("Gtk", "3.0")

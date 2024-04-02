@@ -1,23 +1,20 @@
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GLib
-from gi.repository import Pango, PangoCairo
+from gi.repository import Gtk, Gdk, GLib, Pango, PangoCairo
 import cairo
 
 import neil.com as com
 import neil.common as common
 
-from neil.utils import \
-            AcceleratorMap, ui, \
-            get_new_pattern_name, error, \
-            get_clipboard_text, set_clipboard_text, \
-            fixbn, bn2mn, mn2bn, \
-            prepstr, roundint, ui
+from neil.utils import (
+    get_new_pattern_name, fixbn, bn2mn, mn2bn,
+    prepstr, roundint, ui
+)
 
-from .utils import \
-            key_to_note, \
-            get_str_from_param, get_length_from_param, \
-            get_subindexcount_from_param, get_subindexoffsets_from_param
+from .utils import (
+    key_to_note, get_str_from_param, get_length_from_param, 
+    get_subindexcount_from_param, get_subindexoffsets_from_param
+)
 
 from .patternstatus import PatternStatus
 
@@ -721,7 +718,7 @@ class PatternView(Gtk.DrawingArea):
         """
         player = com.get('neil.core.player')
         sel_sensitive = (self.selection.begin < self.selection.end)
-        paste_sensitive = (get_clipboard_text().startswith(self.CLIPBOARD_MAGIC))
+        paste_sensitive = (ui.get_clipboard_text().startswith(self.CLIPBOARD_MAGIC))
 
         menu = ui.Menu()
         menu.add_item("Add track", self.on_popup_add_track)
@@ -1417,7 +1414,7 @@ class PatternView(Gtk.DrawingArea):
                 continue
             data += "%04x%01x%02x%02x%04x" % (r - self.selection.begin, g, t, i, self.plugin.get_pattern_value(self.pattern, g, t, i, r))
             print("begin=%04x g=%01x t=%02x index=%02x\n\tpattern=%04x" % (r - self.selection.begin, g, t, i, self.plugin.get_pattern_value(self.pattern, g, t, i, r)))
-        set_clipboard_text(data)
+        ui.set_clipboard_text(data)
 
     def delete(self):
         """
@@ -1468,7 +1465,7 @@ class PatternView(Gtk.DrawingArea):
         """
         player = com.get('neil.core.player')
         #player.set_callback_state(False)
-        data = get_clipboard_text()
+        data = ui.get_clipboard_text()
         try:
             gen = self.unpack_clipboard_data(data.strip())
             mode = next(gen)
@@ -1735,7 +1732,7 @@ class PatternView(Gtk.DrawingArea):
             player.history_commit("add pattern track")
             self.pattern_changed()
         else:
-            error(self, "Please select or add a pattern first!")
+            ui.error(self, "Please select or add a pattern first!")
 
     def on_popup_delete_track(self, *args):
         """

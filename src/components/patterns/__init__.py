@@ -21,9 +21,6 @@ Contains all classes and functions needed to render the pattern
 editor and its associated dialogs.
 """
 
-import gi
-gi.require_version("Gtk", "3.0")
-
 from .toolbar import PatternToolBar
 from .panel import PatternPanel
 from .views import PatternView, PatternDialog, show_pattern_dialog, DLGMODE_NEW, DLGMODE_COPY, DLGMODE_CHANGE

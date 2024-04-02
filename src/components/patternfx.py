@@ -1,11 +1,10 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-from neil.utils import warning
+
+from neil.utils import ui
 from neil.envelope import SimpleEnvelope
 from random import randint
-# from math import *
-# from neil.gtkcodebuffer import CodeBuffer, SyntaxLoader, add_syntax_path
 
 class SimpleRandom():
     __neil__ = dict(
@@ -150,10 +149,10 @@ class Envelope():
             buttons=(Gtk.STOCK_OK, True, Gtk.STOCK_CANCEL, False)
             )
         if len(data) < 2:
-            warning(dialog, "The selection is too short! Select more rows.")
+            ui.warning(dialog, "The selection is too short! Select more rows.")
             return data
         if parameter.get_type() in [0, 1]:
-            warning(dialog, "This column type is not supported by Envelope.")
+            ui.warning(dialog, "This column type is not supported by Envelope.")
             return data
         a = parameter.get_value_min()
         b = parameter.get_value_max()

@@ -1,7 +1,8 @@
 import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from neil.utils import add_scrollbars, get_new_pattern_name
+from neil.utils import ui, get_new_pattern_name
 
 from .view import SequencerView
 from .toolbar import SequencerToolBar
@@ -13,6 +14,8 @@ from neil.common import MARGIN, MARGIN0
 import config
 
 from patterns import show_pattern_dialog, DLGMODE_NEW, DLGMODE_COPY, DLGMODE_CHANGE
+
+
 
 class SequencerPanel(Gtk.VBox):
     """
@@ -64,7 +67,7 @@ class SequencerPanel(Gtk.VBox):
         scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL)
         scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, 0)
 
-        self.splitter.pack1(add_scrollbars(self.seqpatternlist), False, False)
+        self.splitter.pack1(ui.add_scrollbars(self.seqpatternlist), False, False)
         self.splitter.pack2(scrollwin, True, True)
         self.view = self.seqview
         self.toolbar = SequencerToolBar(self.seqview)

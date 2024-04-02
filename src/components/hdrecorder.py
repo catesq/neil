@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -22,13 +20,13 @@
 Provides dialog class for hd recorder control.
 """
 
-import os, stat
 import gi
 gi.require_version("Gtk", "3.0")
-
 from gi.repository import Gtk, GLib
 
-from neil.utils import filepath, new_stock_image_toggle_button, ui
+import os, stat
+
+from neil.utils import filepath, ui
 from neil import common, com
 
 import zzub
@@ -71,7 +69,7 @@ class HDRecorderDialog(Gtk.Dialog):
         btnsaveas.connect("clicked", self.on_saveas)
         textposition = Gtk.Label(label="")
         self.hgroup = ui.ObjectHandlerGroup()
-        self.btnrecord = new_stock_image_toggle_button(Gtk.STOCK_MEDIA_RECORD)
+        self.btnrecord = ui.new_stock_image_toggle_button(Gtk.STOCK_MEDIA_RECORD)
         self.hgroup.connect(self.btnrecord, 'clicked', self.on_toggle_record)
         chkauto = Gtk.CheckButton.new_with_mnemonic("_Auto start/stop")
         chkauto.connect("toggled", self.on_autostartstop)
