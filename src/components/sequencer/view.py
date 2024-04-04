@@ -2,6 +2,7 @@
 
 import gi
 gi.require_version("Gtk", "3.0")
+gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, Gdk, Pango, PangoCairo
 
 import time
@@ -535,13 +536,13 @@ class SequencerView(Gtk.DrawingArea):
             paste_sensitive = True
         else:
             paste_sensitive = False
-        menu = ui.Menu()
-        pmenu = ui.Menu()
-        wavemenu = ui.Menu()
+        menu = ui.EasyMenu()
+        pmenu = ui.EasyMenu()
+        wavemenu = ui.EasyMenu()
         for plugin in sorted(list(player.get_plugin_list()), key=lambda plugin: plugin.get_name().lower()):
             pmenu.add_item(prepstr(plugin.get_name().replace("_", "__")), self.on_popup_add_track, plugin)
         for i, name in enumerate(ui.wave_names_generator()):
-            wavemenu.add_item_no_underline(name, self.on_popup_record_to_wave, i + 1)
+            wavemenu.add_item(name, self.on_popup_record_to_wave, i + 1)
         menu.add_submenu("Add track", pmenu)
         menu.add_item("Delete track", self.on_popup_delete_track)
         menu.add_separator()

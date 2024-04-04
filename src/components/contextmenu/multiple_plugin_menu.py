@@ -17,7 +17,7 @@ from .actions import (
 )
 
 
-class MultiplePluginMenu(ui.Menu):
+class MultiplePluginMenu(ui.EasyMenu):
     __neil__ = dict(
         id = 'neil.core.contextmenu.multipleplugins',
         singleton = False,
@@ -25,7 +25,7 @@ class MultiplePluginMenu(ui.Menu):
     )
 
     def __init__(self, plugins):
-        ui.Menu.__init__(self)
+        ui.EasyMenu.__init__(self)
         player = com.get('neil.core.player')
         router = com.get('neil.core.router.view')
 

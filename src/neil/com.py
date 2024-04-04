@@ -22,7 +22,7 @@ from typing import Dict, List
 from .utils.path_config import path_cfg
 import os,sys,glob
 from configparser import ConfigParser
-import player
+import player, router 
 
 
 SECTION_NAME = 'Neil COM'
@@ -82,6 +82,7 @@ class ComponentManager:
             path_cfg.get_path('components') or os.path.join(path_cfg.get_path('share'), 'components'),
             os.path.expanduser('~/.local/neil/components'),
         ]
+
         for path in component_path:
             print("scanning " + path + " for components")
             if os.path.isdir(path):
@@ -93,6 +94,7 @@ class ComponentManager:
                         packages.append(pkg)
             else:
                 print("no such path: " + path)
+                
         for pkg in packages:
             try:
                 modulename = pkg.module
@@ -202,6 +204,9 @@ class ComponentManager:
     def get_player(self) -> player.NeilPlayer:
         return self.get('neil.core.player')
     
+    def get_router(self) -> router.RouteView:
+        return self.get('neil.core.router.view')
+    
 
     def get_categories() -> Dict[str, List[str]]:
         return com.categories
@@ -225,14 +230,14 @@ clear = com.clear
 def get_player() -> player.NeilPlayer:
     return com.get('neil.core.player')
 
+def get_router() -> router.RouteView:
+    return com.get('neil.core.router.view')
 
 def get_packages():
     return com.packages
 
-
 def get_categories():
     return com.categories
-
 
 def get_factories():
     return com.factories

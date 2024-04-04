@@ -23,6 +23,7 @@ Provides dialogs, classes and controls to edit samples.
 """
 import gi
 gi.require_version('Gtk', '3.0')
+gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, Gdk, Pango, PangoCairo
 
 import os
@@ -117,6 +118,7 @@ class WaveEditView(Gtk.DrawingArea):
         self.right_drag_start = 0
         self.stretching = False
         Gtk.DrawingArea.__init__(self)
+        
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.connect('button-press-event', self.on_button_down)
         self.connect('button-release-event', self.on_button_up)
@@ -126,15 +128,12 @@ class WaveEditView(Gtk.DrawingArea):
         self.connect('scroll-event', self.on_mousewheel)
         self.connect("draw", self.on_draw)
 
-        self.context_menu = ui.Menu()
-
+        self.context_menu = ui.EasyMenu()
         self.menu_delete = self.context_menu.add_item("Delete", self.on_delete_range)
         self.menu_loop = self.context_menu.add_item("Loop", self.on_loop_range)
         self.menu_xfade = self.context_menu.add_item("XFade", self.on_xfade_range)
 
-        player = com.get('neil.core.player')
-
-        item, self.store_submenu = self.context_menu.add_submenu("Store")
+        _, self.store_submenu = self.context_menu.add_submenu("Store")
 
         self.context_menu.add_separator()
 

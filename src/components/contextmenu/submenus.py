@@ -9,7 +9,7 @@ import json
 #used by on_store_selection in actions.py
 def store_selection_submenu(metaplugins):
     router = com.get('neil.core.router.view')
-    store_submenu = ui.Menu()
+    store_submenu = ui.EasyMenu()
 
     for index in range(10):
         store_submenu.add_check_item(f"_{index}", router.has_selection(index), on_store_selection, index, metaplugins)
@@ -20,7 +20,7 @@ def store_selection_submenu(metaplugins):
 #used by on_restore_selection in actions.py
 def restore_selection_submenu():
     router = com.get('neil.core.router.view')
-    restore_submenu = ui.Menu()
+    restore_submenu = ui.EasyMenu()
 
     for index in range(10):
         restore_submenu.add_check_item(f"_{index}", router.has_selection(index), on_restore_selection, index)
@@ -94,7 +94,7 @@ def machine_tree_submenu(connection=False):
     plugin_list = load_plugin_list("plugin_tree.json")
     plugins = {}
     tree = {}
-    submenu = ui.Menu()
+    submenu = ui.EasyMenu()
 
     for pluginloader in player.get_pluginloader_list():
         plugins[pluginloader.get_uri()] = pluginloader

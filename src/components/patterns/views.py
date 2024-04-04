@@ -1,7 +1,9 @@
+import cairo
 import gi
 gi.require_version("Gtk", "3.0")
+gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, Gdk, GLib, Pango, PangoCairo
-import cairo
+
 
 import neil.com as com
 import neil.common as common

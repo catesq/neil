@@ -781,7 +781,7 @@ class WavetablePanel(Gtk.VBox):
             #self.on_load_sample(widget)
         #  Open context menu
         elif (event.button == 3):
-            menu = ui.Menu()
+            menu = ui.EasyMenu()
             menu.add_item("Load Sample", self.on_load_sample)
             menu.add_item("Save Sample", self.on_save_sample)
             menu.add_item("Remove Instrument", self.on_clear)

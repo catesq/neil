@@ -27,6 +27,7 @@ editor and its associated components.
 
 import gi
 gi.require_version('Gtk', '3.0')
+gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo
 
 import random

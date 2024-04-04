@@ -22,6 +22,12 @@ paths = {
     }
 }
 
+envvars = {
+    "linux": {
+        "GDK_BACKEND": "x11",
+    }
+}
+
 # updated_env = False
 
 
@@ -54,6 +60,12 @@ if sys.platform.startswith('linux'):
             # updated_env = True
             paths = path.format(DEST=dest, HOME=home)
             os.environ[key] = remove_symlinks(path.format(DEST=dest, HOME=home))
+
+    for key, val in envvars['linux'].items():
+        if key not in os.environ:
+            # updated_env = True
+            os.environ[key] = val
+    
 
 
 if "ZZUB_LIBRARY_PATH" not in os.environ or "zzub" not in os.environ["ZZUB_LIBRARY_PATH"]:

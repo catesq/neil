@@ -9,7 +9,7 @@ from .actions import on_popup_unmute_all, on_popup_clone_chains
 from .submenus import machine_tree_submenu, restore_selection_submenu, store_selection_submenu
 
 
-class RouterMenu(ui.Menu):
+class RouterMenu(ui.EasyMenu):
     __neil__ = dict(
         id = 'neil.core.contextmenu.router',
         singleton = False,
@@ -17,7 +17,7 @@ class RouterMenu(ui.Menu):
     )
 
     def __init__(self, x, y):
-        ui.Menu.__init__(self)
+        ui.EasyMenu.__init__(self)
 
         router = com.get("neil.core.router.view")
         player = com.get_player()

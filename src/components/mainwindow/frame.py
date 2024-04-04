@@ -64,7 +64,7 @@ class FramePanel(Gtk.Notebook):
 
         for index, panel in enumerate(self.pages):
             if not hasattr(panel, '__view__'):
-                print(("panel",panel,"misses attribute __view__"))
+                print(("panel", panel, "misses attribute __view__"))
                 continue
             options = panel.__view__
             stockid = options['stockid']
@@ -133,8 +133,7 @@ class Accelerators(Gtk.AccelGroup):
 
     def add_accelerator(self, shortcut, widget, signal="activate"):
         key, modifier = Gtk.accelerator_parse(shortcut)
-        return widget.add_accelerator(signal, self,  key,  modifier,
-                                      Gtk.AccelFlags.VISIBLE)
+        return widget.add_accelerator(signal, self,  key,  modifier, Gtk.AccelFlags.VISIBLE)
 
 
 #~class NeilToolbar(Gtk.Toolbar):
@@ -211,6 +210,7 @@ class NeilFrame(Gtk.Window):
 
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
 
+        # 
         com.get('neil.core.player').set_host_info(1, 1, ctypes.c_void_p(hash(self)))
 
         
@@ -229,9 +229,10 @@ class NeilFrame(Gtk.Window):
 
 
         errordlg.install(self)
+
         geometry = Gdk.Geometry()
-        geometry.min_height = 400
-        geometry.min_width = 600
+        geometry.min_height = 800
+        geometry.min_width = 800
         hints = Gdk.WindowHints(3) # WindowHints.POS + WindowsHints.Min_SIZE
 
         self.set_geometry_hints(self, geometry, hints)
@@ -276,59 +277,13 @@ class NeilFrame(Gtk.Window):
         self.accelerators = com.get('neil.core.accelerators')
         self.add_accel_group(self.accelerators)
 
-        # Menu Bar
-        self.neilframe_menubar = Gtk.MenuBar()
-        vbox.pack_start(self.neilframe_menubar, False, True, 0)
-        self.filemenu = Gtk.Menu()
-        filemenuitem = ui.make_submenu_item(self.filemenu, "_File", True)
-        filemenuitem.connect('activate', self.update_filemenu)
-        self.neilframe_menubar.append(filemenuitem)
-        self.update_filemenu(None)
+        # build menu Bar
+        menubar = self.populate_menubar( ui.EasyMenuBar())
+        vbox.pack_start(menubar, False, False, 0)
 
-        self.editmenu = Gtk.Menu()
-        editmenuitem = ui.make_submenu_item(self.editmenu, "_Edit", True)
-        editmenuitem.connect('activate', self.update_editmenu)
-        self.update_editmenu(None)
-        self.neilframe_menubar.append(editmenuitem)
-        tempmenu = com.get('neil.core.viewmenu')
-        self.neilframe_menubar.append(ui.make_submenu_item(tempmenu, "_View", True))
-        self.toolsmenu = Gtk.Menu()
-        item = ui.make_submenu_item(self.toolsmenu, "_Tools", True)
-        item.set_use_underline(True)
-        self.neilframe_menubar.append(item)
-        toolitems = com.get_from_category('menuitem.tool', self.toolsmenu)
-        if not toolitems:
-            item.destroy()
-            
-        tempmenu = Gtk.Menu()
-        tempmenu.append(ui.make_stock_menu_item(Gtk.STOCK_HELP, self.on_help_contents))
-        # Menu item that launches a pdf reader with a document explaining Neil shortcuts
-        #shortcuts_menu_item = Gtk.MenuItem("_Shortcuts")
-        #shortcuts_menu_item.connect('activate', self.on_help_shortcuts)
-        #tempmenu.append(shortcuts_menu_item)
-        irc_menu_item = Gtk.MenuItem("Ask on _IRC")
-        irc_menu_item.set_use_underline(True)
-        irc_menu_item.connect('activate', self.on_irc)
-        tempmenu.append(irc_menu_item)
-        bugreport_menu_item = Gtk.MenuItem("Report a _Bug")
-        bugreport_menu_item.set_use_underline(True)
-        bugreport_menu_item.connect('activate', self.on_bug_report)
-        tempmenu.append(bugreport_menu_item)
-        # Separator
-        tempmenu.append(Gtk.SeparatorMenuItem())
-        donate_menu_item = Gtk.MenuItem("_Donate")
-        donate_menu_item.set_use_underline(True)
-        donate_menu_item.connect('activate', self.on_donate)
-        tempmenu.append(donate_menu_item)
-        tempmenu.append(Gtk.SeparatorMenuItem())
-        # Menu item that launches the about box
-        tempmenu.append(ui.make_stock_menu_item(Gtk.STOCK_ABOUT, self.on_about))
-        self.neilframe_menubar.append(ui.make_submenu_item(tempmenu, "_Help", True))
-
+        # create some panels that are always visible
         self.master = com.get('neil.core.panel.master')
-
         self.statusbar = com.get('neil.core.statusbar')
-
         self.transport = com.get('neil.core.transport')
         self.playback_info = com.get('neil.core.playback')
         self.framepanel = com.get('neil.core.framepanel')
@@ -414,6 +369,7 @@ class NeilFrame(Gtk.Window):
         eventbus.document_loaded()
         #self.print_history()
 
+
     def print_history(self):
         """
         Dumps the current undo history to console.
@@ -433,12 +389,14 @@ class NeilFrame(Gtk.Window):
             print(s)
         print("----")
 
+
     def can_activate_undo(self, *args):
         """
         handler for can-activate-accel signal by Undo menuitem. Checks if undo can be executed.
         """
         player = com.get('neil.core.player')
         return player.can_undo()
+
 
     def can_activate_redo(self, *args):
         """
@@ -447,71 +405,113 @@ class NeilFrame(Gtk.Window):
         player = com.get('neil.core.player')
         return player.can_redo()
 
-    def update_editmenu(self, *args):
+
+    def populate_menubar(self, menubar):
+        menuitem, _ = menubar.add_submenu("_File", ui.EasyMenu(), self.update_filemenu)
+        self.update_filemenu(menuitem)
+
+        menuitem, _ = menubar.add_submenu("_Edit", ui.EasyMenu(), self.update_editmenu)
+        self.update_editmenu(menuitem)
+
+        menubar.add_submenu("_View", com.get('neil.core.viewmenu'))
+
+        _, toolsmenu = menubar.add_submenu("_Tools", Gtk.Menu())
+        com.get_from_category('menuitem.tool', toolsmenu)
+                
+        menubar.add_submenu("_Help", self.populate_help_menu())
+        return menubar
+    
+
+    def populate_help_menu(self):
+        menu = ui.EasyMenu()
+
+        menu.add_stock_image_item(Gtk.STOCK_HELP, self.on_help_contents)
+        menu.add_item('Ask on IRC', self.on_irc)
+        menu.add_separator()
+        menu.add_item('Report a Bug', self.on_bug_report)
+        menu.add_separator()
+        menu.add_item('Donate', self.on_donate)
+        menu.add_separator()
+        menu.add_stock_image_item(Gtk.STOCK_ABOUT, self.on_about)
+
+        return menu
+
+
+
+    def update_editmenu(self, menuitem, *args):
         """
         Updates the edit menu, including the undo menu.
         """
-        for item in self.editmenu:
+        editmenu = ui.easy_menu_wrapper(menuitem.get_submenu())
+
+        for item in editmenu:
             item.destroy()
+            
         player = com.get('neil.core.player')
 
         pos = player.history_get_position()
         self.print_history()
 
         accel = com.get('neil.core.accelerators')
-        item = ui.make_menu_item("Undo", "", self.on_undo)
+        item = editmenu.add_item("Undo", "", self.on_undo)
         accel.add_accelerator("<Control>Z", item)
         if player.can_undo():
             item.get_children()[0].set_label('Undo "%s"' % player.history_get_description(pos-1))
         else:
             item.set_sensitive(False)
         item.connect('can-activate-accel', self.can_activate_undo)
-        self.editmenu.append(item)
 
-        item = ui.make_menu_item("Redo", "", self.on_redo)
+        item = editmenu.add_item("Redo", "", self.on_redo)
         accel.add_accelerator("<Control>Y", item)
         if player.can_redo():
             item.get_children()[0].set_label('Redo "%s"' % player.history_get_description(pos))
         else:
             item.set_sensitive(False)
         item.connect('can-activate-accel', self.can_activate_redo)
-        self.editmenu.append(item)
 
-        self.editmenu.append(Gtk.SeparatorMenuItem())
-        self.editmenu.append(ui.make_stock_menu_item(Gtk.STOCK_CUT, self.on_cut))
-        self.editmenu.append(ui.make_stock_menu_item(Gtk.STOCK_COPY, self.on_copy))
-        self.editmenu.append(ui.make_stock_menu_item(Gtk.STOCK_PASTE, self.on_paste))
-        self.editmenu.append(Gtk.SeparatorMenuItem())
-        self.editmenu.append(ui.make_stock_menu_item(Gtk.STOCK_PREFERENCES, self.on_preferences))
-        self.editmenu.show_all()
+        editmenu.add_separator()
+        editmenu.add_stock_image_item(Gtk.STOCK_CUT, self.on_cut)
+        editmenu.add_stock_image_item(Gtk.STOCK_COPY, self.on_copy)
+        editmenu.add_stock_image_item(Gtk.STOCK_PASTE, self.on_paste)
+        editmenu.add_separator()
+        editmenu.add_stock_image_item(Gtk.STOCK_PREFERENCES, self.on_preferences)
+
+        editmenu.show_all()
+
 
     def page_select(self, notebook, page, page_num, *args):
         new_page = notebook.get_nth_page(page_num)
         if hasattr(new_page, 'page_selected'):
             new_page.page_selected()
 
-    def update_filemenu(self, *args):
+
+    def update_filemenu(self, menuitem, *args):
         """
         Updates the most recent files in the file menu.
 
         @param widget: the Menu item.
         @type widget: Gtk.MenuItem
         """
-        for item in self.filemenu:
+        filemenu = ui.easy_menu_wrapper(menuitem.get_submenu())
+
+        for item in filemenu:
             item.destroy()
-        self.filemenu.append(ui.make_stock_menu_item(Gtk.STOCK_NEW, self.on_new_file, frame=self, shortcut="<Control>N"))
-        self.filemenu.append(ui.make_stock_menu_item(Gtk.STOCK_OPEN, self.on_open, frame=self, shortcut="<Control>O"))
-        self.filemenu.append(ui.make_stock_menu_item(Gtk.STOCK_SAVE, self.on_save, frame=self, shortcut="<Control>S"))
-        self.filemenu.append(ui.make_stock_menu_item(Gtk.STOCK_SAVE_AS, self.on_save_as))
+
+        filemenu.add_stock_image_item(Gtk.STOCK_NEW, self.on_new_file, frame=self, shortcut="<Control>N")
+        filemenu.add_stock_image_item(Gtk.STOCK_OPEN, self.on_open, frame=self, shortcut="<Control>O")
+        filemenu.add_stock_image_item(Gtk.STOCK_SAVE, self.on_save, frame=self, shortcut="<Control>S")
+        filemenu.add_stock_image_item(Gtk.STOCK_SAVE_AS, self.on_save_as)
+
         recent_files = config.get_config().get_recent_files_config()
         if recent_files:
-            self.filemenu.append(Gtk.SeparatorMenuItem())
+            filemenu.add_separator()
             for i,filename in enumerate(recent_files):
                 filetitle=os.path.basename(filename).replace("_","__")
-                self.filemenu.append(ui.make_menu_item("_%i %s" % (i+1,filetitle), "", self.open_recent_file, True, filename))
-        self.filemenu.append(Gtk.SeparatorMenuItem())
-        self.filemenu.append(ui.make_stock_menu_item(Gtk.STOCK_QUIT, self.on_exit, frame=self, shortcut="<Control>Q"))
-        self.filemenu.show_all()
+                filemenu.add_tooltip_item("_%i %s" % (i+1,filetitle), "", self.open_recent_file, True, filename)
+
+        filemenu.add_separator()
+        filemenu.add_stock_image_item(Gtk.STOCK_QUIT, self.on_exit, frame=self, shortcut="<Control>Q")
+        filemenu.show_all()
 
     def get_active_view(self):
         """

@@ -45,7 +45,7 @@ class PackageBrowserDialog(Gtk.Dialog):
     )
 
     def __init__(self, hide_on_delete=True):
-        GObject.GObject.__init__(self, "Component Browser")
+        GObject.__init__(self, "Component Browser")
         if hide_on_delete:
             self.connect('delete-event', self.hide_on_delete)
         self.resize(600, 500)
@@ -138,7 +138,7 @@ class PackageBrowserDialog(Gtk.Dialog):
         if not obj:
             return
         if event.button == 3:
-            menu = ui.Menu()
+            menu = ui.EasyMenu()
             classname = obj.__neil__['id']
             menu.add_item("Test '" + classname + "'", self.test_view, classname)
             menu.popup(self, event)

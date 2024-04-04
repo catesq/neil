@@ -5,16 +5,19 @@ from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject
 
 import neil.com
 import weakref
-
+import types
+from .textify import prepstr
 
 def set_clipboard_text(data):
     clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
     clipboard.set_text(data, len(data))
     clipboard.store()
 
+
 def get_clipboard_text():
     clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
     return clipboard.wait_for_text()
+
 
 def refresh_gui():
     main_context = GLib.MainContext.default()
@@ -128,6 +131,8 @@ class AcceleratorMap:
         #print "unknown shortcut:",name
         return False
 
+
+
 class ObjectHandlerGroup:
     """
     allows to block/unblock a bank of handlers
@@ -180,38 +185,52 @@ class ImageToggleButton(Gtk.ToggleButton):
 
 
 
-class Menu(Gtk.Menu):
-    def add_separator(self):
-        self.append(Gtk.SeparatorMenuItem())
-
-    def add_submenu(self, label, submenu = None, use_underline=True):
+# helper functions shared by the EasyMenu and EasyMenuBar 
+class MenuWrapper:
+    def add_submenu(self, label, submenu = None, func = None, *args) -> tuple[Gtk.MenuItem, Gtk.Menu]:
         if not submenu:
-            submenu = Menu()
-        item = Gtk.MenuItem(label=label, use_underline=True)
+            submenu = Gtk.Menu()
+
+        item = self.add_item(label, func, args)
         item.set_submenu(submenu)
-        self.append(item)
+
         return item, submenu
 
-    def add_item(self, label, func, *args):
-        item = Gtk.MenuItem(label=label, use_underline=True)
-        item.connect('activate', func, *args)
+
+    def add_item(self, label, func = None, *args) -> Gtk.MenuItem:
+        if '_' in label:
+            item = Gtk.MenuItem(label=label, use_underline=True)
+        else:
+            item = Gtk.MenuItem(label=label)
+
+        if func:
+            item.connect('activate', func, *args)
+
         self.append(item)
         return item
+    
 
-    def add_item_no_underline(self, label, func, *args):
-        item = Gtk.MenuItem(label=label, use_underline=False)
-        item.connect('activate', func, *args)
-        self.append(item)
+    def add_tooltip_item(self, label, desc, func, *args) -> Gtk.MenuItem:
+        item = self.add_item(label, func, *args)
+        item.set_tooltip_text(desc)
         return item
 
-    def add_check_item(self, label, toggled, func, *args):
+
+    def add_separator(self) -> Gtk.SeparatorMenuItem:
+        self.append(Gtk.SeparatorMenuItem())
+
+    
+    def add_check_item(self, label, toggled, func, *args) -> Gtk.CheckMenuItem:
+        print("build check item ", label)
+
         item = Gtk.CheckMenuItem(label=label, use_underline=True)
         item.set_active(toggled)
         item.connect('toggled', func, *args)
         self.append(item)
         return item
 
-    def add_image_item(self, label, icon_or_path, func, *args):
+
+    def add_image_item(self, label, icon_or_path, func, *args) -> Gtk.ImageMenuItem:
         print("imagemenu.new_from_stock deprecated", label)
         item = Gtk.ImageMenuItem.new_from_stock(stock_id=label)
         if isinstance(icon_or_path, str):
@@ -223,7 +242,27 @@ class Menu(Gtk.Menu):
         item.connect('activate', func, *args)
         self.append(item)
         return item
+    
+    def add_stock_image_item(self, stockid, func, frame=None, shortcut=None, *args):
+        item = Gtk.ImageMenuItem.new_from_stock(stockid, None)
+        if frame and shortcut:
+            acc = neil.com.get('neil.core.accelerators')
+            acc.add_accelerator(shortcut, item)
+        if func:
+            item.connect('activate', func, *args)
+        self.append(item)
+        return item
 
+
+
+
+
+class EasyMenuBar(Gtk.MenuBar, MenuWrapper):
+    pass
+
+
+
+class EasyMenu(Gtk.Menu, MenuWrapper):
     def popup(self, parent, event=None):
         self.show_all()
         if not self.get_attach_widget():
@@ -234,7 +273,20 @@ class Menu(Gtk.Menu):
         else:
             event_button = 0
             event_time = 0
+
         return super().popup(None, None, None, None, event_button, event_time)
+
+
+
+# the get_submenu() method of Gtk.MenuItem returns a Gtk.Menu
+# so use this to get the EasyMenu methods 
+def easy_menu_wrapper(menu: Gtk.Menu) -> EasyMenu:
+    for name in dir(MenuWrapper):
+        if name.startswith('add'):
+            func = getattr(MenuWrapper, name)
+            setattr(menu, name, types.MethodType(func, menu))
+    return menu
+
 
 
 def wave_names_generator():
@@ -316,9 +368,6 @@ class PropertyEventHandler(type):
 
 
 
-
-
-
 def run_function_with_progress(parent, msg, allow_cancel, func, *args):
     """
     Shows a progress dialog.
@@ -366,6 +415,7 @@ def run_function_with_progress(parent, msg, allow_cancel, func, *args):
     dialog.destroy()
     return response
 
+
 def gettext(parent, msg, text=''):
     """
     Shows a dialog to get some text.
@@ -393,6 +443,7 @@ def gettext(parent, msg, text=''):
     if response:
         return text
 
+
 def question(parent, msg, allowcancel = True):
     """
     Shows a question dialog.
@@ -409,6 +460,7 @@ def question(parent, msg, allowcancel = True):
     response = dialog.run()
     dialog.destroy()
     return response
+
 
 def error(parent, msg, msg2=None, details=None):
     """
@@ -441,6 +493,7 @@ def error(parent, msg, msg2=None, details=None):
     dialog.destroy()
     return response
 
+
 def message(parent, msg):
     """
     Shows an info message dialog.
@@ -453,6 +506,7 @@ def message(parent, msg):
     response = dialog.run()
     dialog.destroy()
     return response
+
 
 def warning(parent, msg):
     """
@@ -467,6 +521,7 @@ def warning(parent, msg):
     dialog.destroy()
     return response
 
+
 def new_listview(columns):
     """
     Creates a list store with multiple columns.
@@ -476,6 +531,7 @@ def new_listview(columns):
     store, columncontrols = new_liststore(treeview, columns)
     return treeview,store,columncontrols
 
+
 def new_combobox(columns):
     """
     Creates a combobox.
@@ -483,6 +539,7 @@ def new_combobox(columns):
     combobox = Gtk.ComboBox()
     store, columncontrols = new_liststore(combobox, columns)
     return combobox
+
 
 def new_liststore(view, columns):
     """
@@ -548,6 +605,7 @@ def new_liststore(view, columns):
         view.set_search_column(0)
     return liststore, columncontrols
 
+
 def new_image_button(path, tooltip, width=20, height=20):
     """
     Creates a button with a single image.
@@ -559,6 +617,7 @@ def new_image_button(path, tooltip, width=20, height=20):
     button.set_image(image)
     return button
 
+
 def new_stock_image_button(stockid, tooltip=None):
     """
     Creates a button with a stock image.
@@ -569,6 +628,7 @@ def new_stock_image_button(stockid, tooltip=None):
     button.set_image(image)
     button.set_tooltip_text(tooltip)
     return button
+
 
 def new_stock_image_toggle_button(stockid, tooltip=None, tooltips_object=None):
     """
@@ -584,6 +644,7 @@ def new_stock_image_toggle_button(stockid, tooltip=None, tooltips_object=None):
         button.set_tooltip_text(tooltip)
     return button
 
+
 def new_image_toggle_button(path, tooltip=None, width=24, height=24):
     """
     Creates a toggle button with a single image.
@@ -596,6 +657,7 @@ def new_image_toggle_button(path, tooltip=None, width=24, height=24):
     button.set_image(image)
     return button
 
+
 def new_theme_image(name,size):
     theme = Gtk.IconTheme.get_default()
     image = Gtk.Image()
@@ -603,6 +665,7 @@ def new_theme_image(name,size):
         pixbuf = theme.load_icon(name, size, 0)
         image.set_from_pixbuf(pixbuf)
     return image
+
 
 def new_theme_image_toggle_button(name, tooltip=None, tooltips_object=None):
     """
@@ -617,6 +680,7 @@ def new_theme_image_toggle_button(name, tooltip=None, tooltips_object=None):
     button.set_image(image)
     return button
 
+
 def get_item_count(model):
     """
     Returns the number of items contained in a tree model.
@@ -628,6 +692,7 @@ def get_item_count(model):
     count = Count()
     model.foreach(inc_count,count)
     return count.value
+
 
 def add_scrollbars(view):
     """
@@ -642,6 +707,7 @@ def add_scrollbars(view):
         scrollwin.add_with_viewport(view)
     return scrollwin
 
+
 def add_vscrollbar(view):
     """
     adds a vertical scrollbar to a view
@@ -655,6 +721,7 @@ def add_vscrollbar(view):
         scrollwin.add_with_viewport(view)
     return scrollwin
 
+
 def add_hscrollbar(view):
     """
     adds a vertical scrollbar to a view
@@ -667,6 +734,7 @@ def add_hscrollbar(view):
     else:
         scrollwin.add_with_viewport(view)
     return scrollwin
+
 
 def file_filter(name,*patterns):
     ff = Gtk.FileFilter()

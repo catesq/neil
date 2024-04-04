@@ -27,7 +27,7 @@ from .actions import (
 )
 
 
-class SinglePluginMenu(ui.Menu):
+class SinglePluginMenu(ui.EasyMenu):
     __neil__ = dict(
         id = 'neil.core.contextmenu.singleplugin',
         singleton = False,
@@ -35,7 +35,7 @@ class SinglePluginMenu(ui.Menu):
     )
 
     def __init__(self, metaplugin):
-        ui.Menu.__init__(self)
+        ui.EasyMenu.__init__(self)
         player = com.get('neil.core.player')
 
         self.add_check_item("_Mute", player.plugin_is_muted(metaplugin), on_popup_mute, metaplugin)
@@ -68,7 +68,7 @@ class SinglePluginMenu(ui.Menu):
             self.add_separator()
             self.add_check_item("Default Target", player.autoconnect_target == metaplugin, on_popup_set_target, metaplugin)
 
-        router = com.get('neil.core.router.view')
+        router = com.get_router()
         if router.selection_count() > 0:
             self.add_separator()
             self.add_submenu("_Restore selection", restore_selection_submenu())
@@ -80,8 +80,8 @@ class SinglePluginMenu(ui.Menu):
             for index in range(len(commands)):
                 cmd = commands[index]
                 if cmd.startswith('/'):
-                    item, submenu = menu.add_submenu(prepstr(cmd[1:], fix_underscore=True))
-                    subcommands = mp.get_sub_commands(index).split('\n')
+                    item, submenu = self.add_submenu(prepstr(cmd[1:], fix_underscore=True))
+                    subcommands = metaplugin.get_sub_commands(index).split('\n')
                     submenuindex += 1
                     for subindex in range(len(subcommands)):
                         subcmd = subcommands[subindex]

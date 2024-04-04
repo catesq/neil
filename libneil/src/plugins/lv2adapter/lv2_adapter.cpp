@@ -560,8 +560,10 @@ lv2_adapter::get_param_port(std::string symbol) {
     return nullptr;
 }
 
+
 void lv2_adapter::stop() {
 }
+
 
 void lv2_adapter::update_port(param_port *port, float float_val) {
     printf("Update port: index=%d, name='%s', value=%f\r", port->paramIndex, port->name.c_str(), float_val);
@@ -573,6 +575,7 @@ void lv2_adapter::update_port(param_port *port, float float_val) {
     //    port->putData((uint8_t*) global_values, zzub_val);
     //    _host->control_change(metaPlugin, 1, 0, port->paramIndex, zzub_val, false, true);
 }
+
 
 void lv2_adapter::process_events() {
     if (halting || !initialized)
@@ -639,6 +642,7 @@ void lv2_adapter::send_midi_events() {
     midiEvents.reset();
 }
 
+
 // inline LV2_Atom* populatePosBuf(PluginWorld *world, LV2_Atom_Forge *forge, PlaybackPosition &info) {
 //     static uint8_t pos_buf[256];
 //     /* Build an LV2 position object to report change to plugin */
@@ -672,9 +676,11 @@ void lv2_adapter::send_midi_events() {
 //     return (LV2_Atom*) pos_buf;
 // }
 
+
 bool lv2_adapter::process_offline(float **pin, float **pout, int *numsamples, int *channels, int *samplerate) {
     return false;
 }
+
 
 bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int const mode) {
     if (halting || mode == zzub::process_mode_no_io)
@@ -726,6 +732,7 @@ bool lv2_adapter::process_stereo(float **pin, float **pout, int numsamples, int 
     return true;
 }
 
+
 struct lv2plugincollection : zzub::plugincollection {
     lv2_lilv_world *world = lv2_lilv_world::get_instance();
 
@@ -745,10 +752,12 @@ struct lv2plugincollection : zzub::plugincollection {
     virtual void destroy() { delete this; }
 };
 
+
 zzub::plugincollection *
 zzub_get_plugincollection() {
     return new lv2plugincollection();
 }
+
 
 const char *
 zzub_get_signature() {

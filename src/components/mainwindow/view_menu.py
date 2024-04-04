@@ -15,8 +15,9 @@ from neil.utils import ui
 
 from .cmp import cmp_view
 
-# auto fills the view menu - find any components with a "__neil__" property which have the category "view". Example in "src/components/patterns/panel.py"
-class ViewMenu(ui.Menu):
+# auto populates the view menu
+# find any components with a "__neil__" property which have the category "view". Example in "src/components/patterns/panel.py"
+class ViewMenu(ui.EasyMenu):
     __neil__ = dict(
         id = 'neil.core.viewmenu',
         singleton = True,
@@ -43,7 +44,7 @@ class ViewMenu(ui.Menu):
             view.show_all()
 
     def __init__(self):
-        ui.Menu.__init__(self)
+        ui.EasyMenu.__init__(self)
         views = sorted(com.get_from_category('view'), key=cmp_to_key(cmp_view))
         com.get("neil.core.icons") # make sure theme icons are loaded
         accel = com.get('neil.core.accelerators')
@@ -52,6 +53,7 @@ class ViewMenu(ui.Menu):
             if not hasattr(view, '__view__'):
                 print(("view",view,"misses attribute __view__"))
                 continue
+            
             options = view.__view__
             label = options['label']
             stockid = options.get('stockid', None)
