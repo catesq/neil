@@ -221,8 +221,6 @@ class MenuWrapper:
 
     
     def add_check_item(self, label, toggled, func, *args) -> Gtk.CheckMenuItem:
-        print("build check item ", label)
-
         item = Gtk.CheckMenuItem(label=label, use_underline=True)
         item.set_active(toggled)
         item.connect('toggled', func, *args)
@@ -243,6 +241,7 @@ class MenuWrapper:
         self.append(item)
         return item
     
+
     def add_stock_image_item(self, stockid, func, frame=None, shortcut=None, *args):
         item = Gtk.ImageMenuItem.new_from_stock(stockid, None)
         if frame and shortcut:

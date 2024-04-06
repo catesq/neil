@@ -30,7 +30,8 @@ def restore_selection_submenu():
 
 #used by machine_tree_submenu below
 def load_plugin_list(filename):
-    for dirname in ["", os.path.dirname(os.path.realpath(__file__)), settingspath]:
+    for dirname in ["", os.path.dirname(os.path.realpath(__file__)), settingspath()]:
+        print(dirname, filename)
         if os.path.isfile(os.path.join(dirname, filename)):
             with open(os.path.join(dirname, filename), "r") as jsonfile:
                 return json.load(jsonfile)

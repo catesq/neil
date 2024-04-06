@@ -504,6 +504,7 @@ class ParameterView(Gtk.VBox):
             nl,s,vl = self.pid2ctrls[(g,t,i)]
             s.grab_focus()
         elif event.button == 3:
+            print("this is the menu")
             nl,s,vl = self.pid2ctrls[(g,t,i)]
             menu = Gtk.Menu()
             def make_submenu_item(submenu, name):
@@ -515,6 +516,7 @@ class ParameterView(Gtk.VBox):
                 if func:
                     item.connect('activate', func, *args)
                 return item
+            
             evbinds = self.get_event_connection_bindings(g,t,i)
             if g == 3:
                 for conn,c in evbinds:
