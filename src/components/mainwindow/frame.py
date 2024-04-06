@@ -507,7 +507,7 @@ class NeilFrame(Gtk.Window):
             filemenu.add_separator()
             for i,filename in enumerate(recent_files):
                 filetitle=os.path.basename(filename).replace("_","__")
-                filemenu.add_tooltip_item("_%i %s" % (i+1,filetitle), "", self.open_recent_file, True, filename)
+                filemenu.add_item("_%i %s" % (i+1,filetitle), self.open_recent_file, filename)
 
         filemenu.add_separator()
         filemenu.add_stock_image_item(Gtk.STOCK_QUIT, self.on_exit, frame=self, shortcut="<Control>Q")

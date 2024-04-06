@@ -189,7 +189,7 @@ class ImageToggleButton(Gtk.ToggleButton):
 class MenuWrapper:
     def add_submenu(self, label, submenu = None, func = None, *args) -> tuple[Gtk.MenuItem, Gtk.Menu]:
         if not submenu:
-            submenu = Gtk.Menu()
+            submenu = EasyMenu()
 
         item = self.add_item(label, func, args)
         item.set_submenu(submenu)
