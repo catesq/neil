@@ -7,6 +7,7 @@ namespace zzub {
 /*! \struct CcmWriter
     \brief .CCM exporter
   */
+ 
 xml_node CcmWriter::saveHead(xml_node &parent, zzub::song &player) {
     if (strlen(player.song_comment.c_str())) {
         // save song info
@@ -689,6 +690,7 @@ bool CcmWriter::save(std::string fileName, zzub::player* player) {
     xml_node xmix = xml.append_child(node_element);
     xmix.set_name("xmix");
     xmix.append_attribute("xmlns:xmix") = "http://www.zzub.org/ccm/xmix";
+    xmix.append_attribute("version") = zzub::ccm_version.c_str();
 
     // save meta information
     saveHead(xmix, player->front);

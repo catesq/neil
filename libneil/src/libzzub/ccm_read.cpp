@@ -8,6 +8,9 @@ namespace zzub {
 /*! \struct CcmReader
     \brief .CCM importer
   */
+
+
+
 void CcmReader::registerNodeById(xml_node &item) {
     if (!item.attribute("id").empty()) {
         assert(getNodeById(item.attribute("id").value()).empty()); // make sure no other node has the same id
@@ -706,6 +709,15 @@ bool CcmReader::open(std::string fileName, zzub::player* player) {
             xml_document xml;
             if (xml.load_string(xmldata)) {
                 xml_node xmix = xml.child("xmix");
+                if(!xmix.attribute("version").empty()) {
+                    // scan version attribute into major and minor version
+                    int num_tokens = sscanf(xmix.attribute("version").value(), "%d.%d", &major_version, &minor_version);
+                    
+                    if (num_tokens != 2) {
+                        std::cerr << "ccm: error parsing version attribute in song.xmix from " << fileName << std::endl;
+                    }
+                }
+
                 if (!xmix.empty()) {
                     xmix.traverse(*this); // collect all ids
 

@@ -1,8 +1,12 @@
 #pragma once
 
+#include <string>
+
 #include "zzub/zzub.h"
 
 namespace zzub {
+
+inline const std::string ccm_version = "0.1";
 
 enum {
     // Current version of the zzub interface. Pass this to the

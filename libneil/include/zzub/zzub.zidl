@@ -5,6 +5,8 @@ namespace zzub:
 		set version = 15
 		set buffer_size = 256
 		set default_rate = 48000
+		set ccm_minor = 0
+		set ccm_major = 0
 
 	enum EventType:
 		set pre_flag = 16384

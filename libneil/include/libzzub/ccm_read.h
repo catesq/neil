@@ -49,6 +49,9 @@ class CcmReader : pugi::xml_tree_walker {
     typedef std::map<std::string, xml_node> idnodemap;
     idnodemap nodes;
 
+    int major_version = 0; // if these are both 0 it uses the original loader settings
+    int minor_version = 0; 
+
     void registerNodeById(xml_node &item);
     xml_node getNodeById(const std::string &id);
     virtual bool for_each(xml_node&);
@@ -58,6 +61,8 @@ class CcmReader : pugi::xml_tree_walker {
     bool loadInstruments(xml_node &instruments, zzub::player &player);
     bool loadSequencer(xml_node &seq, zzub::player &player);
 public:
+    CcmReader();
+
     bool open(std::string fileName, zzub::player* player);
 };
 
