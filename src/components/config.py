@@ -354,6 +354,8 @@ class NeilConfig(configparser.ConfigParser):
             traceback.print_exc()
             self.select_theme(None)
 
+
+    # used by generate_config_method to read config values defined in CONFIG_OPTIONS
     def getter(self, section, option, vtype, onget, defvalue):
         self.set_section(section)
         value = self.read_value(option, defvalue)
@@ -365,7 +367,9 @@ class NeilConfig(configparser.ConfigParser):
         if onget:
             value = onget(value)
         return value
+    
 
+    # used by generate_config_method to write config values defined in CONFIG_OPTIONS
     def setter(self, section, option, vtype, onset, value):
         if onset:
             value = onset(value)
@@ -379,6 +383,8 @@ class NeilConfig(configparser.ConfigParser):
         self.write_value(option, str(value))
         self.flush()
 
+
+    # used by generate_config_method to read config values defined in CONFIG_OPTIONS as lists
     def listgetter(self, section, option, vtype, onget):
         self.set_section(section)
         values = []
@@ -394,6 +400,8 @@ class NeilConfig(configparser.ConfigParser):
                 values.append(value)
         return values
 
+
+    # used by generate_config_method to write config values defined in CONFIG_OPTIONS as lists
     def listsetter(self, section, option, vtype, onset, values):
         self.delete_section(section)
         self.set_section(section)
@@ -412,6 +420,7 @@ class NeilConfig(configparser.ConfigParser):
     def set_section(self, section):
         self._section = section
 
+    # remove all settings for a specific section before writing new settings
     def delete_section(self, section):
         if not self.has_section(section):
             return
