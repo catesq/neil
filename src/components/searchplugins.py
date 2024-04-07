@@ -26,7 +26,7 @@ from gi.repository import Gtk, Gdk, GdkPixbuf
 from functools import cmp_to_key
 
 from neil.utils import  (
-    is_generator, is_effect, is_controller, is_other, 
+    is_generator, is_effect, is_other, 
     prepstr, get_adapter_name, ui
 )
 
@@ -98,8 +98,8 @@ class SearchPluginsDialog(Gtk.Window):
         box_container.pack_end(self.check_containers[2], True, False, 0)
         self.vbox.pack_end(box_container, False, False, 0)
 
-        self.machine_types = ["Generators", "Effects", "Controllers", "Others"]
-        self.machine_type_check = dict(zip(self.machine_types, [is_generator, is_effect, is_controller, is_other]))
+        self.machine_types = ["Generators", "Effects", "Others"]
+        self.machine_type_check = dict(zip(self.machine_types, [is_generator, is_effect, is_other]))
 
         # labels and adapger names must be in the same order
         labels = ['Zzub', 'Ladspa', 'Dssi', 'LV2', 'VST 2', 'VST3']
@@ -276,8 +276,8 @@ class SearchPluginsDialog(Gtk.Window):
         def get_rating(pluginloader):
             if is_generator(pluginloader):
                 return 0
-            elif is_controller(pluginloader):
-                return 1
+            # elif is_controller(pluginloader):
+            #     return 1
             elif is_effect(pluginloader):
                 return 2
             else:
@@ -300,8 +300,8 @@ class SearchPluginsDialog(Gtk.Window):
                 return '<span color="' + cfg.get_color('MV Generator') + '">Generator</span>'
             elif is_effect(pluginloader):
                 return '<span color="' + cfg.get_color('MV Effect') + '">Effect</span>'
-            elif is_controller(pluginloader):
-                return '<span color="' + cfg.get_color('MV Controller') + '">Controller</span>'
+            # elif is_controller(pluginloader):
+            #     return '<span color="' + cfg.get_color('MV Controller') + '">Controller</span>'
             else:
                 return '<span color="' + cfg.get_color('MV Other') + '">Other</span>'
 
