@@ -262,7 +262,7 @@ class EasyMenuBar(Gtk.MenuBar, MenuWrapper):
 
 
 class EasyMenu(Gtk.Menu, MenuWrapper):
-    def popup(self, parent, event=None):
+    def easy_popup(self, parent, event=None):
         self.show_all()
         if not self.get_attach_widget():
             self.attach_to_widget(parent and parent.get_toplevel(), None)
@@ -273,7 +273,7 @@ class EasyMenu(Gtk.Menu, MenuWrapper):
             event_button = 0
             event_time = 0
 
-        return super().popup(None, None, None, None, event_button, event_time)
+        return super().popup(None, None, None, None, button=event_button, activate_time=event_time)
 
 
 

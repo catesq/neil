@@ -571,7 +571,7 @@ class ParameterView(Gtk.VBox):
                     menu.append(make_menu_item("_Unbind Parameter from Controller", "", self.on_unbind_event_connection_binding, (g, t, i)))
             menu.show_all()
             menu.attach_to_widget(self, None)
-            menu.popup(None, None, None, event.button, event.time)
+            menu.popup(None, None, None, None, button=event.button, activate_time=event.time)
             return True
 
     def update_presets(self):

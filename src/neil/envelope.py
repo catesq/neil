@@ -33,6 +33,7 @@ import zzub
 import config
 from . import common
 from .common import MARGIN, MARGIN2, MARGIN3
+from neil.utils import ui
 
 import neil.com as com
 
@@ -58,7 +59,7 @@ class SimpleEnvelope(Gtk.DrawingArea):
         self.connect('enter-notify-event', self.on_enter)
         self.connect('leave-notify-event', self.on_leave)
         self.connect('draw', self.on_draw)
-        self.context_menu = Gtk.Menu()
+        self.context_menu = ui.EasyMenu()
         self.reset = Gtk.MenuItem("Reset")
         self.reset.show()
         self.reset.connect('button-press-event', self.on_reset)
@@ -134,7 +135,7 @@ class SimpleEnvelope(Gtk.DrawingArea):
             if i == None:
                 return
             if location == NEXT:
-                self.context_menu.popup(None, None, None, event.button, event.time)
+                self.context_menu.easy_popup(self, event.button)
             else:
                 del self.envelope[i]
 
@@ -430,11 +431,11 @@ class EnvelopeView(Gtk.DrawingArea):
             if location == NEXT:
                 self.sustain.hide()
                 self.delete.hide()
-                self.context_menu.popup(None, None, None, event.button, event.time)
+                self.context_menu.easy_popup(self, event)
             else:
                 self.sustain.show()
                 self.delete.show()
-                self.context_menu.popup(None, None, None, event.button, event.time)
+                self.context_menu.easy_popup(self, event)
 
     def on_button_up(self, widget, event):
         """
