@@ -346,7 +346,6 @@ class NeilConfig(configparser.ConfigParser):
         self.filename = os.path.join(
             self.get_settings_folder(), 'settings.cfg')
         self.read([self.filename])
-        print("config", self.filename)
         self._section = ''
         try:
             self.select_theme(self.get_active_theme())  # pylint: disable=no-member
