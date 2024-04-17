@@ -9,7 +9,7 @@ from .toolbar import SequencerToolBar
 from .utils import Seq
 from .pattern_list import SequencerPatternListTreeView
 
-from neil.com import com
+from neil.main import components
 from neil.common import MARGIN, MARGIN0
 import config
 
@@ -86,7 +86,7 @@ class SequencerPanel(Gtk.VBox):
         self.toolbar.update_all()
         self.seqview.connect('size-allocate', self.on_sash_pos_changed)
         self.seqview.grab_focus()
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.edit_sequence_request += self.edit_sequence_request
 
     def jump_to_patterm(self, pattern_num):
@@ -114,7 +114,7 @@ class SequencerPanel(Gtk.VBox):
         pattern = plugin.create_pattern(length)
         pattern.set_name(name)
         plugin.add_pattern(pattern)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.history_commit("new pattern")
 
     ## called from on)clone in SequencerTreeView
@@ -135,7 +135,7 @@ class SequencerPanel(Gtk.VBox):
         p = m.get_pattern(pattern)
         p.set_name(name)
         m.add_pattern(p)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.history_commit("clone pattern")
 
 
@@ -155,7 +155,7 @@ class SequencerPanel(Gtk.VBox):
         
         self.plugin.set_pattern_name(pattern, name)
         self.plugin.set_pattern_length(pattern, length)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.history_commit("change pattern properties")
         self.view.redraw()
 
@@ -163,11 +163,11 @@ class SequencerPanel(Gtk.VBox):
         widget.grab_focus()
 
     def edit_sequence_request(self, track=None, row=None):
-        framepanel = com.get('neil.core.framepanel')
+        framepanel = components.get('neil.core.framepanel')
         framepanel.select_viewpanel(self)
         #TODO: add active_tracks option to allow track, row position change
         #player.active_tracks = [(track, row)]
-        #framepanel = com.get('neil.core.framepanel')
+        #framepanel = components.get('neil.core.framepanel')
         #framepanel.select_viewpanel(self)
 
     def handle_focus(self):

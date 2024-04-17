@@ -1,7 +1,6 @@
 
 import zzub
-from neil.com import com
-import neil.common as common
+from neil.main import components
 from neil.utils import is_generator, is_root, is_effect, prepstr, ui
 
 
@@ -36,7 +35,7 @@ class SinglePluginMenu(ui.EasyMenu):
 
     def __init__(self, metaplugin):
         ui.EasyMenu.__init__(self)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
 
         self.add_check_item("_Mute", player.plugin_is_muted(metaplugin), on_popup_mute, metaplugin)
 
@@ -68,7 +67,7 @@ class SinglePluginMenu(ui.EasyMenu):
             self.add_separator()
             self.add_check_item("Default Target", player.autoconnect_target == metaplugin, on_popup_set_target, metaplugin)
 
-        router = com.get_router()
+        router = components.get_router()
         if router.selection_count() > 0:
             self.add_separator()
             self.add_submenu("_Restore selection", restore_selection_submenu())

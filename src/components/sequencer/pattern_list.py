@@ -1,7 +1,7 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-from neil.com import com
+from neil.main import components
 
 
 # a couple of helper function for the context menu
@@ -37,7 +37,7 @@ def on_clear(item, treeview, pattern_index):
     plugin = treeview.sequencer_panel.get_active_plugin()
     clear_pattern(plugin, pattern_index)
 
-    player = com.get('neil.core.player')
+    player = components.get('neil.core.player')
     player.history_commit("clear pattern")
 
 
@@ -45,7 +45,7 @@ def on_clear(item, treeview, pattern_index):
 def on_delete(item, treeview, pattern_index):
     if pattern_index >= 0:
         treeview.sequencer_panel.get_active_plugin().remove_pattern(pattern_index)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.history_commit("remove pattern")
         treeview.update_list()
 
@@ -56,7 +56,7 @@ def on_clear_list(item, treeview, pattern_indexes):
     for index in pattern_indexes:
         clear_pattern(plugin, index)
 
-    player = com.get('neil.core.player')
+    player = components.get('neil.core.player')
     player.history_commit("clear patterns")
 
 
@@ -70,7 +70,7 @@ def on_delete_list(item, treeview, pattern_indexes):
     for pattern_index in pattern_indexes:
         treeview.sequencer_panel.get_active_plugin().remove_pattern(pattern_index)
 
-    player = com.get('neil.core.player')
+    player = components.get('neil.core.player')
     player.history_commit("remove patterns")
     treeview.update_list()
 

@@ -36,7 +36,7 @@ import config
 from neil.envelope import EnvelopeView
 from neil.waveedit import WaveEditPanel
 from neil.common import MARGIN, MARGIN2, MARGIN3
-import neil.com as com
+from neil.main import components
 
 class WavetablePanel(Gtk.VBox):
     """
@@ -274,7 +274,7 @@ class WavetablePanel(Gtk.VBox):
             except:
                 print(("couldn't set current sample browser path: '%s'." % currentpath))
 
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_wave_allocated += self.update_samplelist
         eventbus.zzub_wave_allocated += self.update_sampleprops
         eventbus.zzub_wave_allocated += self.envelope.update
@@ -308,7 +308,7 @@ class WavetablePanel(Gtk.VBox):
 
     def handle_focus(self):
         self.samplelist.grab_focus()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if player.active_waves == []:
             self.samplelist.get_selection().select_path(0)
         else:
@@ -352,7 +352,7 @@ class WavetablePanel(Gtk.VBox):
         """
         Returns a list with currently selected sample indices.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         return [w.get_index() for w in player.active_waves]
 
     def get_samplelist_selection(self):
@@ -409,7 +409,7 @@ class WavetablePanel(Gtk.VBox):
         if data_entry.run() == Gtk.ResponseType.OK:
             try:
                 selects = self.get_sample_selection()
-                player = com.get('neil.core.player')
+                player = components.get('neil.core.player')
 
                 sourceIdx = self.get_sample_selection()[0]
                 targetIdx = int("0x" + data_entry.edit.get_text(), 16) - 1
@@ -440,7 +440,7 @@ class WavetablePanel(Gtk.VBox):
         """
         Renames currently selected sample.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         selects = self.get_sample_selection()
         if not(selects) or len(selects) > 1:
             return
@@ -468,7 +468,7 @@ class WavetablePanel(Gtk.VBox):
             v = min(max(int(self.edsamplerate.get_text()), 50), 200000)
         except ValueError:
             return
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for i in self.get_sample_selection():
             w = player.get_wave(i)
             if w.get_level_count() >= 1:
@@ -489,7 +489,7 @@ class WavetablePanel(Gtk.VBox):
         except ValueError:
             print("invalid value.")
             return
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for i in self.get_sample_selection():
             w = player.get_wave(i)
             if w.get_level_count() >= 1:
@@ -511,7 +511,7 @@ class WavetablePanel(Gtk.VBox):
         except ValueError:
             print("invalid value.")
             return
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for i in self.get_sample_selection():
             w = player.get_wave(i)
             if w.get_level_count() >= 1:
@@ -525,7 +525,7 @@ class WavetablePanel(Gtk.VBox):
         """
         Callback of checkbox that enables or disables bidirectional looping for the selected sample.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for i in self.get_sample_selection():
             w = player.get_wave(i)
             flags = w.get_flags()
@@ -541,7 +541,7 @@ class WavetablePanel(Gtk.VBox):
         """
         Callback of checkbox that enables or disables looping for the selected sample.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for i in self.get_sample_selection():
             w = player.get_wave(i)
             flags = w.get_flags()
@@ -557,7 +557,7 @@ class WavetablePanel(Gtk.VBox):
         """
         Callback of checkbox that enables or disables the envelope for the selected sample.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for i in self.get_sample_selection():
             w = player.get_wave(i)
             if w.get_envelope_count() == 0:
@@ -577,7 +577,7 @@ class WavetablePanel(Gtk.VBox):
         @param event: CommandEvent event
         @type event: wx.CommandEvent
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         vol = db2linear(int(value) / 100.0)
         for i in self.get_sample_selection():
             w = player.get_wave(i)
@@ -612,7 +612,7 @@ class WavetablePanel(Gtk.VBox):
                 return
         elif ui.question(self, '<b><big>Really delete instrument?</big></b>', False) != Gtk.ResponseType.YES:
             return
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for i in sel:
             player.get_wave(i).clear()
         if len(sel) > 1:
@@ -637,7 +637,7 @@ class WavetablePanel(Gtk.VBox):
         """
         # master = player.get_plugin(0)
         # vol = -76.0 * (master.get_parameter_value(1, 0, 0) / 16384.0)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         vol = min(max(config.get_config().get_sample_preview_volume(), -76.0), 0.0)
         amp = db2linear(vol, limit= -76.0)
         #player.set_wave_amp(amp)
@@ -652,7 +652,7 @@ class WavetablePanel(Gtk.VBox):
         """
         Callback of a button that plays the currently selected sample in the sample list.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         selects = self.get_sample_selection()
         if selects:
             w = player.get_wave(selects[0])
@@ -664,7 +664,7 @@ class WavetablePanel(Gtk.VBox):
         """
         Callback of a button that stops playback of a wave file that is currently playing.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.stop_preview()
 
     def on_save_sample(self, widget):
@@ -675,7 +675,7 @@ class WavetablePanel(Gtk.VBox):
         @param event: Command event
         @type event: wx.CommandEvent
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         selects = self.get_sample_selection()
         for s in selects:
             w = player.get_wave(s)
@@ -715,7 +715,7 @@ class WavetablePanel(Gtk.VBox):
         elif len(selects) > len(samplepaths):
             selects = selects[:len(samplepaths)]
         assert len(selects) == len(samplepaths)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for source, target in zip(samplepaths, selects):
             w = player.get_wave(target)
             w.clear()
@@ -796,7 +796,7 @@ class WavetablePanel(Gtk.VBox):
         Previews a sample from the filesystem.
         """
         base, ext = os.path.splitext(path)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         # (4 << 4) + 1 ?
         if not player.preview_file(path):
             ui.error(self, "<b><big>Unable to preview <i>%s</i>.</big></b>\n\nThe file may be corrupt or the file type is not supported." % path)
@@ -908,7 +908,7 @@ class WavetablePanel(Gtk.VBox):
         sel = self.get_sample_selection()
         if not sel:
             return
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         w = player.get_wave(sel[0])
         for i in range(w.get_level_count()):
             level = w.get_level(i)
@@ -924,7 +924,7 @@ class WavetablePanel(Gtk.VBox):
         Includes volume slider and looping properties.
         """
         block = self.ohg.autoblock()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         sel = self.get_sample_selection()
         if not sel:
             sel = -1
@@ -998,7 +998,7 @@ class WavetablePanel(Gtk.VBox):
         @param event: Command event
         @type event: wx.CommandEvent
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.active_waves = self.get_samplelist_selection()
 
     def update_samplelist(self, *args):
@@ -1007,7 +1007,7 @@ class WavetablePanel(Gtk.VBox):
         """
         # update sample list
         block = self.ohg.autoblock()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         selection = self.samplelist.get_selection()
         iter = self.samplestore.get_iter_first()
         if not iter: # empty
@@ -1034,7 +1034,7 @@ class WavetablePanel(Gtk.VBox):
         Stretches the sample so it fits the loop
         """
         import math
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         bpm = player.get_bpm()
         for sel in self.get_sample_selection():
             w = player.get_wave(sel)
@@ -1062,7 +1062,7 @@ class WavetablePanel(Gtk.VBox):
         the loop.
         """
         import math
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         bpm = player.get_bpm()
         for sel in self.get_sample_selection():
             w = player.get_wave(sel)

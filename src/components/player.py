@@ -25,7 +25,7 @@ from neil.utils.ui import PropertyEventHandler, refresh_gui
 
 from zzub import Player
 
-import neil.com as com
+from neil.main import components
 import neil.common as common
 import os
 import sys
@@ -153,7 +153,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
                     args.append(argname)
             self.event_id_to_name[val] = (eventname, membername, args)
             #print "'%s', # ( %s )" % (eventname, ','.join(args + ["..."]))
-        config = com.get('neil.core.config')
+        config = components.get('neil.core.config')
         pluginpath = os.environ.get('NEIL_PLUGIN_PATH', None)
         if pluginpath:
             pluginpaths = pluginpath.split(os.pathsep)
@@ -190,7 +190,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self.playstarttime = time.time()
         self.document_unchanged()
         #self.spinbox_edit = False
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_pre_delete_plugin += self.on_pre_delete_plugin
         eventbus.zzub_pre_delete_pattern += self.on_pre_delete_pattern
         self._callback = zzub.zzub_callback_t(self.handle_event)
@@ -384,7 +384,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self.__loading = False
         if not res:
             self.document_path = filename
-            eventbus = com.get('neil.core.eventbus')
+            eventbus = components.get('neil.core.eventbus')
             eventbus.document_loaded()
         self.active_plugins = [self.get_plugin(0)]
         return res
@@ -423,7 +423,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
                 msg = "%i operation(s) left uncommitted." % ucopcount
                 neil.errordlg.error(None, "<b>Internal Program Error</b>", msg)
                 self.history_commit("commit leak")
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         t1 = time.time()
         player.handle_events()
         t2 = time.time() - t1
@@ -548,7 +548,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         @param data: event data.
         @type data: zzub_event_data_t
         """
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         data = data.contents
         # prepare arguments for the specific callback
         eventname, membername, argnames = self.event_id_to_name[data.type]
@@ -620,7 +620,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             print("lunar plugin collection not found, not supporting lunar.", file=sys.stderr)
             return
 
-        config = com.get('neil.core.config')
+        config = components.get('neil.core.config')
         userlunarpath = os.path.join(config.get_settings_folder(), 'lunar')
         if not os.path.isdir(userlunarpath):
             print("folder %s does not exist, creating..." % userlunarpath)
@@ -819,9 +819,9 @@ __neil__ = dict(
 )
 
 if __name__ == '__main__':
-    com.init()
-    player = com.get('neil.core.player')
+    components.init()
+    player = components.get('neil.core.player')
     player.octave = 3
     print(player.get_octave())
-    print(com.get('neil.core.player').sequence_step)
-    print(com.get('neil.core.player').get_sequence_step())
+    print(components.get('neil.core.player').sequence_step)
+    print(components.get('neil.core.player').get_sequence_step())

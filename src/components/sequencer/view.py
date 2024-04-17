@@ -18,7 +18,7 @@ import random
 import config
 
 import neil.common as common
-import neil.com as com
+from neil.main import components
 import zzub
 
 from .add_track import AddSequencerTrackDialog
@@ -68,7 +68,7 @@ class SequencerView(Gtk.DrawingArea):
         self.pango_ctx = None
 
         self.plugin_info = common.get_plugin_infos()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         self.playpos = player.get_position()
         self.row = 0
         self.track = 0
@@ -93,7 +93,7 @@ class SequencerView(Gtk.DrawingArea):
         self.hscroll.connect('change-value', self.on_hscroll_window)
         self.vscroll.connect('change-value', self.on_vscroll_window)
         # GObject.timeout_add(100, self.update_position)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_sequencer_changed += self.redraw
         eventbus.zzub_set_sequence_event += self.redraw
         eventbus.document_loaded += self.redraw
@@ -166,7 +166,7 @@ class SequencerView(Gtk.DrawingArea):
         @param row: Row index.
         @type row: int
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         seq = player.get_current_sequencer()
         track = max(min(track, seq.get_sequence_track_count() - 1), 0)
         row = max(row, 0)
@@ -207,7 +207,7 @@ class SequencerView(Gtk.DrawingArea):
         self.redraw()
 
     def get_track(self):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         seq = player.get_current_sequencer()
         if (self.track != -1) and (self.track < seq.get_sequence_track_count()):
             return seq.get_sequence(self.track)
@@ -216,7 +216,7 @@ class SequencerView(Gtk.DrawingArea):
     # FIXME why does this fail when master is the only plugin and no patterns exist?
     def create_track(self, plugin):
         # get sequencer and add the track
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         seq = player.get_current_sequencer()
         track = seq.create_sequence(plugin, zzub.zzub_sequence_type_pattern)
         # if it has no existing patterns, make one (even if it has no parameters, it might have incoming connections)
@@ -234,7 +234,7 @@ class SequencerView(Gtk.DrawingArea):
         """
         Inserts a space at cursor.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         t = self.get_track()
         if not t:
             return
@@ -249,13 +249,13 @@ class SequencerView(Gtk.DrawingArea):
         """
         Deletes pattern at cursor.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         t = player.get_sequence(self.track)
         t.remove_events(self.row, self.step)
         player.history_commit("delete sequences")
 
     def selection_range(self):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         start = (min(self.selection_start[0], self.selection_end[0]),
                                 min(self.selection_start[1], self.selection_end[1]))
         end = (max(self.selection_start[0], self.selection_end[0]),
@@ -299,7 +299,7 @@ class SequencerView(Gtk.DrawingArea):
         ui.set_clipboard_text(data)
 
     def on_popup_create_pattern(self, *args):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         seq = player.get_current_sequencer()
         if not self.selection_start:
             self.selection_start = (self.track, self.row)
@@ -330,7 +330,7 @@ class SequencerView(Gtk.DrawingArea):
         """Create a copy of the pattern at cursor and replace the current one.
         """
         from neil.utils import get_new_pattern_name
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         machine, pattern_id, _ = self.get_pattern_at(self.track, self.row, includespecial=True)
         if pattern_id is None:
             return
@@ -345,7 +345,7 @@ class SequencerView(Gtk.DrawingArea):
         self.update_list()
 
     def on_popup_merge(self, *args):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.set_callback_state(False)
         seq = player.get_current_sequencer()
         try:
@@ -393,7 +393,7 @@ class SequencerView(Gtk.DrawingArea):
                         break
         player.history_commit("merge patterns")
         player.set_callback_state(True)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.document_loaded()
         self.update_list()
 
@@ -404,7 +404,7 @@ class SequencerView(Gtk.DrawingArea):
     # FIXME it would be nice if pasting moved the cursor forward, so that
     # repeated pasting would work
     def on_popup_paste(self, *args):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.set_callback_state(False)
         seq = player.get_current_sequencer()
         data = ui.get_clipboard_text()
@@ -419,12 +419,12 @@ class SequencerView(Gtk.DrawingArea):
         except ValueError:
             pass
         player.set_callback_state(True)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.document_loaded()
         self.update_list()
 
     def on_popup_delete(self, *args):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.set_callback_state(False)
         seq = player.get_current_sequencer()
         #print self.selection_start
@@ -442,7 +442,7 @@ class SequencerView(Gtk.DrawingArea):
                 t.set_event(row, -1)
         player.history_commit("delete selection")
         player.set_callback_state(True)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.document_loaded()
         self.update_list()
 
@@ -453,7 +453,7 @@ class SequencerView(Gtk.DrawingArea):
         @param event: Menu event.
         @type event: wx.CommandEvent
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         seq = player.get_current_sequencer()
         t = seq.get_track_list()[self.track]
         t.destroy()
@@ -479,7 +479,7 @@ class SequencerView(Gtk.DrawingArea):
         Callback that is used to record a looped song section
         to an instrument slot.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         loader = player.get_pluginloader_by_name('@zzub.org/recorder/wavetable')
         if not loader:
             print("Can't find instrument recorder plugin loader.", file=sys.stderr)
@@ -523,7 +523,7 @@ class SequencerView(Gtk.DrawingArea):
         @param event: Menu event.
         @type event: wx.CommandEvent
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         seq = player.get_current_sequencer()
         x, y = int(event.x), int(event.y)
         track, row = self.pos_to_track_row((x, y))
@@ -565,7 +565,7 @@ class SequencerView(Gtk.DrawingArea):
 
     def show_plugin_dialog(self):
         pmenu = []
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for plugin in player.get_plugin_list():
             pmenu.append(prepstr(plugin.get_name()))
         dlg = AddSequencerTrackDialog(self, pmenu)
@@ -583,14 +583,14 @@ class SequencerView(Gtk.DrawingArea):
         """
         Set loop startpoint
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.set_loop_start(self.row)
         if player.get_loop_end() <= self.row:
             player.set_loop_end(self.row + self.step)
         self.redraw()
 
     def set_loop_end(self, *args):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         pos = self.row  # + self.step
         if player.get_loop_end() != pos:
             player.set_loop_end(pos)
@@ -609,7 +609,7 @@ class SequencerView(Gtk.DrawingArea):
         @param event: Key event
         @type event: wx.KeyEvent
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         seq = player.get_current_sequencer()
         mask = event.get_state()
         kv = event.keyval
@@ -787,7 +787,7 @@ class SequencerView(Gtk.DrawingArea):
         @param index: Pattern index.
         @type index: int
         """
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.edit_pattern_request(plugin, index)
 
     def get_pattern_at(self, track, row, includespecial=False):
@@ -865,7 +865,7 @@ class SequencerView(Gtk.DrawingArea):
         @type event: wx.MouseEvent
         """
         self.grab_focus()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         track_count = player.get_sequence_track_count()
         x, y = int(event.x), int(event.y)
         track, row = self.pos_to_track_row((x, y))
@@ -894,7 +894,7 @@ class SequencerView(Gtk.DrawingArea):
         elif event.button == 3:
             if (x < self.seq_left_margin) and (track < track_count):
                 mp = player.get_sequence(track).get_plugin()
-                menu = com.get('neil.core.contextmenu.singleplugin', mp)
+                menu = components.get('neil.core.contextmenu.singleplugin', mp)
                 menu.popup(self, event)
                 return
             self.on_context_menu(event)
@@ -908,7 +908,7 @@ class SequencerView(Gtk.DrawingArea):
             if self.selection_start == None:
                 self.selection_start = (self.track, self.row)
             if self.selection_start:
-                player = com.get('neil.core.player')
+                player = components.get('neil.core.player')
                 seq = player.get_current_sequencer()
                 select_track = min(seq.get_sequence_track_count() - 1,
                                    max(select_track, 0))
@@ -953,7 +953,7 @@ class SequencerView(Gtk.DrawingArea):
 
     #     if not self.get_window():
     #         return
-    #     player = com.get('neil.core.player')
+    #     player = components.get('neil.core.player')
     #     playpos = player.get_position()
     #     print("set playpos", self.playpos, playpos)
     #     if self.playpos != playpos:
@@ -1033,7 +1033,7 @@ class SequencerView(Gtk.DrawingArea):
         """
         Returns the size in characters of the virtual view area.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         seq = player.get_current_sequencer()
         tracklist = seq.get_track_list()
         total_length = 0
@@ -1068,7 +1068,7 @@ class SequencerView(Gtk.DrawingArea):
         """
         if not self.is_visible():
             return
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         width, height = self.get_client_size()
         ctx.set_source_rgba(1, 0, 0, 0.7)
         ctx.set_line_width(2)
@@ -1190,7 +1190,7 @@ class SequencerView(Gtk.DrawingArea):
         """
         Draw tracks and pattern boxes.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
         pango_layout.set_font_description(Pango.FontDescription("sans 8"))
@@ -1314,7 +1314,7 @@ class SequencerView(Gtk.DrawingArea):
         # ctx.fill()
 
     def draw_loop_points(self, ctx, colors):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         width, height = self.get_client_size()
         ctx.set_line_width(1)
         loop_start, loop_end = player.get_loop()
@@ -1390,7 +1390,7 @@ class SequencerView(Gtk.DrawingArea):
             'Controller Bg Mute': cfg.get_float_color('MV Controller Mute')
         }
 
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         self.playpos = player.get_position()
         if not self.pango_ctx:
             self.pango_ctx = self.get_pango_context()

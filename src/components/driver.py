@@ -25,7 +25,7 @@ Contains tool functions to deal with audio and midi drivers.
 import config
 import zzub
 
-import neil.com as com
+from neil.main import components
 from neil.utils import ui
 
 class MidiDriver:
@@ -41,7 +41,7 @@ class MidiDriver:
         pass
     def __init__(self):
         self.enabled = False
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.shutdown += self.destroy
         self.init_failed = False
         try:
@@ -53,7 +53,7 @@ class MidiDriver:
     def destroy(self):
         if not self.enabled:
             return
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         zzub.Mididriver.close_all(player)
         self.enabled = False
 
@@ -62,7 +62,7 @@ class MidiDriver:
             self.destroy()
         midiinputs = config.get_config().get_mididriver_inputs()
         midioutputs = config.get_config().get_mididriver_outputs()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for i in range(zzub.Mididriver.get_count(player)):
             drivername = zzub.Mididriver.get_name(player,i).strip()
             if zzub.Mididriver.is_input(player,i) and drivername in midiinputs:
@@ -92,7 +92,7 @@ class AudioDriver:
         self.samplerate = 44100
         self.buffersize = 256
         self.driver = None
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.shutdown += self.destroy
         self.init_failed = False
         try:
@@ -128,7 +128,7 @@ class AudioDriver:
             self.destroy()
         inputname, outputname, samplerate, buffersize = config.get_config().get_audiodriver_config()
         print((inputname, outputname))
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         self.driver = zzub.Audiodriver.create(player)
         if not self.driver.get_count():
             raise self.AudioInitException
@@ -203,5 +203,5 @@ __neil__ = dict(
 )
 
 if __name__ == '__main__':
-    com.init()
-    com.get_from_category('driver')
+    components.init()
+    components.get_from_category('driver')

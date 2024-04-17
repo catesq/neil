@@ -33,7 +33,8 @@ from neil.utils import (
 )
 
 
-from neil import com, errordlg, common
+from neil import errordlg, common
+from neil.main import components
 
 import config
 import zzub
@@ -57,10 +58,10 @@ class FramePanel(Gtk.Notebook):
         self.set_show_border(True)
         self.set_border_width(1)
         self.set_show_tabs(True)
-        com.get("neil.core.icons") # make sure theme icons are loaded
+        components.get("neil.core.icons") # make sure theme icons are loaded
         defaultpanel = None
-        self.statusbar = com.get('neil.core.statusbar')
-        self.pages = sorted(com.get_from_category('neil.viewpanel'), key=cmp_to_key(cmp_view))
+        self.statusbar = components.get('neil.core.statusbar')
+        self.pages = sorted(components.get_from_category('neil.viewpanel'), key=cmp_to_key(cmp_view))
 
         for index, panel in enumerate(self.pages):
             if not hasattr(panel, '__view__'):
@@ -212,7 +213,7 @@ class NeilFrame(Gtk.Window):
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
 
         # 
-        com.get('neil.core.player').set_host_info(1, 1, ctypes.c_void_p(hash(self)))
+        components.get('neil.core.player').set_host_info(1, 1, ctypes.c_void_p(hash(self)))
 
         
         theme = config.get_config().get_style()
@@ -275,7 +276,7 @@ class NeilFrame(Gtk.Window):
         vbox = Gtk.VBox()
         self.add(vbox)
 
-        self.accelerators = com.get('neil.core.accelerators')
+        self.accelerators = components.get('neil.core.accelerators')
         self.add_accel_group(self.accelerators)
 
         # build menu Bar
@@ -283,11 +284,11 @@ class NeilFrame(Gtk.Window):
         vbox.pack_start(menubar, False, False, 0)
 
         # create some panels that are always visible
-        self.master = com.get('neil.core.panel.master')
-        self.statusbar = com.get('neil.core.statusbar')
-        self.transport = com.get('neil.core.transport')
-        self.playback_info = com.get('neil.core.playback')
-        self.framepanel = com.get('neil.core.framepanel')
+        self.master = components.get('neil.core.panel.master')
+        self.statusbar = components.get('neil.core.statusbar')
+        self.transport = components.get('neil.core.transport')
+        self.playback_info = components.get('neil.core.playback')
+        self.framepanel = components.get('neil.core.framepanel')
 
         hbox = Gtk.HBox()
         hbox.pack_start(self.framepanel, True, True, 0)
@@ -334,14 +335,14 @@ class NeilFrame(Gtk.Window):
         self.master.hide()
         self.load_view()
 
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.document_path_changed += self.on_document_path_changed
         eventbus.print_mapping()
-        options, args = com.get('neil.core.options').get_options_args()
+        options, args = components.get('neil.core.options').get_options_args()
         if len(args) > 1:
             self.open_file(args[1])
         
-        for driver in com.get_from_category('driver'):
+        for driver in components.get_from_category('driver'):
             if driver.init_failed:
                 GLib.timeout_add(50, show_preferences, self, 1)
                 break
@@ -350,11 +351,11 @@ class NeilFrame(Gtk.Window):
         """
         Called when an undo item is being called.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.set_callback_state(False)
         player.undo()
         player.set_callback_state(True)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.document_loaded()
         #self.print_history()
 
@@ -362,11 +363,11 @@ class NeilFrame(Gtk.Window):
         """
         Called when an undo item is being called.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.set_callback_state(False)
         player.redo()
         player.set_callback_state(True)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.document_loaded()
         #self.print_history()
 
@@ -375,7 +376,7 @@ class NeilFrame(Gtk.Window):
         """
         Dumps the current undo history to console.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         pos = player.history_get_position()
         historysize = player.history_get_size()
         if not historysize:
@@ -395,7 +396,7 @@ class NeilFrame(Gtk.Window):
         """
         handler for can-activate-accel signal by Undo menuitem. Checks if undo can be executed.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         return player.can_undo()
 
 
@@ -403,7 +404,7 @@ class NeilFrame(Gtk.Window):
         """
         handler for can-activate-accel signal by Redo menuitem. Checks if redo can be executed.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         return player.can_redo()
 
 
@@ -414,10 +415,10 @@ class NeilFrame(Gtk.Window):
         menuitem, _ = menubar.add_submenu("_Edit", ui.EasyMenu(), self.update_editmenu)
         self.update_editmenu(menuitem)
 
-        menubar.add_submenu("_View", com.get('neil.core.viewmenu'))
+        menubar.add_submenu("_View", components.get('neil.core.viewmenu'))
 
         _, toolsmenu = menubar.add_submenu("_Tools", Gtk.Menu())
-        com.get_from_category('menuitem.tool', toolsmenu)
+        components.get_from_category('menuitem.tool', toolsmenu)
                 
         menubar.add_submenu("_Help", self.populate_help_menu())
         return menubar
@@ -448,12 +449,12 @@ class NeilFrame(Gtk.Window):
         for item in editmenu:
             item.destroy()
             
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
 
         pos = player.history_get_position()
         self.print_history()
 
-        accel = com.get('neil.core.accelerators')
+        accel = components.get('neil.core.accelerators')
         item = editmenu.add_item("Undo", "", self.on_undo)
         accel.add_accelerator("<Control>Z", item)
         if player.can_undo():
@@ -607,7 +608,7 @@ class NeilFrame(Gtk.Window):
         @param event: menu event.
         @type event: MenuEvent
         """
-        com.get('neil.core.dialog.about', self).show()
+        components.get('neil.core.dialog.about', self).show()
 
     def on_preferences(self, *args):
         """
@@ -623,7 +624,7 @@ class NeilFrame(Gtk.Window):
         Event handler for key events.
         """
         k = Gdk.keyval_name(event.keyval)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if k == 'F6':
             self.play_from_cursor(event)
         elif k == 'F5':
@@ -656,7 +657,7 @@ class NeilFrame(Gtk.Window):
         Updates the title to display the filename of the currently
         loaded document.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         filename = os.path.basename(player.document_path)
         if not filename:
             filename = 'Unsaved'
@@ -681,7 +682,7 @@ class NeilFrame(Gtk.Window):
         if not os.path.isfile(filename):
             return
         self.clear()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         base, ext = os.path.splitext(filename)
         if re.search(r"""\.ccm$|\.ccm.\d\d\d\.bak$""", filename):
             dlg = Gtk.Dialog('Neil', parent=self, flags=Gtk.DialogFlags.MODAL)
@@ -703,7 +704,7 @@ class NeilFrame(Gtk.Window):
             done = True
             # The following loads sequencer step size.
             try:
-                seq = com.get('neil.core.sequencerpanel')
+                seq = components.get('neil.core.sequencerpanel')
                 index = seq.toolbar.steps.index(player.get_seqstep())
                 seq.toolbar.stepselect.set_active(index)
             except ValueError:
@@ -716,7 +717,7 @@ class NeilFrame(Gtk.Window):
 
     def on_document_path_changed(self, path):
         self.update_title()
-        com.get('neil.core.config').add_recent_file_config(path)
+        components.get('neil.core.config').add_recent_file_config(path)
 
     def save_file(self, filename):
         """
@@ -726,7 +727,7 @@ class NeilFrame(Gtk.Window):
         @param filename: Path to song.
         @type filename: str
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         try:
             if not os.path.splitext(filename)[1]:
                 filename += self.DEFAULT_EXTENSION
@@ -763,7 +764,7 @@ class NeilFrame(Gtk.Window):
             ui.error(self, "<b><big>Error saving file:</big></b>\n\n%s" % text)
         #~ progress.Update(100)
         #self.update_title()
-        #com.get('neil.core.config').add_recent_file_config(filename)
+        #components.get('neil.core.config').add_recent_file_config(filename)
 
     def on_open(self, *args):
         """
@@ -801,7 +802,7 @@ class NeilFrame(Gtk.Window):
         """
         Shows a save file dialog if filename is unknown and saves the file.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if not player.document_path:
             self.save_as()
         else:
@@ -811,7 +812,7 @@ class NeilFrame(Gtk.Window):
         """
         Shows a save file dialog and saves the file.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         self.save_dlg.set_filename(player.document_path)
         response = self.save_dlg.run()
         self.save_dlg.hide()
@@ -838,10 +839,10 @@ class NeilFrame(Gtk.Window):
         Clears the current document.
         """
         common.get_plugin_infos().reset()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.clear()
         player.set_loop_start(0)
-        player.set_loop_end(com.get('neil.core.sequencerpanel').view.step)
+        player.set_loop_end(components.get('neil.core.sequencerpanel').view.step)
         player.get_plugin(0).set_parameter_value(1, 0, 1, config.get_config().get_default_int('BPM', 126), 1)
         player.get_plugin(0).set_parameter_value(1, 0, 2, config.get_config().get_default_int('TPB', 4), 1)
         player.history_flush_last()
@@ -853,7 +854,7 @@ class NeilFrame(Gtk.Window):
         @param event: menu event.
         @type event: MenuEvent
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.play()
 
     def play_from_cursor(self, *args):
@@ -863,8 +864,8 @@ class NeilFrame(Gtk.Window):
         @param event: menu event.
         @type event: MenuEvent
         """
-        player = com.get('neil.core.player')
-        player.set_position(max(com.get('neil.core.sequencerpanel').view.row,0))
+        player = components.get('neil.core.player')
+        player.set_position(max(components.get('neil.core.sequencerpanel').view.row,0))
         player.play()
 
     def on_select_theme(self, widget, data):
@@ -879,7 +880,7 @@ class NeilFrame(Gtk.Window):
             cfg.select_theme(None)
         else:
             cfg.select_theme(data)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.document_changed()
 
     def stop(self, *args):
@@ -889,7 +890,7 @@ class NeilFrame(Gtk.Window):
         @param event: menu event.
         @type event: MenuEvent
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.stop()
 
     def save_changes(self):
@@ -897,7 +898,7 @@ class NeilFrame(Gtk.Window):
         Asks whether to save changes or not. Throws a {CancelException} if
         cancelled.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if not player.document_changed():
             return
         if player.document_path:
@@ -923,7 +924,7 @@ class NeilFrame(Gtk.Window):
             self.save_changes()
             self.clear()
             self.update_title()
-            com.get('neil.core.player').document_unchanged()
+            components.get('neil.core.player').document_unchanged()
         except CancelException:
             pass
 
@@ -931,7 +932,7 @@ class NeilFrame(Gtk.Window):
         """
         Event handler triggered when the window is being destroyed.
         """
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.shutdown()
 
     def on_exit(self, *args):

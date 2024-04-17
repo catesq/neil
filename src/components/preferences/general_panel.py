@@ -5,7 +5,7 @@ from gi.repository import Gtk
 
 import os
 
-import neil.com
+from neil.main import components
 
 from neil.common import MARGIN
 from config import get_config
@@ -113,6 +113,6 @@ class GeneralPanel(Gtk.VBox):
             else:
                 get_config().select_theme(self.theme.get_active_text())
 
-        neil.com.get('neil.core.patternpanel').update_all()
-        neil.com.get('neil.core.router.view').update_all()
-        neil.com.get('neil.core.sequencerpanel').update_all()
+        components.get('neil.core.patternpanel').update_all()
+        components.get('neil.core.router.view').update_all()
+        components.get('neil.core.sequencerpanel').update_all()

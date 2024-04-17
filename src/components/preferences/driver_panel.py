@@ -5,7 +5,7 @@ from gi.repository import Gtk
 from neil.common import MARGIN
 from config import get_config
 from neil.utils import prepstr, buffersize_to_latency, ui
-import neil.com as com
+from neil.main import components
 import traceback
 
 
@@ -64,7 +64,7 @@ class DriverPanel(Gtk.VBox):
         vbox.set_border_width(MARGIN)
         sizer1.add(vbox)
         inputname, outputname, samplerate, buffersize = get_config().get_audiodriver_config()
-        audiodriver = com.get('neil.core.driver.audio')
+        audiodriver = components.get('neil.core.driver.audio')
         if not outputname:
             outputname = audiodriver.get_name(-1)
         for i in range(audiodriver.get_count()):
@@ -89,21 +89,21 @@ class DriverPanel(Gtk.VBox):
         sr = self.cbsamplerate.get_active()
         if sr == -1:
             ui.error(self, "You did not pick a valid sample rate.")
-            raise com.exception('neil.exception.cancel')
+            raise components.exception('neil.exception.cancel')
         sr = samplerates[sr]
         bs = self.cblatency.get_active()
         if bs == -1:
             ui.error(self, "You did not pick a valid latency.")
-            raise com.exception('neil.exception.cancel')
+            raise components.exception('neil.exception.cancel')
 
         bs = buffersizes[bs]
         o = self.cboutput.get_active()
         if o == -1:
             ui.error(self, "You did not select a valid output device.")
-            raise com.exception('neil.exception.cancel')
+            raise components.exception('neil.exception.cancel')
 
         iname = ""
-        audiodriver = com.get('neil.core.driver.audio')
+        audiodriver = components.get('neil.core.driver.audio')
         oname = audiodriver.get_name(o)
         inputname, outputname, samplerate, buffersize = get_config().get_audiodriver_config()
         if (oname != outputname) or (samplerate != sr) or (bs != buffersize):
@@ -114,4 +114,4 @@ class DriverPanel(Gtk.VBox):
             except audiodriver.AudioInitException:
                 traceback.print_exc()
                 ui.error(self, "<b><big>There was an error initializing the audio driver.</big></b>\n\nThis can happen when the specified sampling rate or latency is not supported by a particular audio device. Change settings and try again.")
-                raise com.exception('neil.exception.cancel')
+                raise components.exception('neil.exception.cancel')

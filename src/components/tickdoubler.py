@@ -28,7 +28,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject
 
-import neil.com as com
+from neil.main import components
 from neil.utils import ui
 
 class TickDoublerDialog(Gtk.Dialog):
@@ -109,7 +109,7 @@ class TickDoublerDialog(Gtk.Dialog):
 
     def on_double(self, widget, multiplier):
         # multiply pattern positions
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.set_callback_state(False)
         seq = player.get_current_sequencer()
         for track in seq.get_track_list():
@@ -130,7 +130,7 @@ class TickDoublerDialog(Gtk.Dialog):
                     self.halve_pattern(plugin, id)
         player.history_commit("tick resolution resizing")
         player.set_callback_state(True)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.document_loaded()
         ui.message(self, "Resizing complete")
 
@@ -156,7 +156,7 @@ class TickDoublerMenuItem:
         menu.append(item)
 
     def on_menuitem_activate(self, widget):
-        browser = com.get('neil.tickdoubler.dialog')
+        browser = components.get('neil.tickdoubler.dialog')
         browser.show_all()
 
 __neil__ = dict(

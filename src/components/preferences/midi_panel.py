@@ -5,7 +5,7 @@ from gi.repository import Gtk
 import zzub
 from neil.common import MARGIN
 from config import get_config
-from neil import com
+from neil.main import components
 from neil.utils import prepstr
 
 
@@ -38,7 +38,7 @@ class MidiPanel(Gtk.VBox):
         ])
         self.idevicelist.set_property('headers-visible', False)
         inputlist = get_config().get_mididriver_inputs()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for i in range(zzub.Mididriver.get_count(player)):
             if zzub.Mididriver.is_input(player,i):
                 name = prepstr(zzub.Mididriver.get_name(player,i))

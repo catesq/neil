@@ -4,7 +4,8 @@ from gi.repository import Gtk
 
 from functools import reduce
 
-from neil.com import com
+from neil.main import components
+
 from neil.utils import (
     prepstr, filenameify, show_machine_manual, is_root, 
     clone_plugin, clone_plugin_patterns, clone_preset, ui

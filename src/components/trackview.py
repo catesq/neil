@@ -33,7 +33,7 @@ from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo
 import random
 import config
 
-import neil.com as com
+from neil.main import components
 import neil.common as common
 from neil.utils import (from_hsb, prepstr, synchronize_list, to_hsb)
 
@@ -66,7 +66,7 @@ class Track(Gtk.HBox):
         self.header.pack_start(hbox, True, True)
         separator = Gtk.HSeparator()
         self.header.pack_end(separator, False, False)
-        self.view = com.get('neil.core.trackview', track, hadjustment)
+        self.view = components.get('neil.core.trackview', track, hadjustment)
         self.pack_start(self.header, False, False)
         self.pack_end(self.view, True, True)
 
@@ -132,7 +132,7 @@ class TimelineView(View):
         self.set_size_request(-1, 16)
 
     def draw(self, ctx):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         w,h = self.get_client_size()
 
         cfg = config.get_config()
@@ -280,7 +280,7 @@ class TrackView(View):
         return colors
 
     def draw(self, ctx):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         w, h = self.get_client_size()
 
         colors = self.get_colors()
@@ -388,7 +388,7 @@ class TrackViewPanel(Gtk.VBox):
         self.hscroll = Gtk.HScrollbar()
         hadjustment = self.hscroll.get_adjustment()
         hadjustment.set_all(0, 0, 16384, 1, 1024, 2300)
-        self.timeline = com.get('neil.core.timelineview', hadjustment)
+        self.timeline = components.get('neil.core.timelineview', hadjustment)
         self.trackviews = Gtk.VBox()
 
         vbox = Gtk.VBox()
@@ -411,7 +411,7 @@ class TrackViewPanel(Gtk.VBox):
         vbox.pack_end(hbox, False, False)
 
         self.pack_start(vbox, True, True, 0)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_sequencer_changed += self.update_tracks
         eventbus.zzub_set_sequence_tracks += self.update_tracks
         eventbus.zzub_sequencer_remove_track += self.update_tracks
@@ -426,12 +426,12 @@ class TrackViewPanel(Gtk.VBox):
         hadjustment.page_size = int(((64.0 * w) / 24.0) + 0.5)
 
     def update_tracks(self, *args):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         tracklist = list(player.get_sequence_list())
 
         def insert_track(i,track):
             print(("insert",i,track))
-            trackview = com.get('neil.core.track', track, self.hscroll.get_adjustment())
+            trackview = components.get('neil.core.track', track, self.hscroll.get_adjustment())
             self.trackviews.pack_start(trackview, False, False)
             self.trackviews.reorder_child(trackview, i)
             self.sizegroup.add_widget(trackview.header)

@@ -1,6 +1,6 @@
 import zzub
 
-from neil.com import com
+from neil.main import components
 from neil.utils import ui
 from neil.preset import Preset
 
@@ -19,8 +19,8 @@ class RouterMenu(ui.EasyMenu):
     def __init__(self, x, y):
         ui.EasyMenu.__init__(self)
 
-        router = com.get("neil.core.router.view")
-        player = com.get_player()
+        router = components.get("neil.core.router.view")
+        player = components.get_player()
 
         self.add_submenu("_Add machine", machine_tree_submenu(connection=False))
 

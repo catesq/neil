@@ -33,7 +33,7 @@ import time
 
 
 from neil.common import MARGIN, MARGIN2, MARGIN3
-import neil.com as com
+from neil.main import components
 from neil.utils import format_time, ticks_to_time
 
 
@@ -105,7 +105,7 @@ class PlaybackInfo(Gtk.Dialog):
         """
         Event handler triggered by a 10fps timer event.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         p = player.get_position()
         m = player.get_plugin(0)
         bpm = m.get_parameter_value(1, 0, 1)

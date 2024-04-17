@@ -24,7 +24,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import GLib, Gtk
 
 
-import neil.com as com
+from neil.main import components
 from neil.common import MARGIN
 from neil.utils import ui, prepstr
 
@@ -96,8 +96,8 @@ class CPUMonitorDialog(Gtk.Dialog):
         """
         Called by timer event. Updates CPU usage statistics.
         """
-        player = com.get('neil.core.player')
-        driver = com.get('neil.core.driver.audio')
+        player = components.get('neil.core.player')
+        driver = components.get('neil.core.driver.audio')
         if self.is_visible():
             cpu = 0.0
             cpu_loads = {}

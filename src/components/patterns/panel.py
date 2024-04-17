@@ -6,8 +6,7 @@ from .toolbar import PatternToolBar
 from .views import PatternView
 from .patternstatus import PatternStatus
 
-import neil.common as common
-import neil.com as com
+from neil.main import components
 
 class PatternPanel(Gtk.VBox):
     """
@@ -50,21 +49,21 @@ class PatternPanel(Gtk.VBox):
         self.pack_start(scrollwin, True, True, 0)
 
         self.view.grab_focus()
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.edit_pattern_request += self.on_edit_pattern_request
 
     def on_edit_pattern_request(self, plugin, index):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.active_plugins = [plugin]
         player.active_patterns = [(plugin, index)]
-        framepanel = com.get('neil.core.framepanel')
+        framepanel = components.get('neil.core.framepanel')
         framepanel.select_viewpanel(self)
 
     # def has_focus(self):
     #     return self.is_focused
     
     def handle_focus(self):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         # check if active patterns match the pattern view settings
         if not (self.view.plugin, self.view.pattern) in player.active_patterns:
             # if player.active_plugins:

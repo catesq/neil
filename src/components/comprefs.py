@@ -23,7 +23,8 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GObject
 
-import neil.com as com
+from neil.main import components
+
 from neil.common import MARGIN
 from neil.utils import ui
 
@@ -73,7 +74,7 @@ class ComponentPanel(Gtk.VBox):
         ])
 
         self.compolist.set_headers_visible(False)
-        packages = sorted(com.get_packages(), key=lambda package: package.name.lower())
+        packages = sorted(components.get_packages(), key=lambda package: package.name.lower())
         for package in packages:
             text = '<b>' + package.name + '</b>' + '\n'
             text += package.description

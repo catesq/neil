@@ -25,7 +25,7 @@ from gi.repository import Gdk, GdkPixbuf, Gtk
 import glob
 import os
 
-import neil.com as com
+from neil.main import components
 from neil.utils import iconpath, imagepath
 
 ICON_SEARCHPATH = [
@@ -113,8 +113,8 @@ __neil__ = dict(
 )
 
 if __name__ == '__main__':
-    com.init()
-    icons = com.get('neil.core.icons')
+    components.init()
+    icons = components.get('neil.core.icons')
     print(icons.all())
 
 # if __name__ == '__main__':

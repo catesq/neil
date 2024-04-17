@@ -1,6 +1,6 @@
 from gi.repository import Gtk
 
-from neil.com import com
+from neil.main import components
 from neil.utils import (ui, iconpath, prepstr, settingspath)
 from .actions import on_store_selection, on_restore_selection
 import os.path
@@ -8,7 +8,7 @@ import json
 
 #used by on_store_selection in actions.py
 def store_selection_submenu(metaplugins):
-    router = com.get('neil.core.router.view')
+    router = components.get('neil.core.router.view')
     store_submenu = ui.EasyMenu()
 
     for index in range(10):
@@ -19,7 +19,7 @@ def store_selection_submenu(metaplugins):
 
 #used by on_restore_selection in actions.py
 def restore_selection_submenu():
-    router = com.get('neil.core.router.view')
+    router = components.get('neil.core.router.view')
     restore_submenu = ui.EasyMenu()
 
     for index in range(10):
@@ -84,14 +84,14 @@ def machine_tree_submenu(connection=False):
                 populate_from_tree(submenu, value)
 
     def create_plugin(item, loader, menu):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if connection:
             player.create_plugin(loader, connection=connection)
         else:
 #            player.plugin_origin = menu.context
             player.create_plugin(loader)
 
-    player = com.get('neil.core.player')
+    player = components.get('neil.core.player')
     plugin_list = load_plugin_list("plugin_tree.json")
     plugins = {}
     tree = {}

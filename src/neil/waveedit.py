@@ -32,7 +32,7 @@ import zzub
 import config
 from .common import MARGIN
 
-import neil.com as com
+from neil.main import components
 
 # size of border
 BORDER = 5
@@ -68,14 +68,14 @@ class WaveEditPanel(Gtk.VBox):
         self.wavetable.update_sampleprops()
 
     def on_loop_range(self, widget):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         begin, end = self.view.selection
         self.view.level.set_loop_start(begin)
         self.view.level.set_loop_end(end)
         player.history_commit("set loop range")
 
     def on_xfade_range(self, widget):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if self.view.selection == None:
             ui.message(self, "Select a region of the wave first.")
             return
@@ -88,7 +88,7 @@ class WaveEditPanel(Gtk.VBox):
             ui.message(self, "Not enough data at the start of selection.")
 
     def on_normalize(self, widget):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         self.view.level.normalize()
         self.update()
 
@@ -147,7 +147,7 @@ class WaveEditView(Gtk.DrawingArea):
         return rect.width, rect.height
 
     def delete_range(self):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if self.selection:
             begin,end = self.selection
             self.level.remove_sample_range(begin, end - 1)
@@ -382,7 +382,7 @@ class WaveEditView(Gtk.DrawingArea):
             self.context_menu.popup(self, event)
 
     def on_copy_range(self, widget, index):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if self.selection == None:
             ui.message(self, "Select a region of the wave first.")
             return
@@ -398,7 +398,7 @@ class WaveEditView(Gtk.DrawingArea):
         self.sample_changed()
 
     def on_loop_range(self, widget):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         begin, end = self.selection
         self.level.set_loop_start(begin)
         self.level.set_loop_end(end)
@@ -409,7 +409,7 @@ class WaveEditView(Gtk.DrawingArea):
         player.history_commit("set loop range")
 
     def on_xfade_range(self, widget):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if self.selection == None:
             ui.message(self, "Select a region of the wave first.")
             return
@@ -421,7 +421,7 @@ class WaveEditView(Gtk.DrawingArea):
         self.sample_changed()
 
     def on_normalize(self, widget):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         self.level.normalize()
         self.sample_changed()
 
@@ -437,7 +437,7 @@ class WaveEditView(Gtk.DrawingArea):
         """
         Callback that responds to mouse button up over the wave view.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if event.button == 1:
             if self.dragging == True:
                 self.dragging = False
@@ -502,7 +502,7 @@ class WaveEditView(Gtk.DrawingArea):
         self.wave = None
         self.level = None
         self.selection = None
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if sel:
             self.wave = player.get_wave(sel[0])
             if self.wave.get_level_count() >= 1:
@@ -594,7 +594,7 @@ class WaveEditView(Gtk.DrawingArea):
         if self.level == None:
             return False
 
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         ctx.set_source_rgb(*gridpen)
         rb, re = self.range
         rsize = re - rb

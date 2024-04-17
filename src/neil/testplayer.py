@@ -27,7 +27,7 @@ from gi.repository import GLib
 
 from config import get_plugin_aliases, get_plugin_blacklist
 from . import common
-import neil.com as com
+from neil.main import components
 import zzub
 
 _player = None
@@ -54,12 +54,12 @@ class TestWindow(Gtk.Window):
         get_player()
 
 def get_player():
-    com.init()
+    components.init()
     global _player
     if _player is not None:
         return _player
 
-    _player = com.get('neil.core.player')
+    _player = components.get('neil.core.player')
 
     _player.set_callback(zzub.zzub_callback_t(player_callback), 2)
 

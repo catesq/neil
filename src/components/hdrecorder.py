@@ -27,7 +27,9 @@ from gi.repository import Gtk, GLib
 import os, stat
 
 from neil.utils import filepath, ui
-from neil import common, com
+from neil import common
+from neil.main import components
+
 
 import zzub
 
@@ -96,7 +98,7 @@ class HDRecorderDialog(Gtk.Dialog):
         self.get_content_area().add(sizer)
         self.filename = ''
         GLib.timeout_add(100, self.on_timer)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         self.update_label()
         self.update_rec_button()
@@ -105,7 +107,7 @@ class HDRecorderDialog(Gtk.Dialog):
         self.show_all()
 
     def on_zzub_parameter_changed(self,plugin,group,track,param,value):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         recorder = player.get_stream_recorder()
         if plugin == recorder:
             if (group,track,param) == (zzub.zzub_parameter_group_global,0,0):
@@ -115,7 +117,7 @@ class HDRecorderDialog(Gtk.Dialog):
 
     def update_rec_button(self, value=None):
 #        block = self.hgroup.autoblock()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         recorder = player.get_stream_recorder()
         if value is None:
             value = recorder.get_parameter_value(zzub.zzub_parameter_group_global, 0, 1)
@@ -124,7 +126,7 @@ class HDRecorderDialog(Gtk.Dialog):
 
     # todo: the paramter change eveny should be received when new filename selected. todo: find out and fix it';kn X                                                                                                                            ?
     def update_label(self):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         recorder = player.get_stream_recorder()
         self.btnsaveas.set_label(recorder.describe_value(zzub.zzub_parameter_group_global, 0, 0))
 
@@ -136,7 +138,7 @@ class HDRecorderDialog(Gtk.Dialog):
         @param event: Command event.
         @type event: wx.CommandEvent
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         recorder = player.get_stream_recorder()
         recorder.set_attribute_value(0, not widget.get_active())
         player.history_flush()
@@ -154,7 +156,7 @@ class HDRecorderDialog(Gtk.Dialog):
         state of recording.
         """
         if self.is_visible():
-            player = com.get('neil.core.player')
+            player = components.get('neil.core.player')
             master = player.get_plugin(0)
             bpm = master.get_parameter_value(1, 0, 1)
             tpb = master.get_parameter_value(1, 0, 2)
@@ -173,7 +175,7 @@ class HDRecorderDialog(Gtk.Dialog):
         """
         dlg = Gtk.FileChooserDialog(title="Save", parent=self, action=Gtk.FileChooserAction.SAVE, )
         dlg.add_buttons( "_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.OK)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         dlg.set_do_overwrite_confirmation(True)
         ffwav = Gtk.FileFilter()
         ffwav.set_name("PCM Waves (*.wav)")
@@ -195,7 +197,7 @@ class HDRecorderDialog(Gtk.Dialog):
         """
         Handler for the "Record" button.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         recorder = player.get_stream_recorder()
         recorder.set_parameter_value_direct(zzub.zzub_parameter_group_global, 0, 1, widget.get_active(), False)
 
@@ -213,7 +215,7 @@ __neil__ = dict(
 
 if __name__ == '__main__':
     from neil import testplayer # pylint: disable = ungrouped-imports
-    # player = com.get('neil.core.player')
+    # player = components.get('neil.core.player')
     player = testplayer.get_player()
     player.load_ccm(filepath('demosongs/paniq-knark.ccm'))
     window = testplayer.TestWindow()

@@ -40,7 +40,7 @@ import neil.common as common
 import neil.preset as preset_module
 from neil.common import MARGIN
 
-import neil.com as com
+from neil.main import components
 
 class ParameterView(Gtk.VBox):
     """
@@ -122,7 +122,7 @@ class ParameterView(Gtk.VBox):
         self.btnrandom.connect('clicked', self.on_button_random)
         self.btnhelp.connect('clicked', self.on_button_help)
         self.connect('destroy', self.on_destroy)
-        routeview = com.get('neil.core.routerpanel').view
+        routeview = components.get('neil.core.routerpanel').view
         self.connect('key-press-event', routeview.on_key_jazz, self.plugin)
         self.connect('key-release-event', routeview.on_key_jazz_release, self.plugin)
         self.connect('button-press-event', self.on_left_down)
@@ -138,7 +138,7 @@ class ParameterView(Gtk.VBox):
         toplevelgroup.pack_start(scrollwindow, True, True, 0)
 
         self.pack_start(toplevelgroup, True, True, 0)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         self.update_preset_buttons()
 
@@ -369,7 +369,7 @@ class ParameterView(Gtk.VBox):
 
     def on_drag_data_received(self, w, context, x, y, data, info, time, xxx_todo_changeme4):
         (g,t,i) = xxx_todo_changeme4
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         try:
             if data and data.format == 8:
                 plugin_id, sg, st, si = pickle.loads(data.data)
@@ -390,7 +390,7 @@ class ParameterView(Gtk.VBox):
         Unbinds all midi controllers from the selected parameter.
         """
         (g,t,i) = xxx_todo_changeme5
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.remove_midimapping(self.plugin, g, t, i)
         self.update_namelabel(g,t,i)
         player.history_commit("remove MIDI mapping")
@@ -423,7 +423,7 @@ class ParameterView(Gtk.VBox):
         """
         (g, t, i) = xxx_todo_changeme7
         import neil.controller as controller
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         res = controller.learn_controller(self)
         if res:
             name, channel, ctrlid = res
@@ -438,7 +438,7 @@ class ParameterView(Gtk.VBox):
         """
         (g, t, i) = xxx_todo_changeme8
         (name, channel, ctrlid) = xxx_todo_changeme9
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         # FIXME: commented-out for now, because midi controllers crash neil
         # after closing and reopening a rack.
         player.add_midimapping(self.plugin, g, t, i, channel, ctrlid)
@@ -479,7 +479,7 @@ class ParameterView(Gtk.VBox):
     # this fails to add italics to event-connected parameters
     # because get_event_connection_bindings() is broken, for now.
     def update_namelabel(self, g, t, i):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         nl, s, vl = self.pid2ctrls[(g, t, i)]
         markup = "<b>%s</b>" % nl._default_name
         if self.get_event_connection_bindings(g, t, i):
@@ -499,7 +499,7 @@ class ParameterView(Gtk.VBox):
         @type event: wx.Event
         """
         (g,t,i) = xxx_todo_changeme10
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if event.button == 1:
             nl,s,vl = self.pid2ctrls[(g,t,i)]
             s.grab_focus()
@@ -578,7 +578,7 @@ class ParameterView(Gtk.VBox):
         """
         Updates the preset box.
         """
-        config = com.get('neil.core.config')
+        config = components.get('neil.core.config')
         self.presets = config.get_plugin_presets(self.pluginloader)
         s = self.presetbox.get_child().get_text()
         self.presetbox.get_model().clear()
@@ -597,7 +597,7 @@ class ParameterView(Gtk.VBox):
                             self.plugin.set_parameter_value(g,t,i,p.get_value_default(),0)
         else:
             preset.apply(self.plugin)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.history_commit("change preset")
         #self.update_all_sliders()
 
@@ -605,7 +605,7 @@ class ParameterView(Gtk.VBox):
         """
         Handler for the Add preset button
         """
-        config = com.get('neil.core.config')
+        config = components.get('neil.core.config')
         name = self.presetbox.get_child().get_text()
         presets = [preset for preset in self.presets.presets if prepstr(preset.name) == name]
         if presets:
@@ -625,7 +625,7 @@ class ParameterView(Gtk.VBox):
         """
         Handler for the Remove preset button
         """
-        config = com.get('neil.core.config')
+        config = components.get('neil.core.config')
         name = self.presetbox.get_child().get_text()
         presets = [preset for preset in self.presets.presets if prepstr(preset.name) == name]
         if presets:
@@ -734,7 +734,7 @@ class ParameterView(Gtk.VBox):
                         self.plugin.set_parameter_value(g,t,i,v,0)
                         s.set_value(v)
                         self.update_valuelabel(g,t,i)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.history_commit("randomize parameters")
 
     def on_button_help(self, event):
@@ -771,7 +771,7 @@ class ParameterView(Gtk.VBox):
                     s.set_value(value)
                     self.plugin.set_parameter_value(g,t,i,int(s.get_value()),0)
                     self.update_valuelabel(g,t,i)
-                    player = com.get('neil.core.player')
+                    player = components.get('neil.core.player')
                     player.history_commit("change plugin parameter")
                 except:
                     import traceback
@@ -784,7 +784,7 @@ class ParameterView(Gtk.VBox):
         """
         Handles destroy events.
         """
-#               player = com.get('neil.core.player')
+#               player = components.get('neil.core.player')
 #               print player.get_midimapping_count()
 #               for i in range(player.get_midimapping_count()):
 #                       m =  player.get_midimapping(i)
@@ -806,7 +806,7 @@ class ParameterView(Gtk.VBox):
             nl,s,vl = self.pid2ctrls[(g,t,i)]
             s.set_value(v)
             self.update_valuelabel(g,t,i)
-            player = com.get('neil.core.player')
+            player = components.get('neil.core.player')
             player.history_commit("reset plugin parameter")
             # s.emit_stop_by_name('button-press-event')
 
@@ -833,7 +833,7 @@ class ParameterView(Gtk.VBox):
         v = self.plugin.get_parameter_value(g,t,i)
         s.set_value(v)
         self.update_valuelabel(g,t,i)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.history_commit("change plugin parameter")
 
     def update_valuelabel(self, g, t, i):
@@ -942,7 +942,7 @@ class RackPanel(Gtk.VBox):
         self.rowgroup = rowgroup
         self.connect('realize', self.on_realize)
         self.add(self.scrollwindow)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_delete_plugin += self.update_all
 
     def handle_focus(self):

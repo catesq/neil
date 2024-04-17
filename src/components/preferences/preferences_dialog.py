@@ -2,7 +2,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from neil import com
+from neil.main import components
 from neil.common import MARGIN
 from neil.utils import ui
 
@@ -36,7 +36,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.nb.set_show_tabs(False)
         self.nb.set_border_width(MARGIN)
         self.nb.set_show_border(False)
-        self.panels = sorted(com.get_from_category('neil.prefpanel'), key=key_prefpanel)
+        self.panels = sorted(components.get_from_category('neil.prefpanel'), key=key_prefpanel)
 
         starting_tab_index = 0
         for i, panel in enumerate(self.panels):
@@ -100,7 +100,7 @@ class PreferencesDialog(Gtk.Dialog):
         """
         try:
             self.apply()
-        except com.exception('neil.exception.cancel'):
+        except components.exception('neil.exception.cancel'):
             pass
 
     def on_ok(self):
@@ -111,5 +111,5 @@ class PreferencesDialog(Gtk.Dialog):
         try:
             self.apply()
             self.destroy()
-        except com.exception('neil.exception.cancel'):
+        except components.exception('neil.exception.cancel'):
             pass

@@ -28,10 +28,14 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject, Gdk
 
 
-import neil.contextlog as contextlog
-import neil.errordlg as errordlg
+from . import contextlog, errordlg
+from neil.component_manager import ComponentManager
 
-import neil.com as com
+
+
+# used globally by all modules as a service locator 
+components = ComponentManager()
+
 
 def shutdown():
     Gtk.main_quit()
@@ -41,8 +45,9 @@ def init_neil(argv):
     """
     Loads the categories neccessary to visualize neil.
     """
-    com.get_from_category('driver')
-    com.get_from_category('rootwindow')
+    components.init()
+    components.get_from_category('driver')
+    components.get_from_category('rootwindow')
 
 def run(argv, initfunc = init_neil):
     """
@@ -62,7 +67,7 @@ def run(argv, initfunc = init_neil):
 
     contextlog.init()
     errordlg.install()
-    com.init()
+    
 
     initfunc(argv)
 
@@ -70,13 +75,13 @@ def run(argv, initfunc = init_neil):
         if i in argv:
             argv.remove(i)
 
-    options = com.get('neil.core.options')
+    options = components.get('neil.core.options')
     options.parse_args(argv)
 
-    eventbus = com.get('neil.core.eventbus')
+    eventbus = components.get('neil.core.eventbus')
     eventbus.shutdown += shutdown
 
-    options = com.get('neil.core.options')
+    options = components.get('neil.core.options')
     app_options, app_args = options.get_options_args()
 
     if app_options.profile:

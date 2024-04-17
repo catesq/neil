@@ -1,5 +1,5 @@
 
-from neil.com import com
+from neil.main import components
 from neil.utils import ui
 
 
@@ -26,8 +26,8 @@ class MultiplePluginMenu(ui.EasyMenu):
 
     def __init__(self, plugins):
         ui.EasyMenu.__init__(self)
-        player = com.get('neil.core.player')
-        router = com.get('neil.core.router.view')
+        player = components.get('neil.core.player')
+        router = components.get('neil.core.router.view')
 
         self.add_check_item("_Mute", player.group_is_muted(plugins), on_popup_mute_selected, plugins)
         self.add_item("_Delete", on_popup_delete_group, plugins)

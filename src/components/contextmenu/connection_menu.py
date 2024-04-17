@@ -5,7 +5,7 @@ from gi.repository import Gtk
 
 import zzub
 
-from neil.com import com
+from neil.main import components
 from neil.utils import ui
 
 from .actions import on_popup_disconnect, on_popup_disconnect_all, \

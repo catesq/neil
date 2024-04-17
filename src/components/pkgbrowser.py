@@ -29,7 +29,7 @@ from gi.repository import GObject, Gtk, Pango
 
 import inspect, os
 
-import neil.com as com
+from neil.main import components
 import neil.contextlog as contextlog
 
 from neil.utils import ui
@@ -80,12 +80,12 @@ class PackageBrowserDialog(Gtk.Dialog):
         packagenode = self.ifacestore.append(rootnode, ["<b>By Packages</b>", None])
         pkgnodes = {}
         pkgnodes['(unknown)'] = self.ifacestore.append(packagenode, ["<i>(unknown)</i>", None])
-        for pkg in sorted(com.get_packages(), lambda a, b: cmp(a.name.lower(), b.name.lower())):
+        for pkg in sorted(components.get_packages(), lambda a, b: cmp(a.name.lower(), b.name.lower())):
             pkgnodes[pkg.module] = self.ifacestore.append(packagenode, ["<b>%s</b> (<b>module</b> <i>%s</i>)" % (pkg.name, pkg.module), None])
         categorynode = self.ifacestore.append(rootnode, ["<b>By Categories</b>", None])
         catnodes = {}
         catnodes['(unknown)'] = self.ifacestore.append(categorynode, ["<i>(unknown)</i>", None])
-        for name in sorted(com.get_categories()):
+        for name in sorted(components.get_categories()):
             catnodes[name] = self.ifacestore.append(categorynode, ["<b>category</b> <i>%s</i>" % name, None])
         allnode = self.ifacestore.append(rootnode, ["<b>By Alphabet</b>", None])
 
@@ -99,8 +99,8 @@ class PackageBrowserDialog(Gtk.Dialog):
                 eelement = getattr(element, ename)
                 if not ename.startswith('_') and inspect.ismethod(eelement):
                     methodnode = self.ifacestore.append(ifacenode, ["<b>method</b> %s" % ename, eelement])
-        for name in sorted(com.get_factories()):
-            metainfo = com.get_factories()[name]
+        for name in sorted(components.get_factories()):
+            metainfo = components.get_factories()[name]
             create_classnode(allnode, metainfo)
             modulename = metainfo.get('modulename', None) or '(unknown)'
             if modulename in pkgnodes:
@@ -321,7 +321,7 @@ class PackageBrowserMenuItem:
         menu.append(item)
 
     def on_menuitem_activate(self, widget):
-        browser = com.get('neil.componentbrowser.dialog')
+        browser = components.get('neil.componentbrowser.dialog')
         browser.show_all()
 
 __neil__ = dict(

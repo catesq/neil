@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -31,11 +29,9 @@ from .utils import prepstr, db2linear, linear2db, note2str
 from .utils import read_int, write_int, box_contains
 import zzub
 import config
-from . import common
-from .common import MARGIN, MARGIN2, MARGIN3
 from neil.utils import ui
 
-import neil.com as com
+from neil.main import components
 
 # size of border
 BORDER = 5
@@ -555,7 +551,7 @@ class EnvelopeView(Gtk.DrawingArea):
         self.envelope = None
         sel = self.wavetable.get_sample_selection()
         if sel:
-            player = com.get('neil.core.player')
+            player = components.get('neil.core.player')
             w = player.get_wave(sel[0])
             if w.get_envelope_count():
                 self.envelope = w.get_envelope(0)

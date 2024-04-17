@@ -26,7 +26,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject
 
-from neil import com
+from neil.main import components
 
 from .utils import prepstr, buffersize_to_latency, filepath
 from .common import MARGIN, MARGIN2, MARGIN3
@@ -81,7 +81,7 @@ class SelectControllerDialog(Gtk.Dialog):
         self.connect('response', self.on_close)
         self.editname.connect('activate', self.on_editname_activate)
         self.editname.connect('changed', self.on_editname_text)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_midi_control += self.on_player_callback
         self.update()
         self.show_all()

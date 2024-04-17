@@ -2,7 +2,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
-import neil.com as com
+from neil.main import components
 from neil.common import MARGIN
 import config
 
@@ -60,7 +60,7 @@ class SequencerToolBar(Gtk.HBox):
         """
         Updates the step selection choice box.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         try:
             self.stepselect.set_active(self.steps.index(self.seqview.step))
             config.get_config().set_default_int('SequencerStep', self.seqview.step)
@@ -89,5 +89,5 @@ class SequencerToolBar(Gtk.HBox):
         else:
             self.seqview.step = step
         self.seqview.update()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.set_seqstep(step)

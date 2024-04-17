@@ -32,7 +32,7 @@ import glob
 import os
 import re
 
-import neil.com
+from neil.main import components
 import neil.preset as preset
 
 from neil.utils import (camelcase_to_unixstyle, filenameify, filepath, iconpath, sharedpath, settingspath)
@@ -973,7 +973,7 @@ def get_config(*args) -> NeilConfig:
 
     @rtype: {NeilConfig}.
     """
-    return neil.com.get(NeilConfigSingleton.__neil__['id'])
+    return neil.components.get(NeilConfigSingleton.__neil__['id'])
 
 
 def get_plugin_blacklist():

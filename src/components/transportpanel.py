@@ -24,7 +24,7 @@ from gi.repository import GObject, Gtk, Gdk
 
 from neil.common import MARGIN, MARGIN0
 from neil.utils import ui, imagepath
-import neil.com as com
+from neil.main import components
 
 import config
 
@@ -53,7 +53,7 @@ class TransportControls:
         Initializer.
         """
 
-        self.master_controls = com.get('neil.core.panel.master')
+        self.master_controls = components.get('neil.core.panel.master')
         self.master_control_window = Gtk.Window()
         self.master_control_window.add(self.master_controls)
         self.master_control_window.connect('delete-event', lambda widget, event: self.volume_button.set_state(False))
@@ -62,7 +62,7 @@ class TransportControls:
         self.master_control_window.set_resizable(True)
         self.master_control_window.set_position(Gtk.WindowPosition.MOUSE)
 
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         eventbus.zzub_player_state_changed += self.on_zzub_player_state_changed
         eventbus.document_loaded += self.update_all
@@ -73,7 +73,7 @@ class TransportControls:
         self.play_buttons = self.build_play_buttons()
         self.play_info = self.build_play_info()
 
-        statusbar = com.get('neil.core.statusbar')
+        statusbar = components.get('neil.core.statusbar')
         statusbar.set_play_controls(self.play_buttons)
         statusbar.set_play_info(self.play_info)
 
@@ -110,7 +110,7 @@ class TransportControls:
         box.pack_start(self.cpulabel, False, False, MARGIN0)
         box.pack_start(self.cpuvalue, False, False, MARGIN)
 
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.get_plugin(0).set_parameter_value(1, 0, 1, config.get_config().get_default_int('BPM', 126), 1)
         player.get_plugin(0).set_parameter_value(1, 0, 2, config.get_config().get_default_int('TPB', 4), 1)
         player.history_flush_last()
@@ -157,8 +157,8 @@ class TransportControls:
 
         # self.set_border_width(MARGIN)
 
-        player = com.get('neil.core.player')
-        driver = com.get('neil.core.driver.audio')
+        player = components.get('neil.core.player')
+        driver = components.get('neil.core.driver.audio')
 
         self.hgroup.connect(self.btnplay, 'clicked', lambda x: player.play())
         self.hgroup.connect(self.btnstop, 'clicked', lambda x: player.stop())
@@ -169,7 +169,7 @@ class TransportControls:
         
         #self.volume_button.connect('focus-out-event', self.on_master_focus_out)
 
-        accel = com.get('neil.core.accelerators')
+        accel = components.get('neil.core.accelerators')
         #accel.add_accelerator('F5', self.btnplay, 'clicked')
         accel.add_accelerator('F7', self.btnrecord, 'clicked')
         #accel.add_accelerator('F8', self.btnstop, 'clicked')
@@ -178,22 +178,22 @@ class TransportControls:
         return box
 
     #def spinbox_clicked(self, widget, event):
-    #    player = com.get('neil.core.player')
+    #    player = components.get('neil.core.player')
     #    player.spinbox_edit = True
 
     # def play(self, widget):
-    #     player = com.get('neil.core.player')
+    #     player = components.get('neil.core.player')
     #     player.play()
 
     # def on_toggle_automation(self, widget):
-    #     player = com.get('neil.core.player')
+    #     player = components.get('neil.core.player')
     #     if widget.get_active():
     #         player.set_automation(1)
     #     else:
     #         player.set_automation(0)
 
     # def stop(self, widget):
-    #     player = com.get('neil.core.player')
+    #     player = components.get('neil.core.player')
     #     player.stop()
 
     # def on_toggle_loop(self, widget):
@@ -204,7 +204,7 @@ class TransportControls:
     #     @param event command event.
     #     @type event: CommandEvent
     #     """
-    #     player = com.get('neil.core.player')
+    #     player = components.get('neil.core.player')
     #     if widget.get_active():
     #         player.set_loop_enabled(1)
     #     else:
@@ -218,7 +218,7 @@ class TransportControls:
     #     @param event command event.
     #     @type event: CommandEvent
     #     """
-    #     driver = com.get('neil.core.driver.audio')
+    #     driver = components.get('neil.core.driver.audio')
     #     if widget.get_active():
     #         driver.enable(0)
     #     else:
@@ -228,7 +228,7 @@ class TransportControls:
         """
         Toggle master control window
         """
-        root_window = com.get('neil.core.window.root')
+        root_window = components.get('neil.core.window.root')
         if widget.get_active():
             root_window.master.show_all()
         else:
@@ -242,7 +242,7 @@ class TransportControls:
         """
         Update CPU load
         """
-        cpu = com.get('neil.core.driver.audio').get_cpu_load()
+        cpu = components.get('neil.core.driver.audio').get_cpu_load()
         #self.cpu.set_fraction(cpu)
         self.cpuvalue.set_label("%i%%" % int((cpu * 100) + 0.5))
         return True
@@ -251,7 +251,7 @@ class TransportControls:
         """
         Event bus callback that toggles the play button according to player state
         """
-        state = com.get('neil.core.player').get_state()
+        state = components.get('neil.core.player').get_state()
         token = self.hgroup.autoblock()
         assert token  # nice to check, keeps the linter happy from being unsed
         if state == zzub.zzub_player_state_playing:
@@ -270,14 +270,14 @@ class TransportControls:
         called when a parameter changes in zzub. checks whether this parameter
         is related to master bpm or tpb and updates the view.
         """
-        # player = com.get('neil.core.player')
+        # player = components.get('neil.core.player')
         # master = player.get_plugin(0)
         # bpm = master.get_parameter_value(1, 0, 1)
         if (group, track) == (1, 0):
             if param == 1:
                 self.update_bpm()
                 try:
-                    com.get('neil.core.wavetablepanel').waveedit.view.view_changed()
+                    components.get('neil.core.wavetablepanel').waveedit.view.view_changed()
                 except AttributeError:
                     pass
 
@@ -291,7 +291,7 @@ class TransportControls:
         @param event: event.
         @type event: wx.Event
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.get_plugin(0).set_parameter_value(1, 0, 1, int(self.bpm.get_value()), 1)
         player.history_commit("change BPM")
         config.get_config().set_default_int('BPM', int(self.bpm.get_value()))
@@ -303,7 +303,7 @@ class TransportControls:
         @param event: event.
         @type event: wx.Event
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.get_plugin(0).set_parameter_value(1, 0, 2, int(self.tpb.get_value()), 1)
         player.history_commit("change TPB")
         config.get_config().set_default_int('TPB', int(self.tpb.get_value()))
@@ -312,7 +312,7 @@ class TransportControls:
         """
         Update Beats Per Minute
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         master = player.get_plugin(0)
         bpm = master.get_parameter_value(1, 0, 1)
         self.bpm.set_value(bpm)
@@ -321,7 +321,7 @@ class TransportControls:
         """
         Update Ticks Per Beat
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         master = player.get_plugin(0)
         tpb = master.get_parameter_value(1, 0, 2)
         self.tpb.set_value(tpb)
@@ -332,7 +332,7 @@ class TransportControls:
         """
         self.update_bpm()
         self.update_tpb()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         self.btnloop.set_active(player.get_loop_enabled())
         self.btnrecord.set_active(player.get_automation())
 
@@ -386,7 +386,7 @@ if __name__ == '__main__':
 #         Initializer.
 #         """
 #         Gtk.HBox.__init__(self)
-#         self.master_controls = com.get('neil.core.panel.master')
+#         self.master_controls = components.get('neil.core.panel.master')
 #         self.master_control_window = Gtk.Window()
 #         self.master_control_window.add(self.master_controls)
 #         self.master_control_window.connect('delete-event', lambda widget, event: self.volume_button.set_state(False))
@@ -395,7 +395,7 @@ if __name__ == '__main__':
 #         self.master_control_window.set_resizable(True)
 #         self.master_control_window.set_position(Gtk.WindowPosition.MOUSE)
 
-#         eventbus = com.get('neil.core.eventbus')
+#         eventbus = components.get('neil.core.eventbus')
 #         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
 #         eventbus.zzub_player_state_changed += self.on_zzub_player_state_changed
 #         eventbus.document_loaded += self.update_all
@@ -487,7 +487,7 @@ if __name__ == '__main__':
 #         self.pack_end(hbox_end, True, True, 0)
 
 #         self.set_border_width(MARGIN)
-#         player = com.get('neil.core.player')
+#         player = components.get('neil.core.player')
 #         player.get_plugin(0).set_parameter_value(1, 0, 1, config.get_config().get_default_int('BPM', 126), 1)
 #         player.get_plugin(0).set_parameter_value(1, 0, 2, config.get_config().get_default_int('TPB', 4), 1)
 #         player.history_flush_last()
@@ -497,8 +497,8 @@ if __name__ == '__main__':
 #         self.hgroup.connect(self.tpb, 'value-changed', self.on_tpb)
 #         GObject.timeout_add(500, self.update_cpu)
 
-#         player = com.get('neil.core.player')
-#         driver = com.get('neil.core.driver.audio')
+#         player = components.get('neil.core.player')
+#         driver = components.get('neil.core.driver.audio')
 
 #         self.hgroup.connect(self.btnplay, 'clicked', lambda x: player.play())
 #         self.hgroup.connect(self.btnstop, 'clicked', lambda x: player.stop())
@@ -508,7 +508,7 @@ if __name__ == '__main__':
 #         self.hgroup.connect(self.volume_button, 'clicked', self.on_toggle_volume)
 #         #self.volume_button.connect('focus-out-event', self.on_master_focus_out)
 
-#         accel = com.get('neil.core.accelerators')
+#         accel = components.get('neil.core.accelerators')
 #         #accel.add_accelerator('F5', self.btnplay, 'clicked')
 #         accel.add_accelerator('F7', self.btnrecord, 'clicked')
 #         #accel.add_accelerator('F8', self.btnstop, 'clicked')
@@ -516,22 +516,22 @@ if __name__ == '__main__':
 #         self.update_all()
 
 #     #def spinbox_clicked(self, widget, event):
-#     #    player = com.get('neil.core.player')
+#     #    player = components.get('neil.core.player')
 #     #    player.spinbox_edit = True
 
 #     # def play(self, widget):
-#     #     player = com.get('neil.core.player')
+#     #     player = components.get('neil.core.player')
 #     #     player.play()
 
 #     # def on_toggle_automation(self, widget):
-#     #     player = com.get('neil.core.player')
+#     #     player = components.get('neil.core.player')
 #     #     if widget.get_active():
 #     #         player.set_automation(1)
 #     #     else:
 #     #         player.set_automation(0)
 
 #     # def stop(self, widget):
-#     #     player = com.get('neil.core.player')
+#     #     player = components.get('neil.core.player')
 #     #     player.stop()
 
 #     # def on_toggle_loop(self, widget):
@@ -542,7 +542,7 @@ if __name__ == '__main__':
 #     #     @param event command event.
 #     #     @type event: CommandEvent
 #     #     """
-#     #     player = com.get('neil.core.player')
+#     #     player = components.get('neil.core.player')
 #     #     if widget.get_active():
 #     #         player.set_loop_enabled(1)
 #     #     else:
@@ -556,7 +556,7 @@ if __name__ == '__main__':
 #     #     @param event command event.
 #     #     @type event: CommandEvent
 #     #     """
-#     #     driver = com.get('neil.core.driver.audio')
+#     #     driver = components.get('neil.core.driver.audio')
 #     #     if widget.get_active():
 #     #         driver.enable(0)
 #     #     else:
@@ -566,7 +566,7 @@ if __name__ == '__main__':
 #         """
 #         Toggle master control window
 #         """
-#         root_window = com.get('neil.core.window.root')
+#         root_window = components.get('neil.core.window.root')
 #         if widget.get_active():
 #             root_window.master.show_all()
 #         else:
@@ -580,7 +580,7 @@ if __name__ == '__main__':
 #         """
 #         Update CPU load
 #         """
-#         cpu = com.get('neil.core.driver.audio').get_cpu_load()
+#         cpu = components.get('neil.core.driver.audio').get_cpu_load()
 #         #self.cpu.set_fraction(cpu)
 #         self.cpuvalue.set_label("%i%%" % int((cpu * 100) + 0.5))
 #         return True
@@ -589,7 +589,7 @@ if __name__ == '__main__':
 #         """
 #         Event bus callback that toggles the play button according to player state
 #         """
-#         state = com.get('neil.core.player').get_state()
+#         state = components.get('neil.core.player').get_state()
 #         token = self.hgroup.autoblock()
 #         assert token  # nice to check, keeps the linter happy from being unsed
 #         if state == zzub.zzub_player_state_playing:
@@ -608,14 +608,14 @@ if __name__ == '__main__':
 #         called when a parameter changes in zzub. checks whether this parameter
 #         is related to master bpm or tpb and updates the view.
 #         """
-#         # player = com.get('neil.core.player')
+#         # player = components.get('neil.core.player')
 #         # master = player.get_plugin(0)
 #         # bpm = master.get_parameter_value(1, 0, 1)
 #         if (group, track) == (1, 0):
 #             if param == 1:
 #                 self.update_bpm()
 #                 try:
-#                     com.get('neil.core.wavetablepanel').waveedit.view.view_changed()
+#                     components.get('neil.core.wavetablepanel').waveedit.view.view_changed()
 #                 except AttributeError:
 #                     pass
 
@@ -629,7 +629,7 @@ if __name__ == '__main__':
 #         @param event: event.
 #         @type event: wx.Event
 #         """
-#         player = com.get('neil.core.player')
+#         player = components.get('neil.core.player')
 #         player.get_plugin(0).set_parameter_value(1, 0, 1, int(self.bpm.get_value()), 1)
 #         player.history_commit("change BPM")
 #         config.get_config().set_default_int('BPM', int(self.bpm.get_value()))
@@ -641,7 +641,7 @@ if __name__ == '__main__':
 #         @param event: event.
 #         @type event: wx.Event
 #         """
-#         player = com.get('neil.core.player')
+#         player = components.get('neil.core.player')
 #         player.get_plugin(0).set_parameter_value(1, 0, 2, int(self.tpb.get_value()), 1)
 #         player.history_commit("change TPB")
 #         config.get_config().set_default_int('TPB', int(self.tpb.get_value()))
@@ -650,7 +650,7 @@ if __name__ == '__main__':
 #         """
 #         Update Beats Per Minute
 #         """
-#         player = com.get('neil.core.player')
+#         player = components.get('neil.core.player')
 #         master = player.get_plugin(0)
 #         bpm = master.get_parameter_value(1, 0, 1)
 #         self.bpm.set_value(bpm)
@@ -659,7 +659,7 @@ if __name__ == '__main__':
 #         """
 #         Update Ticks Per Beat
 #         """
-#         player = com.get('neil.core.player')
+#         player = components.get('neil.core.player')
 #         master = player.get_plugin(0)
 #         tpb = master.get_parameter_value(1, 0, 2)
 #         self.tpb.set_value(tpb)
@@ -670,7 +670,7 @@ if __name__ == '__main__':
 #         """
 #         self.update_bpm()
 #         self.update_tpb()
-#         player = com.get('neil.core.player')
+#         player = components.get('neil.core.player')
 #         self.btnloop.set_active(player.get_loop_enabled())
 #         self.btnrecord.set_active(player.get_automation())
 

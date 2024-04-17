@@ -32,7 +32,7 @@ from gi.repository import GObject, Gtk, Pango
 import code
 import fnmatch
 
-import neil.com as com
+from neil.main import components
 import neil.contextlog as contextlog
 
 GObject.threads_init()
@@ -63,9 +63,9 @@ class PythonConsoleDialog(Gtk.Dialog):
         toolitem.set_submenu(self.toolmenu)
         self.shell.append(toolitem)
         self.locals = {}
-        for handler in com.get_from_category('pythonconsole.locals'):
+        for handler in components.get_from_category('pythonconsole.locals'):
             handler.register_locals(self.locals)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         self.locals.update(dict(
             __name__ = "__console__",
             __doc__ = None,
@@ -75,7 +75,7 @@ class PythonConsoleDialog(Gtk.Dialog):
             categories = self.list_categories,
             facts = self.list_factories,
             cats = self.list_categories,
-            new = com.get,
+            new = components.get,
             vbox = vpack,
             hbox = hpack,
             tool = self.add_tool,
@@ -90,7 +90,7 @@ class PythonConsoleDialog(Gtk.Dialog):
         buffer = BUFFER_CLASS()
 
         view = VIEW_CLASS(buffer=buffer)
-        cfg = com.get('neil.core.config')
+        cfg = components.get('neil.core.config')
         # "ProFontWindows 9"
         view.modify_font(Pango.FontDescription(cfg.get_pattern_font('Monospace')))
         view.set_editable(False)
@@ -136,23 +136,23 @@ class PythonConsoleDialog(Gtk.Dialog):
         item.show()
         self.toolmenu.append(item)
         if add_to_config:
-            config = com.get('neil.core.config')
+            config = components.get('neil.core.config')
             config.debug_commands = config.debug_commands + [cmd]
 
     def exec_tool(self, menuitem, cmd):
         self.command(cmd)
 
     def list_categories(self):
-        for category in com.get_categories():
+        for category in components.get_categories():
             print(category)
 
     def list_factories(self):
-        for factory,item in com.get_factories().items():
+        for factory,item in components.get_factories().items():
             print((factory,'=',item['classobj']))
 
     def list_plugins(self, pattern='*'):
         uris = []
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for pl in player.get_pluginloader_list():
             uri = pl.get_uri()
             if fnmatch.fnmatch(uri, pattern):
@@ -160,7 +160,7 @@ class PythonConsoleDialog(Gtk.Dialog):
         return uris
 
     def create_plugin(self, pattern='*'):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for uri in self.list_plugins(pattern):
             pl = player.get_pluginloader_by_name(uri)
             player.create_plugin(pl)
@@ -221,7 +221,7 @@ class PythonConsoleMenuItem:
         menu.append(item)
 
     def on_menuitem_activate(self, widget):
-        browser = com.get('neil.pythonconsole.dialog')
+        browser = components.get('neil.pythonconsole.dialog')
         browser.show_all()
 
 __neil__ = dict(
@@ -233,9 +233,9 @@ __neil__ = dict(
 
 if __name__ == '__main__': # extension mode
     contextlog.init()
-    com.init()
+    components.init()
     # running standalone
-    browser = com.get('neil.pythonconsole.dialog', False)
+    browser = components.get('neil.pythonconsole.dialog', False)
     browser.connect('destroy', lambda widget: Gtk.main_quit())
     browser.show_all()
     Gtk.main()

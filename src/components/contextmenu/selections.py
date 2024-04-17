@@ -4,7 +4,6 @@
 #     pass
 #
 
-from neil.com import com
 
 from .actions import on_store_selection, on_restore_selection
 

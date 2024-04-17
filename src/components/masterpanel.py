@@ -26,7 +26,9 @@ from collections import deque
 from math import fabs
 import array
 
-from neil import utils, com, common
+from neil import utils, common
+from neil.main import components
+
 
 # pylint: disable=no-member
 pattern = cairo.SurfacePattern(
@@ -69,7 +71,7 @@ class AmpView(Gtk.DrawingArea):
         """
         Event handler triggered by a 20fps timer event.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         master = player.get_plugin(0)
         self.amp = min(master.get_last_peak()[self.channel], 1.0)
 
@@ -180,7 +182,7 @@ class MasterPanel(Gtk.VBox):
         Gtk.VBox.__init__(self)
         self.latency = 0
         self.ohg = utils.ui.ObjectHandlerGroup()
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         eventbus.document_loaded += self.update_all
         #eventbus.zzub_player_state_changed += self.on_zzub_player_state_changed
@@ -221,14 +223,14 @@ class MasterPanel(Gtk.VBox):
 
         # Send keystrokes back to main window
         # Lambda needed because root window isn't initialized here
-        self.connect('key-press-event', lambda w, e: com.get('neil.core.window.root').on_key_down(w, e))
+        self.connect('key-press-event', lambda w, e: components.get('neil.core.window.root').on_key_down(w, e))
         self.connect('realize', self.on_realize)
 
     def on_realize(self, widget):
         self.clipbtn_org_color = self.clipbtn.get_style_context().get_background_color(Gtk.StateType.NORMAL)
 
     def on_zzub_parameter_changed(self, plugin, group, track, param, value):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if plugin == player.get_plugin(0):
             self.update_all()
 
@@ -240,7 +242,7 @@ class MasterPanel(Gtk.VBox):
         @type event: wx.Event
         """
         vol = int(min(max(value, 0), 16384) + 0.5)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         master = player.get_plugin(0)
         master.set_parameter_value_direct(1, 0, 0, 16384 - vol, 1)
         #self.masterslider.set_value(vol)
@@ -262,7 +264,7 @@ class MasterPanel(Gtk.VBox):
         self.on_scroll_changed(None, None, vol)
 
     def on_clip_button_clicked(self, widget):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         master = player.get_plugin(0)
         maxL, maxR = master.get_last_peak()
         self.clipbtn.set_label("%.1f dbFS" % utils.linear2db(min(maxL, maxR, 1.)))
@@ -278,7 +280,7 @@ class MasterPanel(Gtk.VBox):
         Updates all controls.
         """
         # block = self.ohg.autoblock()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         master = player.get_plugin(0)
         vol = master.get_parameter_value(1, 0, 0)
         self.masterslider.set_value(16384 - vol)
@@ -290,7 +292,7 @@ class MasterPanel(Gtk.VBox):
                 db = 0.0
             text = "%.1f dBFS" % db
         self.volumelabel.set_markup("<small>%s</small>" % text)
-        self.latency = com.get('neil.core.driver.audio').get_latency()
+        self.latency = components.get('neil.core.driver.audio').get_latency()
 
 __neil__ = dict(
     classes=[

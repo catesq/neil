@@ -24,7 +24,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Pango
 
 from neil.common import MARGIN
-import neil.com as com
+from neil.main import components
 
 class InfoPanel(Gtk.VBox):
     """
@@ -55,7 +55,7 @@ class InfoPanel(Gtk.VBox):
         self.set_border_width(MARGIN)
         self.info_view = InfoView()
         self.pack_start(self.info_view, True, True, 0)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.document_loaded += self.update_all
 
     def handle_focus(self):
@@ -92,7 +92,7 @@ class InfoView(Gtk.TextView):
         @param event: Event
         @type event: wx.Event
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         text = self.get_buffer().get_property('text')
         player.set_infotext(text)
 
@@ -106,7 +106,7 @@ class InfoView(Gtk.TextView):
         """
         Updates the view.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         text = player.get_infotext()
         self.get_buffer().set_property('text', text)
 

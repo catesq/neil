@@ -43,7 +43,7 @@ from neil.utils import (
     prepstr, db2linear, linear2db, ui
 )
 
-import neil.com as com
+from neil.main import components
 import neil.common as common
 from neil.common import MARGIN, DRAG_TARGETS
 from rack import ParameterView
@@ -354,7 +354,7 @@ class ParameterDialog(Gtk.Dialog):
         self.get_content_area().add(self.paramview)
         self.connect('destroy', self.on_destroy)
         self.connect('realize', self.on_realize)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_delete_plugin += self.on_zzub_delete_plugin
 
     def on_realize(self, widget):
@@ -431,7 +431,7 @@ class PresetDialog(Gtk.Dialog):
     """
     def __init__(self, manager, plugin, parent):
         #GObject.GObject.__init__(self, parent=parent.get_toplevel())
-        Gtk.Dialog.__init__(self, parent=com.get('neil.core.window.root'))
+        Gtk.Dialog.__init__(self, parent=components.get('neil.core.window.root'))
         self.plugin = plugin
         self.manager = manager
         self.manager.preset_dialogs[plugin] = self
@@ -441,7 +441,7 @@ class PresetDialog(Gtk.Dialog):
         self.set_title(self.presetview.get_title())
         self.get_content_area().add(self.presetview)
         self.connect('realize', self.on_realize)
-        eventbus = com.get('neil.core.eventbus')
+        eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_delete_plugin += self.on_zzub_delete_plugin
 
     def on_zzub_delete_plugin(self, plugin):
@@ -487,7 +487,7 @@ class RoutePanel(Gtk.VBox):
         Initializer.
         """
         Gtk.VBox.__init__(self)
-        self.view = com.get('neil.core.router.view', self)
+        self.view = components.get('neil.core.router.view', self)
         self.pack_start(self.view, True, True, 0)
 
     def handle_focus(self):
@@ -682,7 +682,7 @@ class RouteView(Gtk.DrawingArea):
         self.connecting                  = False
         self.drag_update_timer           = False
 
-        eventbus                         = com.get('neil.core.eventbus')
+        eventbus                         = components.get('neil.core.eventbus')
         eventbus.zzub_connect           += self.on_zzub_redraw_event
         eventbus.zzub_disconnect        += self.on_zzub_redraw_event
         eventbus.zzub_plugin_changed    += self.on_zzub_plugin_changed
@@ -731,7 +731,7 @@ class RouteView(Gtk.DrawingArea):
         
 
     def on_active_plugins_changed(self, *args):
-       # player = com.get('neil.core.player')
+       # player = components.get('neil.core.player')
         common.get_plugin_infos().reset_plugingfx()
 
 
@@ -774,7 +774,7 @@ class RouteView(Gtk.DrawingArea):
         
         context.finish(True, True, time)
 
-        player = com.get_player()
+        player = components.get_player()
         player.plugin_origin = self.pixel_to_float((x, y))
         uri = str(data.get_data(), "utf-8")
         conn = None
@@ -865,7 +865,7 @@ class RouteView(Gtk.DrawingArea):
 
     def restore_selection(self, index):
         if self.has_selection(index):
-            player = com.get('neil.core.player')
+            player = components.get('neil.core.player')
             plugins = player.get_plugin_list()
             player.active_plugins = [plugin for plugin in plugins if plugin.get_id() in self.selections[index]]
 
@@ -883,24 +883,24 @@ class RouteView(Gtk.DrawingArea):
         @type event: wx.Event
         """
         mx, my = int(event.x), int(event.y)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.plugin_origin = self.pixel_to_float((mx, my))
         res = self.get_plugin_at((mx, my))
 
         if res:
             mp, (x, y), area = res
             if mp in player.active_plugins and len(player.active_plugins) > 1:
-                menu = com.get('neil.core.contextmenu.multipleplugins', player.active_plugins)
+                menu = components.get('neil.core.contextmenu.multipleplugins', player.active_plugins)
             else:
-                menu = com.get('neil.core.contextmenu.singleplugin', mp)
+                menu = components.get('neil.core.contextmenu.singleplugin', mp)
         else:
             conns = self.get_connections_at((mx, my))
             if conns:
                 # metaplugin, index = res
-                menu = com.get('neil.core.contextmenu.connection', conns)
+                menu = components.get('neil.core.contextmenu.connection', conns)
             else:
                 (x, y) = self.pixel_to_float((mx, my))
-                menu = com.get('neil.core.contextmenu.router', x, y)
+                menu = components.get('neil.core.contextmenu.router', x, y)
 
         menu.popup(self, event)
 
@@ -955,7 +955,7 @@ class RouteView(Gtk.DrawingArea):
         @param types: a list of zzub connection types to match
         @return: a list of tuples [(target_plugin, connection_index, connection_type), (target_plugin, connection_index, connection_type), ...]
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
 
         matches = []
         for tplugin in player.get_plugin_list():
@@ -990,7 +990,7 @@ class RouteView(Gtk.DrawingArea):
         mx, my = x, y
         PW, PH = PLUGINWIDTH / 2, PLUGINHEIGHT / 2
         area = AREA_ANY
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for mp in reversed(list(player.get_plugin_list())):
             pi = common.get_plugin_infos().get(mp)
             if not pi.songplugin:
@@ -1010,11 +1010,11 @@ class RouteView(Gtk.DrawingArea):
         Event handler for left doubleclicks. If the doubleclick
         hits a plugin, the parameter window is being shown.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         mx, my = int(event.x), int(event.y)
         res = self.get_plugin_at((mx, my))
         if not res:
-            searchwindow = com.get('neil.core.searchplugins')
+            searchwindow = components.get('neil.core.searchplugins')
             searchwindow.show_all()
             searchwindow.present()
             return
@@ -1025,7 +1025,7 @@ class RouteView(Gtk.DrawingArea):
             event_result = mp.invoke_event(data, 1)
             # plugins with custom guis are opened by the double click event
             if not mp.get_flags() & zzub.zzub_plugin_flag_has_custom_gui:
-                com.get('neil.core.parameterdialog.manager').show(mp, self)
+                components.get('neil.core.parameterdialog.manager').show(mp, self)
 
     def on_left_down(self, widget, event):
         """
@@ -1036,7 +1036,7 @@ class RouteView(Gtk.DrawingArea):
         @type event: wx.MouseEvent
         """
         self.grab_focus()
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if (event.button == 3):
             return self.on_context_menu(widget, event)
 
@@ -1099,7 +1099,7 @@ class RouteView(Gtk.DrawingArea):
                 self.volume_slider.display((ox + mx, oy + my), mp, index, my)
 
     def drag_update(self, x, y, state):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         ox, oy = self.dragoffset
         mx, my = int(x), int(y)
         x, y = (mx - ox, my - oy)
@@ -1159,7 +1159,7 @@ class RouteView(Gtk.DrawingArea):
         @type event: wx.MouseEvent
         """
         mx, my = int(event.x), int(event.y)
-        player = com.get_player()
+        player = components.get_player()
 
         if self.dragging:
             self.dragging = False
@@ -1235,7 +1235,7 @@ class RouteView(Gtk.DrawingArea):
         #       return True
         # TODO: find a better way
         if self.is_visible():
-            player = com.get('neil.core.player')
+            player = components.get('neil.core.player')
             
             PW, PH = PLUGINWIDTH / 2, PLUGINHEIGHT / 2
             for mp, (rx, ry) in ((mp, self.float_to_pixel(mp.get_position())) for mp in player.get_plugin_list()):
@@ -1271,14 +1271,14 @@ class RouteView(Gtk.DrawingArea):
         """
         Draws only the leds into the offscreen buffer.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if player.is_loading():
             return
 
         cfg = config.get_config()
 
         PW, PH = PLUGINWIDTH / 2, PLUGINHEIGHT / 2
-        driver = com.get('neil.core.driver.audio')
+        driver = components.get('neil.core.driver.audio')
         cpu_scale = driver.get_cpu_load()
         max_cpu_scale = 1.0 / player.get_plugin_count()
         for mp, (rx, ry) in ((mp, self.float_to_pixel(mp.get_position())) for mp in player.get_plugin_list()):
@@ -1453,7 +1453,7 @@ class RouteView(Gtk.DrawingArea):
     def draw_connections(self, ctx, cfg):
         ctx.translate(0.5, 0.5)
         ctx.set_line_width(1)
-        player = com.get_player()
+        player = components.get_player()
         for mp in player.get_plugin_list():
             rx,ry = self.float_to_pixel(mp.get_position())
 
@@ -1491,7 +1491,7 @@ class RouteView(Gtk.DrawingArea):
         """
         Draws plugins, connections and arrows to an offscreen buffer.
         """
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if player.is_loading():
             return
 
@@ -1557,9 +1557,9 @@ class RouteView(Gtk.DrawingArea):
         k = Gdk.keyval_name(kv)
         if mask & Gdk.ModifierType.CONTROL_MASK:
             if k == 'Return':
-                com.get('neil.core.pluginbrowser', self)
+                components.get('neil.core.pluginbrowser', self)
                 return
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         if not plugin:
             if player.active_plugins:
                 plugin = player.active_plugins[0]
@@ -1585,7 +1585,7 @@ class RouteView(Gtk.DrawingArea):
                 plugin.play_midi_note(n, 0, 127)
 
     def on_key_jazz_release(self, widget, event, plugin):
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         kv = event.keyval
         mask = event.get_state()
 
@@ -1596,7 +1596,7 @@ class RouteView(Gtk.DrawingArea):
                 return
 
         if kv < 256:
-            player = com.get('neil.core.player')
+            player = components.get('neil.core.player')
             octave = player.octave
             note = key_to_note(kv)
             if note in self.chordnotes:

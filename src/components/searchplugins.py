@@ -30,7 +30,9 @@ from neil.utils import  (
     prepstr, get_adapter_name, ui
 )
 
-from neil import com, common
+from neil import common
+from neil.main import components
+
 
 import zzub
 
@@ -87,8 +89,8 @@ class SearchPluginsDialog(Gtk.Window):
         self.set_title("Search Plugins")
         self.connect('delete-event', self.hide_popup_dialog)
 
-        com.get("neil.core.icons")        # make sure theme icons are loaded
-        cfg = com.get('neil.core.config') # get the config object with the 'pluginlistbrowser_show_' config settings
+        components.get("neil.core.icons")        # make sure theme icons are loaded
+        cfg = components.get('neil.core.config') # get the config object with the 'pluginlistbrowser_show_' config settings
 
         box_container = Gtk.HBox()
         self.check_containers = [Gtk.VBox() for i in range(3)]
@@ -212,7 +214,7 @@ class SearchPluginsDialog(Gtk.Window):
 
 
     def on_entry_changed(self, widget):
-        cfg = com.get('neil.core.config')
+        cfg = components.get('neil.core.config')
 
         text = self.searchbox.get_text()
         cfg.pluginlistbrowser_search_term = text
@@ -223,7 +225,7 @@ class SearchPluginsDialog(Gtk.Window):
 
 
     def on_checkbox_changed(self, checkbox):
-        cfg = com.get('neil.core.config')
+        cfg = components.get('neil.core.config')
         label = checkbox.get_label().replace(' ', '').lower()
         setattr(cfg, 'pluginlistbrowser_show_' + label, checkbox.get_active())
         self.filter.refilter()
@@ -265,7 +267,7 @@ class SearchPluginsDialog(Gtk.Window):
 
 
     def populate(self, liststore):
-        cfg = com.get('neil.core.config')
+        cfg = components.get('neil.core.config')
         theme = Gtk.IconTheme.get_default()
 
         def get_type_rating(pluginloader):
@@ -306,7 +308,7 @@ class SearchPluginsDialog(Gtk.Window):
                 return '<span color="' + cfg.get_color('MV Other') + '">Other</span>'
 
         plugins = {}
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         for pluginloader in player.get_pluginloader_list():
             plugins[pluginloader.get_uri()] = pluginloader
 

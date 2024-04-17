@@ -1,15 +1,12 @@
-
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib
 
 from functools import cmp_to_key
 
-
-from neil import com
+from neil.main import components
 
 import config
-
 
 from neil.utils import ui 
 
@@ -32,7 +29,7 @@ class ViewMenu(ui.EasyMenu):
 
     def on_activate_item(self, menuitem, view):
         if 'neil.viewpanel' in view.__neil__.get('categories',[]):
-            framepanel = com.get('neil.core.framepanel')             # mainwindow/frame.py
+            framepanel = components.get('neil.core.framepanel')             # mainwindow/frame.py
             framepanel.select_viewpanel(view)
         else:
             view.hide()
@@ -45,9 +42,9 @@ class ViewMenu(ui.EasyMenu):
 
     def __init__(self):
         ui.EasyMenu.__init__(self)
-        views = sorted(com.get_from_category('view'), key=cmp_to_key(cmp_view))
-        com.get("neil.core.icons") # make sure theme icons are loaded
-        accel = com.get('neil.core.accelerators')
+        views = sorted(components.get_from_category('view'), key=cmp_to_key(cmp_view))
+        components.get("neil.core.icons") # make sure theme icons are loaded
+        accel = components.get('neil.core.accelerators')
 
         for view in views:
             if not hasattr(view, '__view__'):
@@ -73,7 +70,7 @@ class ViewMenu(ui.EasyMenu):
 
         if 0:
             # TODO: themes
-            neil_frame =  com.get('neil.core.accelerators')
+            neil_frame =  components.get('neil.core.accelerators')
             # main_frame = get_root_window()
             tempsubmenu = Gtk.Menu()
             defaultitem = Gtk.RadioMenuItem(label="Default")
