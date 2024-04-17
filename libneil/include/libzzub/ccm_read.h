@@ -61,7 +61,6 @@ class CcmReader : pugi::xml_tree_walker {
     bool loadInstruments(xml_node &instruments, zzub::player &player);
     bool loadSequencer(xml_node &seq, zzub::player &player);
 public:
-    CcmReader();
 
     bool open(std::string fileName, zzub::player* player);
 };

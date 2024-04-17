@@ -22,7 +22,7 @@
 Provides information used by all ui sections.
 """
 
-import neil.com as com
+from neil.main import components
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
@@ -108,7 +108,7 @@ class PluginInfoCollection:
     def update(self):
         previous = dict(self.plugin_info)
         self.plugin_info.clear()
-        for mp in com.get('neil.core.player').get_plugin_list():
+        for mp in components.get('neil.core.player').get_plugin_list():
             if mp in previous:
                 self.plugin_info[mp] = previous[mp]
             else:
@@ -123,6 +123,6 @@ def get_plugin_infos():
     return collection
 
 if __name__ == '__main__':
-    com.load_packages()
+    components.load_packages()
     col = PluginInfoCollection()
     del col[5]

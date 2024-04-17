@@ -22,7 +22,6 @@ from typing import Dict, List
 from .utils.path_config import path_cfg
 import os,sys,glob
 from configparser import ConfigParser
-import player, router 
 
 
 SECTION_NAME = 'Neil COM'
@@ -205,11 +204,11 @@ class ComponentManager:
         return [self.get(classid, *args, **kwargs) for classid in self.categories.get(category, [])]
 
 
-    def get_player(self) -> player.NeilPlayer:
+    def get_player(self):
         return self.get('neil.core.player')
     
 
-    def get_router(self) -> router.RouteView:
+    def get_router(self):
         return self.get('neil.core.router.view')
     
 
@@ -219,6 +218,7 @@ class ComponentManager:
 
     def get_factories(self) -> Dict[str, Dict[str, str]]:
         return self.factories
+
 
 
 

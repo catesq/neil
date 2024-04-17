@@ -973,7 +973,7 @@ def get_config(*args) -> NeilConfig:
 
     @rtype: {NeilConfig}.
     """
-    return neil.components.get(NeilConfigSingleton.__neil__['id'])
+    return components.get(NeilConfigSingleton.__neil__['id'])
 
 
 def get_plugin_blacklist():

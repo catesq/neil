@@ -3,7 +3,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject
 
-import neil.main as main
+from neil.main import components
 import weakref
 import types
 from .textify import prepstr
@@ -35,7 +35,7 @@ def make_submenu_item(submenu, name, use_underline=False):
 def make_stock_menu_item(stockid, func, frame=None, shortcut=None, *args):
     item = Gtk.ImageMenuItem.new_from_stock(stockid, None)
     if frame and shortcut:
-        acc = main.components.get('neil.core.accelerators')
+        acc = components.get('neil.core.accelerators')
         acc.add_accelerator(shortcut, item)
     if func:
         item.connect('activate', func, *args)
@@ -245,7 +245,7 @@ class MenuWrapper:
     def add_stock_image_item(self, stockid, func, frame=None, shortcut=None, *args):
         item = Gtk.ImageMenuItem.new_from_stock(stockid, None)
         if frame and shortcut:
-            acc = neil.components.get('neil.core.accelerators')
+            acc = components.get('neil.core.accelerators')
             acc.add_accelerator(shortcut, item)
         if func:
             item.connect('activate', func, *args)
@@ -289,7 +289,7 @@ def easy_menu_wrapper(menu: Gtk.Menu) -> EasyMenu:
 
 
 def wave_names_generator():
-    player = neil.components.get('neil.core.player')
+    player = components.get('neil.core.player')
     for i in range(player.get_wave_count()):
         w = player.get_wave(i)
         name = "%02X. %s" % ((i + 1), prepstr(w.get_name()))
@@ -297,13 +297,13 @@ def wave_names_generator():
 
 
 def test_view(classname):
-    obj = neil.components.get(classname)
+    obj = components.get(classname)
     if isinstance(obj, Gtk.Window):
         pass
     elif isinstance(obj, Gtk.Dialog):
         pass
     elif isinstance(obj, Gtk.Widget) and not obj.get_parent():
-        dlg = neil.components.get('neil.test.dialog', embed=obj, destroy_on_close=False)
+        dlg = components.get('neil.test.dialog', embed=obj, destroy_on_close=False)
 
 
 
@@ -355,7 +355,7 @@ class PropertyEventHandler(type):
     def setter(self, membername, kwargs, value):
         setattr(self, '__' + membername, value)
         eventname = kwargs.get('event', membername + '_changed')
-        getattr(neil.components.get('neil.core.eventbus'), eventname)(value)
+        getattr(components.get('neil.core.eventbus'), eventname)(value)
 
     def listgetter(self, membername, kwargs):
         return getattr(self, '__' + membername)[:]
@@ -363,7 +363,7 @@ class PropertyEventHandler(type):
     def listsetter(self, membername, kwargs, values):
         setattr(self, '__' + membername, values)
         eventname = kwargs.get('event', membername + '_changed')
-        getattr(neil.components.get('neil.core.eventbus'), eventname)(values[:])
+        getattr(components.get('neil.core.eventbus'), eventname)(values[:])
 
 
 

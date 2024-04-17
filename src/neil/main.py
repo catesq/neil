@@ -33,6 +33,7 @@ from neil.component_manager import ComponentManager
 
 
 
+
 # used globally by all modules as a service locator 
 components = ComponentManager()
 

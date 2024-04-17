@@ -32,7 +32,7 @@ from .utils import (
 
 import config
 from .preset import PresetCollection
-import neil.com as com
+from neil.main import components
 
 class PresetView(Gtk.VBox):
     """
@@ -145,7 +145,7 @@ class PresetView(Gtk.VBox):
     def on_row_activate(self, treeview, path, view_column):
         preset = self.presets.presets[path[0]]
         preset.apply(self.plugin)
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         player.history_commit("change preset")
 
 
