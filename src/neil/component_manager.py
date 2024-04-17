@@ -18,11 +18,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from typing import Dict, List
+from typing import Dict, List, TYPE_CHECKING
 from .utils.path_config import path_cfg
 import os,sys,glob
 from configparser import ConfigParser
 
+if TYPE_CHECKING:
+    import player, router
 
 SECTION_NAME = 'Neil COM'
 
@@ -61,6 +63,7 @@ class Package(ConfigParser):
 
 # neil component object model
 class ComponentManager:
+
     def __init__(self):
         self.clear()
 
@@ -204,11 +207,11 @@ class ComponentManager:
         return [self.get(classid, *args, **kwargs) for classid in self.categories.get(category, [])]
 
 
-    def get_player(self):
+    def get_player(self) -> 'player.Player':
         return self.get('neil.core.player')
     
 
-    def get_router(self):
+    def get_router(self) -> 'router.RouteView':
         return self.get('neil.core.router.view')
     
 
@@ -271,6 +274,7 @@ if __name__ == '__main__':
         ],
     )
 
+    from neil.main import components
     components.register(pkginfo)
     print(components.get('neil.hub.myclass').x)
     print(components.get('neil.hub.myclass').x)

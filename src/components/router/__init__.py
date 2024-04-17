@@ -817,12 +817,14 @@ class RouteView(Gtk.DrawingArea):
                 'MV Border',
                 'MV Text',
         ]
+
         flagids = [
                 (PluginType.Root, 'Master'),
                 (PluginType.Generator, 'Generator'),
                 (PluginType.Effect, 'Effect'),
                 (PluginType.Controller, 'Controller'),
         ]
+        
         self.plugintype2brushes = {}
         for plugintype, name in flagids:
             brushes = []
@@ -1036,7 +1038,7 @@ class RouteView(Gtk.DrawingArea):
         @type event: wx.MouseEvent
         """
         self.grab_focus()
-        player = components.get('neil.core.player')
+        player = components.get_player()
         if (event.button == 3):
             return self.on_context_menu(widget, event)
 
