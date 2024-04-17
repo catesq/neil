@@ -27,6 +27,7 @@ import player, router
 
 SECTION_NAME = 'Neil COM'
 
+
 OPTIONS = [
     'Module',
     'Name',
@@ -94,7 +95,7 @@ class ComponentManager:
                         packages.append(pkg)
             else:
                 print("no such path: " + path)
-                
+
         for pkg in packages:
             try:
                 modulename = pkg.module
@@ -204,6 +205,7 @@ class ComponentManager:
     def get_player(self) -> player.NeilPlayer:
         return self.get('neil.core.player')
     
+
     def get_router(self) -> router.RouteView:
         return self.get('neil.core.router.view')
     
@@ -231,26 +233,39 @@ clear = com.clear
 def get_player() -> player.NeilPlayer:
     return com.get('neil.core.player')
 
+
+
 def get_router() -> router.RouteView:
     return com.get('neil.core.router.view')
+
+
 
 def get_packages():
     return com.packages
 
+
+
 def get_categories():
     return com.categories
 
+
+
 def get_factories():
     return com.factories
+
 
 
 def init():
     if not com.is_loaded:
         com.load_packages()
 
+
+
 __all__ = [
     'com',
 ]
+
+
 
 if __name__ == '__main__':
     class MyClass:
@@ -269,6 +284,7 @@ if __name__ == '__main__':
             import random
             self.x = y or random.random()
 
+
     class MyClass2(MyClass):
         __neil__ = dict(
             id = 'neil.hub.myclass.singleton',
@@ -279,6 +295,7 @@ if __name__ == '__main__':
             ]
         )
 
+
     class CancelException(Exception):
         __neil__ = dict(
             id = 'neil.exception.cancel',
@@ -287,6 +304,7 @@ if __name__ == '__main__':
             ]
         )
 
+
     pkginfo = dict(
         classes = [
             MyClass,
@@ -294,6 +312,7 @@ if __name__ == '__main__':
             CancelException,
         ],
     )
+
     com.register(pkginfo)
     print(com.get('neil.hub.myclass').x)
     print(com.get('neil.hub.myclass').x)
