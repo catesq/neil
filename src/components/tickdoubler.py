@@ -28,7 +28,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject
 
-from neil.main import components
+from neil import components
 from neil.utils import ui
 
 class TickDoublerDialog(Gtk.Dialog):

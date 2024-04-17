@@ -9,7 +9,7 @@ from .toolbar import SequencerToolBar
 from .utils import Seq
 from .pattern_list import SequencerPatternListTreeView
 
-from neil.main import components
+from neil import components
 from neil.common import MARGIN, MARGIN0
 import config
 

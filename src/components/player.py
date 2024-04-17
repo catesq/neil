@@ -25,7 +25,7 @@ from neil.utils.ui import PropertyEventHandler, refresh_gui
 
 from zzub import Player
 
-from neil.main import components
+from neil import components
 import neil.common as common
 import os
 import sys

@@ -22,7 +22,7 @@
 Provides information used by all ui sections.
 """
 
-from neil.main import components
+from neil import components
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk

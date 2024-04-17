@@ -6,7 +6,7 @@ from .toolbar import PatternToolBar
 from .views import PatternView
 from .patternstatus import PatternStatus
 
-from neil.main import components
+from neil import components
 
 class PatternPanel(Gtk.VBox):
     """

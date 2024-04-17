@@ -29,7 +29,7 @@ from gi.repository import GObject, Gtk, Pango
 
 import inspect, os
 
-from neil.main import components
+from neil import components
 import neil.contextlog as contextlog
 
 from neil.utils import ui

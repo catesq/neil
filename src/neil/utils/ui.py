@@ -3,7 +3,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject
 
-from neil.main import components
+from neil import components
 import weakref
 import types
 from .textify import prepstr

@@ -32,7 +32,7 @@ from gi.repository import GObject, Gtk, Pango
 import code
 import fnmatch
 
-from neil.main import components
+from neil import components
 import neil.contextlog as contextlog
 
 GObject.threads_init()

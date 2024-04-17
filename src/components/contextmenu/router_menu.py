@@ -1,6 +1,6 @@
 import zzub
 
-from neil.main import components
+from neil import components
 from neil.utils import ui
 from neil.preset import Preset
 

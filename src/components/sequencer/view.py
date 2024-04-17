@@ -18,7 +18,7 @@ import random
 import config
 
 import neil.common as common
-from neil.main import components
+from neil import components
 import zzub
 
 from .add_track import AddSequencerTrackDialog

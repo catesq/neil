@@ -4,7 +4,7 @@ from gi.repository import Gtk, Gdk, GLib
 
 from functools import cmp_to_key
 
-from neil.main import components
+from neil import components
 
 import config
 

@@ -26,7 +26,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject
 
-from neil.main import components
+from neil import components
 
 from .utils import prepstr, buffersize_to_latency, filepath
 from .common import MARGIN, MARGIN2, MARGIN3

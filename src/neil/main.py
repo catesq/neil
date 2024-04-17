@@ -29,13 +29,8 @@ from gi.repository import Gtk, GObject, Gdk
 
 
 from . import contextlog, errordlg
-from neil.component_manager import ComponentManager
 
-
-
-
-# used globally by all modules as a service locator 
-components = ComponentManager()
+from neil import components
 
 
 def shutdown():

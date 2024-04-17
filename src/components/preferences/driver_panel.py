@@ -5,7 +5,7 @@ from gi.repository import Gtk
 from neil.common import MARGIN
 from config import get_config
 from neil.utils import prepstr, buffersize_to_latency, ui
-from neil.main import components
+from neil import components
 import traceback
 
 

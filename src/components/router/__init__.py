@@ -43,7 +43,7 @@ from neil.utils import (
     prepstr, db2linear, linear2db, ui
 )
 
-from neil.main import components
+from neil import components
 import neil.common as common
 from neil.common import MARGIN, DRAG_TARGETS
 from rack import ParameterView

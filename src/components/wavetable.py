@@ -36,7 +36,7 @@ import config
 from neil.envelope import EnvelopeView
 from neil.waveedit import WaveEditPanel
 from neil.common import MARGIN, MARGIN2, MARGIN3
-from neil.main import components
+from neil import components
 
 class WavetablePanel(Gtk.VBox):
     """

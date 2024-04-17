@@ -24,7 +24,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Pango
 
 from neil.common import MARGIN
-from neil.main import components
+from neil import components
 
 class InfoPanel(Gtk.VBox):
     """

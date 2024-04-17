@@ -25,7 +25,7 @@ from gi.repository import Gdk, GdkPixbuf, Gtk
 import glob
 import os
 
-from neil.main import components
+from neil import components
 from neil.utils import iconpath, imagepath
 
 ICON_SEARCHPATH = [

@@ -3,7 +3,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
-from neil.main import components
+from neil import components
 from neil.common import MARGIN
 from neil.utils import ui, show_machine_manual, filenameify
 

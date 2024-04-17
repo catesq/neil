@@ -28,7 +28,7 @@ import os, stat
 
 from neil.utils import filepath, ui
 from neil import common
-from neil.main import components
+from neil import components
 
 
 import zzub

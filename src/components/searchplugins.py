@@ -31,7 +31,7 @@ from neil.utils import  (
 )
 
 from neil import common
-from neil.main import components
+from neil import components
 
 
 import zzub

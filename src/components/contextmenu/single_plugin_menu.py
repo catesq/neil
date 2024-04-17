@@ -1,6 +1,6 @@
 
 import zzub
-from neil.main import components
+from neil import components
 from neil.utils import is_generator, is_root, is_effect, prepstr, ui
 
 

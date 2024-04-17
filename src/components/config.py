@@ -32,7 +32,7 @@ import glob
 import os
 import re
 
-from neil.main import components
+from neil import components
 import neil.preset as preset
 
 from neil.utils import (camelcase_to_unixstyle, filenameify, filepath, iconpath, sharedpath, settingspath)

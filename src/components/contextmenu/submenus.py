@@ -1,6 +1,6 @@
 from gi.repository import Gtk
 
-from neil.main import components
+from neil import components
 from neil.utils import (ui, iconpath, prepstr, settingspath)
 from .actions import on_store_selection, on_restore_selection
 import os.path

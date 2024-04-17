@@ -33,7 +33,7 @@ from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo
 import random
 import config
 
-from neil.main import components
+from neil import components
 import neil.common as common
 from neil.utils import (from_hsb, prepstr, synchronize_list, to_hsb)
 

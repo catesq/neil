@@ -33,7 +33,7 @@ import time
 
 
 from neil.common import MARGIN, MARGIN2, MARGIN3
-from neil.main import components
+from neil import components
 from neil.utils import format_time, ticks_to_time
 
 

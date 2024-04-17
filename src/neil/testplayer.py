@@ -27,7 +27,7 @@ from gi.repository import GLib
 
 from config import get_plugin_aliases, get_plugin_blacklist
 from . import common
-from neil.main import components
+from neil import components
 import zzub
 
 _player = None

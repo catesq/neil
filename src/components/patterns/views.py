@@ -5,7 +5,7 @@ gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, Gdk, GLib, Pango, PangoCairo
 
 
-from neil.main import components
+from neil import components
 import neil.common as common
 
 from neil.utils import (

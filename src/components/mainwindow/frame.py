@@ -34,7 +34,7 @@ from neil.utils import (
 
 
 from neil import errordlg, common
-from neil.main import components
+from neil import components
 
 import config
 import zzub

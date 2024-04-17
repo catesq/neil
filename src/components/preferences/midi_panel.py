@@ -5,7 +5,7 @@ from gi.repository import Gtk
 import zzub
 from neil.common import MARGIN
 from config import get_config
-from neil.main import components
+from neil import components
 from neil.utils import prepstr
 
 

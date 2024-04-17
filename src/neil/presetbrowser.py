@@ -32,7 +32,7 @@ from .utils import (
 
 import config
 from .preset import PresetCollection
-from neil.main import components
+from neil import components
 
 class PresetView(Gtk.VBox):
     """

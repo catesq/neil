@@ -24,7 +24,7 @@ from gi.repository import GObject, Gtk, Gdk
 
 from neil.common import MARGIN, MARGIN0
 from neil.utils import ui, imagepath
-from neil.main import components
+from neil import components
 
 import config
 

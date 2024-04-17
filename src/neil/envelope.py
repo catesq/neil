@@ -31,7 +31,7 @@ import zzub
 import config
 from neil.utils import ui
 
-from neil.main import components
+from neil import components
 
 # size of border
 BORDER = 5

@@ -27,7 +27,7 @@ from math import fabs
 import array
 
 from neil import utils, common
-from neil.main import components
+from neil import components
 
 
 # pylint: disable=no-member

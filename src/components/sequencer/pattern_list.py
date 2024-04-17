@@ -1,7 +1,7 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-from neil.main import components
+from neil import components
 
 
 # a couple of helper function for the context menu

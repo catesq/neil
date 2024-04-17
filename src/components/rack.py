@@ -40,7 +40,7 @@ import neil.common as common
 import neil.preset as preset_module
 from neil.common import MARGIN
 
-from neil.main import components
+from neil import components
 
 class ParameterView(Gtk.VBox):
     """
