@@ -36,15 +36,15 @@ class InfoPanel(Gtk.VBox):
         categories = [
             'neil.viewpanel',
             'view',
-            ]
-        )
+        ]
+    )
 
     __view__ = dict(
         label = "Info",
         stockid = "neil_info",
         shortcut = 'F11',
         order = 11,
-        )
+    )
 
     def __init__(self, *args, **kwds):
         """

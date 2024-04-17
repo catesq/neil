@@ -66,6 +66,7 @@ class FramePanel(Gtk.Notebook):
             if not hasattr(panel, '__view__'):
                 print(("panel", panel, "misses attribute __view__"))
                 continue
+
             options = panel.__view__
             stockid = options['stockid']
             label = options['label']

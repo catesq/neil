@@ -227,6 +227,7 @@ get_from_category = com.get_from_category
 clear = com.clear
 
 
+
 def get_player() -> player.NeilPlayer:
     return com.get('neil.core.player')
 

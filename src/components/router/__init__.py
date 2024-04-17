@@ -469,8 +469,8 @@ class RoutePanel(Gtk.VBox):
         id = 'neil.core.routerpanel',
         singleton = True,
         categories = [
-                'neil.viewpanel',
-                'view',
+            'neil.viewpanel',
+            'view',
         ]
     )
 

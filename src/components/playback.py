@@ -57,7 +57,7 @@ class PlaybackInfo(Gtk.Dialog):
         label = "Playback Info",
         order = 0,
         toggle = True,
-        )
+    )
 
 
     def __init__(self):
