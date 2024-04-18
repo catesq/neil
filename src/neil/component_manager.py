@@ -59,7 +59,14 @@ class Package(ConfigParser):
         return True
 
 
+# looks for files like "core-about.neil-component" in component path then tries to load matching package
+class NamedComponentLoader():
+    pass
 
+
+# looks for a __neil__ var in all python modules/packages under component path to auto detect components
+class NeilDictComponentLoader():
+    pass
 
 class ComponentManager():
     def __init__(self):
@@ -95,8 +102,8 @@ class ComponentManager():
                     pkg = Package(filename)
                     if pkg.parse():
                         packages.append(pkg)
-            else:
-                print("no such path: " + path)
+            # else:
+            #     print("no such path: " + path)
 
         for pkg in packages:
             try:

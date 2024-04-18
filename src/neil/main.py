@@ -39,6 +39,11 @@ def init_neil(argv):
     Loads the categories neccessary to visualize neil.
     """
     components.load()
+
+    for category in components.get_categories():
+        print(category)
+
+    exit(0)
     components.get_from_category('driver')
     components.get_from_category('rootwindow')
 
