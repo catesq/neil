@@ -522,19 +522,23 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         """
         plugins = sorted(
             self.get_plugin_list(), key=lambda plugin: plugin.get_name().lower())
+        
         if not plugins:
             return
+        
         if direction == -1:
             failsafe = -1
             offset = -1
         elif direction == 1:
             failsafe = 0
             offset = 1
+
         if not self.active_plugins:
             self.active_plugins = [plugins[failsafe]]
         else:
             pindex = plugins.index(self.active_plugins[0])
             self.active_plugins = [plugins[(pindex + offset) % len(plugins)]]
+
         if self.active_plugins[0].get_pattern_count() > 0:
             self.active_patterns = [(self.active_plugins[0], 0)]
         else:
@@ -679,6 +683,13 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         pi.bypassed = not pi.bypassed
         plugin.set_bypass(pi.bypassed)
         pi.reset_plugingfx()
+
+
+    def get_active_plugins(self) -> list[zzub.Plugin]:
+        return self.active_plugins
+    
+    def set_active_plugins(self, plugins: list[zzub.Plugin]):
+        self.active_plugins = plugins
 
 
     def create_plugin(self, pluginloader, connection=None, plugin=None):

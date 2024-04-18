@@ -1,5 +1,3 @@
-#encoding: latin-1
-
 # Neil
 # Modular Sequencer
 # Copyright (C) 2006,2007,2008 The Neil Development Team
@@ -19,8 +17,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-from neil.component_manager import ComponentManager
+from neil.component_manager import ComponentManager, ViewComponentManager
 
 
 components = ComponentManager()
 
+views = ViewComponentManager(components)

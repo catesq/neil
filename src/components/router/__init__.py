@@ -1,4 +1,3 @@
-#encoding: latin-1
 
 # Neil
 # Modular Sequencer
@@ -43,7 +42,7 @@ from neil.utils import (
     prepstr, db2linear, linear2db, ui
 )
 
-from neil import components
+from neil import components, views
 import neil.common as common
 from neil.common import MARGIN, DRAG_TARGETS
 from rack import ParameterView
@@ -867,7 +866,7 @@ class RouteView(Gtk.DrawingArea):
 
     def restore_selection(self, index):
         if self.has_selection(index):
-            player = components.get('neil.core.player')
+            player = components.get_player()
             plugins = player.get_plugin_list()
             player.active_plugins = [plugin for plugin in plugins if plugin.get_id() in self.selections[index]]
 
@@ -892,19 +891,19 @@ class RouteView(Gtk.DrawingArea):
         if res:
             mp, (x, y), area = res
             if mp in player.active_plugins and len(player.active_plugins) > 1:
-                menu = components.get('neil.core.contextmenu.multipleplugins', player.active_plugins)
+                menu = views.get_contextmenu('multipleplugins', player.active_plugins)
             else:
-                menu = components.get('neil.core.contextmenu.singleplugin', mp)
+                menu = views.get_contextmenu('singleplugin', mp)
         else:
             conns = self.get_connections_at((mx, my))
             if conns:
                 # metaplugin, index = res
-                menu = components.get('neil.core.contextmenu.connection', conns)
+                menu = views.get_contextmenu('connection', conns)
             else:
                 (x, y) = self.pixel_to_float((mx, my))
-                menu = components.get('neil.core.contextmenu.router', x, y)
-
-        menu.popup(self, event)
+                menu = views.get_contextmenu('router', x, y)
+        
+        menu.easy_popup(self, event)
 
 
     def float_to_pixel(self, xy):
@@ -977,7 +976,7 @@ class RouteView(Gtk.DrawingArea):
         return matches
 
 
-    def get_plugin_at(self, xy):
+    def get_plugin_at(self, xy) -> tuple[zzub.Plugin, tuple[int, int], int]:
         """
         Finds a plugin at a specific position.
 
@@ -1186,20 +1185,22 @@ class RouteView(Gtk.DrawingArea):
 
         if self.connecting:
             res = self.get_plugin_at((mx, my))
+
             if res:
                 mp, (x, y), area = res
+                active_plugins = player.get_active_plugins()
                 
-                if player.active_plugins:
+                if active_plugins:
                     if event.get_state() & Gdk.ModifierType.MOD1_MASK:
-                        (source_connector, target_connector, data) = self.choose_cv_connectors_dialog(player.active_plugins[0], mp)
+                        (source_connector, target_connector, data) = self.choose_cv_connectors_dialog(active_plugins[0], mp)
 
                         if source_connector and target_connector and data:
                             print("cv connector data", data, data.amp, data.modulate_mode, data.offset_before, data.offset_after)
-                            mp.add_cv_connector(player.active_plugins[0], source_connector, target_connector, data)
+                            mp.add_cv_connector(active_plugins[0], source_connector, target_connector, data)
                             player.history_commit("new cv connection")
                             
-                    elif not is_controller(player.active_plugins[0]):
-                        mp.add_input(player.active_plugins[0], zzub.zzub_connection_type_audio)
+                    elif not is_controller(active_plugins[0]):
+                        mp.add_input(active_plugins[0], zzub.zzub_connection_type_audio)
                         player.history_commit("new event connection")
 
             self.connecting = False

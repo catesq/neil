@@ -1,4 +1,3 @@
-#encoding: latin-1
 
 # Neil
 # Modular Sequencer
@@ -24,7 +23,7 @@ import os,sys,glob
 from configparser import ConfigParser
 
 if TYPE_CHECKING:
-    import player, router
+    import player, router, utils.ui
 
 SECTION_NAME = 'Neil COM'
 
@@ -61,22 +60,23 @@ class Package(ConfigParser):
 
 
 
-# neil component object model
-class ComponentManager:
 
+class ComponentManager():
     def __init__(self):
         self.clear()
-
-
+        
     def clear(self):
         self.is_loaded = False
         self.singletons = {}
         self.factories = {}
         self.categories = {}
         self.packages = []
+        
 
-
-    def load_packages(self):
+    def load(self):
+        if self.is_loaded:
+            return
+        
         self.is_loaded = True
         self.packages = []
         packages = []
@@ -191,9 +191,6 @@ class ComponentManager:
                 self.singletons[id] = obj  # register as singleton
         return obj
 
-    def init(self):
-        if not self.is_loaded:
-            self.load_packages()
 
     def get_ids_from_category(self, category):
         return self.categories.get(category, [])
@@ -207,12 +204,8 @@ class ComponentManager:
         return [self.get(classid, *args, **kwargs) for classid in self.categories.get(category, [])]
 
 
-    def get_player(self) -> 'player.Player':
+    def get_player(self) -> 'player.NeilPlayer':
         return self.get('neil.core.player')
-    
-
-    def get_router(self) -> 'router.RouteView':
-        return self.get('neil.core.router.view')
     
 
     def get_categories(self) -> Dict[str, List[str]]:
@@ -224,7 +217,21 @@ class ComponentManager:
 
 
 
+class ViewComponentManager:
+    def __init__(self, components: ComponentManager):
+        self.components = components
 
+
+    def get_contextmenu(self, menu_name, *args, prefix='neil.core.contextmenu') -> 'utils.ui.EasyMenu':
+        return self.get_menu(menu_name, *args, prefix=prefix)
+    
+
+    def get_menu(self, menu_name, *args, prefix) -> 'utils.ui.EasyMenu':
+        return self.components.get(prefix + '.' + menu_name, *args)
+
+
+    def get_router(self) -> 'router.RouteView':
+        return self.components.get('neil.core.router.view')
 
 
 

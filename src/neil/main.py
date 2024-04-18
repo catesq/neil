@@ -21,29 +21,28 @@ Provides application class and controls used in the neil main window.
 """
 import sys
 
-# from . import pathconfig
-
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject, Gdk
 
+from neil import components, contextlog, errordlg
 
-from . import contextlog, errordlg
-
-from neil import components
 
 
 def shutdown():
     Gtk.main_quit()
-    
+
+
 
 def init_neil(argv):
     """
     Loads the categories neccessary to visualize neil.
     """
-    components.init()
+    components.load()
     components.get_from_category('driver')
     components.get_from_category('rootwindow')
+
+
 
 def run(argv, initfunc = init_neil):
     """
@@ -55,8 +54,6 @@ def run(argv, initfunc = init_neil):
     @type initfunc: callable()
     """
 
-#    print([(key, os.environ[key]) for key in sorted(os.environ.keys())]);
-#    sys.exit();
     Gdk.set_allowed_backends('x11')
     GObject.threads_init()
     Gtk.init(argv)
@@ -64,7 +61,6 @@ def run(argv, initfunc = init_neil):
     contextlog.init()
     errordlg.install()
     
-
     initfunc(argv)
 
     for i in ['--sync', '--gdk-debug', '--gtk-debug']:
@@ -85,6 +81,7 @@ def run(argv, initfunc = init_neil):
         cProfile.runctx('Gtk.main()', globals(), locals(), app_options.profile)
     else:
         Gtk.main()
+
 
 __all__ = [
     'shutdown',

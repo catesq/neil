@@ -1,6 +1,6 @@
 
 import zzub
-from neil import components
+from neil import components, views
 from neil.utils import is_generator, is_root, is_effect, prepstr, ui
 
 
@@ -67,7 +67,7 @@ class SinglePluginMenu(ui.EasyMenu):
             self.add_separator()
             self.add_check_item("Default Target", player.autoconnect_target == metaplugin, on_popup_set_target, metaplugin)
 
-        router = components.get_router()
+        router = views.get_router()
         if router.selection_count() > 0:
             self.add_separator()
             self.add_submenu("_Restore selection", restore_selection_submenu())
