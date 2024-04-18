@@ -1,4 +1,3 @@
-#encoding: latin-1
 
 # Neil
 # Modular Sequencer

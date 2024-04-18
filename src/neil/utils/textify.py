@@ -1,4 +1,5 @@
 #verify/prepare text for display in ui controls
+
 from string import ascii_letters, digits
 
 

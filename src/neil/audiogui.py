@@ -1,4 +1,3 @@
-#encoding: latin-1
 
 # AudioGUI
 # Provides GTK+ controls usually found on front panels of audio hardware.

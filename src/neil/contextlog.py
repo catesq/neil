@@ -1,4 +1,3 @@
-# encoding: latin-1
 
 """
 contextlog adds a hook to stdout which enhances each line with a source
