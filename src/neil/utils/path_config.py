@@ -19,7 +19,7 @@
 
 """
 Organizes finding Neils resources across the system.
-Is a wrapper around the path.cfg file in either <install_dir>/share/neil or <local_settings_dir>
+Basically a wrapper around the path.cfg file in <install_dir>/share/neil or <local_settings_dir>
 """
 
 from configparser import ConfigParser

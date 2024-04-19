@@ -18,55 +18,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from typing import Dict, List, TYPE_CHECKING
-from .utils.path_config import path_cfg
-import os,sys,glob
-from configparser import ConfigParser
 
 if TYPE_CHECKING:
     import player, router, utils.ui
 
-SECTION_NAME = 'Neil COM'
+from .package import PackageInfo
+from .loader import NamedComponentLoader
 
 
-OPTIONS = [
-    'Module',
-    'Name',
-    'Description',
-    'Icon',
-    'Authors',
-    'Copyright',
-    'Website',
-]
-
-
-
-class Package(ConfigParser):
-    def __init__(self, path):
-        ConfigParser.__init__(self)
-        self.filename = path
-
-    def parse(self):
-        self.read([self.filename])
-        if not self.has_section(SECTION_NAME):
-            print("missing section " + SECTION_NAME + " in " + self.filename)
-            return False
-        for option in OPTIONS:
-            if not self.has_option(SECTION_NAME, option):
-                print("missing option " + option + " in " + self.filename)
-                return False
-            setattr(self, option.lower(), self.get(SECTION_NAME, option))
-        #basepath = os.path.dirname(self.filename)
-        return True
-
-
-# looks for files like "core-about.neil-component" in component path then tries to load matching package
-class NamedComponentLoader():
-    pass
-
-
-# looks for a __neil__ var in all python modules/packages under component path to auto detect components
-class NeilDictComponentLoader():
-    pass
 
 class ComponentManager():
     def __init__(self):
@@ -80,54 +39,22 @@ class ComponentManager():
         self.packages = []
         
 
-    def load(self):
-        if self.is_loaded:
-            return
-        
+    def init(self):
+        loader = NamedComponentLoader()
+        loader.load(self)
         self.is_loaded = True
-        self.packages = []
-        packages = []
-        names = []
-        component_path = [
-            path_cfg.get_path('components') or os.path.join(path_cfg.get_path('share'), 'components'),
-            os.path.expanduser('~/.local/neil/components'),
-        ]
-
-        for path in component_path:
-            print("scanning " + path + " for components")
-            if os.path.isdir(path):
-                if not path in sys.path:
-                    sys.path = [path] + sys.path
-                for filename in glob.glob(os.path.join(path, '*.neil-component')):
-                    pkg = Package(filename)
-                    if pkg.parse():
-                        packages.append(pkg)
-            # else:
-            #     print("no such path: " + path)
-
-        for pkg in packages:
-            try:
-                modulename = pkg.module
-                module_ = __import__(modulename)
-                names = modulename.split('.')
-                for name in names[1:]:
-                    module_ = getattr(module_, name)
-                if not hasattr(module_, '__neil__'):
-                    print("module", modulename, "has no __neil__ metadict")
-                    continue
-                self.register(module_.__neil__, modulename)
-                self.packages.append(pkg)
-            except:
-                from . import errordlg
-                errordlg.print_exc()
 
 
-    def register(self, pkginfo, modulename=None):
+    def register(self, info: PackageInfo, neil_dict: Dict, modulefilename, modulename):
+        self.packages.append(info)
+        #print("class", class_, "has no __neil__ metadict")
         # enumerate class factories
-        for class_ in pkginfo.get('classes', []):
+        for class_ in self.get_classes(neil_dict):
             if not hasattr(class_, '__neil__'):
-                print("class", class_, "has no __neil__ metadict")
+                #show error message showing name of class and file
+                print("%s class does not have __neil__ metadict: %s" % (class_.__name__, modulefilename))
                 continue
+
             classinfo = class_.__neil__
             classid = classinfo['id']
             self.factories[classid] = dict(classobj=class_, modulename=modulename)
@@ -138,6 +65,8 @@ class ComponentManager():
                 catlist.append(classid)
                 self.categories[category] = catlist
 
+    def get_classes(self, neil_dict) -> List[type]:
+        return neil_dict.get('classes', [])
 
     def throw(self, id, arg):
         class_ = self.factory(id)
@@ -221,6 +150,10 @@ class ComponentManager():
 
     def get_factories(self) -> Dict[str, Dict[str, str]]:
         return self.factories
+    
+    
+    def get_packages(self) -> List[PackageInfo]:
+        return self.packages
 
 
 

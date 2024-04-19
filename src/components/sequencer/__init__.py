@@ -36,6 +36,6 @@ __all__ = [
 __neil__ = dict(
     classes = [
         SequencerPanel,
-        SequencerView,
+        # SequencerView,
     ],
 )

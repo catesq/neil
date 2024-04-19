@@ -1622,11 +1622,11 @@ __neil__ = dict(
     classes = [
         ParameterDialog,
         ParameterDialogManager,
-        PresetDialog,
+        # PresetDialog,
         PresetDialogManager,
         AttributesDialog,
         RoutePanel,
-        VolumeSlider,
+        # VolumeSlider,
         RouteView,
     ],
 )

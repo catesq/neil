@@ -44,11 +44,11 @@ __all__ = [
 
 __neil__ = dict(
     classes = [
-        PatternDialog,
-        PatternToolBar,
+        # PatternDialog,
+        # PatternToolBar,
         PatternPanel,
-        PatternView,
-        PatternStatus,
+        # PatternView,
+        # PatternStatus,
     ],
 )
 

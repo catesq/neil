@@ -119,9 +119,9 @@ _all__ = [
 __neil__ = dict(
     classes = [
         InfoPanel,
-        InfoView,
-        ],
-    )
+        # InfoView,
+    ],
+)
 
 
 if __name__ == '__main__':

@@ -14,6 +14,6 @@ __neil__ = dict(
         MultiplePluginMenu,
         RouterMenu,
         ConnectionMenu,
-        ConnectDialog,
+        # ConnectDialog,
     ],
 )

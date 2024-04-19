@@ -35,9 +35,6 @@ class Connector:
 
 
 
-
-
-
 class ConnectorDialog(Gtk.Dialog):
     def __init__(self,
                  parent,

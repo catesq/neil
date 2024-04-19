@@ -20,8 +20,8 @@ Import('install')
 import glob
 import os.path
 
-for filename in glob.glob('*.neil-component'):
-	install('${SHARE_PATH}/components', filename)
+for filename in glob.glob('packages/*.neil-component'):
+    install('${SHARE_PATH}/components/packages', filename)
 
 for filename in glob.glob('*.py'):
     install('${SHARE_PATH}/components', filename)
