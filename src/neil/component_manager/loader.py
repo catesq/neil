@@ -13,23 +13,23 @@ class NamedComponentLoader():
         self.packages = []
         packages = []
         names = []
+
         component_path = [
             path_cfg.get_path('components') or os.path.join(path_cfg.get_path('share'), 'components'),
             os.path.expanduser('~/.local/neil/components'),
         ]
+
         parser = PackageParser()
 
+        print("scanning for components in: " + ', '.join(component_path))
         for path in component_path:
-            print("scanning " + path + " for components")
             if os.path.isdir(path):
-                use_pkg_dir = False
-                for filename in glob.glob(os.path.join(path, '**.neil-component')):
+                for filename in self.get_component_files(path):
                     pkg = parser.parse_package(filename)
                     if pkg.is_valid():
                         packages.append(pkg)
-                        use_pkg_dir = True
 
-                if use_pkg_dir and (not path in sys.path):
+                if not path in sys.path:
                     sys.path = [path] + sys.path
 
         for pkg in packages:
@@ -44,12 +44,20 @@ class NamedComponentLoader():
                 if not hasattr(module_, '__neil__'):
                     print("module", modulename, "has no __neil__ metadict")
                     continue
-                manager.register(pkg, module_.__neil__, module_.__file__, modulename)
+
+                manager.register(pkg, module_.__neil__, module_.__file__)
             except:
                 from .. import errordlg
                 errordlg.print_exc()
 
-        
+
+    # gets all .neil-component info files in path and path/packages 
+    # the matching .py file for each component in immediately under path
+    # did this for a cleaner file structure as the components subdir was very messy
+    def get_component_files(self, top_path):
+        return glob.glob(os.path.join(top_path, '*.neil-component')) + glob.glob(os.path.join(top_path, 'packages', '*.neil-component')) 
+
+
 
 # looks for a __neil__ var in all python modules/packages under component path to auto detect components
 class NeilDictComponentLoader():

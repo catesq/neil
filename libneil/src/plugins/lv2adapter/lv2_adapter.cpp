@@ -12,10 +12,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-// lv2 plugin adapter by github.com/mitnuh
-// based on the dssi adapter by
-//     Copyright (C) 2006 Leonard Ritter (contact@leonard-ritter.com)
-//     Copyright (C) 2008 James McDermott (jamesmichaelmcdermott@gmail.com)
 
 #include "lv2_adapter.h"
 

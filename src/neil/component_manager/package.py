@@ -14,10 +14,12 @@ class PackageInfo:
     def is_valid(self):
         return self.module and self.name
     
+    def __str__(self):
+        return self.name + " (" + self.module + ")"
+    
 
 
-# loads info from files like component_path/subdir/core-info.neil-component
-
+# get package info from a .neil-component 
 class PackageParser(ConfigParser):
     section_name = 'Neil COM'
 
@@ -48,6 +50,3 @@ class PackageParser(ConfigParser):
                 print("missing component info " + option + " in " + filename)
                 
         return package
-        #basepath = os.path.dirname(self.filename)
-
-# loads info from the __neil__ dict in modules under component path

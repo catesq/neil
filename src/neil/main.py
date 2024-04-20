@@ -39,11 +39,6 @@ def init_neil(argv):
     Loads the categories neccessary to visualize neil.
     """
     components.init()
-
-    for pkg in components.get_packages():
-        print(pkg)
-
-    exit(0)
     components.get_from_category('driver')
     components.get_from_category('rootwindow')
 
@@ -68,9 +63,9 @@ def run(argv, initfunc = init_neil):
     
     initfunc(argv)
 
-    for i in ['--sync', '--gdk-debug', '--gtk-debug']:
-        if i in argv:
-            argv.remove(i)
+    # for i in ['--sync', '--gdk-debug', '--gtk-debug']:
+    #     if i in argv:
+    #         argv.remove(i)
 
     options = components.get('neil.core.options')
     options.parse_args(argv)
