@@ -21,6 +21,10 @@
 from .managers import *
 
 
+# the main class is the ComponenManager
+# service locator pattern - a system wide singleton which is created in neil/__init__.py
+# it is used to register and get all neil classes in the components directories
+
 if __name__ == '__main__':
     class MyClass:
         __neil__ = dict(

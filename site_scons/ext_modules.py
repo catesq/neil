@@ -2,9 +2,15 @@
 
 import os, typing
 
+
+
+
+
     # used by build_cmake_module() to check if the library is has been built 
 def check_lib_exists(lib_name, lib_path):
-    return os.path.exists(os.path.join(lib_path, 'lib' + lib_name + '.a')) or os.path.exists(os.path.join(lib_path, 'lib' + lib_name + '.lib'))
+    suffixes = ['.a', '.lib']
+    return any([os.path.exists(os.path.join(lib_path, 'lib' + lib_name + suffix)) for suffix in suffixes])
+
 
 
 # base class
@@ -26,13 +32,23 @@ class cpp_module:
 
 
 
+
 class cmake_module(cpp_module):
-    def __init__(self, name, lib_name = None, build_subdir = False, always_link = False, cpp_defines = {}):
+    def __init__(self, name, lib_name = None, src_subdir = False, always_link = False, lib_path = False, cpp_defines = {}, cmake_opts = '', cmakelists_dir = '../..'):
+        #, cmakelists_subdir = ''):
+        """
+        name: matches a subdirectory ogf libneil - and as used in scons build
+        lib_name: used internally - only needed when it doesn't match 'name'
+        src_subdir: gist library has an unexpected subdirectory 
+        """
         self.name = name
         self.lib_name = lib_name if lib_name else name
-        self.build_subdir = build_subdir
-        self.always_link = always_link
-        self.cpp_defines = cpp_defines
+        self.src_subdir = src_subdir         #
+        self.always_link = always_link       #
+        self.cpp_defines = cpp_defines       #
+        self.extra_opts = cmake_opts         #
+        self.lib_path = lib_path             # the location of the library relative to '<proj_dir>/build/release' - usually blank
+        self.cmakelists_dir = cmakelists_dir # the location of CMakeLists.txt relative to '<proj_dir>/build/release' - usually '../..'
 
     def get_env_flags(self) -> typing.Dict[str, str]:
         return {
@@ -42,22 +58,12 @@ class cmake_module(cpp_module):
     def get_src_path(self):
         src_path = super().get_src_path()
 
-        if self.build_subdir:
-            return os.path.join(src_path, self.build_subdir)
+        if self.src_subdir:
+            return os.path.join(src_path, self.src_subdir)
         else:
             return src_path 
 
     def build(self, env):
-        # build_cmake_module(env, self.name, self.lib_name, self.build_subdir, self.always_link)
-
-        """
-        build and link a cmake project in a subdir of libneil/src
-
-                name: subdir of libneil/src 
-        actual_lib_name: name of the library cmake will build as used in -L linker flag
-                            for loguru it is either 'loguru' or 'logurud', for gist it is 'Gist'
-            libsubdir: the subdirectory of the module_path where the library is built - libGist is built in 'module_path/src', libloguru is in main 'module_path/'
-        """
         module_path = os.path.join(env['SRC_PATH'], 'libneil', 'src', self.name)
 
         if not os.path.exists(module_path):
@@ -65,7 +71,13 @@ class cmake_module(cpp_module):
 
         cmake_build_type = 'Debug' if env['DEBUG'] else 'Release'
         cmake_build_path = os.path.join(module_path, 'build', cmake_build_type.lower())
-        cmake_lib_path = os.path.join(cmake_build_path, self.build_subdir) if self.build_subdir else cmake_build_path
+
+        if self.lib_path:
+            cmake_lib_path = os.path.join(cmake_build_path, self.lib_path)
+        else:
+            cmake_lib_path = os.path.join(cmake_build_path, self.src_subdir) if self.src_subdir else cmake_build_path
+
+        cmake_lib_path = os.path.abspath(cmake_lib_path )
 
         if not os.path.exists(cmake_build_path):
             os.makedirs(cmake_build_path)
@@ -75,10 +87,15 @@ class cmake_module(cpp_module):
         
         cwd = os.getcwd()
         os.chdir(cmake_build_path)
+
+
+        print("cmake build path: ", cmake_build_path)
         
-        env.Execute('cmake -DCMAKE_POSITION_INDEPENDENT_CODE=On -DBUILD_SHARED_LIBS=Off -DCMAKE_BUILD_TYPE=' + cmake_build_type + ' ../..')
+        cmake_opts = self.extra_opts + ' -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_SHARED_LIBS=off -DCMAKE_BUILD_TYPE=' + cmake_build_type
+        env.Execute('cmake ' + cmake_opts  + ' ' + self.cmakelists_dir)
         env.Execute('cmake --build .')
         os.chdir(cwd)
+
 
         if check_lib_exists(self.lib_name, cmake_lib_path):
             if self.always_link:
@@ -90,6 +107,8 @@ class cmake_module(cpp_module):
 
     def get_cpp_defines(self):
         return self.cpp_defines
+
+
 
 
 
@@ -125,4 +144,7 @@ class cpp_path(cpp_module):
 
     def get_src_path_key(self):
         return self.name.upper() + '_SRC_PATH'
+
+
+
 

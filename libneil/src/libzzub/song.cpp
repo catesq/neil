@@ -94,7 +94,7 @@ void topological_sort_kahn(plugin_map& tg, std::deque<plugin_descriptor>& input,
             boost::tie(in, in_end) = in_edges(*i, tg);
             if ((in_end - in) == 0) {
                 // when a plugin has audio and cv connections there were duplicates
-                // this will be removed when i rewrite connectors.coo
+                // this will be removed when connectors.cpp is rewritten
                 if(*i != input.back()) {
                     input.push_back(*i);
                 }

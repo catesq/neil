@@ -287,6 +287,10 @@ namespace zzub:
 		set load_presets = bit 10         # the ui will open a file picker to load a preset/bank file
 		set save_presets = bit 11         # the ui will open a file browser to save a preset/bank file
 	
+		# bits 14,15 unused - maybe 12 -> has_mono , 12 -> uses_faust
+		set has_mono = bit 12             # can switch from mono/stereo
+		set in_faust = bit 13           # is a faust based plugin
+
 		set is_root = bit 16              # master plugin only
 		set has_audio_input = bit 17      # for audio effects
 		set has_audio_output = bit 18     # for audio generators and effects

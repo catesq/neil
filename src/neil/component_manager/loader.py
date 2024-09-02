@@ -36,8 +36,8 @@ class NamedComponentLoader():
             try:
                 modulename = pkg.module
                 module_ = __import__(modulename)
-                names = modulename.split('.')
                 
+                names = modulename.split('.')
                 for name in names[1:]:
                     module_ = getattr(module_, name)
 
@@ -51,7 +51,7 @@ class NamedComponentLoader():
                 errordlg.print_exc()
 
 
-    # gets all .neil-component info files in path and path/packages 
+    # gets all .neil-component info files in path and path/package_info 
     # the matching .py file for each component in immediately under path
     # did this for a cleaner file structure as the components subdir was very messy
     def get_component_files(self, top_path):
@@ -59,6 +59,6 @@ class NamedComponentLoader():
 
 
 
-# looks for a __neil__ var in all python modules/packages under component path to auto detect components
+# looks for a __neil__ var in all python modules under component path to auto detect view components
 class NeilDictComponentLoader():
     pass

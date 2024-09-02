@@ -10,6 +10,7 @@
 #include <pluginterfaces/vst/ivstcomponent.h>
 #include <pluginterfaces/vst/ivstevents.h>
 #include <pluginterfaces/gui/iplugview.h>
+#include <pluginterfaces/base/funknown.h>
 
 #include "zzub/plugin.h"
 
@@ -23,16 +24,67 @@ extern "C" {
     void on_window_destroy(GtkWidget* widget, gpointer data);
 }
 
+
+
+
 struct BusSummary {
     uint16_t bus_count = 0;
     int16_t main_bus_index = 0;
     uint16_t main_channel_count = 0;
 };
 
+
+
+
 struct BusSummaries {
     BusSummary in;
     BusSummary out;
 };
+
+
+
+
+struct VstHostContext : Steinberg::Vst::IComponentHandler {
+    VstHostContext() {}
+
+    virtual Steinberg::tresult PLUGIN_API beginEdit(Steinberg::Vst::ParamID id) override {
+        return Steinberg::kResultOk;
+    }
+
+    virtual Steinberg::tresult PLUGIN_API performEdit(Steinberg::Vst::ParamID id, Steinberg::Vst::ParamValue valueNormalized) override {
+        return Steinberg::kResultOk;
+    }
+
+    virtual Steinberg::tresult PLUGIN_API endEdit(Steinberg::Vst::ParamID id) override {
+        return Steinberg::kResultOk;
+    }
+
+    virtual Steinberg::tresult PLUGIN_API restartComponent(Steinberg::int32 flags) override {
+        return Steinberg::kResultOk;
+    }
+
+    virtual Steinberg::tresult queryInterface(const Steinberg::TUID _iid, void **obj) {
+	    QUERY_INTERFACE (_iid, obj, Steinberg::Vst::IComponentHandler::iid, Steinberg::Vst::IComponentHandler)
+
+        return Steinberg::kNoInterface;
+    }
+ 
+    virtual Steinberg::uint32 addRef () {
+        return 1;
+    }
+    
+    virtual Steinberg::uint32 release () {
+        return 1;
+    }
+
+ 	static const Steinberg::FUID iid;
+};
+
+DECLARE_CLASS_IID(VstHostContext, 0x0A3D4C2D, 0x3D4A3A2D, 0x7D4A3A2D, 0x8D4A3A2D)
+
+
+
+
 
 struct WindowResizer: Steinberg::IPlugFrame {
     WindowResizer(std::function<bool(int, int)> resizer): resizer(resizer) {}
@@ -65,6 +117,8 @@ private:
 
     std::function<bool(int, int)> resizer;
 };
+
+
 
 
 struct Vst3PluginAdapter: zzub::plugin, zzub::midi_plugin_interface, zzub::event_handler {
@@ -120,8 +174,21 @@ struct Vst3PluginAdapter: zzub::plugin, zzub::midi_plugin_interface, zzub::event
     }
 
 private:
-    Steinberg::Vst::AudioBusBuffers* init_audio_buffers(Steinberg::Vst::BusDirections direction, BusSummary& main_bus);
-    Steinberg::Vst::EventList* init_event_buffers(Steinberg::Vst::BusDirections direction, BusSummary& main_bus);
+    Steinberg::Vst::AudioBusBuffers* init_audio_buffers(
+        Steinberg::Vst::BusDirections direction, 
+        BusSummary& main_bus
+    );
+
+    Steinberg::Vst::EventList* init_event_buffers(
+        Steinberg::Vst::BusDirections direction, 
+        BusSummary& main_bus
+    );
+
+    std::vector<Steinberg::Vst::SpeakerArrangement> get_actual_arrangements(
+        Steinberg::Vst::BusDirections direction
+    );
+
+    bool setup_speaker_arrangements();
 
     bool ok = false;
     bool editor_is_open = false;
@@ -137,6 +204,7 @@ private:
     Steinberg::IPtr<Steinberg::Vst::IAudioProcessor> processor ;
     Steinberg::IPtr<Steinberg::IPlugView> plugin_view ;
     Steinberg::Vst::PlugProvider* provider = nullptr;
+    VstHostContext host_context{};
 
     std::vector<Steinberg::Vst::Event> eventbuf{};
 
@@ -153,4 +221,6 @@ private:
 
     zzub::tools::CopyChannels* copy_in;
     zzub::tools::CopyChannels* copy_out;
+
+    bool initialised = false;
 };

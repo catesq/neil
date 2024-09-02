@@ -1,0 +1,5 @@
+Import('pluginenv', 'build_plugin')
+
+localenv = pluginenv.Clone()
+localenv.Append(LIBS=['faust'])
+build_plugin(localenv, "faust_oscillator", ['faust_oscillator.cpp', 'faust_ui.cpp'])

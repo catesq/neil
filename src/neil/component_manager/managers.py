@@ -7,19 +7,52 @@ from .package import PackageInfo
 from .loader import NamedComponentLoader
 
 
+# the component manager is the main registry for the service locator
+# it has a factoryinfo for each class id 
+# there is almost always only one class for each class id
+# only more than one when custom components in ~/.local/neil/components made to override the default ones 
+
 
 def get_neil_classes(neil_dict) -> List[type]:
     return neil_dict.get('classes', [])
 
+
+
 class FactoryInfo:
-    def __init__(self, classobj, pkg: PackageInfo):
+    def __init__(self, classobj, pkg_info: PackageInfo):
         self.id = id
         self.singleton = False
         self.categories = []
-        
+        self.priority = 1
         self.__dict__.update(classobj.__neil__)
-        self.classobj = classobj
-        self.pkg = pkg
+        self._classobj = classobj
+        self._pkg = pkg_info
+        self._builders = [self._classobj]
+        
+
+    ## get a setting from one of the __neil__ dicts from the class
+    def get_config(self, key: str, default=False):
+        if key and key[0] != '_':
+            return self.__dict__.get(key, default)
+        else:
+            return default
+    
+
+    def create_instance(self, *args, **kwargs):
+        return self._classobj(*args, **kwargs)
+    
+
+    def can_build(self):
+        return self._classobj and callable(self._classobj)
+    
+    
+    def add_custom_builder(self, custom: 'FactoryInfo'):
+        if custom.priority > self.priority:
+            self.priority = custom.priority
+            self._classobj = custom._classobj
+
+        self._builders.append(custom._classobj)
+
 
 
 class ComponentManager():
@@ -44,7 +77,7 @@ class ComponentManager():
     #
     def register(self, info: PackageInfo, neil_dict: Dict, modulefilename):
         self.packages.append(info)
-
+        
         for class_ in get_neil_classes(neil_dict):
             if not hasattr(class_, '__neil__'):
                 #show error message showing name of class and file
@@ -52,7 +85,11 @@ class ComponentManager():
                 continue
             
             factory_info = FactoryInfo(class_, info)
-            self.factories[factory_info.id] = factory_info
+
+            if factory_info.id in self.factories:
+                self.factories[factory_info.id].add_custom_builder(factory_info)
+            else:
+                self.factories[factory_info.id] = factory_info
 
             for category in factory_info.categories:
                 catlist = self.categories.get(category, [])
@@ -72,11 +109,11 @@ class ComponentManager():
             print("no factory info found for classid '%s'" % id)
             return None
         
-        class_ = factory_info.classobj
-        if not class_:
-            print("no factory found for classid '%s'" % id)
+        if not factory_info.can_build():
+            print("factory config problem for classid '%s'" % id)
             return None
-        return class_
+        
+        return factory_info
 
 
     def exception(self, id):
@@ -99,18 +136,18 @@ class ComponentManager():
             return instance
         
         # retrieve factory
-        class_ = self.factory(id)
+        factory = self.factory(id)
 
-        if not class_:
+        if not factory:
             return None
         
-        if class_.__neil__.get('singleton', False):
+        if factory.get_config('singleton'):
             self.singletons[id] = None  # fill with an empty slot so we get no recursive loop
 
         # create a new object
         obj = None
         try:
-            obj = class_(*args, **kwargs)
+            obj = factory.create_instance(*args, **kwargs)
         except:
             import traceback
             from . import errordlg
@@ -118,11 +155,13 @@ class ComponentManager():
             msg = "<b><big>Could not create component</big></b>"
             msg2 = "while trying to create '" + id + "'"
             errordlg.error(None, msg, msg2, traceback.format_exc(), offer_quit=True)
-        if class_.__neil__.get('singleton', False):
+    
+        if factory.get_config('singleton'):
             if not obj:
                 del self.singletons[id]
             else:
                 self.singletons[id] = obj  # register as singleton
+
         return obj
 
 

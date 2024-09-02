@@ -30,13 +30,15 @@ x86_64 = platform.machine() == 'x86_64'
 
 Import('main_env', 'tools_converter', 'bool_converter')
 
-######################################
-#
-# init environment and define options
-#
-######################################
 
-#  describe an error about a missing library
+
+
+##############################################
+#
+# error types use by the configuration check
+#
+##############################################
+
 class LibraryNotFound:
     def __init__(self, lib):
         self.lib = lib
@@ -66,17 +68,51 @@ class PkgVersionErr:
 
 
 
+######################################
+#
+# submodule tools
+#
+######################################
 
-# def tools_converter(value):
-#     return value.split(',')
+def add_submodule(env, submodule):
+    if submodule.get_src_path():
+        env.Append(CPPPATH = [submodule.get_src_path()])
+        if submodule.get_src_path_key():
+            env[submodule.get_src_path_key()] = submodule.get_src_path()
 
-# def bool_converter(value):
-#     value = value.lower()
-#     if value in ('true','enabled','on','yes','1'):
-#         return True
-#     elif value in ('false','disabled','off','no','0'):
-#         return False
-#     return bool(value)
+    if submodule.get_cpp_defines():
+        env.Append(CPPDEFINES = submodule.get_cpp_defines())
+
+    for key, val in submodule.get_env_flags().items():
+        env[key] = val
+
+    if 'submodules' not in env:
+        env['submodules'] = []
+
+    env['submodules'].append(submodule)
+
+
+def add_submodules(env, submodules):
+    # def __init__(self, submodules, env):
+    for module in submodules:
+        env.AddSubmodule(module)
+
+
+def build_submodules(env):
+    if 'submodules' not in env:
+        return
+    
+    for module in env['submodules']:
+        module.build(env)
+
+
+
+
+######################################
+#
+# init environment and define options
+#
+######################################
 
 def audioengine_converter(value):
     value = value.lower()
@@ -114,6 +150,10 @@ opts.Add("MAD", "Support libmad encoder", False, None, bool_converter)
 
 env = Environment(ENV = os.environ, options = opts)
 
+env.AddMethod(add_submodule, "AddSubmodule")
+env.AddMethod(add_submodules, "AddSubmodules")
+env.AddMethod(build_submodules, "BuildSubmodules")
+
 def get_revision():
     # its a release build, take the string from a special file
     if os.path.isfile('REVISION'):
@@ -127,6 +167,9 @@ print(revision, file=open('REVISION','w'))
 env['REVISION'] = revision
 
 env.SConsignFile()
+
+
+
 
 ######################################
 #
@@ -234,6 +277,9 @@ if x86_64:
         '-D__X86_64__'
     ])
 
+
+
+
 ######################################
 #
 # signature
@@ -247,9 +293,12 @@ import socket
 env['LIBZZUB_VERSION'] = VERSION
 env['SIGNATURE'] = 'libzzub %s r%s %s-%s %s' % (env['LIBZZUB_VERSION'],env['REVISION'],env['CC'],sys.platform,socket.gethostname())
 
+
+
+
 ######################################
 #
-# install paths
+# define install paths and helpers
 #
 ######################################
 
@@ -317,23 +366,40 @@ def install_plugin_help(name, files):
     return install("${DESTDIR}${PREFIX}/share/doc/zzub/plugins/"+name, files, 0o644)
 
 
-################################################################################
-# every submodule (subdirs of libneil/src) has a <SUBMODULENAME>_SRC_PATH. 
-# the src_path is needed for: build_cmake_module, build_scons_module, include path
-################################################################################
 
 
+######################################
+#
+# submodule paths
+#
+######################################
 
-loguru_lib_name = 'logurud' if env['DEBUG'] else 'loguru'
+faust_backends = [ 
+    'C_BACKEND', 'CODEBOX_BACKEND', 'CPP_BACKEND', 'CMAJOR_BACKEND', 'CMAJOR_BACKEND', 'CSHARP_BACKEND', 
+    'DLANG_BACKEND', 'FIR_BACKEND', 'INTERP_BACKEND', 'JAVA_BACKEND', 'JAX_BACKEND', 'JULIA_BACKEND',
+    'JSFX_BACKEND', 'OLDCPP_BACKEND', 'RUST_BACKEND', 'TEMPLATE_BACKEND', 'VHDL_BACKEND', 'WASM_BACKEND'
+]
+
+faust_options = '-C ../../build/backends/all.cmake -D LLVM_BACKEND=STATIC -D INCLUDE_STATIC=On -D INCLUDE_DYNAMIC=off -D INCLUDE_EXECUTABLE=off -D SELF_CONTAINED_LIBRARY=on '
+faust_options += ' '.join(["-D{}=off".format(backend) for backend in faust_backends])
 
 submodules = [
+    # this is not really an external module but usi ng AddSubModules  was a tidy way
+    # of adding libneil/src to the cpppath and defining LIBNEIL_SRC_PATH.
+
+    # so all submodules - plus libneil - have a <SUBMODULENAME>_SRC_PATH env variable using the same naming scheme
     ext_modules.cpp_path('libneil', '${BUILD_PATH}/libneil/include'),
 
     ext_modules.scons_module('kiss_fft'),
 
-    ext_modules.cmake_module('gist', 'Gist', build_subdir = 'src', cpp_defines = ['USE_KISS_FFT'], ),
+    ext_modules.cmake_module('gist', 'Gist', src_subdir = 'src', cpp_defines = ['USE_KISS_FFT'], ),
 
-    ext_modules.cmake_module('loguru', loguru_lib_name, always_link = True),
+    ext_modules.cmake_module('loguru', 
+                             'logurud' if env['DEBUG'] else 'loguru', 
+                             always_link = True),
+
+    ext_modules.cmake_module('faust', src_subdir='build', cmake_opts=faust_options, 
+                             lib_path='../lib', always_link=True, cmakelists_dir='..'),
 
     ext_modules.scons_module('lanternfish'),
 
@@ -348,45 +414,10 @@ submodules = [
 ]
 
 ##################################################################################
-# add ???_SRC_PATH for each submodule's build path 
-##################################################################################
-# for subdir in ('libzzub', 'pyzzub', 'plugins', 'lanternfish', 'kiss_fft', 'loguru', 'gist'):
-#     add_submodule_src_path(subdir)
-
-for module in submodules:
-    if module.get_src_path():
-        env.Append(CPPPATH = [module.get_src_path()])
-
-        if module.get_src_path_key():
-            env[module.get_src_path_key()] = module.get_src_path()
-
-    if module.get_cpp_defines():
-        env.Append(CPPDEFINES = module.get_cpp_defines())
-
-    for key, val in module.get_env_flags().items():
-        env[key] = val
+# add source path for each submodule's build path 
 
 
-
-
-###############################
-#
-# c/c++ src dirs and defines 
-#
-###############################
-
-# env.Append(CPPPATH=[ '${BUILD_PATH}/libneil/include', 
-#                      '${LOGURU_SRC_PATH}', 
-#                      '${GIST_SRC_PATH}/src', 
-#                      '${LANTERNFISH_SRC_PATH}', 
-#                      '${KISS_FFT_SRC_PATH}' ],
-
-#            CPPDEFINES = [ 'USE_KISS_FFT' ])
-
-
-# env['LOGURU_LIB_NAME'] = 'logurud' if env['DEBUG'] else 'loguru'
-# env['LIB_BUILD_PATH']  = '${BUILD_PATH}/lib'
-# env['BIN_BUILD_PATH']  = '${BUILD_PATH}/bin'
+env.AddSubmodules(submodules)
 
 
 ######################################################
@@ -485,6 +516,9 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
 
     if not conf.CheckCXXHeader('loguru.cpp'):
         lib_errors.append(SubModuleNotFound('loguru', 'https://github.com/martinmoene/clue'))
+
+    if not conf.CheckCHeader('minizip/minizip-compat.h'):
+        lib_errors.append(LibraryNotFound('minizip-compat (aka minizip-ng-compat)'))
 
     if not conf.CheckCHeader('zlib.h'):
         lib_errors.append(LibraryNotFound("zlib"))
@@ -638,7 +672,6 @@ def build_signature(target, source, env):
 
 
 
-
 #########################################################
 #
 # custom builders
@@ -681,11 +714,7 @@ output.append(env.ZIDLPyCtypes(  '${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__
 env.Depends(output, '${SRC_PATH}/libneil/tools/zidl')
 
 
-# copy generated header files from build dir to src dir for vscode 
-# when the debug + release versions are built, there are multiple identical versions of the same headers visible vscode
-# this made: autocomplete, goto definition etc - very slow. 
-# so add build dir to files.exclude in settings.json and copy generated headers to source tree
-# todo: should make this a compile option which defaults to no
+# clone header files just generated by scons to the source dir  - (for vscode completion)   
 for obj in output[0:3]:
     header_name = str(obj[0])
     src = env['BUILD_PATH'] + '/libneil/' + header_name
@@ -723,11 +752,7 @@ env.Signature(target='${SRC_PATH}/libneil/include/zzub/signature.h', source=opti
 #
 ##############################################################################
 
-
-
-for module in submodules:
-    module.build(env)
-
+env.BuildSubmodules()
 
 #######################################
 #

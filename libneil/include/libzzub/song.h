@@ -221,11 +221,9 @@ struct song {
     virtual void set_state(player_state newstate);
     void plugin_add_input(int to_id, int from_id, connection_type type);
     void plugin_delete_input(int to_id, int from_id, connection_type type);
+    
 private:
     // the input plugins are stored as out edges and vice versa
-    // this is confusing and i'm not sure why it's done this way 
-    // i see it as the plugin requesting audio from the plugins out edges to collect the plugins audio input
-    // and suspect the out_edge=>input audio and in_edge=>output audio oddity is something to do with how make_work_order functions
     std::pair<zzub::out_edge_iterator, zzub::out_edge_iterator> get_plugin_input_edges(int plugin_id);
     std::pair<zzub::in_edge_iterator, zzub::in_edge_iterator> get_plugin_output_edges(int plugin_id);
     zzub::out_edge_iterator get_plugin_input_edge(int plugin_id, int index);

@@ -23,6 +23,10 @@
 #include "zzub/plugin.h"
 #include "libzzub/metaplugin.h"
 
+#define ALL_OF(it) (it).begin(), (it).end()
+
+
+
 float linear_to_dB(float val);
 float dB_to_linear(float val);
 void handleError(std::string errorTitle);
@@ -57,8 +61,7 @@ public:
 };
 
 
-// used in process_stereo of lv2/vst adapters
-// duplicate a output of mono plugin to zzub's stereo or mix down zzub's stereo channel to the input of a mono plugin 
+// used in process_stereo of lv2/vst adapters to duplicate a mono output to stereo or mix zzub's stereo channel to the input of a mono plugin 
 struct CopyChannels {
     virtual void copy(float **src, float **dest, int num_samples) = 0;
     static CopyChannels* build(int num_in, int num_out);

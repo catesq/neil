@@ -151,7 +151,6 @@ CONFIG_OPTIONS = dict(
             vtype=bool,
             doc="Show others."
         ),
-                            #  ShowNonNative
         ShowZzub=dict(
             func='pluginlistbrowser_show_zzub',
             default='false',

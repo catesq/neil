@@ -16,37 +16,66 @@ enum class Vst3Category {
 };
 
 struct Vst3Info : zzub::info {
-    Vst3Info(std::string filename,
-            VST3::Hosting::Module::Ptr host_module,
-            VST3::Hosting::ClassInfo class_info,
-            Steinberg::Vst::PlugProvider* provider);
+    Vst3Info(
+        std::string filename,
+        VST3::Hosting::Module::Ptr host_module,
+        VST3::Hosting::ClassInfo class_info,
+        Steinberg::Vst::PlugProvider* provider
+    );
 
     virtual ~Vst3Info();
 
-    virtual zzub::plugin *create_plugin() const;
+    virtual zzub::plugin *
+    create_plugin() const;
 
-    virtual bool store_info(zzub::archive *) const { return false; }
+    virtual bool 
+    store_info(
+        zzub::archive *
+    ) const { 
+        return false; 
+    }
 
-    bool is_valid() const;
+    bool 
+    is_valid() const;
 
-    std::string get_filename() const;
+    std::string 
+    get_filename() const;
 
-    uint32_t get_global_param_count() const;
+    uint32_t 
+    get_global_param_count() const;
 
-    uint32_t get_track_param_count() const;
+    uint32_t 
+    get_track_param_count() const;
 
-    Vst3Param* get_vst_param(uint32_t index) const;
+    Vst3Param* 
+    get_vst_param(
+        uint32_t index
+    ) const;
 
-    Vst3Category get_main_category(const VST3::Hosting::ClassInfo &) const;
 
-    uint32_t get_bus_count(Steinberg::Vst::MediaTypes type, Steinberg::Vst::BusDirections direction) const;
+    Vst3Category get_main_category(
+        const VST3::Hosting::ClassInfo &
+    ) const;
 
-    const std::vector<Steinberg::Vst::BusInfo>& get_bus_infos(Steinberg::Vst::MediaTypes type,
-                                                       Steinberg::Vst::BusDirections direction) const;
 
-    const Steinberg::Vst::BusInfo& get_bus_info(Steinberg::Vst::MediaTypes type,
-                                                      Steinberg::Vst::BusDirections direction,
-                                                      uint32_t index) const;
+    uint32_t get_bus_count(
+        Steinberg::Vst::MediaTypes type, 
+        Steinberg::Vst::BusDirections direction
+    ) const;
+
+
+    const std::vector<Steinberg::Vst::BusInfo>& get_bus_infos(
+        Steinberg::Vst::MediaTypes media_type,
+        Steinberg::Vst::BusDirections direction
+    ) const;
+
+
+    const Steinberg::Vst::BusInfo& get_bus_info(
+        Steinberg::Vst::MediaTypes type,
+        Steinberg::Vst::BusDirections direction,
+        uint32_t index) 
+    const;
+
 
 private:
     std::string filename;

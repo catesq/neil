@@ -22,6 +22,7 @@ public:
           return true;
         }
 
+        dcblock.process(pin[0], pout[0], pin[1], pout[1], numsamples);
 
         return true;
     }

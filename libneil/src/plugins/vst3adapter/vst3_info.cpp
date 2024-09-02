@@ -7,6 +7,8 @@
 #include "vst3_info.h"
 #include "vst3_adapter.h"
 
+#include <algorithm>
+
 using MediaTypes = Steinberg::Vst::MediaTypes;
 using BusDirections = Steinberg::Vst::BusDirections;
 
@@ -44,9 +46,9 @@ Vst3Info::Vst3Info(
         params.push_back(Vst3Param::build(param_info));
     }
 
-    author = class_info.vendor().c_str();
-    name = class_info.name().c_str();
-    short_name = class_info.name().c_str();
+    author = class_info.vendor();
+    name = class_info.name  ();
+    short_name = class_info.name();
     version = (int) (std::stod(class_info.version()) * 1000);
     uri = "@zzub.org/vst3adapter/" + name + "/" + std::to_string(version);
 
@@ -70,11 +72,17 @@ Vst3Info::Vst3Info(
     }
 
 
-    flags |= zzub::plugin_flag_has_custom_gui;
+    flags |= zzub::plugin_flag_has_custom_gui;  
 
 
-    Steinberg::FUnknownPtr<Steinberg::Vst::IProcessContextRequirements> contextRequirements(audio_processor);
-    requirement_flags = contextRequirements->getProcessContextRequirements();
+    Steinberg::FUnknownPtr<Steinberg::Vst::IProcessContextRequirements> contextRequirements(plugin_component);
+    
+    if(contextRequirements) {
+        printf("contextRequirements for %s: %p\n", name.c_str(), contextRequirements);
+        requirement_flags = contextRequirements->getProcessContextRequirements();
+    } else {
+        printf("no      contextRequirements for %s\n", name.c_str());
+    }
 
     bus_infos.audio_in  = build_bus_infos(plugin_component, MediaTypes::kAudio, BusDirections::kInput);
     bus_infos.audio_out = build_bus_infos(plugin_component, MediaTypes::kAudio, BusDirections::kOutput);
@@ -157,12 +165,11 @@ const Steinberg::Vst::BusInfo& Vst3Info::get_bus_info
 
 uint32_t Vst3Info::get_bus_count
 (
-    Steinberg::Vst::MediaTypes type,
+    Steinberg::Vst::MediaTypes media_type,
     Steinberg::Vst::BusDirections direction
 ) const {
-    return get_bus_infos(type, direction).size();
+    return get_bus_infos(media_type, direction).size();
 }
-
 
 
 std::vector<Steinberg::Vst::BusInfo> Vst3Info::build_bus_infos

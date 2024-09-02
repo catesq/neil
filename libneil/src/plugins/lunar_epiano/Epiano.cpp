@@ -16,6 +16,7 @@ LunarEpiano::~LunarEpiano() {
 
 void LunarEpiano::init(zzub::archive* pi) {
   waves = epianoData;
+  
   //Waveform data and keymapping
   kgrp[0].root = 36; kgrp[0].high = 39; //C1
   kgrp[3].root = 43; kgrp[3].high = 45; //G1

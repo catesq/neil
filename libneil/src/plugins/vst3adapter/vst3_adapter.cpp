@@ -6,10 +6,8 @@
 #include "pluginterfaces/vst/ivstmessage.h"
 #include "pluginterfaces/gui/iplugviewcontentscalesupport.h"
 
-using MediaTypes = Steinberg::Vst::MediaTypes;
 
-using BusDirections = Steinberg::Vst::BusDirections;
-namespace SpeakerArr = Steinberg::Vst::SpeakerArr;
+namespace Vst = Steinberg::Vst;
 
 
 extern "C" {
@@ -21,7 +19,7 @@ extern "C" {
 
 Vst3PluginAdapter::Vst3PluginAdapter(
     const zzub::info* info,
-    Steinberg::Vst::PlugProvider* provider 
+    Vst::PlugProvider* provider 
 ) : info((const Vst3Info*) info),
     provider(provider), 
     midi_track_manager(*this, info->max_tracks),
@@ -40,12 +38,12 @@ Vst3PluginAdapter::Vst3PluginAdapter(
 Vst3PluginAdapter::~Vst3PluginAdapter() {
     delete provider;
     // delete audio bus buffers
-
-    for (auto idx = 0; idx < info->get_bus_count(MediaTypes::kAudio, BusDirections::kInput); idx++) {
+                        
+    for (auto idx = 0; idx < info->get_bus_count(Vst::MediaTypes::kAudio, Vst::BusDirections::kInput); idx++) {
         free(process_data.inputs[idx].channelBuffers32);
     }
 
-    for (auto idx = 0; idx < info->get_bus_count(MediaTypes::kAudio, BusDirections::kOutput); idx++) {
+    for (auto idx = 0; idx < info->get_bus_count(Vst::MediaTypes::kAudio, Vst::BusDirections::kOutput); idx++) {
         free(process_data.outputs[idx].channelBuffers32);
     }
 
@@ -57,11 +55,14 @@ Vst3PluginAdapter::~Vst3PluginAdapter() {
 }
 
 
-void Vst3PluginAdapter::init(zzub::archive* pi) {
+
+
+void Vst3PluginAdapter::init(zzub::archive* pi) 
+{
     metaplugin = _host->get_metaplugin();
     _host->set_event_handler(metaplugin, this);
 
-    auto sample_size = Steinberg::Vst::kSample32;
+    auto sample_size = Vst::kSample32;
     // auto meta_plugin = _host->get_metaplugin();
     auto max_block_size = zzub::buffer_size;
     auto realtime = true;
@@ -90,65 +91,125 @@ void Vst3PluginAdapter::init(zzub::archive* pi) {
     process_context.sampleRate = _master_info->samples_per_second;
     process_context.projectTimeSamples = 0;
 
-    copy_in = zzub::tools::CopyChannels::build(2, audio_buses.in.main_channel_count);
-    copy_out = zzub::tools::CopyChannels::build(audio_buses.out.main_channel_count, 2);
-}
-
-inline void print_arrangements(Steinberg::Vst::SpeakerArrangement* data, uint8_t num) {
-    for(uint8_t idx=0; idx < num; idx++) {
-        printf("bus %d: %d \n", idx, data[idx]);
-    }
-    printf("\n");
-}
-
-inline void print_arrangements(std::vector<Steinberg::Vst::SpeakerArrangement>& speakers) {
-    for(auto speaker: speakers) {
-        printf("%d", speaker);
-    }
-    printf("\n");
-}
-
-void Vst3PluginAdapter::created() {
-    controller = provider->getController();
     component = provider->getComponent();
-    processor = Steinberg::FUnknownPtr<Steinberg::Vst::IAudioProcessor>(component);
+    processor = Steinberg::FUnknownPtr<Vst::IAudioProcessor>(component);
+    
+    if(component->initialize(&host_context) != Steinberg::kResultOk) {
+          printf("component %s failed to initialize\n", info->name.c_str());  
+    } else {
+        printf("component %s initialized\n", info->name.c_str());
 
-    Steinberg::FUnknownPtr<Steinberg::Vst::IConnectionPoint>(component)->connect(Steinberg::FUnknownPtr<Steinberg::Vst::IConnectionPoint>(controller));
+    }
 
-    //define a int array of length bus count populated with Steinberg::Vst::SpeakerArr::kStereo
-    auto audio_in_count = info->get_bus_count(MediaTypes::kAudio, BusDirections::kInput);
-    auto audio_out_count = info->get_bus_count(MediaTypes::kAudio, BusDirections::kOutput);
+    controller = provider->getController();
 
-    std::vector<Steinberg::Vst::SpeakerArrangement> input_speakers(audio_in_count, SpeakerArr::kStereo);
-    std::vector<Steinberg::Vst::SpeakerArrangement> output_speakers(audio_out_count, SpeakerArr::kStereo);
+    if(controller && controller->initialize(&host_context) != Steinberg::kResultOk) {
+        printf("controller %s failed to initialize\n", info->name.c_str());  
+        return;
+    } else {
+        printf("controller %s initialized\n", info->name.c_str());
+    }
+
+
+    // if(controller && component) {
+    //     Steinberg::FUnknownPtr<Vst::IConnectionPoint> component_p(component);
+    //     Steinberg::FUn   knownPtr<Vst::IConnectionPoint> controller_p(controller);
+
+    //     if (component_p && controller_p) {
+    //         printf("Connecting controller and component\n");
+    //         component_p->connect(controller_p);
+    //         controller_p->connect(component_p);
+    //     }
+    // }
+
+    initialised = true;
+}
+
+
+
+
+std::vector<Vst::SpeakerArrangement> 
+Vst3PluginAdapter::get_actual_arrangements(
+    Steinberg::Vst::BusDirections direction
+) {
+    std::vector<Vst::SpeakerArrangement> speakers;
+    Vst::SpeakerArrangement arrangement;
+
+    for(auto idx=0; idx < info->get_bus_count(Vst::MediaTypes::kAudio, direction); idx++) {
+        processor->getBusArrangement(direction, idx, arrangement);
+        speakers.push_back(arrangement);
+    }
+
+    return speakers;
+}
+
+
+
+
+bool 
+Vst3PluginAdapter::setup_speaker_arrangements() 
+{
+    auto audio_in_count = info->get_bus_count(Vst::MediaTypes::kAudio, Vst::BusDirections::kInput);
+    auto audio_out_count = info->get_bus_count(Vst::MediaTypes::kAudio, Vst::BusDirections::kOutput);
+
+    std::vector<Vst::SpeakerArrangement> input_speakers(audio_in_count, Vst::SpeakerArr::kStereo);
+    std::vector<Vst::SpeakerArrangement> output_speakers(audio_out_count, Vst::SpeakerArr::kStereo);
 
     auto res = processor->setBusArrangements(
         input_speakers.data(), audio_in_count,
         output_speakers.data(), audio_out_count
     );
 
-    if (res == Steinberg::kResultFalse) {
-		std::cout << "Failed to set bus arrangements: " << res << std::endl;
-        return;
-	}
+    if(res != Steinberg::kResultOk) {
+        auto actual_ins = get_actual_arrangements(Vst::BusDirections::kInput);
+        auto actual_outs = get_actual_arrangements(Vst::BusDirections::kOutput);
+        
+        if(actual_ins.size() != audio_in_count || actual_outs.size() != audio_out_count) {
+            printf("failed to set audio bus arrangements for '%s', bus count mismatch.\n", info->name.c_str());
+            return false;
+        }
 
-    res = processor->setupProcessing(process_setup);
+        if(actual_ins != input_speakers || actual_outs != output_speakers) {
+            printf("failed to set audio bus arrangements for '%s', speaker arrangement problem\n", info->name.c_str());
+            return false;
+        }       
+    }
+
+    return true;
+}
+
+
+
+
+void 
+Vst3PluginAdapter::created() 
+{
+    if(!setup_speaker_arrangements()) {
+        return;
+    }
+
+    auto res = processor->setupProcessing(process_setup);
     if (res != Steinberg::kResultOk) {
         std::cout << "Failed to setup VST processing: " << res << std::endl;
         return;
     }
 
+
+
     process_data.prepare(*component, process_setup.maxSamplesPerBlock, process_setup.symbolicSampleSize);
 
-    process_data.inputParameterChanges = new Steinberg::Vst::ParameterChanges();
+    process_data.inputParameterChanges = new Vst::ParameterChanges();
 
-    process_data.inputs = init_audio_buffers(BusDirections::kInput, audio_buses.in);
-    process_data.outputs = init_audio_buffers(BusDirections::kOutput, audio_buses.out);
+    process_data.inputs = init_audio_buffers(Vst::BusDirections::kInput, audio_buses.in);
+    process_data.outputs = init_audio_buffers(Vst::BusDirections::kOutput, audio_buses.out);
 
     // find main audio bus and number of channels in audio bus
-    process_data.inputEvents = init_event_buffers(BusDirections::kInput, event_buses.in);
-    process_data.outputEvents = init_event_buffers(BusDirections::kOutput, event_buses.out);
-    
+    process_data.inputEvents = init_event_buffers(Vst::BusDirections::kInput, event_buses.in);
+    process_data.outputEvents = init_event_buffers(Vst::BusDirections::kOutput, event_buses.out);
+
+    copy_in = zzub::tools::CopyChannels::build(2, audio_buses.in.main_channel_count);
+    copy_out = zzub::tools::CopyChannels::build(audio_buses.out.main_channel_count, 2);
+
     if (component->setActive(true) != Steinberg::kResultTrue) {
         std::cout << "Failed to activate VST component" << std::endl;
         return;
@@ -159,7 +220,9 @@ void Vst3PluginAdapter::created() {
 }
 
 
-bool Vst3PluginAdapter::invoke(zzub_event_data_t& data) {
+
+bool Vst3PluginAdapter::invoke(zzub_event_data_t& data) 
+{
     if(data.type == zzub::event_type_double_click && !plugin_view && is_ok()) {
         ui_open();
     }
@@ -170,8 +233,10 @@ bool Vst3PluginAdapter::invoke(zzub_event_data_t& data) {
 
 
 
-void Vst3PluginAdapter::ui_open() {
-    plugin_view = controller->createView(Steinberg::Vst::ViewType::kEditor);
+
+void Vst3PluginAdapter::ui_open() 
+{
+    plugin_view = controller->createView(Vst::ViewType::kEditor);
     if (!plugin_view) {
         std::cout << "Failed to create plugin view" << std::endl;
         return;
@@ -204,8 +269,11 @@ void Vst3PluginAdapter::ui_open() {
 }
 
 
+
+
 // this makes the plugin rescale the interface - if possible - then resize the gtk window to match
-bool Vst3PluginAdapter::ui_rescale(float factor) {
+bool Vst3PluginAdapter::ui_rescale(float factor) 
+{
     if (!plugin_view || !window) {
         return false;
     }
@@ -224,7 +292,11 @@ bool Vst3PluginAdapter::ui_rescale(float factor) {
 }
 
 
-bool Vst3PluginAdapter::ui_resize(int width, int height) {
+
+
+bool 
+Vst3PluginAdapter::ui_resize(int width, int height) 
+{
     if(!window)
         return false;
 
@@ -233,8 +305,10 @@ bool Vst3PluginAdapter::ui_resize(int width, int height) {
 }
 
 
+
 void 
-Vst3PluginAdapter::ui_close() {
+Vst3PluginAdapter::ui_close() 
+{
     if (!plugin_view) {
         return;
     }
@@ -249,6 +323,7 @@ Vst3PluginAdapter::ui_close() {
 
 
 
+
 /**
  * @brief 
  * 
@@ -256,11 +331,16 @@ Vst3PluginAdapter::ui_close() {
  * @param direction kInput or kOutput
  * @param MainAudioBusInfo& main_bus Will store the index of the main bus and number of channels it has
  */
-Steinberg::Vst::AudioBusBuffers* Vst3PluginAdapter::init_audio_buffers(Steinberg::Vst::BusDirections direction, BusSummary& bus_summary) {
-    auto bus_count = bus_summary.bus_count = info->get_bus_count(MediaTypes::kAudio, direction);
-    auto buffers = new Steinberg::Vst::AudioBusBuffers[bus_count];
 
-    auto bus_infos = info->get_bus_infos(MediaTypes::kAudio, direction);
+Vst::AudioBusBuffers* 
+    Vst3PluginAdapter::init_audio_buffers(
+    Vst::BusDirections direction, 
+    BusSummary& bus_summary
+) {
+    auto bus_count = bus_summary.bus_count = info->get_bus_count(Vst::MediaTypes::kAudio, direction);
+    auto buffers = new Vst::AudioBusBuffers[bus_count];
+
+    auto bus_infos = info->get_bus_infos(Vst::MediaTypes::kAudio, direction);
 
     for (auto idx = 0; idx < bus_count; idx++) {
         buffers[idx].numChannels = bus_infos[idx].channelCount;
@@ -273,16 +353,18 @@ Steinberg::Vst::AudioBusBuffers* Vst3PluginAdapter::init_audio_buffers(Steinberg
             buffers[idx].channelBuffers32[chan_idx] = audio_buf;
         }
 
-        if(bus_infos[idx].busType == Steinberg::Vst::BusTypes::kMain) {
+        if(bus_infos[idx].busType == Vst::BusTypes::kMain) {
             bus_summary.main_bus_index = idx;
             bus_summary.main_channel_count = bus_infos[idx].channelCount;
         }
 
-        component->activateBus(MediaTypes::kAudio, direction, idx, true);
+        auto res = component->activateBus(Vst::MediaTypes::kAudio, direction, idx, true);
     }
 
     return buffers;
 }
+
+
 
 
 /**
@@ -292,18 +374,23 @@ Steinberg::Vst::AudioBusBuffers* Vst3PluginAdapter::init_audio_buffers(Steinberg
  * @param direction kInput or kOutput
  * @param MainAudioBusInfo& main_bus Will store the index of the main bus and number of channels it has
  */
-Steinberg::Vst::EventList* Vst3PluginAdapter::init_event_buffers(Steinberg::Vst::BusDirections direction, BusSummary& bus_summary) {
-    auto bus_count = bus_summary.bus_count = info->get_bus_count(MediaTypes::kEvent, direction);
-    auto events = new Steinberg::Vst::EventList[bus_count];
 
-    auto bus_infos = info->get_bus_infos(MediaTypes::kEvent, direction);
+Vst::EventList* 
+Vst3PluginAdapter::init_event_buffers(
+    Vst::BusDirections direction, 
+    BusSummary& bus_summary
+) {
+    auto bus_count = bus_summary.bus_count = info->get_bus_count(Vst::MediaTypes::kEvent, direction);
+    auto events = new Vst::EventList[bus_count];
+
+    auto bus_infos = info->get_bus_infos(Vst::MediaTypes::kEvent, direction);
 
     for (auto idx = 0; idx < bus_count; idx++) {
-        if(bus_infos[idx].busType == Steinberg::Vst::BusTypes::kMain) {
+        if(bus_infos[idx].busType == Vst::BusTypes::kMain) {
             bus_summary.main_bus_index = idx;
         }
 
-        component->activateBus(MediaTypes::kEvent, direction, idx, true);
+        component->activateBus(Vst::MediaTypes::kEvent, direction, idx, true);
     }
 
     if(bus_summary.main_bus_index == -1) {
@@ -316,13 +403,20 @@ Steinberg::Vst::EventList* Vst3PluginAdapter::init_event_buffers(Steinberg::Vst:
 }
 
 
-void Vst3PluginAdapter::set_track_count(int track_count) {
+
+
+void Vst3PluginAdapter::set_track_count(
+    int track_count
+) {
     midi_track_manager.set_track_count(track_count);
     num_tracks = track_count;
 }
 
 
-void Vst3PluginAdapter::process_events() {
+
+
+void Vst3PluginAdapter::process_events() 
+{
     if (!ok)
         return;
 
@@ -364,8 +458,8 @@ void Vst3PluginAdapter::process_events() {
     //         auto* event = event_list->addEvent();
     //         event->busIndex = 0;
     //         event->sampleOffset = midi_track->events[idx].sample_offset;
-    //         event->flags = Steinberg::Vst::Event::kIsLive;
-    //         event->type = Steinberg::Vst::Event::kNoteOnEvent;
+    //         event->flags = Vst::Event::kIsLive;
+    //         event->type = Vst::Event::kNoteOnEvent;
     //         event->noteOn.pitch = midi_track->events[idx].pitch;
     //         event->noteOn.velocity = midi_track->events[idx].velocity;
     //         event->noteOn.length = midi_track->events[idx].length;
@@ -378,28 +472,52 @@ void Vst3PluginAdapter::process_events() {
 
 
 
-void Vst3PluginAdapter::add_note_on(uint8_t note, uint8_t volume) {
+
+void Vst3PluginAdapter::add_note_on(
+    uint8_t note, 
+    uint8_t volume
+) {
     printf("add note on: %d, %d event count %d\n", note, volume, process_data.inputEvents[0].getEventCount());
-    add_midi_event(0, 0, 0.0, Steinberg::Vst::Event::kNoteOnEvent, Steinberg::Vst::NoteOnEvent{0, note, 0.0f, volume / 127.0f, 10000, -1}, false);
+    add_midi_event(0, 0, 0.0, Vst::Event::kNoteOnEvent, Vst::NoteOnEvent{0, note, 0.0f, volume / 127.0f, 10000, -1}, false);
 }
 
 
-void Vst3PluginAdapter::add_note_off(uint8_t note) {
-    add_midi_event(0, 0, 0.0, Steinberg::Vst::Event::kNoteOffEvent, Steinberg::Vst::NoteOffEvent{0, note, 0.0f, -1, 0.0f}, false);
+
+
+void Vst3PluginAdapter::add_note_off(
+    uint8_t note
+) {
+    add_midi_event(0, 0, 0.0, Vst::Event::kNoteOffEvent, Vst::NoteOffEvent{0, note, 0.0f, -1, 0.0f}, false);
 }
 
 
-void Vst3PluginAdapter::add_aftertouch(uint8_t note, uint8_t volume) {
-    add_midi_event(0, 0, 0.0, Steinberg::Vst::Event::kPolyPressureEvent, Steinberg::Vst::PolyPressureEvent{0, note, volume / 127.0f, -1}, false);
+
+
+void Vst3PluginAdapter::add_aftertouch(
+    uint8_t note, 
+    uint8_t volume
+) {
+    add_midi_event(0, 0, 0.0, Vst::Event::kPolyPressureEvent, Vst::PolyPressureEvent{0, note, volume / 127.0f, -1}, false);
 }
 
 
-void Vst3PluginAdapter::add_midi_command(uint8_t cmd, uint8_t data1, uint8_t data2) {
+
+
+void Vst3PluginAdapter::add_midi_command(
+    uint8_t cmd, 
+    uint8_t data1, 
+    uint8_t data2
+) {
     
 }
 
 
-bool Vst3PluginAdapter::process_stereo(float **pin, float **pout, int numsamples, int mode) {
+bool Vst3PluginAdapter::process_stereo(
+    float **pin, 
+    float **pout, 
+    int numsamples, 
+    int mode
+) {
     if (info->flags & zzub_plugin_flag_has_midi_input) {
         midi_track_manager.process_samples(numsamples, mode);
 
@@ -422,8 +540,8 @@ bool Vst3PluginAdapter::process_stereo(float **pin, float **pout, int numsamples
 
     copy_out->copy(process_data.outputs[0].channelBuffers32, pout, numsamples);
 
-    ((Steinberg::Vst::ParameterChanges*) process_data.inputParameterChanges)->clearQueue();
-    ((Steinberg::Vst::EventList*) process_data.inputEvents)->clear();
+    ((Vst::ParameterChanges*) process_data.inputParameterChanges)->clearQueue();
+    ((Vst::EventList*) process_data.inputEvents)->clear();
     
 
     return 1;

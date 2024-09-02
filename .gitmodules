@@ -8,3 +8,6 @@
 [submodule "libneil/src/gist"]
 	path = libneil/src/gist
 	url = https://github.com/adamstark/Gist
+[submodule "libneil/src/faust"]
+	path = libneil/src/faust
+	url = https://github.com/grame-cncm/faust

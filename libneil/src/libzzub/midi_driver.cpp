@@ -184,7 +184,7 @@ void mididriver::schedule_send(size_t index, int time_ms, unsigned int data) {
     msg.device = index;
     msg.timestamp = time_ms * 1000;	// using microseconds for fixed point presicion
     msg.message = data,
-            Pm_Enqueue(sendQueue, &msg);
+    Pm_Enqueue(sendQueue, &msg);
 }
 
 bool mididriver::send(size_t index, unsigned int data) {

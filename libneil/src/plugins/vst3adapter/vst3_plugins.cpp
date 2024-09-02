@@ -25,6 +25,9 @@ Vst3PluginCollection::Vst3PluginCollection(const char* vst_path)
 
 
 void Vst3PluginCollection::initialize(zzub::pluginfactory *factory) {
+    // the Vst3InfoLoader chooses which folders to look in for vst3's
+    // the Vst3Info tries to load anything that the InfoLoader decides is a vst
+    // plugin_info_iterator does the file walking using InfoLoader as the guide
     auto info_collector = zzub::plugin_info_iterator<struct Vst3Info, struct Vst3InfoLoader>(vst_path);
 
     for(auto plugin_info: info_collector.get_plugin_infos()) {
