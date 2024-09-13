@@ -135,6 +135,7 @@ def InstallPerm(env, dir, source, perm):
 
 SConsEnvironment.InstallPerm = InstallPerm
 
+
 def install(target, source, perm=None):
     if not perm:
         env.Install(dir=env.Dir(target), source=source)
@@ -145,6 +146,7 @@ env.Alias(target='install', source="${DESTDIR}${PREFIX}")
 env.Alias(target='install', source="${DESTDIR}${ETCDIR}")
 env.Alias(target='install', source=get_settings_dir())
 
+
 def install_recursive(target, path, mask):
     for f in glob.glob(os.path.join(path, mask)):
         install(target, f)
@@ -152,6 +154,7 @@ def install_recursive(target, path, mask):
         fullpath = os.path.join(path, filename)
         if os.path.isdir(fullpath):
             install_recursive(os.path.join(target, filename), fullpath, mask)
+
 
 def build_path_config(target, source, env):
     import os, sys

@@ -4,8 +4,6 @@ import os, typing
 
 
 
-
-
     # used by build_cmake_module() to check if the library is has been built 
 def check_lib_exists(lib_name, lib_path):
     suffixes = ['.a', '.lib']
@@ -87,9 +85,6 @@ class cmake_module(cpp_module):
         
         cwd = os.getcwd()
         os.chdir(cmake_build_path)
-
-
-        print("cmake build path: ", cmake_build_path)
         
         cmake_opts = self.extra_opts + ' -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_SHARED_LIBS=off -DCMAKE_BUILD_TYPE=' + cmake_build_type
         env.Execute('cmake ' + cmake_opts  + ' ' + self.cmakelists_dir)

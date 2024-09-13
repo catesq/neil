@@ -28,7 +28,25 @@ posix = os.name == 'posix'
 linux = sys.platform == 'linux'
 x86_64 = platform.machine() == 'x86_64'
 
-Import('main_env', 'tools_converter', 'bool_converter')
+Import('main_env', 'tools_converter', 'bool_converter', 'install_recursive')
+
+
+
+
+##############################################
+#
+# important install paths
+#
+#############################################
+
+
+rootpath = "${DESTDIR}${PREFIX}"
+binpath = "${DESTDIR}${PREFIX}/bin"
+libpath = "${DESTDIR}${PREFIX}${LIBDIR}"
+includepath = "${DESTDIR}${PREFIX}/include"
+pluginpath = "${DESTDIR}${PREFIX}${LIBDIR}/zzub"
+
+pyextpath = main_env['SITE_PACKAGE_PATH']
 
 
 
@@ -286,14 +304,11 @@ if x86_64:
 #
 ######################################
 
-import stat
 import socket
 
 
 env['LIBZZUB_VERSION'] = VERSION
 env['SIGNATURE'] = 'libzzub %s r%s %s-%s %s' % (env['LIBZZUB_VERSION'],env['REVISION'],env['CC'],sys.platform,socket.gethostname())
-
-
 
 
 ######################################
@@ -326,13 +341,7 @@ def InstallPerm(env, dir, source, perm):
 
 SConsEnvironment.InstallPerm = InstallPerm
 
-rootpath = "${DESTDIR}${PREFIX}"
-binpath = "${DESTDIR}${PREFIX}/bin"
-libpath = "${DESTDIR}${PREFIX}${LIBDIR}"
-includepath = "${DESTDIR}${PREFIX}/include"
-pluginpath = "${DESTDIR}${PREFIX}${LIBDIR}/zzub"
 
-pyextpath = main_env['SITE_PACKAGE_PATH']
 
 
 def install(target, source, perm=None, symlink=False):
@@ -370,7 +379,7 @@ def install_plugin_help(name, files):
 
 ######################################
 #
-# submodule paths
+# how to build submodules, the scons_module 
 #
 ######################################
 
@@ -384,10 +393,10 @@ faust_options = '-C ../../build/backends/all.cmake -D LLVM_BACKEND=STATIC -D INC
 faust_options += ' '.join(["-D{}=off".format(backend) for backend in faust_backends])
 
 submodules = [
-    # this is not really an external module but usi ng AddSubModules  was a tidy way
-    # of adding libneil/src to the cpppath and defining LIBNEIL_SRC_PATH.
-
-    # so all submodules - plus libneil - have a <SUBMODULENAME>_SRC_PATH env variable using the same naming scheme
+    # cpp_path is not really a submodule.
+    # it just adds libneil/src to the cpppath and defines LIBNEIL_SRC_PATH.
+    # some other submodules also change the cpppath and use the same naming scheme
+    # for the source path env var <MODULENAME>_SRC_PATH so it seems convenient doing it here for libneil 
     ext_modules.cpp_path('libneil', '${BUILD_PATH}/libneil/include'),
 
     ext_modules.scons_module('kiss_fft'),
@@ -398,6 +407,9 @@ submodules = [
                              'logurud' if env['DEBUG'] else 'loguru', 
                              always_link = True),
 
+    # faust build structure uses the same location for release and debug build
+    # currently you have to manually delete the build when switching between debug and release
+    # i tend to build debug first and rarely rebuilding a release version 
     ext_modules.cmake_module('faust', src_subdir='build', cmake_opts=faust_options, 
                              lib_path='../lib', always_link=True, cmakelists_dir='..'),
 
@@ -413,11 +425,13 @@ submodules = [
     ext_modules.scons_module('pyzzub'),
 ]
 
-##################################################################################
-# add source path for each submodule's build path 
+
+
 
 
 env.AddSubmodules(submodules)
+
+
 
 
 ######################################################
@@ -764,3 +778,6 @@ env.BuildSubmodules()
 import glob
 for header in glob.glob(env['BUILD_PATH'] + '/libneil/include/zzub/*.h'):
     install(includepath+'/zzub', header)
+
+
+install_recursive(rootpath + "/lib/faustlibraries", os.path.join(env['SRC_PATH'], 'libneil/src/faustlibraries'), '*')
