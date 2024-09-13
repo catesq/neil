@@ -11,3 +11,6 @@
 [submodule "libneil/src/faust"]
 	path = libneil/src/faust
 	url = https://github.com/grame-cncm/faust
+[submodule "libneil/src/faustlibraries"]
+	path = libneil/src/faustlibraries
+	url = https://github.com/grame-cncm/faustlibraries

@@ -1,8 +1,13 @@
 #include <zzub/zzub.h>
 #include <zzub/signature.h>
 #include <zzub/plugin.h>
+
 #include "faust/dsp/llvm-dsp.h"
 #include "faust_ui.hpp"
+
+#include "faust_oscillator_info.hpp"
+
+
 
 const char *zzub_get_signature()
 {
@@ -11,62 +16,58 @@ const char *zzub_get_signature()
 
 
 
+
 class gvals 
 {
 public:
-    unsigned char wave_type; // sin,tri,saw,sqr
-    unsigned char freq_type; // Hz, milliHz, beats, beats/256
-    unsigned short int freq;
-    unsigned short int pwm;
+    unsigned char wave_type = 0; // sin,tri,saw,sqr
+    unsigned char freq_type = 0; // Hz, milliHz, beats, beats/192, beats_num(upper 8bit) / beats_denom(low 8 bit)
+    unsigned short int freq = 1;
+    // unsigned short int pwm =0;
     unsigned char note;
-    unsigned char vol;
+    unsigned char vol = 64;
 };
+
 
 
 
 class faust_oscillator : public zzub::plugin 
 {
 public:
-    faust_oscillator() {}
+    faust_oscillator(const faust_oscillator_info* info) : info(info) 
+    {
+        faust_lib_dir = std::string(getenv("NEIL_BASE_PATH")) + "/lib/faustlibraries";
+    }
 
     virtual ~faust_oscillator() { }
 
+    // virtual void init(zzub::archive *arc, zzub::init_config* init_config) override;
     virtual void init(zzub::archive *arc) override;
 
+    bool process_mono(float **pin, float **pout, int numsamples, int mode);
     virtual bool process_stereo(float **pin, float **pout, int numsamples, int mode) override;
+    virtual void process_events() override;
 
-private:    
-    
-    llvm_dsp_factory *factories[4];  //sin,tri,saw,sqr, phasor
-    llvm_dsp* dsp[5];               
+private:
+
+    float calculate_freq(unsigned short int freq, unsigned char freq_type) const;
+
+    const faust_oscillator_info* info;
+    llvm_dsp_factory *factories[5];  //sin,tri,saw,sqr, phasor
+    llvm_dsp* dsp[5];
+
+    std::string faust_lib_dir;
+
+    // the name of the faust widgets in the phasor computer - not the zzub widgets
+    static inline int phase_widget = 0;
+
+    std::vector<faust_widget_info*> faust_widgets;
+
     faust_ui ui{};
-    gvals gval;
+    gvals state{};
+    gvals gval{};
 };
 
-
-
-struct faust_oscillator_info : zzub::info 
-{
-    faust_oscillator_info();
-
-    zzub::parameter *wave_type;  // sin,tri,saw,sqr
-    zzub::parameter *freq_type;
-    zzub::parameter *freq;
-    zzub::parameter *pwm;
-    zzub::parameter *note;
-    zzub::parameter *vol;
-
-    virtual zzub::plugin* create_plugin() const 
-    { 
-        return new faust_oscillator();
-    }
-    
-
-    virtual bool store_info(zzub::archive *data) const 
-    { 
-        return false; 
-    }
-};
 
 
 

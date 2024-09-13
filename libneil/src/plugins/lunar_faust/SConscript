@@ -2,4 +2,7 @@ Import('pluginenv', 'build_plugin')
 
 localenv = pluginenv.Clone()
 localenv.Append(LIBS=['faust'])
-build_plugin(localenv, "faust_oscillator", ['faust_oscillator.cpp', 'faust_ui.cpp'])
+localenv.Append(CPPPATH=["${LANTERNFISH_SRC_PATH}"])
+localenv.Append(LIBS=['lanternfish'])
+
+build_plugin(localenv, "faust_oscillator", ['faust_oscillator.cpp', 'faust_oscillator_info.cpp', 'faust_ui.cpp'])

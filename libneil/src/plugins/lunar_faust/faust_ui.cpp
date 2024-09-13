@@ -1,5 +1,5 @@
 #include "faust_ui.hpp"
-
+#include <cstring>
 
 
 
@@ -9,10 +9,12 @@ void faust_ui::addButton(const char* label, FAUSTFLOAT* zone)
 }
 
 
+
 void faust_ui::addCheckButton(const char* label, FAUSTFLOAT* zone)
 {
     add_widget(label, zone);
 }
+
 
 
 void faust_ui::addVerticalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step)
@@ -21,10 +23,12 @@ void faust_ui::addVerticalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT
 }
 
 
+
 void faust_ui::addHorizontalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step)
 {
     add_widget(label, zone);
 }
+
 
 
 void faust_ui::addNumEntry(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step)
@@ -33,10 +37,12 @@ void faust_ui::addNumEntry(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init,
 }
 
 
+
 void faust_ui::addHorizontalBargraph(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT min, FAUSTFLOAT max)
 {
     add_widget(label, zone);
 }
+
 
 
 void faust_ui::addVerticalBargraph(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT min, FAUSTFLOAT max)
@@ -45,33 +51,16 @@ void faust_ui::addVerticalBargraph(const char* label, FAUSTFLOAT* zone, FAUSTFLO
 }
 
 
-int faust_ui::get_widget_index(const char* label)
-{
-    for(int i = 0; i < labels.size(); i++)
-        if(labels[i] == label)
-            return i;
+faust_widget_info* faust_ui::get_widget(const char* label) {
+    for(auto& widget : widgets)
+        if(widget->label == label)
+            return widget;
 
-    return -1;
+    return nullptr;
 }
 
 
-FAUSTFLOAT faust_ui::get_widget_value(int index)
+void faust_ui::add_widget(const char* label, FAUSTFLOAT* zone) 
 {
-    if(index < values.size())
-        return *values[index];
-
-    return 0;
-}
-
-
-void faust_ui::set_widget_value(int index, FAUSTFLOAT new_value)
-{
-    if(index < values.size())
-        *values[index] = new_value;
-}
-
-
-void faust_ui::add_widget(const char*label, FAUSTFLOAT* zone) {
-    labels.push_back(label);
-    values.push_back(zone);
+    widgets.push_back(new faust_widget_info{label, zone});
 }
