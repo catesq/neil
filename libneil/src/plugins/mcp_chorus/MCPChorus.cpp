@@ -51,12 +51,12 @@ void MCPChorus::process_events() {
 }
 
 bool MCPChorus::process_stereo(float **pin, float **pout, int n, int mode) {
-    if (mode == zzub::process_mode_write || mode == zzub::process_mode_no_io) {
+    if (
+        mode == zzub::process_mode_write || mode == zzub::process_mode_no_io || mode == zzub::process_mode_read
+    ) {
         return false;
     }
-    if (mode == zzub::process_mode_read) {
-        return true;
-    }
+    
     unsigned long i, k, wi, len;
     int   j;
     float *p0_l,*p0_r, *p1_l, *p1_r;
@@ -70,7 +70,7 @@ bool MCPChorus::process_stereo(float **pin, float **pout, int n, int mode) {
     p1_l = pout[0];
     p1_r = pout[1];
     
-    // I think this is our 'state' between blocks
+    // current and previous write index
     wi = _wi;
 
     do {

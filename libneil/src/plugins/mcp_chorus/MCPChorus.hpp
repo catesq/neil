@@ -26,7 +26,7 @@ const char *zzub_get_signature() {
 class MCPChorus : public zzub::plugin {
 private:
   Gvals gval;
-
+    unsigned int chunklen = 64;
     unsigned long  _size;
     unsigned long  _wi;
     unsigned long  _gi;
