@@ -37,7 +37,7 @@ faust_oscillator_info::faust_oscillator_info()
         .set_name("freq")
         .set_description("freq")
         .set_value_min(1)
-        .set_value_max(64435)
+        .set_value_max(20000)
         .set_value_none(0)
         .set_flags(zzub::parameter_flag_state)
         .set_value_default(1);

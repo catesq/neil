@@ -62,7 +62,8 @@ private:
     static inline int phase_widget = 0;
 
     std::vector<faust_widget_info*> faust_widgets;
-
+    
+    zzub_plugin_t* metaplugin;
     faust_ui ui{};
     gvals state{};
     gvals gval{};

@@ -15,7 +15,8 @@ zzub::plugin* faust_oscillator_info::create_plugin() const {
 
 void faust_oscillator::init(zzub::archive *arc) {
     global_values = &gval;
-
+    metaplugin = _host->get_metaplugin();
+    
     std::string error_msg;
 
     // some faust stdlib oscillators don't have phase + reset arguments so some osc_process weren't trivial
@@ -161,8 +162,6 @@ void faust_oscillator::process_events()
         *faust_widgets[FREQ_WIDGET]->value = lanternfish::note_to_freq(gval.note);
     } else if(changed_freq) {
         *faust_widgets[FREQ_WIDGET]->value = calculate_freq(state.freq, state.freq_type);
-        // _host->control_change(metaPlugin, 1, 0, port->paramIndex, zzub_val, false, true);
-
     }
 
     if(gval.vol != info->vol->value_none) {
