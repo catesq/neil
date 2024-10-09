@@ -807,6 +807,9 @@ bool op_plugin_add_cv_connector::operate(zzub::song& song) {
         return false;
     
     static_cast<cv_connection*>(conn)->add_connector(connector, song);
+
+    song.plugins[to_id]->plugin->connect_ports(connector);
+    song.plugins[from_id]->plugin->connect_ports(connector);
     
     return true;
 }
@@ -865,6 +868,9 @@ bool op_plugin_remove_cv_connector::operate(zzub::song& song) {
             ++it;
         }
     }
+
+    song.plugins[to_id]->plugin->disconnect_ports(connector);
+    song.plugins[from_id]->plugin->disconnect_ports(connector);
 
     if(do_plugin_disconnect)
         plugin_disconnect_op.operate(song);
