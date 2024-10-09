@@ -46,11 +46,11 @@ struct cv_connector_data {
 
 enum cv_node_type {
     // the cv_node_type - stored in cv_node.type - changes how the cv_node.value is interpreted
-    audio_node = 1,             // value will be 0 or 1 for L/R audio channel
-    zzub_global_param_node = 2, // value: index of a zzub plugin global parameter
-    zzub_track_param_node = 3,  // value: index of a zzub plugin track parameter
-    ext_port_node  = 4,         // value: index of a external plugin port - lv2/vst2 or vst3
-    // midi_track_node  = 5,       // value: copy notes/volume to + from tracks of zzub plugin
+    audio_node = 0,             // value will be 0 or 1 for L/R audio channel
+    zzub_global_param_node, // value: index of a zzub plugin global parameter
+    zzub_track_param_node,  // value: index of a zzub plugin track parameter
+    ext_port_node,         // value: index of a external plugin port - lv2/vst2 or vst3
+    // midi_track_node,       // value: copy notes/volume to + from tracks of zzub plugin
 };
 
 
@@ -85,13 +85,21 @@ enum cv_node_type {
  *     lower 16 bits of param is the index of the parameter in that track
  * 
  * node_type = ext_port_node
- *     value is index of the zzub_port (if that plugin supports zzub::port yet)
+ *     value is index of the zzub_port (if that plugin supports zzub::port)
  * 
  * node_type is midi_track_node
- *      value is ? - not decided how to transport midi stuff yet
+ *      value is ? - not supporting midi yet
  * 
  *******************************************************************************************************/
 
+union cv_node_value {
+    uint32_t channels; // audio channels - bitmask up to 32 channels
+    uint32_t index;    // port or param
+    struct {
+        uint16_t track;
+        uint16_t param;
+    };
+};
 
 
 struct cv_node {
@@ -101,6 +109,9 @@ struct cv_node {
 
     uint32_t value;
 
+    // cv_node() : plugin_id(-1), type(audio_node), value({0}) {}
+    // cv_node(int32_t plugin_id, uint32_t type, uint32_t value) : plugin_id(plugin_id), type(static_cast<cv_node_type>(type)), value({value}) {}
+    
     bool operator==(const cv_node& other) const { return plugin_id == other.plugin_id && type == other.type && value == other.value; }
 };
 

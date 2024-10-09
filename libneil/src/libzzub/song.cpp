@@ -132,10 +132,6 @@ zzub::metaplugin& song::get_plugin(zzub::plugin_descriptor index) {
 }
 
 
-zzub::metaplugin& song::get_plugin(int id) {
-    assert(id >= 0 && (size_t)id < plugins.size());
-    return *plugins[id];
-}
 
 int song::get_plugin_count() {
     return (int)num_vertices(graph);
@@ -438,13 +434,12 @@ connection_type song::plugin_get_output_connection_type(int plugin_id, int index
 
 zzub::port* song::plugin_get_port(int plugin_id, int index) {
     ASSERT_PLUGIN(plugin_id);
-
     return plugins[plugin_id]->plugin->get_port(index);
 }
 
 int song::plugin_get_port_count(int plugin_id) {
     ASSERT_PLUGIN(plugin_id);
-
+      
     return plugins[plugin_id]->plugin->get_port_count();
 }
 
@@ -1282,9 +1277,9 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
 
     // process connections
     int plugin_id = get_plugin_id(plugin);
-    metaplugin& m = *plugins[plugin_id];
-    memset(&m.work_buffer[0].front(), 0, sample_count * sizeof(float));
-    memset(&m.work_buffer[1].front(), 0, sample_count * sizeof(float));
+    metaplugin& mp = *plugins[plugin_id];
+    memset(&mp.work_buffer[0].front(), 0, sample_count * sizeof(float));
+    memset(&mp.work_buffer[1].front(), 0, sample_count * sizeof(float));
     
     bool result = false;
     zzub::out_edge_iterator out, out_end;
@@ -1293,38 +1288,42 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
         assert(source(*out, graph) < num_vertices(graph));
         assert(target(*out, graph) < num_vertices(graph));
 
+        metaplugin& plugin_from = get_plugin(target(*out, graph));
+
+        bool use_work_buffer = plugin_from.last_work_frame == mp.last_work_frame + mp.last_work_buffersize;
+
         edge_props& c = graph[*out];
-        result |= c.conn->work(*this, *out, work_chunk_size);
+        result |= c.conn->work(*this, *out, work_chunk_size, use_work_buffer);
     }
 
     // process audio:
     int flags;
-    if (((m.info->flags & zzub_plugin_flag_has_audio_output) != 0) &&
-            ((m.info->flags & zzub_plugin_flag_has_audio_input) == 0)) {
+    if (((mp.info->flags & zzub_plugin_flag_has_audio_output) != 0) &&
+            ((mp.info->flags & zzub_plugin_flag_has_audio_input) == 0)) {
         flags = zzub::process_mode_write;
     } else {
 
         if (result) {
-            bool does_input_mixing = (m.info->flags & zzub::plugin_flag_does_input_mixing) != 0;
+            bool does_input_mixing = (mp.info->flags & zzub::plugin_flag_does_input_mixing) != 0;
             bool has_signals =
-                    buffer_has_signals(&m.work_buffer[0].front(), sample_count) ||
-                    buffer_has_signals(&m.work_buffer[1].front(), sample_count);
+                    buffer_has_signals(&mp.work_buffer[0].front(), sample_count) ||
+                    buffer_has_signals(&mp.work_buffer[1].front(), sample_count);
             flags = (does_input_mixing || has_signals) ? zzub::process_mode_read_write : zzub::process_mode_write;
         } else
             flags = zzub::process_mode_write;
     }
 
-    memcpy(&mix_buffer[0].front(), &m.work_buffer[0].front(), sample_count * sizeof(float));
-    memcpy(&mix_buffer[1].front(), &m.work_buffer[1].front(), sample_count * sizeof(float));
+    memcpy(&mix_buffer[0].front(), &mp.work_buffer[0].front(), sample_count * sizeof(float));
+    memcpy(&mix_buffer[1].front(), &mp.work_buffer[1].front(), sample_count * sizeof(float));
     float *plin[] = { &mix_buffer[0].front(), &mix_buffer[1].front() };
-    float *plout[] = { &m.work_buffer[0].front(), &m.work_buffer[1].front() };
-    if (m.is_muted || m.sequencer_state == sequencer_event_type_mute) {
-        m.last_work_audio_result = false;
-    } else if (m.is_bypassed || m.sequencer_state == sequencer_event_type_thru) {
-        m.last_work_audio_result = result;
+    float *plout[] = { &mp.work_buffer[0].front(), &mp.work_buffer[1].front() };
+    if (mp.is_muted || mp.sequencer_state == sequencer_event_type_mute) {
+        mp.last_work_audio_result = false;
+    } else if (mp.is_bypassed || mp.sequencer_state == sequencer_event_type_thru) {
+        mp.last_work_audio_result = result;
     } else {
         SETABRPUN(); // turn on flush-to-zero for SSE machines
-        m.last_work_audio_result = m.plugin->process_stereo(plin, plout, sample_count, flags);
+        mp.last_work_audio_result = mp.plugin->process_stereo(plin, plout, sample_count, flags);
         // (paniq) flush to zero should be turned off outside our DSP loop
         // because the player library might be running in a process where
         // precise computation is expected (i.e. realtime physics simulation).
@@ -1333,48 +1332,48 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
         SETGRADUN();
     }
 
-    std::copy(m.callbacks->feedback_buffer[0].begin() + sample_count, m.callbacks->feedback_buffer[0].begin() + buffer_size, m.callbacks->feedback_buffer[0].begin());
-    std::copy(m.callbacks->feedback_buffer[1].begin() + sample_count, m.callbacks->feedback_buffer[1].begin() + buffer_size, m.callbacks->feedback_buffer[1].begin());
-    std::copy(m.work_buffer[0].begin(), m.work_buffer[0].begin() + sample_count, m.callbacks->feedback_buffer[0].begin() + buffer_size - sample_count);
-    std::copy(m.work_buffer[1].begin(), m.work_buffer[1].begin() + sample_count, m.callbacks->feedback_buffer[1].begin() + buffer_size - sample_count);
+    std::copy(mp.callbacks->feedback_buffer[0].begin() + sample_count, mp.callbacks->feedback_buffer[0].begin() + buffer_size, mp.callbacks->feedback_buffer[0].begin());
+    std::copy(mp.callbacks->feedback_buffer[1].begin() + sample_count, mp.callbacks->feedback_buffer[1].begin() + buffer_size, mp.callbacks->feedback_buffer[1].begin());
+    std::copy(mp.work_buffer[0].begin(), mp.work_buffer[0].begin() + sample_count, mp.callbacks->feedback_buffer[0].begin() + buffer_size - sample_count);
+    std::copy(mp.work_buffer[1].begin(), mp.work_buffer[1].begin() + sample_count, mp.callbacks->feedback_buffer[1].begin() + buffer_size - sample_count);
 
     float samplerate = float(master_info.samples_per_second);
     float falloff = std::pow(10.0f, (-48.0f / (samplerate * 20.0f))); // vu meter falloff (-48dB/s)
-    if (m.last_work_audio_result) {
-        if (scanPeakStereo(&m.work_buffer[0].front(), &m.work_buffer[1].front(), sample_count,
-                           m.last_work_max_left, m.last_work_max_right, falloff)) {
+    if (mp.last_work_audio_result) {
+        if (scanPeakStereo(&mp.work_buffer[0].front(), &mp.work_buffer[1].front(), sample_count,
+                           mp.last_work_max_left, mp.last_work_max_right, falloff)) {
             // the plugin claims it has generated non-silence, but our scan says otherwise
-            m.writemode_errors++;
+            mp.writemode_errors++;
         }
     } else {
-        m.last_work_max_left *= std::pow(falloff, sample_count);
-        m.last_work_max_right *= std::pow(falloff, sample_count);
+        mp.last_work_max_left *= std::pow(falloff, sample_count);
+        mp.last_work_max_right *= std::pow(falloff, sample_count);
     }
 
     // write recorded parameters to patterns
     if (is_recording_parameters) {
         int pattern_index, pattern_row;
         if (get_currently_playing_pattern(plugin_id, pattern_index, pattern_row)) {
-            zzub::pattern& p = *m.patterns[pattern_index];
-            transfer_plugin_parameter_row(plugin_id, 0, m.state_automation, p, 0, pattern_row, false);
-            transfer_plugin_parameter_row(plugin_id, 1, m.state_automation, p, 0, pattern_row, false);
-            transfer_plugin_parameter_row(plugin_id, 2, m.state_automation, p, 0, pattern_row, false);
+            zzub::pattern& p = *mp.patterns[pattern_index];
+            transfer_plugin_parameter_row(plugin_id, 0, mp.state_automation, p, 0, pattern_row, false);
+            transfer_plugin_parameter_row(plugin_id, 1, mp.state_automation, p, 0, pattern_row, false);
+            transfer_plugin_parameter_row(plugin_id, 2, mp.state_automation, p, 0, pattern_row, false);
         }
     }
 
     // clear recorded parameters - state_automation is currently written to all the time,
     // ignoring is_recording_parameters, so we need to clear it all the time as well
-    reset_plugin_parameter_group(m.state_automation.groups[1], m.info->global_parameters);
-    reset_plugin_parameter_group(m.state_automation.groups[2], m.info->track_parameters);
+    reset_plugin_parameter_group(mp.state_automation.groups[1], mp.info->global_parameters);
+    reset_plugin_parameter_group(mp.state_automation.groups[2], mp.info->track_parameters);
 
     // update statistics
-    m.last_work_time = timer.frame() - start_time;
-    m.last_work_buffersize = sample_count;
-    m.last_work_frame = work_position;
+    mp.last_work_time = timer.frame() - start_time;
+    mp.last_work_buffersize = sample_count;
+    mp.last_work_frame = work_position;
 
     // these are used to calculating cpu_load-per-plugin-per-buffer in op_player_get_plugins_load_snapshot::operate()
-    m.cpu_load_time += m.last_work_time;
-    m.cpu_load_buffersize += sample_count;
+    mp.cpu_load_time += mp.last_work_time;
+    mp.cpu_load_buffersize += sample_count;
 }
 
 bool mixer::plugin_update_keyjazz(int plugin_id, int note, int prev_note, int velocity, int& note_group, int& note_track, int& note_column, int& velocity_column) {

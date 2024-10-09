@@ -1,5 +1,5 @@
-#include "libzzub/ccm_helpers.h"
 #include "libzzub/ccm_write.h"
+#include "libzzub/ccm_helpers.h"
 #include "libzzub/connections.h"
 
 
@@ -7,13 +7,17 @@ namespace zzub {
 /*! \struct CcmWriter
     \brief .CCM exporter
   */
- 
-xml_node CcmWriter::saveHead(xml_node &parent, zzub::song &player) {
+
+xml_node CcmWriter::saveHead(xml_node& parent, zzub::song& player)
+{
     if (strlen(player.song_comment.c_str())) {
         // save song info
         if (arch.createFileInArchive("readme.txt")) {
-            arch.write((void*)player.song_comment.c_str(),
-                       (int)strlen(player.song_comment.c_str()));
+            arch.write(
+                (void*)player.song_comment.c_str(),
+                (int)strlen(player.song_comment.c_str())
+            );
+
             arch.closeFileInArchive();
             xml_node commentmeta = addMeta(parent, "comment");
             commentmeta.append_attribute("src") = "readme.txt";
@@ -24,21 +28,33 @@ xml_node CcmWriter::saveHead(xml_node &parent, zzub::song &player) {
     return parent;
 }
 
-xml_node CcmWriter::addMeta(xml_node &parent, const std::string &propname) {
+xml_node CcmWriter::addMeta(xml_node& parent, const std::string& propname)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("meta");
     item.attribute("name").set_name(propname.c_str());
     return item;
 }
 
-xml_node CcmWriter::saveClasses(xml_node &parent, zzub::song &player) {
+xml_node CcmWriter::saveClasses(xml_node& parent, zzub::song& player)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("pluginclasses");
 
     std::vector<const zzub::info*> distinctLoaders;
+    using info_iterator = std::vector<const zzub::info*>::iterator;
+
     for (int i = 0; i < player.get_plugin_count(); i++) {
-        std::vector<const zzub::info*>::iterator p = find<vector<const zzub::info*>::iterator >(distinctLoaders.begin(), distinctLoaders.end(), player.get_plugin(i).info);
-        if (p == distinctLoaders.end()) distinctLoaders.push_back(player.get_plugin(i).info);
+        const zzub::info* info = player.get_plugin(i).info;
+
+        info_iterator p = find<info_iterator>(
+            distinctLoaders.begin(),
+            distinctLoaders.end(),
+            info
+        );
+
+        if (p == distinctLoaders.end())
+            distinctLoaders.push_back(info);
     }
 
     for (size_t i = 0; i < distinctLoaders.size(); i++) {
@@ -49,7 +65,8 @@ xml_node CcmWriter::saveClasses(xml_node &parent, zzub::song &player) {
 }
 
 
-xml_node CcmWriter::saveParameter(xml_node &parent, const zzub::parameter &p) {
+xml_node CcmWriter::saveParameter(xml_node& parent, const zzub::parameter& p)
+{
 
     // we take the same format as for lunar manifests
 
@@ -68,17 +85,20 @@ xml_node CcmWriter::saveParameter(xml_node &parent, const zzub::parameter &p) {
     if (p.flags & zzub::parameter_flag_wavetable_index) {
         item.append_attribute("waveindex") = "true";
     }
+
     if (p.flags & zzub::parameter_flag_state) {
         item.append_attribute("state") = "true";
     }
+
     if (p.flags & zzub::parameter_flag_event_on_edit) {
         item.append_attribute("editevent") = "true";
     }
-    
+
     return item;
 }
 
-xml_node CcmWriter::saveClass(xml_node &parent, const zzub::info &info) {
+xml_node CcmWriter::saveClass(xml_node& parent, const zzub::info& info)
+{
 
     // we take the same format as for lunar manifests
 
@@ -135,8 +155,8 @@ xml_node CcmWriter::saveClass(xml_node &parent, const zzub::info &info) {
 }
 
 
-
-xml_node CcmWriter::saveEventBinding(xml_node &parent, zzub::event_connection_binding &binding) {
+xml_node CcmWriter::saveEventBinding(xml_node& parent, zzub::event_connection_binding& binding)
+{
     // xml_node item = parent.append_child(node_element);
     // item.set_name("binding");
     xml_node item = parent.append_child("binding");
@@ -149,7 +169,8 @@ xml_node CcmWriter::saveEventBinding(xml_node &parent, zzub::event_connection_bi
     return item;
 }
 
-xml_node CcmWriter::saveEventBindings(xml_node &parent, std::vector<zzub::event_connection_binding> &bindings) {
+xml_node CcmWriter::saveEventBindings(xml_node& parent, std::vector<zzub::event_connection_binding>& bindings)
+{
     // xml_node item = parent.append_child(node_element);
     // item.set_name("bindings");
     xml_node item = parent.append_child("bindings");
@@ -161,31 +182,33 @@ xml_node CcmWriter::saveEventBindings(xml_node &parent, std::vector<zzub::event_
     return item;
 }
 
-xml_node CcmWriter::saveCVConnector(xml_node &parent, zzub::cv_connector &link) {
+xml_node CcmWriter::saveCVConnector(xml_node& parent, zzub::cv_connector& link)
+{
     xml_node item = parent.append_child(node_element);
 
     item.set_name("cv_connector");
-    
-    item.append_attribute("source_type")        = link.source.type;
-    item.append_attribute("source_value")       = link.source.value;
 
-    item.append_attribute("target_type")        = link.target.type;
-    item.append_attribute("target_value")       = link.target.value;
+    item.append_attribute("source_type") = link.source.type;
+    item.append_attribute("source_value") = link.source.value;
 
-    item.append_attribute("data_amp")           = link.data.amp;
+    item.append_attribute("target_type") = link.target.type;
+    item.append_attribute("target_value") = link.target.value;
+
+    item.append_attribute("data_amp") = link.data.amp;
     item.append_attribute("data_modulate_mode") = link.data.modulate_mode;
     item.append_attribute("data_offset_before") = link.data.offset_before;
-    item.append_attribute("data_offset_after")  = link.data.offset_after;
+    item.append_attribute("data_offset_after") = link.data.offset_after;
 
     return item;
 }
 
 
-xml_node CcmWriter::saveCVConnectors(xml_node &parent, std::vector<zzub::cv_connector> &connectors) {
+xml_node CcmWriter::saveCVConnectors(xml_node& parent, std::vector<zzub::cv_connector>& connectors)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("cv_connectors");
 
-    for(size_t i = 0; i < connectors.size(); i++) {
+    for (size_t i = 0; i < connectors.size(); i++) {
         saveCVConnector(item, connectors[i]);
     }
 
@@ -193,7 +216,8 @@ xml_node CcmWriter::saveCVConnectors(xml_node &parent, std::vector<zzub::cv_conn
 }
 
 
-xml_node CcmWriter::saveArchive(xml_node &parent, const std::string &pathbase, zzub::mem_archive &arc) {
+xml_node CcmWriter::saveArchive(xml_node& parent, const std::string& pathbase, zzub::mem_archive& arc)
+{
     zzub::mem_archive::buffermap::iterator i;
     for (i = arc.buffers.begin(); i != arc.buffers.end(); ++i) {
         if (i->second.size()) {
@@ -216,14 +240,15 @@ xml_node CcmWriter::saveArchive(xml_node &parent, const std::string &pathbase, z
     return xml_node();
 }
 
-xml_node CcmWriter::saveInit(xml_node &parent, zzub::song &player, int plugin) {
+xml_node CcmWriter::saveInit(xml_node& parent, zzub::song& player, int plugin)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("init");
 
     mem_archive arc;
     metaplugin& m = *player.plugins[plugin];
     m.plugin->save(&arc);
-    saveArchive(item, id_from_ptr((const void*)((long) plugin)), arc);
+    saveArchive(item, id_from_ptr((const void*)((long)plugin)), arc);
 
     if (m.info->global_parameters.size()) {
         xml_node global = item.append_child(node_element);
@@ -262,7 +287,8 @@ xml_node CcmWriter::saveInit(xml_node &parent, zzub::song &player, int plugin) {
     return item;
 }
 
-xml_node CcmWriter::saveAttributes(xml_node &parent, zzub::song &player, int plugin) {
+xml_node CcmWriter::saveAttributes(xml_node& parent, zzub::song& player, int plugin)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("attributes");
 
@@ -280,16 +306,17 @@ xml_node CcmWriter::saveAttributes(xml_node &parent, zzub::song &player, int plu
     return item;
 }
 
-xml_node CcmWriter::savePatternTrack(xml_node &parent, const std::string &colname, double fac, zzub::song &player, int plugin, zzub::pattern &p, int group, int track) {
+xml_node CcmWriter::savePatternTrack(xml_node& parent, const std::string& colname, double fac, zzub::song& player, int plugin, zzub::pattern& p, int group, int track)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name(colname.c_str());
     if (group == 2 || group == 0)
         item.append_attribute("index") = track;
 
-    //zzub::patterntrack& t = *p.getPatternTrack(group, track);
+    // zzub::patterntrack& t = *p.getPatternTrack(group, track);
     for (int i = 0; i < p.rows; ++i) {
         for (size_t j = 0; j < p.groups[group][track].size(); ++j) {
-            const zzub::parameter *param = player.plugin_get_parameter_info(plugin, group, track, j);
+            const zzub::parameter* param = player.plugin_get_parameter_info(plugin, group, track, j);
             assert(param != 0);
 
             int value = p.groups[group][track][j][i];
@@ -331,7 +358,8 @@ xml_node CcmWriter::savePatternTrack(xml_node &parent, const std::string &colnam
     return item;
 }
 
-xml_node CcmWriter::savePattern(xml_node &parent, zzub::song &player, int plugin, zzub::pattern &p) {
+xml_node CcmWriter::savePattern(xml_node& parent, zzub::song& player, int plugin, zzub::pattern& p)
+{
     // we're going to save pattern data as events, since storing data
     // in a table is implementation detail. also, empty patterns will
     // take less space.
@@ -340,7 +368,7 @@ xml_node CcmWriter::savePattern(xml_node &parent, zzub::song &player, int plugin
     // easier to change the tpb count manually, and have the loader adapt all
     // patterns on loading.
 
-    double tpbfac = 1.0/double(player.plugin_get_parameter(0, 1, 0, 2));
+    double tpbfac = 1.0 / double(player.plugin_get_parameter(0, 1, 0, 2));
 
     xml_node item = parent.append_child(node_element);
     item.set_name("events");
@@ -364,7 +392,8 @@ xml_node CcmWriter::savePattern(xml_node &parent, zzub::song &player, int plugin
     return item;
 }
 
-xml_node CcmWriter::savePatterns(xml_node &parent, zzub::song &player, int plugin) {
+xml_node CcmWriter::savePatterns(xml_node& parent, zzub::song& player, int plugin)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("eventtracks");
 
@@ -375,14 +404,15 @@ xml_node CcmWriter::savePatterns(xml_node &parent, zzub::song &player, int plugi
     return item;
 }
 
-xml_node CcmWriter::saveSequence(xml_node &parent, double fac, zzub::song &player, int track) {
+xml_node CcmWriter::saveSequence(xml_node& parent, double fac, zzub::song& player, int track)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("sequence");
     item.append_attribute("index") = track;
 
     int plugin_id = player.sequencer_tracks[track].plugin_id;
     for (size_t i = 0; i < player.sequencer_tracks[track].events.size(); ++i) {
-        sequence_event &ev = player.sequencer_tracks[track].events[i];
+        sequence_event& ev = player.sequencer_tracks[track].events[i];
 
         xml_node e = item.append_child(node_element);
         e.set_name("e");
@@ -404,12 +434,13 @@ xml_node CcmWriter::saveSequence(xml_node &parent, double fac, zzub::song &playe
     return item;
 }
 
-xml_node CcmWriter::saveSequences(xml_node &parent, zzub::song &player, int plugin) {
+xml_node CcmWriter::saveSequences(xml_node& parent, zzub::song& player, int plugin)
+{
 
     // event positions and track length is stored in beats, not rows. this makes it
     // easier to change the tpb count manually, and have the loader adapt all
     // sequences on loading.
-    double tpbfac = 1.0/double(player.plugin_get_parameter(0, 1, 0, 2));
+    double tpbfac = 1.0 / double(player.plugin_get_parameter(0, 1, 0, 2));
 
     xml_node item = parent.append_child(node_element);
     item.set_name("sequences");
@@ -423,7 +454,8 @@ xml_node CcmWriter::saveSequences(xml_node &parent, zzub::song &player, int plug
     return item;
 }
 
-xml_node CcmWriter::saveMidiMappings(xml_node &parent, zzub::song &player, int plugin) {
+xml_node CcmWriter::saveMidiMappings(xml_node& parent, zzub::song& player, int plugin)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("midi");
 
@@ -433,7 +465,7 @@ xml_node CcmWriter::saveMidiMappings(xml_node &parent, zzub::song &player, int p
             xml_node bind = item.append_child(node_element);
             bind.set_name("bind");
 
-            const zzub::parameter *param = player.plugin_get_parameter_info(plugin, mm.group, mm.track, mm.column);
+            const zzub::parameter* param = player.plugin_get_parameter_info(plugin, mm.group, mm.track, mm.column);
             assert(param);
 
             if (mm.group == 0) {
@@ -464,10 +496,11 @@ xml_node CcmWriter::saveMidiMappings(xml_node &parent, zzub::song &player, int p
     return item;
 }
 
-xml_node CcmWriter::savePlugin(xml_node &parent, zzub::song &player, int plugin) {
+xml_node CcmWriter::savePlugin(xml_node& parent, zzub::song& player, int plugin)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("plugin");
-    item.append_attribute("id") = plugin;//id_from_ptr(plugin);
+    item.append_attribute("id") = plugin; // id_from_ptr(plugin);
     item.append_attribute("name") = player.plugins[plugin]->name.c_str();
     item.append_attribute("ref") = player.plugins[plugin]->info->uri.c_str();
 
@@ -496,22 +529,21 @@ xml_node CcmWriter::savePlugin(xml_node &parent, zzub::song &player, int plugin)
                 item.append_attribute("panning") = pan_to_double(player.plugin_get_parameter(plugin, 0, i, 1));
                 break;
             case zzub::connection_type_event: {
-                zzub::event_connection &midi_conn = *(zzub::event_connection*)player.plugin_get_input_connection(plugin, i);
+                zzub::event_connection& midi_conn = *(zzub::event_connection*)player.plugin_get_input_connection(plugin, i);
                 saveEventBindings(item, midi_conn.bindings);
             } break;
             case zzub::connection_type_midi: {
-                zzub::midi_connection &midi_conn = *(zzub::midi_connection*)player.plugin_get_input_connection(plugin, i);
+                zzub::midi_connection& midi_conn = *(zzub::midi_connection*)player.plugin_get_input_connection(plugin, i);
                 item.append_attribute("device") = midi_conn.device_name.c_str();
             } break;
             case zzub::connection_type_cv: {
-                zzub::cv_connection &cv_conn = *(zzub::cv_connection*)player.plugin_get_input_connection(plugin, i);
+                zzub::cv_connection& cv_conn = *(zzub::cv_connection*)player.plugin_get_input_connection(plugin, i);
                 saveCVConnectors(item, cv_conn.connectors);
             } break;
             default:
                 assert(0);
                 break;
             }
-
         }
     }
 
@@ -527,7 +559,8 @@ xml_node CcmWriter::savePlugin(xml_node &parent, zzub::song &player, int plugin)
     return item;
 }
 
-xml_node CcmWriter::savePlugins(xml_node &parent, zzub::song &player) {
+xml_node CcmWriter::savePlugins(xml_node& parent, zzub::song& player)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("plugins");
 
@@ -538,7 +571,8 @@ xml_node CcmWriter::savePlugins(xml_node &parent, zzub::song &player) {
     return item;
 }
 
-xml_node CcmWriter::saveEnvelope(xml_node &parent, zzub::envelope_entry& env) {
+xml_node CcmWriter::saveEnvelope(xml_node& parent, zzub::envelope_entry& env)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("envelope");
 
@@ -555,7 +589,7 @@ xml_node CcmWriter::saveEnvelope(xml_node &parent, zzub::envelope_entry& env) {
     xml_node points = item.append_child(node_element);
     points.set_name("points");
     for (size_t i = 0; i != env.points.size(); ++i) {
-        envelope_point &pt = env.points[i];
+        envelope_point& pt = env.points[i];
         xml_node point = points.append_child(node_element);
         point.set_name("e");
         point.append_attribute("t") = double(pt.x) / 65535.0;
@@ -571,11 +605,12 @@ xml_node CcmWriter::saveEnvelope(xml_node &parent, zzub::envelope_entry& env) {
     return item;
 }
 
-xml_node CcmWriter::saveEnvelopes(xml_node &parent, zzub::wave_info_ex &info) {
+xml_node CcmWriter::saveEnvelopes(xml_node& parent, zzub::wave_info_ex& info)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("envelopes");
 
-    for (size_t i=0; i != info.envelopes.size(); ++i) {
+    for (size_t i = 0; i != info.envelopes.size(); ++i) {
         if (!info.envelopes[i].disabled) {
             xml_node envnode = saveEnvelope(item, info.envelopes[i]);
             envnode.append_attribute("index") = (int)i;
@@ -586,7 +621,8 @@ xml_node CcmWriter::saveEnvelopes(xml_node &parent, zzub::wave_info_ex &info) {
 }
 
 
-xml_node CcmWriter::saveWave(xml_node &parent, zzub::wave_info_ex &info) {
+xml_node CcmWriter::saveWave(xml_node& parent, zzub::wave_info_ex& info)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("instrument");
 
@@ -601,7 +637,7 @@ xml_node CcmWriter::saveWave(xml_node &parent, zzub::wave_info_ex &info) {
 
     for (int j = 0; j < info.get_levels(); j++) {
         if (info.get_sample_count(j)) {
-            wave_level_ex &level = info.levels[j];
+            wave_level_ex& level = info.levels[j];
             xml_node levelnode = waves.append_child(node_element);
             levelnode.set_name("wave");
             levelnode.append_attribute("id") = id_from_ptr(&level).c_str();
@@ -650,13 +686,13 @@ xml_node CcmWriter::saveWave(xml_node &parent, zzub::wave_info_ex &info) {
             encodeFLAC(&arch, info, j);
             arch.closeFileInArchive();
         }
-
     }
 
     return item;
 }
 
-xml_node CcmWriter::saveWaves(xml_node &parent, zzub::song &player) {
+xml_node CcmWriter::saveWaves(xml_node& parent, zzub::song& player)
+{
     xml_node item = parent.append_child(node_element);
     item.set_name("instruments");
 
@@ -674,9 +710,11 @@ xml_node CcmWriter::saveWaves(xml_node &parent, zzub::song &player) {
     return item;
 }
 
-bool CcmWriter::save(std::string fileName, zzub::player* player) {
+bool CcmWriter::save(std::string fileName, zzub::player* player)
+{
 
-    if (!arch.create(fileName)) return false;
+    if (!arch.create(fileName))
+        return false;
 
     const char* loc = setlocale(LC_NUMERIC, "C");
 
@@ -697,9 +735,9 @@ bool CcmWriter::save(std::string fileName, zzub::player* player) {
 
     // save main sequencer settings
     {
-        double tpbfac = 1.0/double(player->front.plugin_get_parameter(0, 1, 0, 2));
+        double tpbfac = 1.0 / double(player->front.plugin_get_parameter(0, 1, 0, 2));
 
-        //sequencer &seq = player->song_sequencer;
+        // sequencer &seq = player->song_sequencer;
         xml_node item = xmix.append_child(node_element);
         item.set_name("transport");
         item.append_attribute("bpm") = double(player->front.plugin_get_parameter(0, 1, 0, 1));
@@ -734,7 +772,8 @@ bool CcmWriter::save(std::string fileName, zzub::player* player) {
     return true;
 }
 
-bool CcmWriter::saveSelected(std::string filename, zzub::player* player, const int* plugins, unsigned int size) {
+bool CcmWriter::saveSelected(std::string filename, zzub::player* player, const int* plugins, unsigned int size)
+{
     printf("todo: save selected plugins not implemented...\n");
     return false;
 }

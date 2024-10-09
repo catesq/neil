@@ -1,7 +1,9 @@
 Import('pluginenv', 'build_plugin')
 
 localenv = pluginenv.Clone()
+localenv.Append(LIBS=['zzub'])
 
 files = ["MCPChorus.cpp"]
+
 
 build_plugin(localenv, "mrmonkington_mcpchorus", files)

@@ -1,7 +1,7 @@
 [submodule "libneil/src/plugins/vst3adapter/vst3sdk"]
 	path = libneil/src/plugins/vst3adapter/vst3sdk
 	url = https://github.com/steinbergmedia/vst3sdk
-	ignore = untracked
+	ignore = dirty
 [submodule "libneil/src/loguru"]
 	path = libneil/src/loguru
 	url = https://github.com/emilk/loguru
@@ -11,6 +11,7 @@
 [submodule "libneil/src/faust"]
 	path = libneil/src/faust
 	url = https://github.com/grame-cncm/faust
+	ignore = untracked
 [submodule "libneil/src/faustlibraries"]
 	path = libneil/src/faustlibraries
 	url = https://github.com/grame-cncm/faustlibraries

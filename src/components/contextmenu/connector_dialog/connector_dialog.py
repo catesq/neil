@@ -6,7 +6,7 @@ from typing import List
 import zzub
 
 from .port_info import PortInfo, PortWrapper
-from .options_ui import OptionsBox
+from .options import OptionsBox
 from .port_ui import AudioPorts, TypedPorts, DummyGroup
 
 

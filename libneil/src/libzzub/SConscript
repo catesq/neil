@@ -1,5 +1,4 @@
-#encoding: latin-1
-
+# type: ignore
 # libzzub, Buz�, Aldrin
 # Modular Sequencer
 # Copyright (C) 2006 The Aldrin Development Team
@@ -52,6 +51,9 @@ files = [
     'input.cpp',
     'operations.cpp',
     'output.cpp',
+    'ports.cpp',
+    'ports/param_port.cpp',
+    'ports/ports_facade.cpp',
     'song.cpp',
     'synchronization.cpp',
     'waveimport.cpp',

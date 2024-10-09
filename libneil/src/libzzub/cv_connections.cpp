@@ -97,7 +97,6 @@ void cv_input_ext_port::work(zzub::metaplugin& from_plugin, zzub::metaplugin& to
 
 }
 
-
 // /*****************************
 //  * 
 //  * cv_input_midi 
@@ -200,10 +199,12 @@ void cv_output_ext_port::work(zzub::metaplugin& from_plugin, zzub::metaplugin& t
 }
 
 
-void cv_output_ext_port::connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {
+void cv_output_ext_port::connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) 
+{
     if(zzub::port* output_port = to_plugin.plugin->get_port(node.value))
-        output_type = output_port->get_type();
+        output_type = output_port->get_type();    
 }
+
 
 
 // /*****************************

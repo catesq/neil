@@ -30,8 +30,9 @@ class PortWrapper:
 
 
 
-# The connect dialog builds a PortInfo structure for the source and target plugins
-# It builds a list of PortWrapper objects
+# The connect dialog builds a PortInfo structure for each source and target plugins
+# The portinfo class creates a list of PortWrapper or zzub::port objects
+# The portwrapper is used as not all plugins use zzub::ports  
 # only the lv2 plugin wrapper directly supports port's
 # vst and zzub plugins use the make_ports() method to mimic the lv2 ports
 class PortInfo:

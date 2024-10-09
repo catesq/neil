@@ -26,7 +26,6 @@ struct midi_message {
 };
 
 
-
 struct master_info {
     int beats_per_minute;
     int ticks_per_beat;

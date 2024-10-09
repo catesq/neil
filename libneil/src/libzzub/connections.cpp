@@ -71,7 +71,7 @@ void audio_connection::process_events(zzub::song& player, const zzub::connection
         values.pan = cvalues.pan;
 }
 
-bool audio_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
+bool audio_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count, bool use_work_buffer) {
 
     metaplugin& plugin_from = player.get_plugin(target(conn, player.graph));
     metaplugin& plugin_to = player.get_plugin(source(conn, player.graph));
@@ -83,12 +83,12 @@ bool audio_connection::work(zzub::song& player, const zzub::connection_descripto
 
     float *plin[2] = {0, 0};
 
-    if (plugin_from.last_work_frame != plugin_to.last_work_frame + plugin_to.last_work_buffersize) {
-        plin[0] = &plugin_from.callbacks->feedback_buffer[0].front();
-        plin[1] = &plugin_from.callbacks->feedback_buffer[1].front();
-    } else {
+    if (use_work_buffer) {
         plin[0] = &plugin_from.work_buffer[0].front();
         plin[1] = &plugin_from.work_buffer[1].front();
+    } else {
+        plin[0] = &plugin_from.callbacks->feedback_buffer[0].front();
+        plin[1] = &plugin_from.callbacks->feedback_buffer[1].front();
     }
 
     bool plugin_to_does_input_mixing = (plugin_to.info->flags & zzub::plugin_flag_does_input_mixing) != 0;
@@ -208,7 +208,7 @@ void event_connection::process_events(zzub::song& player, const zzub::connection
     }
 }
 
-bool event_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
+bool event_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count, bool use_work_buffer) {
     return true;
 }
 
@@ -236,7 +236,7 @@ void cv_connector::process_events(zzub::song& player, zzub::metaplugin& from, zz
 }
 
 
-void cv_connector::work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, int sample_count) {
+void cv_connector::work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, int sample_count, bool use_work_buffer) {
     input->work(from, to, sample_count);
     output->work(from, to, sample_count);
 }
@@ -271,12 +271,12 @@ void cv_connection::process_events(zzub::song& player, const zzub::connection_de
 }
 
 
-bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
+bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count, bool use_work_buffer) {
     auto& to = player.get_plugin(source(conn, player.graph));
     auto& from = player.get_plugin(target(conn, player.graph));
 
     for(auto& it : connectors) {
-        it.work(player, from, to, sample_count);
+        it.work(player, from, to, sample_count, use_work_buffer);
     }
 
     return true;
@@ -360,7 +360,7 @@ void midi_connection::process_events(zzub::song& player, const zzub::connection_
 }
 
 
-bool midi_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count) {
+bool midi_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count, bool use_work_buffer) {
     int to_id = player.get_plugin_id(source(conn, player.graph));
     int from_id = player.get_plugin_id(target(conn, player.graph));
 

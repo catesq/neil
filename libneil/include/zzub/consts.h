@@ -170,7 +170,8 @@ enum plugin_flag {
     plugin_flag_has_midi_output = zzub_plugin_flag_has_midi_output,
     plugin_flag_has_custom_gui = zzub_plugin_flag_has_custom_gui,
     plugin_flag_has_cv_input = zzub_plugin_flag_has_cv_input,
-    plugin_flag_has_cv_output = zzub_plugin_flag_has_cv_output
+    plugin_flag_has_cv_output = zzub_plugin_flag_has_cv_output,
+    plugin_flag_has_ports = zzub_plugin_flag_has_ports
 };
 
 enum state_flag {

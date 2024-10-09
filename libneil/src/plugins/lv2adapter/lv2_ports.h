@@ -113,7 +113,7 @@ struct lv2_port : public zzub::port {
 
     virtual void set_value(float val) override {};
     virtual void set_value(int val) override {};
-    virtual void set_value(float *buf, int count) override {}
+    virtual void set_value(float *buf, uint count) override {}
 };
 
 
@@ -155,7 +155,7 @@ struct audio_buf_port : lv2_port {
         return buffer;
     }
 
-    virtual void set_value(float *buf, int count) override {
+    virtual void set_value(float *buf, uint count) override {
         for (int i = 0; i < count; i++) {
             buffer[i] = buf[i];
         }

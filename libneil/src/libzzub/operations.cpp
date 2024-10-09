@@ -521,7 +521,7 @@ bool op_plugin_connect::prepare(zzub::song& song) {
     case connection_type_cv:
     default:
         break;
-}
+    }
 
     metaplugin& to_mpl = *song.plugins[to_id];
     metaplugin& from_mpl = *song.plugins[from_id];

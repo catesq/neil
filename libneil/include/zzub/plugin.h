@@ -33,6 +33,7 @@
 #include "zzub/info.h"
 #include "zzub/internal.h"
 #include "zzub/parameter.h"
+#include "zzub/types.h"
 
 
 #include "libzzub/archive.h"
@@ -50,10 +51,14 @@ struct player;
 struct song;
 struct info;
 
+
+
 struct event_handler {
     virtual ~event_handler() {}
     virtual bool invoke(zzub_event_data_t &data) = 0;
 };
+
+
 
 
 enum class port_flow {
@@ -61,24 +66,32 @@ enum class port_flow {
     output = 1
 };
 
+
+
 enum class port_type {
     audio = 1,     // audio in/out
-    parameter = 2, // plugin parameter in/out
-    cv = 3,        // cv stream in/out
+    parameter = 2, // global zzub parameter in/out
+    cv = 3,        // cv stream in/out (treated as single channel audio)
     midi = 4,      // midi in/out
-    track = 5,     // track parameter in/out
+    track = 5,     // track zzub parameter in/out
 };
 
+
+
 struct port {
+    virtual ~port() {}
     virtual const char* get_name() = 0;
     virtual port_flow get_flow() = 0;
     virtual port_type get_type() = 0;
-    virtual float get_value() = 0;
 
-    virtual void set_value(float val) = 0;
-    virtual void set_value(int val) = 0;
-    virtual void set_value(float *buf, int count) = 0;
+    virtual float get_value() { return 0; };
+    virtual void get_value(float* buf, uint count, bool use_delay_frame) { };
+
+    virtual void set_value(float val) {};
+    virtual void set_value(int val) {};
+    virtual void set_value(float* buf, uint count) {};
 };
+
 
 
 struct plugin {
@@ -111,13 +124,16 @@ struct plugin {
     virtual const char *describe_param(int param) { return 0; }
     virtual bool set_instrument(const char *name) { return false; }
     virtual void get_sub_menu(int index, zzub::outstream *os) {}
-    virtual void add_input(const char *name, zzub::connection_type type) {}
 
+    virtual void add_input(const char *name, zzub::connection_type type) {}
     virtual void delete_input(const char *name, zzub::connection_type type) {}
     virtual void rename_input(const char *oldname, const char *newname) {}
+    
     virtual void input(float **samples, int size, float amp) {}
 
     virtual void midi_control_change(int ctrl, int channel, int value) {}
+
+    //FIXME never used - remove
     virtual bool handle_input(int index, int amp, int pan) { return false; }
     
     // plugin_flag_has_midi_output
@@ -134,6 +150,10 @@ struct plugin {
     virtual zzub::port* get_port(zzub::port_type, zzub::port_flow, int index) { return nullptr; }
     virtual int get_port_count(zzub::port_type, zzub::port_flow) { return 0; }
 
+    // only used for cv ports connecting & disconnecting
+    // return true if the connection was successful
+    virtual bool connect_ports(cv_connector& connnector) { return true; }
+    virtual void disconnect_ports(cv_connector& connnector) { }
     
 
     // used in cv connections
@@ -168,6 +188,8 @@ struct plugin {
     host *_host;
 };
 
+
+
 // A plugin factory allows to add and replace plugin infos
 // known to the host.
 struct pluginfactory {
@@ -176,6 +198,8 @@ struct pluginfactory {
     // to the host, the old info struct will be replaced.
     virtual void register_info(const zzub::info *_info) = 0;
 };
+
+
 
 // A plugin collection registers plugin infos and provides
 // serialization services for plugin info, to allow

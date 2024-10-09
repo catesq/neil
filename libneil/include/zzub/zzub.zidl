@@ -412,10 +412,10 @@ namespace zzub:
 		def get_group(): int
 	
 	enum CvNodeType:
-		set audio = 1
-		set global_parameter = 2
-		set track_parameter = 3
-		set port = 4
+		set audio = 0
+		set global_parameter = 1
+		set track_parameter = 2
+		set port = 3
 
 	"no typedef"
 	class CvNode:

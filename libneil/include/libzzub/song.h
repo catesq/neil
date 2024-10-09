@@ -151,8 +151,8 @@ struct song {
     virtual ~song() { }
     // plugin methods
     metaplugin& get_plugin(plugin_descriptor index);
-    metaplugin& get_plugin(int id);
     int get_plugin_count();
+    
     plugin_descriptor get_plugin_descriptor(string name);
     int get_plugin_id(plugin_descriptor index);
     void process_plugin_events(int plugin_id);
