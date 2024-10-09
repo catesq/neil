@@ -1,7 +1,6 @@
 #include "faust_oscillator_info.hpp"
 
 
-
 faust_oscillator_info::faust_oscillator_info() 
 {
     this->flags = zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;

@@ -6,6 +6,7 @@
 #define RESET_WIDGET 1
 #define FREQ_WIDGET 2
 
+faust_oscillator_info machine_info{};
 
 
 zzub::plugin* faust_oscillator_info::create_plugin() const {

@@ -1,4 +1,8 @@
+#pragma once
+
+
 #include <zzub/plugin.h>
+
 
 
 struct faust_oscillator_info : zzub::info 
@@ -16,4 +20,6 @@ struct faust_oscillator_info : zzub::info
     
     virtual bool store_info(zzub::archive *data) const { return false; }
 };
+
+extern faust_oscillator_info machine_info;
 
