@@ -6,8 +6,6 @@
 #define RESET_WIDGET 1
 #define FREQ_WIDGET 2
 
-faust_oscillator_info machine_info{};
-
 
 zzub::plugin* faust_oscillator_info::create_plugin() const {
     return new faust_oscillator(this);
@@ -194,7 +192,11 @@ bool faust_oscillator::process_mono(float **pin, float **pout, int numsamples, i
         return false;
 
     // the phasor is the faust computer to generate the phasor - from 0 to pl.tablesize
+    
     auto phasor = dsp[4];
+
+    // the oscillator is one of the faust programs in osc_process, they all calulate
+    // a waveform and stored it in a rdtable 
     auto osc = dsp[state.wave_type];
 
     float phase[256] = {0};

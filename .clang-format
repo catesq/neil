@@ -1,0 +1,6 @@
+BasedOnStyle: Webkit
+IndentWidth: 4
+AlignAfterOpenBracket: BlockIndent
+BinPackParameters: false
+BinPackArguments: false
+MaxEmptyLinesToKeep: 2
