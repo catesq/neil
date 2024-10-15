@@ -130,6 +130,7 @@ class lfo_port : public zzub::port {
     audiobuffer buffer;
     const char* port_name;
     const zzub::port_flow direction;
+    bool connected;
 
 
 public:
@@ -218,7 +219,7 @@ public:
 
 class MCPChorus : public zzub::plugin {
 private:
-    zzub::ports_facade* ports;
+    zzub::ports_facade ports;
     Gvals gval;
     unsigned int chunklen = 64;
     unsigned long _size;
@@ -272,7 +273,7 @@ public:
     virtual const char* get_stream_source() { return 0; }
     virtual void play_pattern(int index) { }
     virtual void configure(const char* key, const char* value) { }
-    
+
     virtual bool connect_ports(zzub::cv_connector& connnector) override;
     virtual void disconnect_ports(zzub::cv_connector& connnector) override;
     virtual zzub::port* get_port(int index) override;

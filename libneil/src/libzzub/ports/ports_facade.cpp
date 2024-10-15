@@ -7,13 +7,14 @@
 namespace zzub {
 
 
-ports_facade::ports_facade(
+void
+ports_facade::init(
     host* plugin_host,
     std::vector<zzub::port*> cv_ports
 )
-    : plugin_host(plugin_host)
-    , plugin_info(plugin_host->get_info(plugin_host->_plugin))
 {
+    plugin_host = plugin_host;
+    plugin_info = plugin_host->get_info(plugin_host->_plugin);
     param_ports = build_param_ports();
     
     audio_in_ports = build_audio_ports(
@@ -82,6 +83,8 @@ ports_facade::get_ports(
     throw std::runtime_error("unknown port type");
 }
 
+
+
 std::vector<zzub::port*>
 ports_facade::build_param_ports()
 {
@@ -117,6 +120,7 @@ ports_facade::build_audio_ports(
 }
 
 
+
 void ports_facade::process_events(
     const std::vector<port_event*>& events
 )
@@ -128,6 +132,48 @@ void ports_facade::process_events(
             break;
         }
     }
+}
+
+
+void
+port_facade_plugin::init_port_facade(host* plugin_host, std::vector<zzub::port*> cv_ports){
+    ports.init(plugin_host, cv_ports);
+}
+
+
+
+zzub::port* 
+port_facade_plugin::get_port(int index)
+{
+    return ports.get_port(index);
+}
+
+
+int 
+port_facade_plugin::get_port_count()
+{
+    return ports.get_port_count();
+}
+
+
+zzub::port* 
+port_facade_plugin::get_port(
+    zzub::port_type type, 
+    zzub::port_flow flow, 
+    int index
+)
+{
+    return ports.get_port(type, flow, index);
+}
+
+
+int 
+port_facade_plugin::get_port_count(
+    zzub::port_type type, 
+    zzub::port_flow flow
+)
+{
+    return ports.get_port_count(type, flow);
 }
 
 

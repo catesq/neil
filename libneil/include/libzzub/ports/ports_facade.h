@@ -5,6 +5,8 @@
 #include "port_types.h"
 #include "zzub/plugin.h"
 
+#include <vector>
+
 
 namespace zzub {
 
@@ -39,14 +41,21 @@ class ports_facade {
     );
 
 public:
-    ports_facade(
+    ports_facade() {}
+
+
+
+    void
+    init(
         host* plugin_host,
         std::vector<zzub::port*> cv_ports = {}
     );
 
 
+
     void
     process_events(const std::vector<port_event*>& events);
+
 
 
     //
@@ -64,6 +73,7 @@ public:
     }
 
 
+
     int
     get_port_count(
         zzub::port_type port_type,
@@ -72,6 +82,7 @@ public:
     {
         return get_ports(port_type, port_flow).size();
     }
+
 
 
     //
@@ -84,6 +95,7 @@ public:
             return nullptr;
         }
     }
+
 
 
     zzub::port*
@@ -101,6 +113,21 @@ public:
             return nullptr;
         }
     }
+};
+
+
+
+class port_facade_plugin : public virtual zzub::plugin {
+    ports_facade ports{};
+
+public:
+    virtual ~port_facade_plugin() {};
+    void init_port_facade(host* plugin_host, std::vector<zzub::port*> cv_ports);
+
+    virtual int get_port_count();
+    virtual zzub::port* get_port(int index);
+    virtual int get_port_count(zzub::port_type type, zzub::port_flow flow);
+    virtual zzub::port* get_port(zzub::port_type type, zzub::port_flow flow, int index);
 };
 
 

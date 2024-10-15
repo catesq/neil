@@ -19,8 +19,8 @@ class PluginType(Enum):
 
 
 
-AUDIO_IO_FLAGS = zzub.zzub_plugin_flag_has_audio_input | zzub.zzub_plugin_flag_has_audio_output
-EVENT_IO_FLAGS = zzub.zzub_plugin_flag_has_event_output | zzub.zzub_plugin_flag_has_cv_output
+AUDIO_IO_FLAGS = zzub.zzub_plugin_flag_has_audio_input | zzub.zzub_plugin_flag_has_audio_output | zzub.zzub_plugin_flag_is_cv_generator
+EVENT_IO_FLAGS = zzub.zzub_plugin_flag_has_event_output
 
 
 
@@ -43,7 +43,7 @@ def get_plugin_type(plugin):
 
     if flags & zzub.zzub_plugin_flag_is_effect:
         return PluginType.Effect
-    elif flags & zzub.zzub_plugin_flag_is_instrument:
+    elif flags & zzub.zzub_plugin_flag_is_instrument or zzub.zzub_plugin_flag_is_cv_generator:
         return PluginType.Generator
     elif flags & zzub.zzub_plugin_flag_is_root:
         return PluginType.Root
@@ -66,7 +66,7 @@ def is_effect(plugin):
 
 
 def is_generator(plugin):
-    return plugin.get_flags() & zzub.zzub_plugin_flag_is_instrument #(plugin.get_flags() & zzub.zzub_plugin_flag_has_audio_output) and not (plugin.get_flags() & zzub.zzub_plugin_flag_has_audio_input)
+    return plugin.get_flags() & zzub.zzub_plugin_flag_is_instrument or (plugin.get_flags() & zzub.zzub_plugin_flag_is_cv_generator)
 
 
 

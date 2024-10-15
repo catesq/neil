@@ -135,6 +135,8 @@ struct song {
     player_state state;
     vector<metaplugin*> plugins;
     vector<plugin_descriptor> work_order;
+    vector<plugin_descriptor> cv_work_order;
+
     vector<event_message> user_event_queue;
     unsigned int user_event_queue_read, user_event_queue_write;
     int enable_event_queue;

@@ -20,7 +20,6 @@ MCPChorus::~MCPChorus()
 {
     delete[] _line_l;
     delete[] _line_r;
-    delete ports;
 }
 
 
@@ -47,7 +46,7 @@ MCPChorus::init(zzub::archive* pi)
         new lfo_port("lfo2_in", zzub::port_flow::input)
     };
 
-    ports = new zzub::ports_facade(
+    ports.init(
         _host, 
         lfo_ports
     );
@@ -249,14 +248,14 @@ MCPChorus::disconnect_ports(zzub::cv_connector& connnector)
 zzub::port* 
 MCPChorus::get_port(int index)
 {
-    return ports->get_port(index);
+    return ports.get_port(index);
 }
 
 
 int 
 MCPChorus::get_port_count()
 {
-    return ports->get_port_count();
+    return ports.get_port_count();
 }
 
 
@@ -267,7 +266,7 @@ MCPChorus::get_port(
     int index
 )
 {
-    return ports->get_port(type, flow, index);
+    return ports.get_port(type, flow, index);
 }
 
 
@@ -277,6 +276,6 @@ MCPChorus::get_port_count(
     zzub::port_flow flow
 )
 {
-    return ports->get_port_count(type, flow);
+    return ports.get_port_count(type, flow);
 }
 

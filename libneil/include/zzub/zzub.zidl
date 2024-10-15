@@ -287,9 +287,7 @@ namespace zzub:
 		set load_presets = bit 10         # the ui will open a file picker to load a preset/bank file
 		set save_presets = bit 11         # the ui will open a file browser to save a preset/bank file
 	
-		# bits 14,15 unused - maybe 12 -> has_mono , 12 -> uses_faust
-		set has_mono = bit 12             # can switch from mono/stereo
-		set in_faust = bit 13           # is a faust based plugin
+		# bits 12, 13, 14, 15 unused - 
 
 		set is_root = bit 16              # master plugin only
 		set has_audio_input = bit 17      # for audio effects
@@ -309,10 +307,11 @@ namespace zzub:
 		
 		set has_custom_gui = bit 27       # machine can draw a GUI
 
-		set has_cv_input = bit 28 # for event effects
-		set has_cv_output = bit 29 # for event generators and effects
+		set has_cv_input = bit 28 
+		set has_cv_output = bit 29 
+		set is_cv_generator = bit 30             
 
-		set has_ports = bit 30
+		set has_ports = bit 31
 
 	enum StateFlag:
 		# player state flags

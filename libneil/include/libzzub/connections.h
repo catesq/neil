@@ -36,7 +36,7 @@ struct connection {
 
     virtual ~connection() {};
     virtual void process_events(zzub::song& player, const connection_descriptor& conn) = 0;
-    virtual bool work(zzub::song& player, const connection_descriptor& conn, int sample_count, bool use_work_buffer) = 0;
+    virtual bool work(zzub::song& player, const connection_descriptor& conn, uint sample_count, uint work_position) = 0;
 
 
     connection_type get_type() const { return type; }
@@ -77,11 +77,11 @@ struct audio_connection : connection {
     audio_connection_values values;
     audio_connection_values cvalues;
 
-    float lastFrameMaxSampleL, lastFrameMaxSampleR;
+    float lastFramePos;
 
     audio_connection();
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
-    virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count, bool use_work_buffer);
+    virtual bool work(zzub::song& player, const connection_descriptor& conn, uint sample_count, uint work_position);
 };
 
 
@@ -111,7 +111,7 @@ struct event_connection : connection {
 
     event_connection();
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
-    virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count, bool use_work_buffer);
+    virtual bool work(zzub::song& player, const connection_descriptor& conn, uint sample_count, uint work_position);
 
     int get_binding_count() const { return bindings.size(); }
 
@@ -157,8 +157,8 @@ struct cv_connector {
     cv_connector(cv_node source, cv_node target);
     cv_connector(cv_node source, cv_node target, cv_connector_data data);
 
-    void process_events(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to);
-    void work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, int sample_count, bool use_work_buffer);
+    virtual void process_events(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to);
+    virtual void work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, uint sample_count, uint work_position);
 
     bool operator==(const cv_connector& other) const { return source == other.source && target == other.target; }
     void connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
@@ -178,12 +178,17 @@ private:
 
 struct cv_connection : connection {
     std::vector<cv_connector> connectors;
-    int count = 0;
 
-    cv_connection();
+    /**
+     * When the source plugin has the is_controller flag set then
+     * the source plugins process_controller_events method is called
+     */
+    bool is_from_controller;
 
-    virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
-    virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count , bool use_work_buffer);
+    cv_connection(bool is_from_controller);
+
+    void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
+    virtual bool work(zzub::song& player, const connection_descriptor& conn, uint sample_count, uint work_position);
 
     void add_connector(const cv_connector& link, zzub::song& song);
     bool remove_connector(const cv_connector& link);
@@ -208,7 +213,7 @@ struct midi_connection : connection {
     midi_connection();
     int get_midi_device(zzub::song& player, int plugin, std::string name);
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
-    virtual bool work(zzub::song& player, const zzub::connection_descriptor& conn, int sample_count, bool use_work_buffer);
+    virtual bool work(zzub::song& player, const connection_descriptor& conn, uint sample_count, uint work_position);
 };
 
 

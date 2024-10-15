@@ -17,15 +17,15 @@
 */
 
 #include "libzzub/common.h"
-#include <deque>
-#include <functional>
+#include "libzzub/dummy.h"
+#include "libzzub/metaplugin.h"
+#include "libzzub/timer.h"
 #include <algorithm>
 #include <cctype>
 #include <ctime>
+#include <deque>
+#include <functional>
 #include <sstream>
-#include "libzzub/timer.h"
-#include "libzzub/dummy.h"
-#include "libzzub/metaplugin.h"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -34,18 +34,20 @@
 
 #include "libzzub/sseoptimization.h"
 
-using std::deque;
 using std::cerr;
+using std::deque;
 using std::endl;
 
 
-namespace {	// duplicate from ccm.h and pattern.cpp
+namespace { // duplicate from ccm.h and pattern.cpp
 
-int midi_to_buzz_note(int value) {
+int midi_to_buzz_note(int value)
+{
     return ((value / 12) << 4) + (value % 12) + 1;
 }
 
-int buzz_to_midi_note(int value) {
+int buzz_to_midi_note(int value)
+{
     return 12 * (value >> 4) + (value & 0xf) - 1;
 }
 
@@ -54,30 +56,34 @@ int buzz_to_midi_note(int value) {
 namespace zzub {
 
 
-bool is_note_playing(int plugin_id, const std::vector<zzub::keyjazz_note>& keyjazz, int note) {
+bool is_note_playing(int plugin_id, const std::vector<zzub::keyjazz_note>& keyjazz, int note)
+{
     for (size_t i = 0; i < keyjazz.size(); i++)
-        if (keyjazz[i].plugin_id == plugin_id && keyjazz[i].note == note) return true;
+        if (keyjazz[i].plugin_id == plugin_id && keyjazz[i].note == note)
+            return true;
     return false;
 }
 
 
-inline bool scanPeakStereo(float* l, float* r, int numSamples, float& maxL, float& maxR, float falloff) {
+inline bool scanPeakStereo(float* l, float* r, int numSamples, float& maxL, float& maxR, float falloff)
+{
     bool zero = true;
     while (numSamples--) {
         maxL *= falloff;
         maxR *= falloff;
         maxL = std::max(std::abs(*l), maxL);
         maxR = std::max(std::abs(*r), maxR);
-        if (zero && ((*l > SIGNAL_TRESHOLD)||(*l < -SIGNAL_TRESHOLD)||
-                     (*r > SIGNAL_TRESHOLD)||(*r < -SIGNAL_TRESHOLD)))
+        if (zero && ((*l > SIGNAL_TRESHOLD) || (*l < -SIGNAL_TRESHOLD) || (*r > SIGNAL_TRESHOLD) || (*r < -SIGNAL_TRESHOLD)))
             zero = false;
-        l++;r++;
+        l++;
+        r++;
     }
     return zero;
 }
 
 // http://en.wikipedia.org/wiki/Topological_sorting
-void topological_sort_kahn(plugin_map& tg, std::deque<plugin_descriptor>& input, std::vector<plugin_descriptor>& result) {
+void topological_sort_kahn(plugin_map& tg, std::deque<plugin_descriptor>& input, std::vector<plugin_descriptor>& result)
+{
     while (input.size()) {
         plugin_descriptor n = input.front();
         input.pop_front();
@@ -95,7 +101,7 @@ void topological_sort_kahn(plugin_map& tg, std::deque<plugin_descriptor>& input,
             if ((in_end - in) == 0) {
                 // when a plugin has audio and cv connections there were duplicates
                 // this will be removed when connectors.cpp is rewritten
-                if(*i != input.back()) {
+                if (*i != input.back()) {
                     input.push_back(*i);
                 }
             }
@@ -109,7 +115,8 @@ void topological_sort_kahn(plugin_map& tg, std::deque<plugin_descriptor>& input,
 
   ***/
 
-song::song() {
+song::song()
+{
     state = player_state_muted;
     seqstep = 16;
     song_begin = 0;
@@ -124,7 +131,8 @@ song::song() {
     user_event_queue_read = user_event_queue_write = 0;
 }
 
-zzub::metaplugin& song::get_plugin(zzub::plugin_descriptor index) {
+zzub::metaplugin& song::get_plugin(zzub::plugin_descriptor index)
+{
     assert(index >= 0 && index < num_vertices(graph));
     int id = graph[index].id;
     assert(id >= 0 && (size_t)id < plugins.size());
@@ -132,25 +140,29 @@ zzub::metaplugin& song::get_plugin(zzub::plugin_descriptor index) {
 }
 
 
-
-int song::get_plugin_count() {
+int song::get_plugin_count()
+{
     return (int)num_vertices(graph);
 }
 
-zzub::plugin_descriptor song::get_plugin_descriptor(std::string name) {
+zzub::plugin_descriptor song::get_plugin_descriptor(std::string name)
+{
     plugin_iterator vi;
     for (vi = vertices(graph).first; vi != vertices(graph).second; ++vi)
-        if (get_plugin(*vi).name == name) return *vi;
+        if (get_plugin(*vi).name == name)
+            return *vi;
 
     return graph_traits<plugin_map>::null_vertex();
 }
 
-int song::get_plugin_id(zzub::plugin_descriptor index) {
+int song::get_plugin_id(zzub::plugin_descriptor index)
+{
     assert(index >= 0 && index < num_vertices(graph));
     return graph[index].id;
 }
 
-int song::plugin_get_parameter_count(int plugin_id, int group, int track) {
+int song::plugin_get_parameter_count(int plugin_id, int group, int track)
+{
     const zzub::info* loader = plugins[plugin_id]->info;
     switch (group) {
     case 0: { // input connections
@@ -168,8 +180,9 @@ int song::plugin_get_parameter_count(int plugin_id, int group, int track) {
     }
 }
 
-int song::plugin_get_track_count(int plugin_id, int group) {
-    //const zzub::info* loader = plugins[plugin_id]->info;
+int song::plugin_get_track_count(int plugin_id, int group)
+{
+    // const zzub::info* loader = plugins[plugin_id]->info;
     switch (group) {
     case 0:
         return plugin_get_input_connection_count(plugin_id);
@@ -185,13 +198,14 @@ int song::plugin_get_track_count(int plugin_id, int group) {
 }
 
 
-const parameter* song::plugin_get_parameter_info(int plugin_id, int group, int track, int column) {
+const parameter* song::plugin_get_parameter_info(int plugin_id, int group, int track, int column)
+{
     const zzub::info* loader = plugins[plugin_id]->info;
     switch (group) {
     case 0: { // input connections
         connection* conn = plugin_get_input_connection(plugin_id, track);
-        //std::pair<zzub::connection_descriptor, bool> conndesc = plugin_get_input_connection(plugin_id, track);
-        //edge_props& conn = graph[conndesc.first];
+        // std::pair<zzub::connection_descriptor, bool> conndesc = plugin_get_input_connection(plugin_id, track);
+        // edge_props& conn = graph[conndesc.first];
         return conn->connection_parameters[column];
     }
     case 1: // globals
@@ -205,7 +219,8 @@ const parameter* song::plugin_get_parameter_info(int plugin_id, int group, int t
     }
 }
 
-int song::plugin_get_parameter(int plugin_id, int group, int track, int column) {
+int song::plugin_get_parameter(int plugin_id, int group, int track, int column)
+{
     // use state_write or state_last depending on what is freshest
     assert(plugins[plugin_id] != 0);
     assert(group >= 0 && group < plugins[plugin_id]->state_write.groups.size());
@@ -214,13 +229,15 @@ int song::plugin_get_parameter(int plugin_id, int group, int track, int column) 
 
     int v = plugins[plugin_id]->state_write.groups[group][track][column][0];
     const zzub::parameter* param = plugin_get_parameter_info(plugin_id, group, track, column);
-    if (v != param->value_none) return v;
+    if (v != param->value_none)
+        return v;
 
     return plugins[plugin_id]->state_last.groups[group][track][column][0];
 }
 
 
-int song::plugin_get_parameter_direct(int plugin_id, int group, int track, int column) {
+int song::plugin_get_parameter_direct(int plugin_id, int group, int track, int column)
+{
     assert(plugins[plugin_id] != 0);
     assert(group >= 0 && group < plugins[plugin_id]->state_write.groups.size());
     assert(track >= 0 && track < plugins[plugin_id]->state_write.groups[group].size());
@@ -230,7 +247,8 @@ int song::plugin_get_parameter_direct(int plugin_id, int group, int track, int c
 }
 
 
-void song::plugin_set_parameter_direct(int plugin_id, int group, int track, int column, int value, bool record) {
+void song::plugin_set_parameter_direct(int plugin_id, int group, int track, int column, int value, bool record)
+{
     assert(plugins[plugin_id] != 0);
     assert(group >= 0 && group < plugins[plugin_id]->state_write.groups.size());
     assert(track >= 0 && track < plugins[plugin_id]->state_write.groups[group].size());
@@ -242,7 +260,8 @@ void song::plugin_set_parameter_direct(int plugin_id, int group, int track, int 
 }
 
 
-zzub::info* song::create_dummy_info(int flags, std::string pluginUri, int attributes, int globalValues, int trackValues, parameter* params) {
+zzub::info* song::create_dummy_info(int flags, std::string pluginUri, int attributes, int globalValues, int trackValues, parameter* params)
+{
 
     dummy_info* new_info = new dummy_info();
 
@@ -255,17 +274,17 @@ zzub::info* song::create_dummy_info(int flags, std::string pluginUri, int attrib
 
     // copy incoming params because they wont be valid after loading ends
     for (int i = 0; i < globalValues; ++i) {
-        parameter &p = new_info->add_global_parameter();
+        parameter& p = new_info->add_global_parameter();
         p = *params;
-        char* name = new char[strlen(params->name)+1];
+        char* name = new char[strlen(params->name) + 1];
         strcpy(name, params->name);
         p.name = name;
         params++;
     }
     for (int i = 0; i < trackValues; ++i) {
-        parameter &p = new_info->add_track_parameter();
+        parameter& p = new_info->add_track_parameter();
         p = *params;
-        char* name = new char[strlen(params->name)+1];
+        char* name = new char[strlen(params->name) + 1];
         strcpy(name, params->name);
         p.name = name;
         params++;
@@ -275,14 +294,16 @@ zzub::info* song::create_dummy_info(int flags, std::string pluginUri, int attrib
 }
 
 
-std::pair<zzub::out_edge_iterator, zzub::out_edge_iterator> song::get_plugin_input_edges(int plugin_id) {
+std::pair<zzub::out_edge_iterator, zzub::out_edge_iterator> song::get_plugin_input_edges(int plugin_id)
+{
     ASSERT_PLUGIN(plugin_id);
 
     return out_edges(plugins[plugin_id]->descriptor, graph);
 }
 
 
-zzub::out_edge_iterator song::get_plugin_input_edge(int plugin_id, int index) {
+zzub::out_edge_iterator song::get_plugin_input_edge(int plugin_id, int index)
+{
     auto [first_edge, last_edge] = get_plugin_input_edges(plugin_id);
 
     assert(index < (last_edge - first_edge));
@@ -291,7 +312,8 @@ zzub::out_edge_iterator song::get_plugin_input_edge(int plugin_id, int index) {
 }
 
 
-std::vector<connection*> song::plugin_get_input_connections(int plugin_id, int from_id) {
+std::vector<connection*> song::plugin_get_input_connections(int plugin_id, int from_id)
+{
     std::vector<connection*> result;
 
     auto [first_edge, last_edge] = get_plugin_input_edges(plugin_id);
@@ -306,14 +328,16 @@ std::vector<connection*> song::plugin_get_input_connections(int plugin_id, int f
 }
 
 
-int song::plugin_get_input_connection_count(int to_id) {
+int song::plugin_get_input_connection_count(int to_id)
+{
     auto [first_edge, last_edge] = get_plugin_input_edges(to_id);
 
     return int(last_edge - first_edge);
 }
 
 
-int song::plugin_get_input_connection_plugin(int plugin_id, int index) {
+int song::plugin_get_input_connection_plugin(int plugin_id, int index)
+{
     auto edge = get_plugin_input_edge(plugin_id, index);
 
     plugin_descriptor from_plugin = target(*edge, graph);
@@ -322,12 +346,14 @@ int song::plugin_get_input_connection_plugin(int plugin_id, int index) {
 }
 
 
-connection_type song::plugin_get_input_connection_type(int plugin_id, int index) {
+connection_type song::plugin_get_input_connection_type(int plugin_id, int index)
+{
     return plugin_get_input_connection(plugin_id, index)->type;
 }
 
 
-connection* song::plugin_get_input_connection(int plugin_id, int index) {
+connection* song::plugin_get_input_connection(int plugin_id, int index)
+{
     auto [first_edge, last_edge] = get_plugin_input_edges(plugin_id);
 
     assert(index < (last_edge - first_edge));
@@ -336,7 +362,8 @@ connection* song::plugin_get_input_connection(int plugin_id, int index) {
 }
 
 
-std::pair<connection*, int> song::plugin_get_input_connection_and_index(int plugin_id, int from_id, connection_type type) {
+std::pair<connection*, int> song::plugin_get_input_connection_and_index(int plugin_id, int from_id, connection_type type)
+{
     ASSERT_PLUGIN(from_id);
 
     plugin_descriptor from_plugin = plugins[from_id]->descriptor;
@@ -344,7 +371,7 @@ std::pair<connection*, int> song::plugin_get_input_connection_and_index(int plug
     auto [first_edge, last_edge] = get_plugin_input_edges(plugin_id);
 
     for (out_edge_iterator it = first_edge; it != last_edge; ++it) {
-        if (target(*it, graph) == from_plugin && graph[*it].conn->type == type) 
+        if (target(*it, graph) == from_plugin && graph[*it].conn->type == type)
             return std::make_pair(graph[*it].conn, (int)(it - first_edge));
     }
 
@@ -352,24 +379,28 @@ std::pair<connection*, int> song::plugin_get_input_connection_and_index(int plug
 }
 
 
-int song::plugin_get_input_connection_index(int plugin_id, int from_id, connection_type type) {
+int song::plugin_get_input_connection_index(int plugin_id, int from_id, connection_type type)
+{
     return plugin_get_input_connection_and_index(plugin_id, from_id, type).second;
 }
 
 
-connection* song::plugin_get_input_connection(int plugin_id, int from_id, connection_type type) {
+connection* song::plugin_get_input_connection(int plugin_id, int from_id, connection_type type)
+{
     return plugin_get_input_connection_and_index(plugin_id, from_id, type).first;
 }
 
 
-std::pair<zzub::in_edge_iterator, zzub::in_edge_iterator> song::get_plugin_output_edges(int plugin_id) {
+std::pair<zzub::in_edge_iterator, zzub::in_edge_iterator> song::get_plugin_output_edges(int plugin_id)
+{
     ASSERT_PLUGIN(plugin_id);
 
     return in_edges(plugins[plugin_id]->descriptor, graph);
 }
 
 
-zzub::in_edge_iterator song::get_plugin_output_edge(int plugin_id, int index) {
+zzub::in_edge_iterator song::get_plugin_output_edge(int plugin_id, int index)
+{
     auto [first_edge, last_edge] = get_plugin_output_edges(plugin_id);
 
     assert(index < (last_edge - first_edge));
@@ -378,22 +409,24 @@ zzub::in_edge_iterator song::get_plugin_output_edge(int plugin_id, int index) {
 }
 
 
-int song::plugin_get_output_connection_count(int to_id) {
+int song::plugin_get_output_connection_count(int to_id)
+{
     auto [first_edge, last_edge] = get_plugin_output_edges(to_id);
 
     return int(last_edge - first_edge);
 }
 
 
-connection* song::plugin_get_output_connection(int plugin_id, int index) {
+connection* song::plugin_get_output_connection(int plugin_id, int index)
+{
     auto edge = get_plugin_output_edge(plugin_id, index);
-    
+
     return graph[*edge].conn;
 }
 
 
-
-std::pair<connection*, int> song::plugin_get_output_connection_and_index(int plugin_id, int to_id, connection_type type) {
+std::pair<connection*, int> song::plugin_get_output_connection_and_index(int plugin_id, int to_id, connection_type type)
+{
     ASSERT_PLUGIN(to_id);
 
     plugin_descriptor to_plugin = plugins[to_id]->descriptor;
@@ -401,7 +434,7 @@ std::pair<connection*, int> song::plugin_get_output_connection_and_index(int plu
     auto [first_edge, last_edge] = get_plugin_output_edges(plugin_id);
 
     for (in_edge_iterator it = first_edge; it != last_edge; ++it) {
-        if (source(*it, graph) == to_plugin && graph[*it].conn->type == type) 
+        if (source(*it, graph) == to_plugin && graph[*it].conn->type == type)
             return std::make_pair(graph[*it].conn, (int)(it - first_edge));
     }
 
@@ -409,17 +442,20 @@ std::pair<connection*, int> song::plugin_get_output_connection_and_index(int plu
 }
 
 
-int song::plugin_get_output_connection_index(int to_id, int from_id, connection_type type) {
+int song::plugin_get_output_connection_index(int to_id, int from_id, connection_type type)
+{
     return plugin_get_output_connection_and_index(to_id, from_id, type).second;
 }
 
 
-connection* song::plugin_get_output_connection(int to_id, int from_id, connection_type type) {
+connection* song::plugin_get_output_connection(int to_id, int from_id, connection_type type)
+{
     return plugin_get_output_connection_and_index(to_id, from_id, type).first;
 }
 
 
-int song::plugin_get_output_connection_plugin(int plugin_id, int index) {
+int song::plugin_get_output_connection_plugin(int plugin_id, int index)
+{
     auto edge = get_plugin_output_edge(plugin_id, index);
 
     plugin_descriptor from_plugin = source(*edge, graph);
@@ -428,18 +464,21 @@ int song::plugin_get_output_connection_plugin(int plugin_id, int index) {
 }
 
 
-connection_type song::plugin_get_output_connection_type(int plugin_id, int index) {
+connection_type song::plugin_get_output_connection_type(int plugin_id, int index)
+{
     return plugin_get_output_connection(plugin_id, index)->type;
 }
 
-zzub::port* song::plugin_get_port(int plugin_id, int index) {
+zzub::port* song::plugin_get_port(int plugin_id, int index)
+{
     ASSERT_PLUGIN(plugin_id);
     return plugins[plugin_id]->plugin->get_port(index);
 }
 
-int song::plugin_get_port_count(int plugin_id) {
+int song::plugin_get_port_count(int plugin_id)
+{
     ASSERT_PLUGIN(plugin_id);
-      
+
     return plugins[plugin_id]->plugin->get_port_count();
 }
 
@@ -450,16 +489,20 @@ struct feedback_detector : public base_visitor<feedback_detector> {
     vector<connection_descriptor>& back_edges;
 
     feedback_detector(vector<connection_descriptor>& result)
-        :back_edges(result) { }
+        : back_edges(result)
+    {
+    }
     template <class Vertex, class Graph>
-    inline void operator()(Vertex u, Graph& g) {
-        //cerr << u << " is a back edge!" << endl;
+    inline void operator()(Vertex u, Graph& g)
+    {
+        // cerr << u << " is a back edge!" << endl;
         back_edges.push_back(u);
     }
 };
 
 
-void song::make_work_order() {
+void song::make_work_order()
+{
     work_order.clear();
 
     // use a temp graph
@@ -477,11 +520,12 @@ void song::make_work_order() {
 
     // find roots in the graph, e.g master, and machines w/o outputs
     vector<plugin_descriptor> roots;
-    //plugin_iterator v, v_end;
+    // plugin_iterator v, v_end;
     for (tie(v, v_end) = vertices(tg); v != v_end; ++v) {
         zzub::in_edge_iterator e, e_end;
         boost::tie(e, e_end) = in_edges(*v, tg);
-        if ((e_end - e) == 0) roots.push_back(*v);
+        if ((e_end - e) == 0)
+            roots.push_back(*v);
     }
 
     // do a topological sort from each root and ensure plugins related to the master are put last in the final work order
@@ -490,7 +534,7 @@ void song::make_work_order() {
         deque<plugin_descriptor> inputs;
         inputs.push_back(*i);
 
-        //metaplugin& m = *plugins[tg[*i].id];
+        // metaplugin& m = *plugins[tg[*i].id];
 
         // find plugins that send sound into this root, in topological order.
         // topological_sort_kahn will remove edges from the temp graph.
@@ -506,6 +550,18 @@ void song::make_work_order() {
             work_order.insert(work_order.end(), outputs.rbegin(), outputs.rend());
         }
     }
+
+    cv_work_order.clear();
+
+    // iterator work order - if metaplugin has the cv_only_flag then add it to cv_work_order_order
+    for (vector<plugin_descriptor>::iterator i = work_order.begin(); i != work_order.end(); ++i) {
+        if (plugins[*i]->flags & zzub_plugin_flag_is_cv_generator) {
+            cv_work_order.push_back(*i);
+            work_order.erase(i);
+        }
+    }
+
+
     /*
       cerr << "-------------------------------------------------------" << endl;
       cerr << "Remaining out-edges:" << endl;
@@ -537,26 +593,31 @@ void song::make_work_order() {
 //
 // ---------------------------------------------------------------------------
 
-void song::reset_plugin_parameter_group(zzub::pattern::group& group, const std::vector<const zzub::parameter*>& parameters) {
+void song::reset_plugin_parameter_group(zzub::pattern::group& group, const std::vector<const zzub::parameter*>& parameters)
+{
     for (size_t i = 0; i < group.size(); i++)
         reset_plugin_parameter_track(group[i], parameters);
 }
 
-void song::reset_plugin_parameter_track(zzub::pattern::track& track, const std::vector<const zzub::parameter*>& parameters) {
+void song::reset_plugin_parameter_track(zzub::pattern::track& track, const std::vector<const zzub::parameter*>& parameters)
+{
     for (size_t j = 0; j < track.size(); j++)
         for (size_t k = 0; k < track[j].size(); k++)
             track[j][k] = parameters[j]->value_none;
 }
 
-void song::default_plugin_parameter_track(zzub::pattern::track& track, const std::vector<const zzub::parameter*>& parameters) {
+void song::default_plugin_parameter_track(zzub::pattern::track& track, const std::vector<const zzub::parameter*>& parameters)
+{
     for (size_t j = 0; j < track.size(); j++)
         for (size_t k = 0; k < track[j].size(); k++)
             if (parameters[j]->flags & zzub::parameter_flag_state)
-                track[j][k] = parameters[j]->value_default; else
+                track[j][k] = parameters[j]->value_default;
+            else
                 track[j][k] = parameters[j]->value_none;
 }
 
-int song::get_plugin_parameter_track_row_bytesize(int plugin_id, int g, int t) {
+int song::get_plugin_parameter_track_row_bytesize(int plugin_id, int g, int t)
+{
     int size = 0;
     for (int i = 0; i < plugin_get_parameter_count(plugin_id, g, t); i++) {
         const zzub::parameter* param = plugin_get_parameter_info(plugin_id, g, t, i);
@@ -565,7 +626,8 @@ int song::get_plugin_parameter_track_row_bytesize(int plugin_id, int g, int t) {
     return size;
 }
 
-void song::transfer_plugin_parameter_track_row(int plugin_id, int g, int t, const zzub::pattern& from_pattern, void* target, int row, bool copy_all) {
+void song::transfer_plugin_parameter_track_row(int plugin_id, int g, int t, const zzub::pattern& from_pattern, void* target, int row, bool copy_all)
+{
     const zzub::pattern::group& group = from_pattern.groups[g];
 
     char* param_ptr = (char*)target;
@@ -586,7 +648,8 @@ void song::transfer_plugin_parameter_track_row(int plugin_id, int g, int t, cons
     }
 }
 
-void song::transfer_plugin_parameter_track_row(int plugin_id, int g, int t, const void* source, zzub::pattern& to_pattern, int row, bool copy_all) {
+void song::transfer_plugin_parameter_track_row(int plugin_id, int g, int t, const void* source, zzub::pattern& to_pattern, int row, bool copy_all)
+{
     zzub::pattern::group& group = to_pattern.groups[g];
 
     char* param_ptr = (char*)source;
@@ -608,7 +671,8 @@ void song::transfer_plugin_parameter_track_row(int plugin_id, int g, int t, cons
     }
 }
 
-void song::invoke_plugin_parameter_changes(int plugin_id, int g) {
+void song::invoke_plugin_parameter_changes(int plugin_id, int g)
+{
     const zzub::pattern::group& group = plugins[plugin_id]->state_write.groups[g];
     for (int j = 0; j < (int)group.size(); j++) {
         for (int i = 0; i < (int)group[j].size(); i++) {
@@ -629,13 +693,15 @@ void song::invoke_plugin_parameter_changes(int plugin_id, int g) {
     }
 }
 
-void song::invoke_plugin_parameter_changes(int plugin_id) {
+void song::invoke_plugin_parameter_changes(int plugin_id)
+{
     invoke_plugin_parameter_changes(plugin_id, 0);
     invoke_plugin_parameter_changes(plugin_id, 1);
     invoke_plugin_parameter_changes(plugin_id, 2);
 }
 
-void song::transfer_plugin_parameter_row(int plugin_id, int g, const zzub::pattern& from_pattern, zzub::pattern& target_pattern, int from_row, int target_row, bool copy_all) {
+void song::transfer_plugin_parameter_row(int plugin_id, int g, const zzub::pattern& from_pattern, zzub::pattern& target_pattern, int from_row, int target_row, bool copy_all)
+{
     const zzub::pattern::group& source_group = from_pattern.groups[g];
     zzub::pattern::group& target_group = target_pattern.groups[g];
 
@@ -652,7 +718,8 @@ void song::transfer_plugin_parameter_row(int plugin_id, int g, const zzub::patte
     }
 }
 
-void song::create_pattern(zzub::pattern& result, int plugin_id, int rows) {
+void song::create_pattern(zzub::pattern& result, int plugin_id, int rows)
+{
     metaplugin& m = *plugins[plugin_id];
 
     result.rows = rows;
@@ -662,7 +729,7 @@ void song::create_pattern(zzub::pattern& result, int plugin_id, int rows) {
     zzub::out_edge_iterator out, out_end;
     boost::tie(out, out_end) = out_edges(m.descriptor, graph);
 
-    for(; out != out_end; ++out) {
+    for (; out != out_end; ++out) {
         edge_props& c = graph[*out];
         add_pattern_connection_track(result, c.conn->connection_parameters);
     }
@@ -684,7 +751,8 @@ void song::create_pattern(zzub::pattern& result, int plugin_id, int rows) {
     reset_plugin_parameter_group(result.groups[2], m.info->track_parameters);
 }
 
-void song::set_pattern_tracks(zzub::pattern& p, const std::vector<const zzub::parameter*>& parameters, int tracks, bool set_defaults) {
+void song::set_pattern_tracks(zzub::pattern& p, const std::vector<const zzub::parameter*>& parameters, int tracks, bool set_defaults)
+{
     zzub::pattern::group& g = p.groups[2];
 
     if ((int)g.size() > tracks) {
@@ -699,13 +767,14 @@ void song::set_pattern_tracks(zzub::pattern& p, const std::vector<const zzub::pa
             for (size_t j = 0; j < parameters.size(); j++) {
                 int v;
                 if (parameters[j]->flags & zzub::parameter_flag_state)
-                    v = parameters[j]->value_default; else
+                    v = parameters[j]->value_default;
+                else
                     v = parameters[j]->value_none;
                 for (size_t k = 0; k < t[j].size(); k++) {
                     t[j][k] = v;
                 }
             }
-            //default_plugin_parameter_track(t, parameters);
+            // default_plugin_parameter_track(t, parameters);
         } else
             reset_plugin_parameter_track(t, parameters);
         int diff = int(tracks - g.size());
@@ -715,7 +784,8 @@ void song::set_pattern_tracks(zzub::pattern& p, const std::vector<const zzub::pa
     }
 }
 
-void song::set_pattern_length(int plugin_id, zzub::pattern& p, int rows) {
+void song::set_pattern_length(int plugin_id, zzub::pattern& p, int rows)
+{
     for (int i = 0; i < (int)p.groups.size(); i++) {
         for (int j = 0; j < (int)p.groups[i].size(); j++) {
             for (int k = 0; k < (int)p.groups[i][j].size(); k++) {
@@ -732,7 +802,8 @@ void song::set_pattern_length(int plugin_id, zzub::pattern& p, int rows) {
 }
 
 
-void song::add_pattern_connection_track(zzub::pattern& pattern, const std::vector<const zzub::parameter*>& parameters) {
+void song::add_pattern_connection_track(zzub::pattern& pattern, const std::vector<const zzub::parameter*>& parameters)
+{
     pattern.groups[0].push_back(zzub::pattern::track());
 
     zzub::pattern::track& t = pattern.groups[0].back();
@@ -744,11 +815,14 @@ void song::add_pattern_connection_track(zzub::pattern& pattern, const std::vecto
     reset_plugin_parameter_track(t, parameters);
 }
 
-bool song::plugin_invoke_event(int plugin_id, zzub_event_data data, bool immediate) {
+bool song::plugin_invoke_event(int plugin_id, zzub_event_data data, bool immediate)
+{
     assert(plugin_id >= 0 && plugin_id < (int)plugins.size());
     assert(plugins[plugin_id] != 0);
-    if (!enable_event_queue) return false;
-    if (plugins[plugin_id] == 0) return false;
+    if (!enable_event_queue)
+        return false;
+    if (plugins[plugin_id] == 0)
+        return false;
     std::vector<event_handler*> handlers = plugins[plugin_id]->event_handlers;
     bool handled = false;
     for (size_t i = 0; i < handlers.size(); i++) {
@@ -756,17 +830,19 @@ bool song::plugin_invoke_event(int plugin_id, zzub_event_data data, bool immedia
             event_message em = { plugin_id, handlers[i], data };
             user_event_queue[user_event_queue_write] = em;
             if (user_event_queue_write == user_event_queue.size() - 1)
-                user_event_queue_write = 0; else
+                user_event_queue_write = 0;
+            else
                 user_event_queue_write++;
             assert(user_event_queue_write != user_event_queue_read);
         } else {
-            handled = handlers[i]->invoke(data)||handled;
+            handled = handlers[i]->invoke(data) || handled;
         }
     }
     return handled;
 }
 
-void song::process_plugin_events(int plugin_id) {
+void song::process_plugin_events(int plugin_id)
+{
 
     metaplugin& m = *plugins[plugin_id];
     assert(m.descriptor != graph_traits<plugin_map>::null_vertex());
@@ -776,7 +852,7 @@ void song::process_plugin_events(int plugin_id) {
     boost::tie(out, out_end) = out_edges(m.descriptor, graph);
     int index = 0;
 
-    for(; out != out_end; ++out, index++) {
+    for (; out != out_end; ++out, index++) {
         assert(source(*out, graph) < num_vertices(graph));
         assert(target(*out, graph) < num_vertices(graph));
 
@@ -813,9 +889,7 @@ void song::process_plugin_events(int plugin_id) {
     // reset global and track states
     reset_plugin_parameter_group(m.state_write.groups[1], m.info->global_parameters);
     reset_plugin_parameter_group(m.state_write.groups[2], m.info->track_parameters);
-
 }
-
 
 
 // ---------------------------------------------------------------------------
@@ -824,16 +898,17 @@ void song::process_plugin_events(int plugin_id) {
 //
 // ---------------------------------------------------------------------------
 
-std::string song::plugin_describe_value(plugin_descriptor plugindesc, int group, int column, int value) {
+std::string song::plugin_describe_value(plugin_descriptor plugindesc, int group, int column, int value)
+{
     return "Describe value here";
 }
 
-int song::sequencer_get_event_at(int track, unsigned long timestamp) {
+int song::sequencer_get_event_at(int track, unsigned long timestamp)
+{
     size_t event_count = (size_t)sequencer_tracks[track].events.size();
     size_t song_index = 0;
     while (event_count > 0 && song_index < event_count
-           && sequencer_tracks[track].events[song_index].time < (int)timestamp)
-    {
+           && sequencer_tracks[track].events[song_index].time < (int)timestamp) {
         song_index++;
     }
 
@@ -848,7 +923,8 @@ int song::sequencer_get_event_at(int track, unsigned long timestamp) {
     return -1;
 }
 
-void song::set_state(player_state newstate) {
+void song::set_state(player_state newstate)
+{
     state = newstate;
     switch (state) {
     case player_state_playing:
@@ -864,14 +940,19 @@ void song::set_state(player_state newstate) {
     }
 }
 
-void song::plugin_add_input(int to_id, int from_id, connection_type type) {
+void song::plugin_add_input(int to_id, int from_id, connection_type type)
+{
 
-    plugin_descriptor to_plugin = plugins[to_id]->descriptor;
-    plugin_descriptor from_plugin = plugins[from_id]->descriptor;
-    assert(to_plugin != graph_traits<plugin_map>::null_vertex());
-    assert(from_plugin != graph_traits<plugin_map>::null_vertex());
+    metaplugin& to_mpl = *plugins[to_id];
+    metaplugin& from_mpl = *plugins[from_id];
 
-    std::pair<connection_descriptor, bool> edge_instance_p = add_edge(to_plugin, from_plugin, graph);
+    plugin_descriptor to_plugin_desc = to_mpl.descriptor;
+    plugin_descriptor from_plugin_desc = from_mpl.descriptor;
+
+    assert(to_plugin_desc != graph_traits<plugin_map>::null_vertex());
+    assert(from_plugin_desc != graph_traits<plugin_map>::null_vertex());
+
+    std::pair<connection_descriptor, bool> edge_instance_p = add_edge(to_plugin_desc, from_plugin_desc, graph);
     edge_props& c = graph[edge_instance_p.first];
 
     switch (type) {
@@ -885,12 +966,12 @@ void song::plugin_add_input(int to_id, int from_id, connection_type type) {
         c.conn = new event_connection();
         break;
     case connection_type_cv:
-        c.conn = new cv_connection();
+        c.conn = new cv_connection(
+            from_mpl.info->flags & (plugin_flag_is_instrument + plugin_flag_has_cv_output)
+        );
         break;
     }
 
-    metaplugin& to_mpl = *plugins[to_id];
-    //metaplugin& from_mpl = *plugins[from_id];
 
     for (size_t i = 0; i < to_mpl.patterns.size(); i++) {
         add_pattern_connection_track(*to_mpl.patterns[i], c.conn->connection_parameters);
@@ -904,10 +985,10 @@ void song::plugin_add_input(int to_id, int from_id, connection_type type) {
     add_pattern_connection_track(to_mpl.state_automation, c.conn->connection_parameters);
 
     make_work_order();
-
 }
 
-void song::plugin_delete_input(int to_id, int from_id, connection_type type) {
+void song::plugin_delete_input(int to_id, int from_id, connection_type type)
+{
 
     metaplugin& to_mpl = *plugins[to_id];
     metaplugin& from_mpl = *plugins[from_id];
@@ -946,7 +1027,6 @@ void song::plugin_delete_input(int to_id, int from_id, connection_type type) {
     remove_edge(conndesc, graph);
 
     make_work_order();
-
 }
 
 
@@ -956,7 +1036,8 @@ void song::plugin_delete_input(int to_id, int from_id, connection_type type) {
 
   ***/
 
-mixer::mixer() {
+mixer::mixer()
+{
     solo_plugin = graph_traits<plugin_map>::null_vertex();
     work_position = 0;
     work_tick_fracs = 0.0f;
@@ -972,7 +1053,8 @@ mixer::mixer() {
     memset(inputBuffer, 0, sizeof(inputBuffer));
 }
 
-void mixer::set_state(player_state newstate) {
+void mixer::set_state(player_state newstate)
+{
     if (newstate == player_state_playing && state == player_state_stopped) {
         master_info.tick_position = 0;
         work_tick_fracs = 0;
@@ -980,13 +1062,15 @@ void mixer::set_state(player_state newstate) {
     song::set_state(newstate);
 }
 
-void mixer::set_play_position(int position) {
+void mixer::set_play_position(int position)
+{
     song_position = position;
     master_info.tick_position = 0;
     work_tick_fracs = 0;
 }
 
-void mixer::process_sequencer_events(plugin_descriptor plugin) {
+void mixer::process_sequencer_events(plugin_descriptor plugin)
+{
     metaplugin& m = get_plugin(plugin);
     int plugin_id = graph[plugin].id;
 
@@ -997,7 +1081,8 @@ void mixer::process_sequencer_events(plugin_descriptor plugin) {
     bool reset_sequencer = has_jumped || has_started;
 
     for (size_t i = 0; i < sequencer_tracks.size(); i++) {
-        if (plugin_id != sequencer_tracks[i].plugin_id) continue;
+        if (plugin_id != sequencer_tracks[i].plugin_id)
+            continue;
         int index = sequencer_indices[i];
         if (index == -1) {
             assert(sequencer_tracks[i].events.size() == 0 || song_position < sequencer_tracks[i].events[0].time);
@@ -1011,78 +1096,80 @@ void mixer::process_sequencer_events(plugin_descriptor plugin) {
 
             if (type == sequence_type_pattern) {
                 switch (e.pattern_event.value) {
-                //case -1:	// none
-                case 0:		// mute
-                case 1:		// break
-                case 2:		// thru
+                // case -1:	// none
+                case 0: // mute
+                case 1: // break
+                case 2: // thru
                     if (e.time == song_position)
                         m.sequencer_state = (sequencer_event_type)e.pattern_event.value;
                     break;
-                default:	// pattern
+                default: // pattern
                     if (size_t(e.pattern_event.value - 0x10) < m.patterns.size()) {
                         zzub::pattern& p = *m.patterns[e.pattern_event.value - 0x10];
                         int row = song_position - e.time;
                         if (row >= 0 && row < p.rows && !m.is_muted && !m.is_bypassed) {
-                            if (row == 0 || reset_sequencer) m.plugin->play_sequence_event(t.proxy, e, row);
+                            if (row == 0 || reset_sequencer)
+                                m.plugin->play_sequence_event(t.proxy, e, row);
                             m.sequencer_state = sequencer_event_type_none;
                             transfer_plugin_parameter_row(get_plugin_id(plugin), 0, p, m.state_write, row, 0, false);
                             transfer_plugin_parameter_row(get_plugin_id(plugin), 1, p, m.state_write, row, 0, false);
                             transfer_plugin_parameter_row(get_plugin_id(plugin), 2, p, m.state_write, row, 0, false);
-                            //cout << "Pattern row " << row << endl;
+                            // cout << "Pattern row " << row << endl;
                         }
                     }
                     break;
                 }
-            } else
-                if (type == sequence_type_wave) {
-                    // set note/trigger and wave column for this plugin
-                    int row = song_position - e.time;
-                    if (row >= 0 && !m.is_muted && !m.is_bypassed && ((m.info->flags & plugin_flag_plays_waves) != 0)) {
-                        if (row == 0 || reset_sequencer) {
-                            m.sequencer_state = sequencer_event_type_none;
-                            m.plugin->play_sequence_event(t.proxy, e, row);
-                        }
-                        //m.plugin->play_wave(e.wave_event.wave, note_value_c4, 1.0f);
-
-                        // instead of play_wave(), its also possible to set note and wave parameters manually:
-                        // plugin_set_parameter_direct(plugin_id, m.note_group, wave_track, m.note_column, note_value_c4, false);
-                        // plugin_set_parameter_direct(plugin_id, m.note_group, wave_track, m.wave_column, e.wave_event.wave, false);
+            } else if (type == sequence_type_wave) {
+                // set note/trigger and wave column for this plugin
+                int row = song_position - e.time;
+                if (row >= 0 && !m.is_muted && !m.is_bypassed && ((m.info->flags & plugin_flag_plays_waves) != 0)) {
+                    if (row == 0 || reset_sequencer) {
+                        m.sequencer_state = sequencer_event_type_none;
+                        m.plugin->play_sequence_event(t.proxy, e, row);
                     }
+                    // m.plugin->play_wave(e.wave_event.wave, note_value_c4, 1.0f);
 
-                    if (m.note_group == 2) wave_track = (wave_track + 1) % m.tracks;
+                    // instead of play_wave(), its also possible to set note and wave parameters manually:
+                    // plugin_set_parameter_direct(plugin_id, m.note_group, wave_track, m.note_column, note_value_c4, false);
+                    // plugin_set_parameter_direct(plugin_id, m.note_group, wave_track, m.wave_column, e.wave_event.wave, false);
                 }
+
+                if (m.note_group == 2)
+                    wave_track = (wave_track + 1) % m.tracks;
+            }
         }
     }
 }
 
-int mixer::determine_chunk_size(int sample_count, double& tick_fracs, int& next_tick_position) {
+int mixer::determine_chunk_size(int sample_count, double& tick_fracs, int& next_tick_position)
+{
     int chunk_size = master_info.samples_per_tick + (int)floor(tick_fracs) - master_info.tick_position;
 
-    int max_size = std::min((int)buffer_size, master_info.samples_per_tick);	// eg mixing rate of 4000hz = 250 samples per tick
+    int max_size = std::min((int)buffer_size, master_info.samples_per_tick); // eg mixing rate of 4000hz = 250 samples per tick
     if (chunk_size > max_size || chunk_size < 0) {
         chunk_size = max_size;
         if (chunk_size > sample_count)
             chunk_size = sample_count;
         next_tick_position = master_info.tick_position + chunk_size;
-    } else
-        if (chunk_size > sample_count) {
-            chunk_size = sample_count;
-            next_tick_position = master_info.tick_position + chunk_size;
-        } else {
-            double n;
-            tick_fracs = modf(tick_fracs, &n);
-            next_tick_position = 0;
-        }
+    } else if (chunk_size > sample_count) {
+        chunk_size = sample_count;
+        next_tick_position = master_info.tick_position + chunk_size;
+    } else {
+        double n;
+        tick_fracs = modf(tick_fracs, &n);
+        next_tick_position = 0;
+    }
     return chunk_size;
 }
 
-void mixer::process_keyjazz_noteoff_events() {
+void mixer::process_keyjazz_noteoff_events()
+{
     // check for delayed note offs
     // plugin_update_keyjazz may modify keyjazz so we use a copy
     std::vector<keyjazz_note> keycopy = keyjazz;
     for (size_t i = 0; i < keycopy.size(); i++) {
         if (keycopy[i].delay_off == true) {
-            //cerr << "playing delayed off" << endl;
+            // cerr << "playing delayed off" << endl;
             int plugin_id = keycopy[i].plugin_id;
             int note_group = -1, note_track = -1, note_column = -1;
             int velocity_column = -1;
@@ -1094,7 +1181,8 @@ void mixer::process_keyjazz_noteoff_events() {
     }
 }
 
-void mixer::process_sequencer_events() {
+void mixer::process_sequencer_events()
+{
     process_keyjazz_noteoff_events();
 
     if (!song_loop_enabled && song_position >= song_loop_end) {
@@ -1130,7 +1218,6 @@ void mixer::process_sequencer_events() {
         song_position++;
         if (song_loop_enabled && song_position >= song_loop_end)
             song_position = song_loop_begin;
-
     }
 
     last_tick_state = state;
@@ -1138,7 +1225,8 @@ void mixer::process_sequencer_events() {
 }
 
 
-int mixer::generate_audio(int sample_count) {
+int mixer::generate_audio(int sample_count)
+{
 
     // is state is muted, we abort so the user thread can modify song data freely
     if (state == player_state_muted) {
@@ -1162,15 +1250,15 @@ int mixer::generate_audio(int sample_count) {
             tick_now = song_position;
 
             // process event connections and tick each plugin
-            for (size_t i = 0; i < work_order.size(); i++) {
-                int plugin_id = get_plugin_id(work_order[i]);
+            for (auto plugin_desc : cv_work_order) {
+                int plugin_id = get_plugin_id(plugin_desc);
 
-                assert(plugin_id >=0 && plugin_id < plugins.size() && plugins[plugin_id] != 0);
                 metaplugin& workplugin = *plugins[plugin_id];
 
                 // process events (connections may alter state_write, plugins may alter song_position)
-                if (!workplugin.is_muted && !workplugin.is_bypassed)
+                if (!workplugin.is_muted && !workplugin.is_bypassed) {
                     process_plugin_events(plugin_id);
+                }
             }
         } while (tick_now != song_position);
     }
@@ -1183,17 +1271,23 @@ int mixer::generate_audio(int sample_count) {
     assert(next_tick_position <= master_info.samples_per_tick);
     assert(work_chunk_size >= 0 && work_chunk_size <= sample_count);
 
+    for (auto plugin_desc : cv_work_order) {
+        int plugin_id = get_plugin_id(plugin_desc);
+        metaplugin& workplugin = *plugins[plugin_id];
+        workplugin.plugin->process_cv(sample_count);
+    }
+
+
     // process plugins
-    for (size_t i = 0; i < work_order.size(); i++) {
+    for (auto plugin_desc : work_order) {
 
         // process audio
-        work_plugin(work_order[i], work_chunk_size);
-
+        work_plugin(plugin_desc, work_chunk_size);
     }
-    
+
     // process midi
-    for (size_t i = 0; i < work_order.size(); i++) {
-        metaplugin& workplugin = get_plugin(work_order[i]);
+    for (auto plugin_desc : work_order) {
+        metaplugin& workplugin = get_plugin(plugin_desc);
         workplugin.midi_messages.clear();
     }
 
@@ -1209,24 +1303,28 @@ int mixer::generate_audio(int sample_count) {
     return work_chunk_size;
 }
 
-bool mixer::get_currently_playing_pattern(int plugin_id, int& pattern_index, int& pattern_row) {
+bool mixer::get_currently_playing_pattern(int plugin_id, int& pattern_index, int& pattern_row)
+{
     metaplugin& m = *plugins[plugin_id];
 
     for (size_t i = 0; i < sequencer_tracks.size(); i++) {
         const sequencer_track& seqtrack = sequencer_tracks[i];
-        if (plugin_id != seqtrack.plugin_id) continue;
-        if (sequence_type_pattern != seqtrack.type) continue;
+        if (plugin_id != seqtrack.plugin_id)
+            continue;
+        if (sequence_type_pattern != seqtrack.type)
+            continue;
         int index = sequencer_indices[i];
-        if (index == -1) continue;
+        if (index == -1)
+            continue;
         if (seqtrack.events.size() > 0 && (size_t)index < seqtrack.events.size()) {
             const sequence_event& e = seqtrack.events[index];
             switch (e.pattern_event.value) {
-            //case -1:	// none
-            case 0:		// mute
-            case 1:		// break
-            case 2:		// thru
+            // case -1:	// none
+            case 0: // mute
+            case 1: // break
+            case 2: // thru
                 break;
-            default:	// pattern
+            default: // pattern
                 if (size_t(e.pattern_event.value - 0x10) < m.patterns.size()) {
                     zzub::pattern& p = *m.patterns[e.pattern_event.value - 0x10];
                     int row = song_position - e.time;
@@ -1243,15 +1341,19 @@ bool mixer::get_currently_playing_pattern(int plugin_id, int& pattern_index, int
     return false;
 }
 
-bool mixer::get_currently_playing_pattern_row(int plugin_id, int pattern_index, int& pattern_row) {
+bool mixer::get_currently_playing_pattern_row(int plugin_id, int pattern_index, int& pattern_row)
+{
     metaplugin& m = *plugins[plugin_id];
 
     for (size_t i = 0; i < sequencer_tracks.size(); i++) {
         const sequencer_track& seqtrack = sequencer_tracks[i];
-        if (plugin_id != seqtrack.plugin_id) continue;
-        if (sequence_type_pattern != seqtrack.type) continue;
+        if (plugin_id != seqtrack.plugin_id)
+            continue;
+        if (sequence_type_pattern != seqtrack.type)
+            continue;
         int index = sequencer_indices[i];
-        if (index == -1) continue;
+        if (index == -1)
+            continue;
         if (seqtrack.events.size() > 0 && (size_t)index < seqtrack.events.size()) {
             const sequence_event& e = seqtrack.events[index];
 
@@ -1268,11 +1370,13 @@ bool mixer::get_currently_playing_pattern_row(int plugin_id, int pattern_index, 
     return false;
 }
 
-void mixer::sequencer_update_play_pattern_positions() {
+void mixer::sequencer_update_play_pattern_positions()
+{
     sequencer_indices.resize(sequencer_tracks.size());
 }
 
-void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
+void mixer::work_plugin(plugin_descriptor plugin, int sample_count)
+{
     double start_time = timer.frame();
 
     // process connections
@@ -1280,11 +1384,11 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
     metaplugin& mp = *plugins[plugin_id];
     memset(&mp.work_buffer[0].front(), 0, sample_count * sizeof(float));
     memset(&mp.work_buffer[1].front(), 0, sample_count * sizeof(float));
-    
+
     bool result = false;
     zzub::out_edge_iterator out, out_end;
     boost::tie(out, out_end) = out_edges(plugin, graph);
-    for(; out != out_end; ++out) {
+    for (; out != out_end; ++out) {
         assert(source(*out, graph) < num_vertices(graph));
         assert(target(*out, graph) < num_vertices(graph));
 
@@ -1298,16 +1402,13 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
 
     // process audio:
     int flags;
-    if (((mp.info->flags & zzub_plugin_flag_has_audio_output) != 0) &&
-            ((mp.info->flags & zzub_plugin_flag_has_audio_input) == 0)) {
+    if (((mp.info->flags & zzub_plugin_flag_has_audio_output) != 0) && ((mp.info->flags & zzub_plugin_flag_has_audio_input) == 0)) {
         flags = zzub::process_mode_write;
     } else {
 
         if (result) {
             bool does_input_mixing = (mp.info->flags & zzub::plugin_flag_does_input_mixing) != 0;
-            bool has_signals =
-                    buffer_has_signals(&mp.work_buffer[0].front(), sample_count) ||
-                    buffer_has_signals(&mp.work_buffer[1].front(), sample_count);
+            bool has_signals = buffer_has_signals(&mp.work_buffer[0].front(), sample_count) || buffer_has_signals(&mp.work_buffer[1].front(), sample_count);
             flags = (does_input_mixing || has_signals) ? zzub::process_mode_read_write : zzub::process_mode_write;
         } else
             flags = zzub::process_mode_write;
@@ -1315,8 +1416,8 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
 
     memcpy(&mix_buffer[0].front(), &mp.work_buffer[0].front(), sample_count * sizeof(float));
     memcpy(&mix_buffer[1].front(), &mp.work_buffer[1].front(), sample_count * sizeof(float));
-    float *plin[] = { &mix_buffer[0].front(), &mix_buffer[1].front() };
-    float *plout[] = { &mp.work_buffer[0].front(), &mp.work_buffer[1].front() };
+    float* plin[] = { &mix_buffer[0].front(), &mix_buffer[1].front() };
+    float* plout[] = { &mp.work_buffer[0].front(), &mp.work_buffer[1].front() };
     if (mp.is_muted || mp.sequencer_state == sequencer_event_type_mute) {
         mp.last_work_audio_result = false;
     } else if (mp.is_bypassed || mp.sequencer_state == sequencer_event_type_thru) {
@@ -1340,8 +1441,7 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
     float samplerate = float(master_info.samples_per_second);
     float falloff = std::pow(10.0f, (-48.0f / (samplerate * 20.0f))); // vu meter falloff (-48dB/s)
     if (mp.last_work_audio_result) {
-        if (scanPeakStereo(&mp.work_buffer[0].front(), &mp.work_buffer[1].front(), sample_count,
-                           mp.last_work_max_left, mp.last_work_max_right, falloff)) {
+        if (scanPeakStereo(&mp.work_buffer[0].front(), &mp.work_buffer[1].front(), sample_count, mp.last_work_max_left, mp.last_work_max_right, falloff)) {
             // the plugin claims it has generated non-silence, but our scan says otherwise
             mp.writemode_errors++;
         }
@@ -1376,7 +1476,8 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count) {
     mp.cpu_load_buffersize += sample_count;
 }
 
-bool mixer::plugin_update_keyjazz(int plugin_id, int note, int prev_note, int velocity, int& note_group, int& note_track, int& note_column, int& velocity_column) {
+bool mixer::plugin_update_keyjazz(int plugin_id, int note, int prev_note, int velocity, int& note_group, int& note_track, int& note_column, int& velocity_column)
+{
     assert(plugin_id >= 0 && plugin_id < plugins.size());
     assert(plugins[plugin_id] != 0);
 
@@ -1385,9 +1486,11 @@ bool mixer::plugin_update_keyjazz(int plugin_id, int note, int prev_note, int ve
     note_group = -1;
 
     // ignore note-off when prevNote wasnt already playing, except if prevNote is -1, where we stop all playing notes
-    if (note == note_value_off && prev_note != -1 && !is_note_playing(plugin_id, keyjazz, prev_note)) return false;
+    if (note == note_value_off && prev_note != -1 && !is_note_playing(plugin_id, keyjazz, prev_note))
+        return false;
 
-    if (m.note_group == -1) return false;
+    if (m.note_group == -1)
+        return false;
     note_group = m.note_group;
     note_column = m.note_column;
     velocity_column = m.velocity_column;
@@ -1403,21 +1506,23 @@ bool mixer::plugin_update_keyjazz(int plugin_id, int note, int prev_note, int ve
             // and return. a poller checks the keyjazz-vector each tick and
             // records/plays noteoffs then.
             for (size_t i = 0; i < keyjazz.size(); i++) {
-                if (keyjazz[i].plugin_id != plugin_id) continue;
+                if (keyjazz[i].plugin_id != plugin_id)
+                    continue;
                 if (keyjazz[i].note == prev_note || prev_note == -1) {
 
                     note_group = keyjazz[i].group;
                     note_track = keyjazz[i].track;
 
                     if (keyjazz[i].timestamp >= last_tick_work_position) {
-                        //cerr << "note off on the same tick as note was played!" << endl;
+                        // cerr << "note off on the same tick as note was played!" << endl;
                         keyjazz[i].delay_off = true;
                         return true;
                     }
 
                     keyjazz.erase(keyjazz.begin() + i);
                     i--;
-                    if (prev_note != -1) return true;
+                    if (prev_note != -1)
+                        return true;
                 }
             }
         } else {
@@ -1431,9 +1536,11 @@ bool mixer::plugin_update_keyjazz(int plugin_id, int note, int prev_note, int ve
                 found_tracks[i] = false;
 
             for (size_t j = 0; j < keyjazz.size(); j++) {
-                if (keyjazz[j].plugin_id != plugin_id) continue;
+                if (keyjazz[j].plugin_id != plugin_id)
+                    continue;
                 size_t track = keyjazz[j].track;
-                if (track >= found_tracks.size()) continue;
+                if (track >= found_tracks.size())
+                    continue;
 
                 found_tracks[track] = true;
                 if (keyjazz[j].timestamp < lowest_time) {
@@ -1465,12 +1572,13 @@ bool mixer::plugin_update_keyjazz(int plugin_id, int note, int prev_note, int ve
         // play global note - no need for track counting
         if (note == note_value_off) {
             for (size_t i = 0; i < keyjazz.size(); i++) {
-                if (keyjazz[i].plugin_id != plugin_id) continue;
+                if (keyjazz[i].plugin_id != plugin_id)
+                    continue;
                 if (keyjazz[i].note == prev_note || prev_note == -1) {
                     note_track = 0;
 
                     if (keyjazz[i].timestamp >= last_tick_work_position) {
-                        //cerr << "detected a note off on the same tick as note was played!" << endl;
+                        // cerr << "detected a note off on the same tick as note was played!" << endl;
                         keyjazz[i].delay_off = true;
                         return true;
                     }
@@ -1491,8 +1599,9 @@ bool mixer::plugin_update_keyjazz(int plugin_id, int note, int prev_note, int ve
     return false;
 }
 
-void mixer::midi_event(unsigned short status, unsigned char data1, unsigned char data2) {
-    int channel = status&0xF;
+void mixer::midi_event(unsigned short status, unsigned char data1, unsigned char data2)
+{
+    int channel = status & 0xF;
     int command = (status & 0xf0) >> 4;
     int midi_value = 0;
     float max_value = 0.0;
@@ -1584,8 +1693,7 @@ void mixer::midi_event(unsigned short status, unsigned char data1, unsigned char
                 }
             }
         }
-    }
-    else if (command == 0xb) {
+    } else if (command == 0xb) {
         for (int i = 0; i < get_plugin_count(); i++) {
             zzub::metaplugin& m = get_plugin(i);
             m.plugin->midi_control_change((int)data1, channel, midi_value);

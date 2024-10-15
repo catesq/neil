@@ -3,9 +3,9 @@
 
 faust_oscillator_info::faust_oscillator_info() 
 {
-    this->flags = zzub::plugin_flag_has_audio_output | zzub::plugin_flag_is_instrument;
-    this->min_tracks = 1;
-    this->max_tracks = 1;
+    this->flags = zzub::plugin_flag_has_cv_output | zzub::plugin_flag_is_cv_generator | zzub::plugin_flag_has_ports;
+    this->min_tracks = 0;
+    this->max_tracks = 0;
     this->name = "faust_oscillator";
     this->short_name = "faust_oscillator";
     this->author = "tnh";

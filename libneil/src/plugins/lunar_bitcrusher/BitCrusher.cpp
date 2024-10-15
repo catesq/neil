@@ -16,7 +16,7 @@ void LunarBitCrusher::init(zzub::archive *pi) {
   sampleR = 0.0;
   counter = downsample;
 }
-	
+
 void LunarBitCrusher::process_events() {
   if (gval.crush != 0xff) {
     crush = gval.crush;

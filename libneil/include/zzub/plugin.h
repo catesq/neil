@@ -76,8 +76,6 @@ enum class port_type {
     track = 5,     // track zzub parameter in/out
 };
 
-
-
 struct port {
     virtual ~port() {}
     virtual const char* get_name() = 0;
@@ -154,6 +152,7 @@ struct plugin {
     // return true if the connection was successful
     virtual bool connect_ports(cv_connector& connnector) { return true; }
     virtual void disconnect_ports(cv_connector& connnector) { }
+    virtual void process_cv(int numsamples) {}
     
 
     // used in cv connections

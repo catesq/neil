@@ -2,6 +2,8 @@
 #include <utility>
 #include "lanternfish.h"
 
+#include "libzzub/ports/ports_facade.h"
+
 #define PHASE_WIDGET 0
 #define RESET_WIDGET 1
 #define FREQ_WIDGET 2
@@ -84,10 +86,7 @@ void faust_oscillator::init(zzub::archive *arc) {
             3
         );
 
-        if(factories[i] == nullptr)
-            printf("factory %d null. error: %s\n", i, error_msg.c_str());
-        else
-            printf("factory %d ok\n", i);
+        assert(factories[i] != nullptr);
 
         dsp[i] = factories[i]->createDSPInstance();
         dsp[i]->init(_master_info->samples_per_second);
@@ -95,8 +94,7 @@ void faust_oscillator::init(zzub::archive *arc) {
 
 
 
-    // the waveforms [sine, triangle, saw, square] are stored in dsp[0-3]
-    // the other faust computer for the phasor is in dsp[4]
+
 
     std::string phasor_process = R"(
         import("stdfaust.lib");
@@ -119,11 +117,7 @@ void faust_oscillator::init(zzub::archive *arc) {
         3
     );
 
-
-    if(factories[4] == nullptr)
-        printf("factory %d null. error: %s\n", 4, error_msg.c_str());
-    else
-        printf("factory %d ok\n", 4);
+    assert(factories[4] != nullptr);
     
 
     dsp[4] = factories[4]->createDSPInstance();
@@ -136,6 +130,8 @@ void faust_oscillator::init(zzub::archive *arc) {
     for(auto widget_name: widget_infos) {
         faust_widgets.push_back(ui.get_widget(widget_name));
     }
+
+    init_port_facade(_host, {&lfo});
 }
 
 
@@ -186,38 +182,16 @@ float faust_oscillator::calculate_freq(unsigned short int freq, unsigned char fr
 }
 
 
-bool faust_oscillator::process_mono(float **pin, float **pout, int numsamples, int mode) 
+void faust_oscillator::process_cv(int numsamples) 
 {
-    if (mode == zzub::process_mode_no_io)
-        return false;
-
-    // the phasor is the faust computer to generate the phasor - from 0 to pl.tablesize
-    
+    // the phasor generates a offset into a faust rdtable from 0 to tablesize
     auto phasor = dsp[4];
 
-    // the oscillator is one of the faust programs in osc_process, they all calulate
-    // a waveform and stored it in a rdtable 
+    // the oscillator generates the wavetable which the phasor indexes
     auto osc = dsp[state.wave_type];
 
-    float phase[256] = {0};
-    float *phase_out[1] = {phase};
-
-    phasor->compute(numsamples, nullptr, phase_out);
-
-    osc->compute(numsamples, phase_out, pout);
-
-    return true;
-}
-
-
-bool faust_oscillator::process_stereo(float **pin, float **pout, int numsamples, int mode) 
-{
-    if(!process_mono(pin, pout, numsamples, mode))
-        return false;
-
-    memcpy(pout[1], pout[0], sizeof(float) * numsamples);
-
-    return true;
+    phasor->compute(numsamples, nullptr, &phase);
+    osc->compute(numsamples, &phase, &output);
 }
 
 
