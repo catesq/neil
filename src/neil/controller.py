@@ -27,8 +27,7 @@ from gi.repository import Gtk, GObject
 
 from neil import components
 
-from .utils import prepstr, buffersize_to_latency, filepath
-from .common import MARGIN, MARGIN2, MARGIN3
+from .utils import prepstr, buffersize_to_latency, filepath, sizes
 
 class SelectControllerDialog(Gtk.Dialog):
     """
@@ -42,15 +41,15 @@ class SelectControllerDialog(Gtk.Dialog):
                 None
         )
         vbox = Gtk.VBox()
-        lsizer = Gtk.VBox(False, MARGIN)
-        vbox.set_border_width(MARGIN2)
-        vbox.set_spacing(MARGIN)
+        lsizer = Gtk.VBox(False, sizes.get('margin'))
+        vbox.set_border_width(sizes.get('margin', 2))
+        vbox.set_spacing(sizes.get('margin'))
         label = Gtk.Label(label="Move a control on your MIDI device to pick it up.")
         label.set_alignment(0, 0.5)
         lsizer.pack_start(label, False, True, 0)
         sg = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
         def make_row(name):
-            row = Gtk.HBox(False, MARGIN)
+            row = Gtk.HBox(False, sizes.get('margin'))
             c1 = Gtk.Label()
             c1.set_markup('<b>%s</b>' % name)
             c1.set_alignment(1, 0.5)
@@ -67,7 +66,7 @@ class SelectControllerDialog(Gtk.Dialog):
         self.btnok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
         self.btncancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         vbox.pack_start(lsizer, False, True, 0)
-        hsizer = Gtk.HBox(False, MARGIN)
+        hsizer = Gtk.HBox(False, sizes.get('margin'))
         self.namelabel = Gtk.Label(label="Name")
         self.editname = Gtk.Entry()
         hsizer.pack_start(self.namelabel, False, True, 0)

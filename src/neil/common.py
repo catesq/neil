@@ -25,14 +25,10 @@ from neil import components
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
+import zzub
 
 
-MARGIN0 = 3
-MARGIN = 6
-MARGIN2 = 12
-MARGIN3 = 18
-
-DRAG_TARGETS = [
+PLUGIN_DRAG_TARGETS = [
     Gtk.TargetEntry.new('application/x-neil-plugin-uri', Gtk.TargetFlags.SAME_APP, 1)
 ]
 
@@ -63,11 +59,12 @@ class PluginInfo(object):
     def add_cached_gfx(self, key, item):
         self.gfx_cache[key] = item
     
-
     def reset_plugingfx(self):
         self.plugingfx = None
         self.amp = -9999.0
         self.cpu = -9999.0
+
+
 
 class PluginInfoCollection:
     """
@@ -80,13 +77,13 @@ class PluginInfoCollection:
     def reset(self):
         self.plugin_info = {}
 
-    def __getitem__(self, k):
+    def __getitem__(self, k) -> PluginInfo:
         return self.plugin_info.__getitem__(k)
 
     def __delitem__(self, k):
         return self.plugin_info.__delitem__(k)
 
-    def keys(self):
+    def keys(self) -> list[zzub.Plugin]:
         return list(self.plugin_info.keys())
 
     def get(self, k) -> PluginInfo:
@@ -94,7 +91,7 @@ class PluginInfoCollection:
             self.add_plugin(k)
         return self.plugin_info.__getitem__(k)
 
-    def items(self):
+    def items(self) ->list[PluginInfo]:
         return iter(self.plugin_info.items())
 
     def reset_plugingfx(self):
@@ -115,11 +112,14 @@ class PluginInfoCollection:
 
 collection = None
 
-def get_plugin_infos():
+
+
+def get_plugin_infos() -> PluginInfoCollection:
     global collection
     if not collection:
         collection = PluginInfoCollection()
     return collection
+
 
 if __name__ == '__main__':
     components.load_packages()

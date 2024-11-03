@@ -2,9 +2,8 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from neil.common import MARGIN
 from config import get_config
-from neil.utils import prepstr, buffersize_to_latency, ui
+from neil.utils import prepstr, buffersize_to_latency, ui, sizes
 from neil import components
 import traceback
 
@@ -38,14 +37,14 @@ class DriverPanel(Gtk.VBox):
         Initializing.
         """
         Gtk.VBox.__init__(self)
-        self.set_border_width(MARGIN)
+        self.set_border_width(sizes.get('margin'))
         self.cboutput = Gtk.ComboBoxText()
         self.cbsamplerate = Gtk.ComboBoxText()
         self.cblatency = Gtk.ComboBoxText()
         size_group = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
 
         def add_row(c1, c2):
-            row = Gtk.HBox(False, MARGIN)
+            row = Gtk.HBox(False, sizes.get('margin'))
             size_group.add_widget(c1)
             c1.set_alignment(1, 0.5)
             row.pack_start(c1, False, True, 0)
@@ -53,7 +52,7 @@ class DriverPanel(Gtk.VBox):
             return row
 
         sizer1 = Gtk.Frame.new("Audio Output")
-        vbox = Gtk.VBox(False, MARGIN)
+        vbox = Gtk.VBox(False, sizes.get('margin'))
         driver_row = add_row(Gtk.Label(label="Driver"), self.cboutput)
         samp_rate_row = add_row(Gtk.Label(label="Samplerate"), self.cbsamplerate)
         latency_row = add_row(Gtk.Label(label="Latency"), self.cblatency)
@@ -61,7 +60,7 @@ class DriverPanel(Gtk.VBox):
         vbox.pack_start(driver_row, False, True, 0)
         vbox.pack_start(samp_rate_row, False, True, 0)
         vbox.pack_start(latency_row, False, True, 0)
-        vbox.set_border_width(MARGIN)
+        vbox.set_border_width(sizes.get('margin'))
         sizer1.add(vbox)
         inputname, outputname, samplerate, buffersize = get_config().get_audiodriver_config()
         audiodriver = components.get('neil.core.driver.audio')

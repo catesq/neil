@@ -27,32 +27,31 @@ gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, Gdk, Pango, PangoCairo
 
 import os
-from .utils import ui
+from .utils import ui, sizes
 import zzub
 import config
-from .common import MARGIN
 
 from neil import components
 
-# size of border
-BORDER = 5
-# size of the envelope dots
-DOTSIZE = 8
-# matches existing points exactly or approximately
-EXACT = 0
-NEXT = 1
+# # size of border
+# BORDER = 5
+# # size of the envelope dots
+# DOTSIZE = 8
+# # matches existing points exactly or approximately
+# EXACT = 0
+# NEXT = 1
 
 
 
 class WaveEditPanel(Gtk.VBox):
     def __init__(self, wavetable):
-        Gtk.VBox.__init__(self, False, MARGIN)
+        Gtk.VBox.__init__(self, False, sizes.get('margin'))
         self.wavetable = wavetable
         self.view = WaveEditView(wavetable)
         self.viewport = Gtk.Viewport()
         self.viewport.add(self.view)
         self.add(self.viewport)
-        self.set_border_width(MARGIN)
+        self.set_border_width(sizes.get('margin'))
 
     def update(self, *args):
         self.view.update()

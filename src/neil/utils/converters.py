@@ -3,7 +3,7 @@
 
 #
 
-import math, zzub
+import math, zzub, re
 
 def db2linear(val, limit = -48.0):
     """
@@ -180,6 +180,82 @@ def buffersize_to_latency(bs, sr):
     """
     return (float(bs) / float(sr)) * 1000.0
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+
+
+
+# store pixel dimensions for the ui
+# it can scale for hidpi &
+# calculate sizes based on earlier values using parse_size())
+# eg values={
+#   'width': 4, 
+#   'height': 2, 
+#   'area': 'width * height'
+# }
+
+class Sizes():
+    _scale_ = 1.0
+
+    def __init__(self, **kwargs):
+        self.values = {'margin' : 6}
+
+        for key, value in kwargs.items():
+            key = key.lower()
+            if isinstance(value, str):
+                self.values[key] = self.parse_size(value)
+            elif isinstance(value, float):
+                self.values[key] = value
+            else:
+                self.values[key] = int(value)
+
+    @classmethod
+    def set_scale(new_scale):
+        Sizes._scale_ = new_scale
+
+    @classmethod
+    def get_scale(new_scale):
+        return Sizes._scale_
+    
+    def get(self, name, factor = 1.0) -> float:
+        name = name.lower()
+        if name in self.values:
+            return self.values[name] * Sizes._scale_ * factor
+    
+    def half(self, name):
+        return self.get(name, 0.5)
+
+    def twice(self, name):
+        return self.get(name, 2)
+
+    def __getattr__(self, name):
+        return self.get(name)
+    
+    #uses eval to do basic math. treat any text as the key to an entry in self.values
+    def parse_size(self, equation:str) -> int | float:
+        match_pattern = re.compile(r'(\w+)?')
+        matches = match_pattern.findall(equation)
+
+        for match in matches:
+            match = match.strip()
+            key = match.lower()
+            
+            if not match:
+                continue
+            
+            if key in self.values:
+                pattern = f"\\b{match}\\b"
+                equation2 = re.sub(pattern, str(self.values[key]), equation)
+                equation = equation2
+
+        try:
+            result = eval(equation)
+        except Exception as e:
+            result = 0
+
+        return result
+    
 
 __all__ = [
     'db2linear', 
@@ -192,5 +268,6 @@ __all__ = [
     'switch2str', 
     'byte2str', 
     'word2str', 
-    'buffersize_to_latency'
+    'buffersize_to_latency',
+    'Sizes'
 ]

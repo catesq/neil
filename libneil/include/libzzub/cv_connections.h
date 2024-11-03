@@ -5,14 +5,13 @@
 #include "libzzub/metaplugin.h"
 
 
-
 namespace zzub {
 
 
 /*************************************************************************
- * 
- * cv_connector_data
- * 
+ *
+ * cv_connector_opts
+ *
  ************************************************************************/
 
 
@@ -27,7 +26,8 @@ enum modulation_mode {
     modulation_copy = 7
 };
 
-struct cv_connector_data {
+
+struct cv_connector_opts {
     float amp = 1.0f;
     uint32_t modulate_mode = 0;
     float offset_before = 0.f;
@@ -37,64 +37,47 @@ struct cv_connector_data {
 
 
 
-/*************************************************************************
- * 
- * cv_connector_data
- * 
- ************************************************************************/
-
-
-enum cv_node_type {
-    // the cv_node_type - stored in cv_node.type - changes how the cv_node.value is interpreted
-    audio_node = 0,             // value will be 0 or 1 for L/R audio channel
-    zzub_global_param_node, // value: index of a zzub plugin global parameter
-    zzub_track_param_node,  // value: index of a zzub plugin track parameter
-    ext_port_node,         // value: index of a external plugin port - lv2/vst2 or vst3
-    // midi_track_node,       // value: copy notes/volume to + from tracks of zzub plugin
-};
-
-
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 
 // enum cv_node_flags {
 //     audio_in = 1,   // read audio from input
 
-//     audio_out = 2,  // read audio from output 
+//     audio_out = 2,  // read audio from output
 
-//     midi_track = 128,  // zzub::midi_track or 
+//     midi_track = 128,  // zzub::midi_track or
 
 //     midi_seq = 256,   // raw midi
 // };
 
 
 /*******************************************************************************************************
- * 
+ *
  * cv_node
- * 
- * node->value depends on node->type 
- * 
+ *
+ * node->value depends on node->port_type
+ *
  * node type = audio:
- *     value is channel 0 or 1 -> left or right 
- * 
+ *     value is channel 0 or 1 -> left or right
+ *
  * node_type = zzub_global_param_node:
  *     value is the index of the zzub_parameter in zzub_plugins globals
- * 
+ *
  * node_type = zzub_track_param_node:
  *     upper 16 bits of value is track number
  *     lower 16 bits of param is the index of the parameter in that track
- * 
+ *
  * node_type = ext_port_node
  *     value is index of the zzub_port (if that plugin supports zzub::port)
- * 
+ *
  * node_type is midi_track_node
  *      value is ? - not supporting midi yet
- * 
+ *
  *******************************************************************************************************/
 
 union cv_node_value {
     uint32_t channels; // audio channels - bitmask up to 32 channels
-    uint32_t index;    // port or param
+    uint32_t index; // port or param
     struct {
         uint16_t track;
         uint16_t param;
@@ -102,84 +85,124 @@ union cv_node_value {
 };
 
 
+// represents a link to a plugin parameter, audio or cv port
 struct cv_node {
     int32_t plugin_id = -1;
 
-    uint32_t type;
+    // zzub::port_type - uses a uint32_t because of hassle with zzub.zidl
+    uint32_t port_type;
 
     uint32_t value;
 
     // cv_node() : plugin_id(-1), type(audio_node), value({0}) {}
     // cv_node(int32_t plugin_id, uint32_t type, uint32_t value) : plugin_id(plugin_id), type(static_cast<cv_node_type>(type)), value({value}) {}
-    
-    bool operator==(const cv_node& other) const { return plugin_id == other.plugin_id && type == other.type && value == other.value; }
+
+    bool operator==(const cv_node& other) const { return plugin_id == other.plugin_id && port_type == other.port_type && value == other.value; }
 };
 
 
-
-/*******************************************************************************************************
- * 
- * cv_input and cv_output are used in the process_events and work method of cv_connector to move data
- * from source to target plugin
- * 
- * the data will be a either:
- *    a single constant value from a plugin control parameter/port
- *    a stream of 32bit floating point data at the audio rate - for a mono audio channel or cv data
- *    8 bit raw midi stream
- *    zzub data structure - probably midi_track data 
- * 
- *******************************************************************************************************/
+enum class cv_data_type {
+    zzub_audio, // stereo or mono
+    zzub_param,
+    cv_param,
+    cv_stream // essentially mono audio, difference from zzub_audio data is how zzub audio is stored in metaplugin
 
 
+};
 
-struct cv_io {
+
+/***********************************************************************************************************
+ *
+ * cv_io - used by the cv_connector class to transfer data from source to destination
+ *
+ * the data is either audio stream or plugin parameter
+ * the complexity is the duplicated data types
+ * because the zzub_global and zzub track parameters
+ * haven't been fully replaced by ports yet
+ **********************************************************************************************************/
+
+
+struct cv_data_transfer {
+    cv_data_type data_type;
+
+    cv_data_transfer(cv_data_type data_type)
+        : data_type(data_type)
+    {
+    }
+
     virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) = 0;
     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples) = 0;
-    virtual void connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {}
 };
 
 
-
-struct cv_input : cv_io {
+struct cv_data_source : cv_data_transfer {
     cv_node node;
-    cv_connector_data data;
+    cv_connector_opts opts;
 
-    cv_input(const cv_node& node, const cv_connector_data& data) : node(node), data(data) {}
+    cv_data_source(
+        cv_data_type data_type,
+        const cv_node& node,
+        const cv_connector_opts& opts
+    )
+        : cv_data_transfer(data_type)
+        , node(node)
+        , opts(opts)
+    {
+    }
+
+    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {};
 };
 
 
-
-struct cv_output : cv_io {
-    cv_input* input;
+struct cv_data_target : cv_data_transfer {
+    cv_data_source* data_source;
     cv_node node;
-    cv_connector_data data;
+    cv_connector_opts opts;
 
-    cv_output(const cv_node& node, const cv_connector_data& data, cv_input* input) : node(node), data(data), input(input) {}
+    cv_data_target(
+        cv_data_type data_type,
+        const cv_node& node,
+        const cv_connector_opts& opts,
+        cv_data_source* data_source
+    )
+        : cv_data_transfer(data_type)
+        , node(node)
+        , opts(opts)
+        , data_source(data_source)
+    {
+    }
+
+    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin) {};
+
 };
 
 
 
 /*************************************************************************
- * 
+ *
  * cv_input types
- * 
+ *
  ************************************************************************/
 
 
+struct cv_data_source_audio : public cv_data_source {
+    float data[zzub_buffer_size];
 
-struct cv_input_audio : public cv_input {
-    float data[256];
-    
-    using cv_input::cv_input;
+    cv_data_source_audio(const cv_node& node, const cv_connector_opts& data)
+        : cv_data_source(cv_data_type::zzub_audio, node, data)
+    {
+    }
 
-    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
 };
 
 
 
+/*
+ * cv_input_zzub_param
+ */
 
-struct cv_input_param : public cv_input  {
+struct cv_data_source_zzub_param : public cv_data_source {
     int raw_value;
     float norm_value;
 
@@ -187,8 +210,10 @@ struct cv_input_param : public cv_input  {
     uint16_t track_index;
     uint16_t param_index;
 
-    cv_input_param(const cv_node& node, const cv_connector_data& data) : cv_input(node, data) {
-        if(node.type == zzub_track_param_node) {
+    cv_data_source_zzub_param(const cv_node& node, const cv_connector_opts& data)
+        : cv_data_source(cv_data_type::zzub_param, node, data)
+    {
+        if (node.port_type == zzub_port_type_track) {
             param_type = zzub_parameter_group_track;
             track_index = (node.value >> 16) & 0x00ff;
             param_index = node.value & 0x00ff;
@@ -199,54 +224,109 @@ struct cv_input_param : public cv_input  {
         }
     }
 
-    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
 };
 
 
 
+/*
+ * cv_input_port_param
+ */
 
-struct cv_input_ext_port : public cv_input  {
-    float value;
+struct cv_data_source_port_param : public cv_data_source {
+    float port_value;
 
-    using cv_input::cv_input;
+    cv_data_source_port_param(const cv_node& node, const cv_connector_opts& data, zzub::port* port)
+        : cv_data_source(cv_data_type::cv_param, node, data)
+        , source_port(port)
+    {
+    }
 
-    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
+
+protected:
+    zzub::port* source_port;
 };
 
 
 
-// struct cv_input_midi : cv_input {
-//     using cv_input::cv_input;
+/*
+ * cv_output_port_param
+ */
 
-//     unsigned char data[2048];
-//     uint len;
+struct cv_data_source_port_stream : public cv_data_source {
+    // process_cv is run before process_stereo()
+    // when the input is audio the latest data can be used without checking the work order
+    bool is_audio;
+    float port_data[256];
 
-//     virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
-//     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-// };
+    cv_data_source_port_stream(const cv_node& node, const cv_connector_opts& data, zzub::port* port)
+        : cv_data_source(cv_data_type::cv_stream, node, data)
+        , source_port(port)
+    {
+        is_audio = port->get_type() == zzub::port_type::audio;
+    }
 
+    virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
 
-
+protected:
+    zzub::port* source_port;
+};
 
 
 
 /*************************************************************************
- * 
- * cv_output types
- * 
+ * cv_output_zzub_param and cv_output_port_param read from the input node in the same way
+ * as so cv_output_port_audio and cv_output_port_stream
+ * how they write the data is different
  ************************************************************************/
 
-struct cv_output_param : cv_output {
-    using cv_output::cv_output;
-    
+struct cv_data_target_param : public cv_data_target {
+    cv_data_target_param(cv_data_type type, const cv_node& node, const cv_connector_opts& data, cv_data_source* input)
+        : cv_data_target(data_type, node, data, input)
+    {
+    }
+
+protected:
+    virtual float get_input_value(int numsamples);
+};
+
+
+
+struct cv_data_target_stream : public cv_data_target {
+    using cv_data_target::cv_data_target;
+
+protected:
+    float data[zzub_buffer_size];
+    void populate_data(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
+};
+
+
+
+/*************************************************************************
+ *
+ * cv_output sub types
+ *
+ ************************************************************************/
+
+
+/*
+ * cv_output_zzub_param
+ */
+
+struct cv_data_target_zzub_param : public cv_data_target_param {
     uint16_t param_type;
     uint16_t track_index;
     uint16_t param_index;
 
-    cv_output_param(const cv_node& node, const cv_connector_data& data, cv_input* input) : cv_output(node, data, input) {
-        if(node.type == zzub_track_param_node) {
+    cv_data_target_zzub_param(
+        const cv_node& node, 
+        const cv_connector_opts& data, 
+        cv_data_source* input
+    )
+        : cv_data_target_param(cv_data_type::zzub_param, node, data, input)
+    {
+        if (node.port_type == zzub_port_type_track) {
             param_type = zzub_parameter_group_track;
             track_index = (node.value >> 16) & 0x00ff;
             param_index = node.value & 0x00ff;
@@ -257,59 +337,105 @@ struct cv_output_param : cv_output {
         }
     }
 
-    virtual void  process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
-    virtual void  work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-
-private:
-    // between 0.0 and 1.0
-    float get_input_value(int numsamples);
-};
-
-
-struct cv_output_ext_port : cv_output {
-    using cv_output::cv_output;
-    float buf[256];
-    zzub::port_type output_type; 
-    
-    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-    virtual void connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
 };
 
 
 
-// struct cv_output_midi_track : cv_output {
-//     using cv_output::cv_output;
+/*
+ * cv_output_port_param
+ */
 
-//     virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
-//     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-// };
+struct cv_data_target_port_param : public cv_data_target_param {
 
+    cv_data_target_port_param(
+        const cv_node& node, 
+        const cv_connector_opts& data, 
+        cv_data_source* input, 
+        zzub::port* target_port
+    )
+        : cv_data_target_param(cv_data_type::cv_param, node, data, input), target_port(target_port)
+    {
+    }
 
-
-struct cv_output_audio  : cv_output {
-    using cv_output::cv_output;
-
-    // some types of cv_input need a buffer to duplicate a single value   
-    float buf[256];
-
-    virtual void process_events(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
     virtual void work(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
-    void write_buffer(float* buffer, zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin, int numsamples);
+
+protected:
+    zzub::port* target_port;
 };
 
 
 
-/*************************************************************************
- * 
- * cv_output types
- * 
- ************************************************************************/
 
 
 
-std::shared_ptr<cv_input> build_cv_input(const cv_node& source, const cv_connector_data& data);
-std::shared_ptr<cv_output> build_cv_output(const cv_node& target, const cv_connector_data& data, cv_input* input);
+/*
+ * cv_output_port_stream
+ */
+
+struct cv_data_target_port_stream : public cv_data_target_stream {
+    cv_data_target_port_stream(
+        const cv_node& node, 
+        const cv_connector_opts& data, 
+        cv_data_source* input, 
+    zzub::port* target_port
+    )
+        : cv_data_target_stream(cv_data_type::cv_stream, node, data, input), target_port(target_port)
+    {
+    }
+
+    virtual void work(
+        zzub::metaplugin& from_plugin, 
+        zzub::metaplugin& to_plugin, 
+        int numsamples
+    );
+
+protected:
+    zzub::port* target_port;
+};
+
+
+
+/*
+ * cv_output_audio
+ */
+
+struct cv_data_target_audio : public cv_data_target_stream {
+    cv_data_target_audio(
+        const cv_node& node, 
+        const cv_connector_opts& data, 
+        cv_data_source* input
+    )
+        : cv_data_target_stream(cv_data_type::cv_stream, node, data, input)
+    {
+    }
+
+    virtual void work(
+        zzub::metaplugin& from_plugin, 
+        zzub::metaplugin& to_plugin, 
+        int numsamples
+    );
+};
+
+
+
+
+/*
+ * builders for the cv_input and cv_output - used in cv_connector::connected
+ */
+
+std::shared_ptr<cv_data_source> build_cv_data_source(
+    zzub::metaplugin& from_plugin, 
+    const cv_node& source, 
+    const cv_connector_opts& opts
+);
+
+
+std::shared_ptr<cv_data_target> build_cv_data_target(
+    zzub::metaplugin& from_plugin, 
+    const cv_node& target, 
+    const cv_connector_opts& opts, cv_data_source* data_source
+);
 
 
 

@@ -3,8 +3,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 from neil import components
-from neil.common import MARGIN
-from neil.utils import ui
+from neil.utils import ui, sizes
 
 def key_prefpanel(a):
     return (hasattr(a, '__prefpanel__') and a.__prefpanel__.get('label','')) or ''
@@ -34,7 +33,7 @@ class PreferencesDialog(Gtk.Dialog):
         self.set_size_request(800, 600)
         self.nb = Gtk.Notebook()
         self.nb.set_show_tabs(False)
-        self.nb.set_border_width(MARGIN)
+        self.nb.set_border_width(sizes.get('margin'))
         self.nb.set_show_border(False)
         self.panels = sorted(components.get_from_category('neil.prefpanel'), key=key_prefpanel)
 

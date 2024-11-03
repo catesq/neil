@@ -11,7 +11,7 @@ import sys
 
 from neil.utils import (
     prepstr, get_new_pattern_name, ui,
-    is_effect, is_generator, is_controller, is_root
+    get_plugin_color_name, is_instrument
 )
 
 import random
@@ -1269,29 +1269,20 @@ class SequencerView(Gtk.DrawingArea):
             title = prepstr(name)
             if (player.solo_plugin and
                 player.solo_plugin != plugin and
-                is_generator(plugin)):
+                is_instrument(plugin)):
                 title = "[%s]" % title
             elif self.plugin_info[plugin].muted or self.plugin_info[plugin].bypassed:
                 title = "(%s)" % title
+
             # Draw a box that states the name of the machine on that track.
             if self.plugin_info[plugin].muted or self.plugin_info[plugin].bypassed:
-                if (is_effect(plugin)):
-                    ctx.set_source_rgb(*colors['Effect Bg Mute'])
-                elif (is_generator(plugin)):
-                    ctx.set_source_rgb(*colors['Generator Bg Mute'])
-                elif (is_controller(plugin)):
-                    ctx.set_source_rgb(*colors['Controller Bg Mute'])
-                elif (is_root(plugin)):
-                    ctx.set_source_rgb(*colors['Master Bg Mute'])
+                name = get_plugin_color_name(plugin, "Bg Mute")
             else:
-                if (is_effect(plugin)):
-                    ctx.set_source_rgb(*colors['Effect Bg'])
-                elif (is_generator(plugin)):
-                    ctx.set_source_rgb(*colors['Generator Bg'])
-                elif (is_controller(plugin)):
-                    ctx.set_source_rgb(*colors['Controller Bg'])
-                elif (is_root(plugin)):
-                    ctx.set_source_rgb(*colors['Master Bg'])
+                name = get_plugin_color_name(plugin, "Bg")
+
+            ctx.set_source_rgb(*colors[name])
+
+
             ctx.rectangle(0, y, self.seq_left_margin, self.seq_track_size)
             ctx.fill()
             ctx.set_source_rgb(*colors['Border'])

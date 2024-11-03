@@ -2,8 +2,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
-from neil import components
-from neil.common import MARGIN
+from neil import components, sizes
 import config
 
 class SequencerToolBar(Gtk.HBox):
@@ -16,9 +15,9 @@ class SequencerToolBar(Gtk.HBox):
         """
         Initialization.
         """
-        Gtk.HBox.__init__(self, False, MARGIN)
+        Gtk.HBox.__init__(self, False, sizes.get('margin'))
         self.seqview = seqview
-        self.set_border_width(MARGIN)
+        self.set_border_width(sizes.get('margin'))
         self.steplabel = Gtk.Label()
         self.steplabel.set_text_with_mnemonic("_Step")
         self.steps = [1, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64]

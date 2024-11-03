@@ -141,6 +141,7 @@ event_connection::event_connection()
 //     }
 // }
 
+
 int event_connection::convert(int value, const zzub::parameter* oldparam, const zzub::parameter* newparam)
 {
     int result = newparam->value_none;
@@ -154,6 +155,7 @@ int event_connection::convert(int value, const zzub::parameter* oldparam, const 
     }
     return result;
 }
+
 
 void event_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn)
 {
@@ -231,38 +233,40 @@ bool event_connection::work(zzub::song& player, const zzub::connection_descripto
 
 
 cv_connector::cv_connector(cv_node source, cv_node target)
-    : cv_connector(source, target, cv_connector_data())
+    : cv_connector(source, target, cv_connector_opts())
 {
 }
 
-cv_connector::cv_connector(cv_node source, cv_node target, cv_connector_data data)
-    : source(source)
-    , target(target)
-    , data(data)
+
+cv_connector::cv_connector(cv_node source, cv_node target, cv_connector_opts opts)
+    : source_node(source)
+    , target_node(target)
+    , opts(opts)
 {
-    input = build_cv_input(this->source, this->data);
-    output = build_cv_output(this->target, this->data, input.get());
+
+}
+
+
+void cv_connector::connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin)
+{
+    source_data = build_cv_data_source(from_plugin, this->source_node, this->opts);
+    target_data = build_cv_data_target(to_plugin, this->target_node, this->opts, source_data.get());
 }
 
 
 void cv_connector::process_events(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to)
 {
-    input->process_events(from, to);
-    output->process_events(from, to);
+    source_data->process_events(from, to);
+    target_data->process_events(from, to);
 }
 
 
 void cv_connector::work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, uint sample_count, uint work_position)
 {
-    input->work(from, to, sample_count);
-    output->work(from, to, sample_count);
+    source_data->work(from, to, sample_count);
+    target_data->work(from, to, sample_count);
 }
 
-void cv_connector::connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin)
-{
-    input->connected(from_plugin, to_plugin);
-    output->connected(from_plugin, to_plugin);
-}
 
 
 /*************************************************************************
@@ -305,7 +309,11 @@ bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& 
 }
 
 
-void cv_connection::add_connector(const cv_connector& link, zzub::song& player)
+void cv_connection::add_connector(
+    const cv_connector& link, 
+    zzub::metaplugin& from,
+    zzub::metaplugin& to
+)
 {
     for (auto& it : connectors) {
         if (it == link)
@@ -313,10 +321,6 @@ void cv_connection::add_connector(const cv_connector& link, zzub::song& player)
     }
 
     connectors.push_back(link);
-
-    auto& to = player.get_plugin(link.source.plugin_id);
-    auto& from = player.get_plugin(link.target.plugin_id);
-
     connectors.back().connected(from, to);
 }
 
@@ -358,13 +362,24 @@ const cv_connector* cv_connection::get_connector(int index)
 }
 
 
-bool cv_connection::update_connector(int index, const cv_connector& link)
+bool cv_connection::update_connector(
+    const cv_connector& old_connector, 
+    const cv_connector& new_connector, 
+    zzub::metaplugin& from,
+    zzub::metaplugin& to
+)
 {
-    if (index < 0 || index > connectors.size())
-        return false;
+    for(auto& it : connectors) {
+        if (it == old_connector) {
+            it = new_connector;
 
-    connectors[index] = link;
-    return true;
+            it.connected(from, to);
+            printf("assigned link");
+            return true;
+        }
+    }
+
+    return false;    
 }
 
 

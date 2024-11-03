@@ -10,11 +10,11 @@ from .options import OptionsBox
 from .port_ui import AudioPorts, TypedPorts, DummyGroup
 
 
-# store selected port info to create a cvnode
-# the connectdialog has two of these and they are update when user clicks a label in the dialog
+# store the port type and port index selected by the user
+# the connectdialog uses two of these - one for input plugin, one for the output 
 class Connector:
     def __init__(self, plugin_id, is_target):
-        self.type = None           # audio/parameter/cv
+        self.type = None           # port_type
         self.value = None          # when parameter port it's the index of parameter. when audio port it's bitflag of audio channels where  1 = mono left, 2 = mono right, 3 = stereo
         self.is_target = is_target # this is whether it's the source or target plugin
         self.plugin_id = plugin_id # this is plugin id
@@ -34,7 +34,7 @@ class Connector:
 
 
 
-
+# the main ui - two columns of ports with ok/cancel buttons at the bottom
 class ConnectorDialog(Gtk.Dialog):
     def __init__(self,
                  parent,
@@ -42,7 +42,7 @@ class ConnectorDialog(Gtk.Dialog):
                  to_plugin: zzub.Plugin,
                  source_node: zzub.CvNode = None,
                  target_node: zzub.CvNode = None,
-                 cvdata: zzub.CvConnectorData = None
+                 cvdata: zzub.CvConnectorOpts = None
                 ):
         """
         Show lists of all ports on the souce and target plugin
@@ -63,7 +63,7 @@ class ConnectorDialog(Gtk.Dialog):
 
         self.source = Connector(from_plugin.get_id(), False)
         self.target = Connector(to_plugin.get_id(), True)
-        self.cvdata = zzub.CvConnectorData.create() if cvdata is None else cvdata
+        self.cvdata = zzub.CvConnectorOpts.create() if cvdata is None else cvdata
 
         self.target_ports = PortInfo(to_plugin)
         self.source_ports = PortInfo(from_plugin)
@@ -87,8 +87,8 @@ class ConnectorDialog(Gtk.Dialog):
         self.show_all()
 
         if source_node and target_node:
-            self.get_group(source_node.get_type(), 0).set_selected_value(source_node.get_value())
-            self.get_group(target_node.get_type(), 1).set_selected_value(target_node.get_value())
+            self.get_group(source_node.port_type, False).set_selected_value(source_node.value)
+            self.get_group(target_node.port_type, True).set_selected_value(target_node.value)
 
 
     def get_group(self, port_type, is_target):
@@ -99,9 +99,8 @@ class ConnectorDialog(Gtk.Dialog):
         return DummyGroup(is_target, port_type)
 
 
-    # build a tall scroll view which has two columns with port connectors.
-    # beanth that is a grid for configuration of the connectors details(panning/amp/scaling etc)
-    # at the bottom are the ok/cancel buttons
+    # build a tall scroll view, the main scroll paine is the connector grid, below that is
+    # the connector config data and below that are the ok/cancel buttons
     def build_layout(self, connector_grid, options_box):
         # scroll box with the connector grid
         scroll_box = Gtk.ScrolledWindow()
@@ -118,7 +117,6 @@ class ConnectorDialog(Gtk.Dialog):
         
         btn_box.pack_end(cancel, False, False, 0)
         btn_box.pack_end(ok, False, False, 0)
-
 
         #add scroll grid and button to main content
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -137,8 +135,8 @@ class ConnectorDialog(Gtk.Dialog):
         return [self.source.as_node(), self.target.as_node()]
 
 
-    # the zzub.CvConnectorData object
-    def get_cv_data(self):
+    # the zzub.CvConnectorOpts object
+    def get_cv_data(self) -> zzub.CvConnectorOpts:
         return self.cvdata
 
 
@@ -175,12 +173,15 @@ class ConnectorDialog(Gtk.Dialog):
         sub_grids = []
 
         if is_target:
-            [audio_ports, midi_ports, parameter_ports, track_ports] = [ports.audio_in_ports, ports.midi_in_ports, ports.parameter_in_ports, ports.track_in_ports]
+            [audio_ports, midi_ports, parameter_ports, track_ports, cv_ports] = [ports.audio_in_ports, ports.midi_in_ports, ports.parameter_in_ports, ports.track_in_ports, ports.cv_in_ports]
         else:
-            [audio_ports, midi_ports, parameter_ports, track_ports] = [ports.audio_out_ports, ports.midi_out_ports, ports.parameter_in_ports, ports.track_in_ports]
+            [audio_ports, midi_ports, parameter_ports, track_ports, cv_ports] = [ports.audio_out_ports, ports.midi_out_ports, ports.parameter_in_ports, ports.track_in_ports, ports.cv_out_ports]
 
         if len(audio_ports) > 0:
             sub_grids.append(self.build_audio_group(grid, audio_ports, is_target, "audio %s" % suffix))
+
+        if len(cv_ports) > 0:
+            sub_grids.append(self.build_port_group(grid, cv_ports, is_target, "cv", zzub.zzub_port_type_cv))
 
         if len(midi_ports) > 0:
             sub_grids.append(self.build_port_group(grid, midi_ports, is_target, "midi %s" % suffix, zzub.zzub_port_type_midi))

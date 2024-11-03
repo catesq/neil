@@ -32,10 +32,9 @@ import inspect, os
 from neil import components
 import neil.contextlog as contextlog
 
-from neil.utils import ui
+from neil.utils import ui, sizes
 
 
-MARGIN = 6
 
 
 class PackageBrowserDialog(Gtk.Dialog):
@@ -109,7 +108,7 @@ class PackageBrowserDialog(Gtk.Dialog):
                 if category in catnodes:
                     create_classnode(catnodes[category], metainfo)
         hsizer = Gtk.HPaned()
-        hsizer.set_border_width(MARGIN)
+        hsizer.set_border_width(sizes.get('margin'))
         scrollwin = Gtk.ScrolledWindow()
         scrollwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         scrollwin.set_shadow_type(Gtk.ShadowType.IN)

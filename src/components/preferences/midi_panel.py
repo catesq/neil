@@ -3,10 +3,9 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 import zzub
-from neil.common import MARGIN
 from config import get_config
 from neil import components
-from neil.utils import prepstr
+from neil.utils import prepstr, sizes, ui
 
 
 class MidiPanel(Gtk.VBox):
@@ -26,11 +25,11 @@ class MidiPanel(Gtk.VBox):
     )
 
     def __init__(self):
-        Gtk.VBox.__init__(self, False, MARGIN)
-        self.set_border_width(MARGIN)
+        Gtk.VBox.__init__(self, False, sizes.get('margin'))
+        self.set_border_width(sizes.get('margin'))
         frame1 = Gtk.Frame.new("MIDI Input Devices")
         sizer1 = Gtk.VBox()
-        sizer1.set_border_width(MARGIN)
+        sizer1.set_border_width(sizes.get('margin'))
         frame1.add(sizer1)
         self.idevicelist, self.istore, columns = ui.new_listview([
             ("Use", bool),
@@ -47,7 +46,7 @@ class MidiPanel(Gtk.VBox):
         sizer1.add(ui.add_scrollbars(self.idevicelist))
         frame2 = Gtk.Frame.new("MIDI Output Devices")
         sizer2 = Gtk.VBox()
-        sizer2.set_border_width(MARGIN)
+        sizer2.set_border_width(sizes.get('margin'))
         frame2.add(sizer2)
         self.odevicelist, self.ostore, columns = ui.new_listview([
             ("Use", bool),

@@ -26,10 +26,8 @@ from gi.repository import Gtk, GLib
 
 import os, stat
 
-from neil.utils import filepath, ui
-from neil import common
+from neil.utils import filepath, ui, sizes
 from neil import components
-
 
 import zzub
 
@@ -83,18 +81,18 @@ class HDRecorderDialog(Gtk.Dialog):
         self.chkauto = chkauto
         # 0.3: DEAD
         #self.chkauto.set_active(self.master.get_auto_write())
-        sizer = Gtk.VBox(homogeneous=False, spacing=common.MARGIN)
+        sizer = Gtk.VBox(homogeneous=False, spacing=sizes.get('margin'))
         sizer.pack_start(btnsaveas, False, True, 0)
         sizer.pack_start(textposition, False, True, 0)
-        sizer2 = Gtk.HBox(homogeneous=False, spacing=common.MARGIN)
+        sizer2 = Gtk.HBox(homogeneous=False, spacing=sizes.get('margin'))
         sizer3 = Gtk.HButtonBox()
-        sizer3.set_spacing(common.MARGIN)
+        sizer3.set_spacing(sizes.get('margin'))
         sizer3.set_layout(Gtk.ButtonBoxStyle.START)
         sizer3.pack_start(self.btnrecord, False, True, 0)
         sizer2.pack_start(sizer3, False, True, 0)
         sizer2.pack_start(chkauto, False, True, 0)
         sizer.pack_start(sizer2, True, True, 0)
-        sizer.set_border_width(common.MARGIN)
+        sizer.set_border_width(sizes.get('margin'))
         self.get_content_area().add(sizer)
         self.filename = ''
         GLib.timeout_add(100, self.on_timer)

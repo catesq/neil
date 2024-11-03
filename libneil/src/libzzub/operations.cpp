@@ -806,7 +806,11 @@ bool op_plugin_add_cv_connector::operate(zzub::song& song) {
     if(!conn)    
         return false;
     
-    static_cast<cv_connection*>(conn)->add_connector(connector, song);
+    static_cast<cv_connection*>(conn)->add_connector(
+        connector,
+        *song.plugins[from_id],
+        *song.plugins[to_id]
+    );
 
     song.plugins[to_id]->plugin->connect_ports(connector);
     song.plugins[from_id]->plugin->connect_ports(connector);
@@ -892,11 +896,16 @@ void op_plugin_remove_cv_connector::finish(zzub::song& song, bool send_events) {
 //
 // ---------------------------------------------------------------------------
 
-op_plugin_edit_cv_connector::op_plugin_edit_cv_connector(int to_id, int from_id, const cv_connector& connector, int conn_index) :
+op_plugin_edit_cv_connector::op_plugin_edit_cv_connector(
+    int to_id, 
+    int from_id, 
+    const cv_connector& old_connector, 
+    const cv_connector& new_connector
+) :
     from_id(from_id),
     to_id(to_id),
-    connector(connector),
-    conn_index(conn_index) {
+    old_connector(old_connector),
+    new_connector(new_connector) {
 }
 
 
@@ -912,7 +921,18 @@ bool op_plugin_edit_cv_connector::operate(zzub::song& song) {
         return false;
     }
 
-    connection->update_connector(conn_index, this->connector);
+    song.plugins[to_id]->plugin->disconnect_ports(old_connector);
+    song.plugins[from_id]->plugin->disconnect_ports(old_connector);
+
+    connection->update_connector(
+        old_connector, 
+        new_connector,
+        *song.plugins[from_id],
+        *song.plugins[to_id]
+    );
+
+    song.plugins[to_id]->plugin->disconnect_ports(old_connector);
+    song.plugins[from_id]->plugin->disconnect_ports(old_connector);
 
     return true;
 }

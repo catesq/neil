@@ -1,7 +1,7 @@
 
 import zzub
 from neil import components, views
-from neil.utils import is_generator, is_root, is_effect, prepstr, ui
+from neil.utils import is_instrument, is_root, is_effect, prepstr, ui
 
 
 from .submenus import restore_selection_submenu
@@ -39,7 +39,7 @@ class SinglePluginMenu(ui.EasyMenu):
 
         self.add_check_item("_Mute", player.plugin_is_muted(metaplugin), on_popup_mute, metaplugin)
 
-        if is_generator(metaplugin):
+        if is_instrument(metaplugin):
             self.add_check_item("_Solo", player.solo_plugin == metaplugin, on_popup_solo, metaplugin)
 
         self.add_check_item("_Bypass", metaplugin.get_bypass(), on_popup_bypass, metaplugin)

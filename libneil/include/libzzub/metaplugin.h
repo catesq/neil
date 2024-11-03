@@ -39,6 +39,7 @@ struct metaplugin {
 
     std::string stream_source;
 
+    int work_order_index;
     int last_work_buffersize, last_work_frame;
     float last_work_max_left, last_work_max_right;
     bool last_work_audio_result;

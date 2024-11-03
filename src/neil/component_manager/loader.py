@@ -1,6 +1,8 @@
 from ..utils.path_config import path_cfg
 import os,sys,glob
 from .package import PackageParser
+from .. import errordlg
+
 
 
 # looks for files like "core-about.neil-component" in component path then tries to load matching package
@@ -47,7 +49,6 @@ class NamedComponentLoader():
 
                 manager.register(pkg, module_.__neil__, module_.__file__)
             except:
-                from .. import errordlg
                 errordlg.print_exc()
 
 

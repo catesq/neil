@@ -36,7 +36,7 @@ const char* param_port::get_name()
 port_type
 param_port::get_type()
 {
-    return zzub::port_type::parameter;
+    return zzub::port_type::param;
 }
 
 

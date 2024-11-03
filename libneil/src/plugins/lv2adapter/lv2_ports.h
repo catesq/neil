@@ -97,8 +97,8 @@ struct lv2_port : public zzub::port {
     virtual zzub::port_type get_type() override {
         switch (type) {
             case Audio: return zzub::port_type::audio;
-            case Control: return zzub::port_type::parameter;
-            case Param: return zzub::port_type::parameter;
+            case Control: return zzub::port_type::param;
+            case Param: return zzub::port_type::param;
             case CV: return zzub::port_type::cv;
             case Midi: return zzub::port_type::midi;
             case Track: return zzub::port_type::track;

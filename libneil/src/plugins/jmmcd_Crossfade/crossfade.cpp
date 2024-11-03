@@ -272,7 +272,7 @@ void crossfade::command(const int i)
   char txt[10000];
   strcpy(txt,
 	 "jmmcd Crossfade v1.0\n"
-	 "©2008 James McDermott (jmmcd)\n\n"
+	 "ï¿½2008 James McDermott (jmmcd)\n\n"
 	 "The even-numbered inputs are mixed; the odd-numbered inputs are mixed;\n"
 	 "then the two groups are crossfaded together according to the parameter.\n"
 	 "Comments/suggestions/bug reports to jamesmichaelmcdermott@gmail.com\n\n");
@@ -318,7 +318,7 @@ const char *zzub_get_signature() { return ZZUB_SIGNATURE; }
 
 struct jmmcd_crossfade_plugin_info : zzub::info {
   jmmcd_crossfade_plugin_info() {
-    this->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_does_input_mixing;
+    this->flags = zzub::plugin_flag_has_audio_input | zzub::plugin_flag_has_audio_output | zzub::plugin_flag_does_input_mixing | zzub::plugin_flag_is_effect;
     this->min_tracks = 0;
     this->max_tracks = 0;
     this->name = "jmmcd Crossfade";

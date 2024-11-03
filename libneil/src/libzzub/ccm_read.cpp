@@ -231,7 +231,7 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
 
     // make connections
     for (std::vector<ccache>::iterator c = conns.begin(); c != conns.end(); ++c) {
-
+        auto target_id = c->target;
         if (!c->connections.empty()) {
             for (xml_node::iterator i = c->connections.begin(); i != c->connections.end(); ++i) {
                 if (!strcmp(i->name(), "input")) {
@@ -242,18 +242,18 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
                             conntype = i->attribute("type").value();
                         }
                         if (conntype == "audio") {
-                            if (player.plugin_add_input(c->target, iplug->second, connection_type_audio)) {
+                            if (player.plugin_add_input(target_id, iplug->second, connection_type_audio)) {
                                 int amp = double_to_amp((double)i->attribute("amplitude").as_double());
                                 int pan = double_to_pan((double)i->attribute("panning").as_double());
-                                int track = player.back.plugin_get_input_connection_count(c->target) - 1;
+                                int track = player.back.plugin_get_input_connection_count(target_id) - 1;
 
-                                player.plugin_set_parameter(c->target, 0, track, 0, amp, false, false, false);
-                                player.plugin_set_parameter(c->target, 0, track, 1, pan, false, false, false);
+                                player.plugin_set_parameter(target_id, 0, track, 0, amp, false, false, false);
+                                player.plugin_set_parameter(target_id, 0, track, 1, pan, false, false, false);
                             } else
                                 assert(false);
                         } else if (conntype == "event") {
                             // restore controller associations
-                            player.plugin_add_input(c->target, iplug->second, connection_type_event);
+                            player.plugin_add_input(target_id, iplug->second, connection_type_event);
 
                             for (xml_node::iterator j = i->begin(); j != i->end(); ++j) {
                                 if (!strcmp(j->name(), "bindings")) {
@@ -265,7 +265,7 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
                                             long target_track_index = long(k->attribute("target_track_index").as_int());
                                             long target_param_index = long(k->attribute("target_param_index").as_int());
 
-                                            player.plugin_add_event_connection_binding(c->target, iplug->second,
+                                            player.plugin_add_event_connection_binding(target_id, iplug->second,
                                                                                        source_param_index, target_group_index, target_track_index, target_param_index);
                                         }
                                     }
@@ -273,10 +273,10 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
                             }
                         } else if (conntype == "midi") {
                             assert(false);
-                            player.plugin_add_input(c->target, iplug->second, connection_type_midi);
-                            player.plugin_set_midi_connection_device(c->target, iplug->second, i->attribute("device").value());
+                            player.plugin_add_input(target_id, iplug->second, connection_type_midi);
+                            player.plugin_set_midi_connection_device(target_id, iplug->second, i->attribute("device").value());
                         } else if (conntype == "cv") {
-                            player.plugin_add_input(c->target, iplug->second, connection_type_cv);
+                            player.plugin_add_input(target_id, iplug->second, connection_type_cv);
                             for (xml_node::iterator j = i->begin(); j != i->end(); ++j) {
                                 if (!strcmp(j->name(), "cv_connectors")) {
                                     for (xml_node::iterator k = j->begin(); k != j->end(); ++k) {
@@ -289,17 +289,17 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
                                             auto target_value  = k->attribute("target_value").as_uint();
 
                                             auto amp           = k->attribute("data_amp").as_float();
-                                            auto modulate_mode = k->attribute("data_modulate_mode").as_int();
+                                            auto modulate_mode = k->attribute("data_modulate_mode").as_uint();
                                             auto offset_before = k->attribute("data_offset_before").as_float();
                                             auto offset_after  = k->attribute("data_offset_after").as_float();
 
                                             cv_connector port_link (
-                                                cv_node{ c->target, source_type, source_value }, 
-                                                cv_node{ iplug->second, target_type, target_value },
-                                                cv_connector_data { amp, modulate_mode, offset_before, offset_after }
+                                                cv_node{ iplug->second, source_type, source_value }, 
+                                                cv_node{ target_id, target_type, target_value },
+                                                cv_connector_opts { amp, modulate_mode, offset_before, offset_after }
                                             );
 
-                                            player.plugin_add_cv_connector(c->target, iplug->second, port_link);
+                                            player.plugin_add_cv_connector(target_id, iplug->second, port_link);
                                         }
                                     }
                                 }
@@ -325,20 +325,20 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
                     if ((bool)paraminfo.attribute("state") == true) {
 
                         // test if the parameter names correspond with index position
-                        int plugin = c->target;
+                        int target_id = c->target;
                         unsigned long index = long(paraminfo.attribute("index").as_int());
-                        const parameter* param = player.back.plugin_get_parameter_info(plugin, 1, 0, index);
+                        const parameter* param = player.back.plugin_get_parameter_info(target_id, 1, 0, index);
                         std::string name = paraminfo.attribute("name").value();
-                        const zzub::info* info = player.back.plugins[plugin]->info;
+                        const zzub::info* info = player.back.plugins[target_id]->info;
 
                         if (index < info->global_parameters.size() && param->name == name) {
-                            player.plugin_set_parameter(plugin, 1, 0, index, long(i->attribute("v").as_int()), false, false, false);
+                            player.plugin_set_parameter(target_id, 1, 0, index, long(i->attribute("v").as_int()), false, false, false);
                         } else {
                             // else search for a parameter name that matches
                             for (size_t pg = 0; pg != info->global_parameters.size(); ++pg) {
-                                const parameter* pgp = player.back.plugin_get_parameter_info(plugin, 1, 0, pg);
+                                const parameter* pgp = player.back.plugin_get_parameter_info(target_id, 1, 0, pg);
                                 if (pgp->name == name) {
-                                    player.plugin_set_parameter(plugin, 1, 0, pg, long(i->attribute("v").as_int()), false, false, false);
+                                    player.plugin_set_parameter(target_id, 1, 0, pg, long(i->attribute("v").as_int()), false, false, false);
                                     break;
                                 }
                             }
@@ -357,20 +357,20 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
                             assert(!paraminfo.empty()); // not being able to deduce the index is fatal
                             if ((bool)paraminfo.attribute("state") == true) {
                                 // test if the parameter names correspond with index position
-                                int plugin = c->target;
+                                int target_id = c->target;
                                 unsigned long index = long(paraminfo.attribute("index").as_int());
-                                const parameter* param = player.back.plugin_get_parameter_info(plugin, 2, t, index);
+                                const parameter* param = player.back.plugin_get_parameter_info(target_id, 2, t, index);
                                 std::string name = paraminfo.attribute("name").value();
-                                const zzub::info* info = player.back.plugins[plugin]->info;
+                                const zzub::info* info = player.back.plugins[target_id]->info;
 
                                 if ((index < info->track_parameters.size()) && param->name == name) {
-                                    player.plugin_set_parameter(plugin, 2, t, index, long(j->attribute("v").as_int()), false, false, false);
+                                    player.plugin_set_parameter(target_id, 2, t, index, long(j->attribute("v").as_int()), false, false, false);
                                 } else {
                                     // else search for a parameter name that matches
                                     for (size_t pt = 0; pt != info->track_parameters.size(); ++pt) {
-                                        const parameter* ptp = player.back.plugin_get_parameter_info(plugin, 2, t, pt);
+                                        const parameter* ptp = player.back.plugin_get_parameter_info(target_id, 2, t, pt);
                                         if (ptp->name == name) {
-                                            player.plugin_set_parameter(plugin, 2, t, pt, long(j->attribute("v").as_int()), false, false, false);
+                                            player.plugin_set_parameter(target_id, 2, t, pt, long(j->attribute("v").as_int()), false, false, false);
                                             break;
                                         }
                                     }
@@ -401,12 +401,12 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
             for (xml_node::iterator i = c->eventtracks.begin(); i != c->eventtracks.end(); ++i) {
                 if (!strcmp(i->name(), "events")) {
                     int rows = int(double(i->attribute("length").as_double()) * tpbfac + 0.5);
-                    int plugin = c->target;
+                    int target_id = c->target;
                     pattern p;
-                    player.back.create_pattern(p, plugin, rows);
+                    player.back.create_pattern(p, target_id, rows);
                     p.name = i->attribute("name").value();
-                    player.plugin_add_pattern(plugin, p);
-                    int pattern_index = player.back.plugins[plugin]->patterns.size() - 1;
+                    player.plugin_add_pattern(target_id, p);
+                    int pattern_index = player.back.plugins[target_id]->patterns.size() - 1;
                     i->append_attribute("index") = pattern_index;  // set an index attribute
                     for (xml_node::iterator j = i->begin(); j != i->end(); ++j) {
                         int group = 1;
@@ -453,7 +453,7 @@ bool CcmReader::loadPlugins(xml_node plugins, zzub::player &player) {
                                     }
                                 }
 
-                                player.plugin_set_pattern_value(plugin, pattern_index, group, track, idx, row, value);
+                                player.plugin_set_pattern_value(target_id, pattern_index, group, track, idx, row, value);
                             }
                         }
                     }

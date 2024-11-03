@@ -188,16 +188,16 @@ xml_node CcmWriter::saveCVConnector(xml_node& parent, zzub::cv_connector& link)
 
     item.set_name("cv_connector");
 
-    item.append_attribute("source_type") = link.source.type;
-    item.append_attribute("source_value") = link.source.value;
+    item.append_attribute("source_type") = link.source_node.port_type;
+    item.append_attribute("source_value") = link.source_node.value;
 
-    item.append_attribute("target_type") = link.target.type;
-    item.append_attribute("target_value") = link.target.value;
+    item.append_attribute("target_type") = link.target_node.port_type;
+    item.append_attribute("target_value") = link.target_node.value;
 
-    item.append_attribute("data_amp") = link.data.amp;
-    item.append_attribute("data_modulate_mode") = link.data.modulate_mode;
-    item.append_attribute("data_offset_before") = link.data.offset_before;
-    item.append_attribute("data_offset_after") = link.data.offset_after;
+    item.append_attribute("data_amp") = link.opts.amp;
+    item.append_attribute("data_modulate_mode") = link.opts.modulate_mode;
+    item.append_attribute("data_offset_before") = link.opts.offset_before;
+    item.append_attribute("data_offset_after") = link.opts.offset_after;
 
     return item;
 }

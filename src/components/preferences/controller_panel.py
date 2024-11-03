@@ -2,9 +2,8 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from neil.common import MARGIN
 from neil.controller import learn_controller
-from neil.utils import ui
+from neil.utils import ui, sizes
 
 from config import get_config
 
@@ -27,10 +26,10 @@ class ControllerPanel(Gtk.VBox):
     def __init__(self):
         self.sort_column = 0
         Gtk.VBox.__init__(self)
-        self.set_border_width(MARGIN)
+        self.set_border_width(sizes.get('margin'))
         frame1 = Gtk.Frame.new("Controllers")
-        sizer1 = Gtk.VBox(False, MARGIN)
-        sizer1.set_border_width(MARGIN)
+        sizer1 = Gtk.VBox(False, sizes.get('margin'))
+        sizer1.set_border_width(sizes.get('margin'))
         frame1.add(sizer1)
         self.controllers, self.store, columns = ui.new_listview([
                 ('Name', str),
@@ -42,7 +41,7 @@ class ControllerPanel(Gtk.VBox):
         self.btnadd = Gtk.Button(stock=Gtk.STOCK_ADD)
         self.btnremove = Gtk.Button(stock=Gtk.STOCK_REMOVE)
         hsizer = Gtk.HButtonBox()
-        hsizer.set_spacing(MARGIN)
+        hsizer.set_spacing(sizes.get('margin'))
         hsizer.set_layout(Gtk.ButtonBoxStyle.START)
         hsizer.pack_start(self.btnadd, False, True, 0)
         hsizer.pack_start(self.btnremove, False, True, 0)

@@ -23,7 +23,7 @@ namespace zzub {
 	struct connection;
 	struct event_connection;
 	struct event_connection_binding;
-	struct cv_connector_data;
+	struct cv_connector_opts;
 	struct cv_connection;
 	struct cv_connector;
 	struct cv_node;
@@ -43,7 +43,7 @@ typedef zzub::sequence_proxy zzub_sequence_t;
 
 typedef zzub::connection zzub_connection_t;
 typedef zzub::cv_connection zzub_cv_connection_t;
-typedef zzub::cv_connector_data zzub_cv_connector_data_t;
+typedef zzub::cv_connector_opts zzub_cv_connector_opts_t;
 typedef zzub::cv_connector zzub_cv_connector_t;
 typedef zzub::cv_node zzub_cv_node_t;
 typedef zzub::port zzub_port_t;

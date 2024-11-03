@@ -1,5 +1,43 @@
-from enum import Enum
+from enum import IntEnum
 import zzub
+
+
+
+class PluginType(IntEnum):
+    Root = 1
+    Instrument = 2
+    CV = 3
+    Effect = 4
+    Controller = 5
+    Streamer = 6
+    Other = 7
+
+
+plugin_color_names = {
+    PluginType.Effect: "Effect",
+    PluginType.Instrument: "Generator",
+    PluginType.CV: "Controller",
+    PluginType.Root: "Master",
+    PluginType.Controller: "Other",
+    PluginType.Streamer: "Other",
+    PluginType.Other: "Other",
+}
+
+
+plugin_type_names = {
+    PluginType.Root: "Root",
+    PluginType.Instrument: "Instrument",
+    PluginType.CV: "CV generator",
+    PluginType.Effect: "Effect",
+    PluginType.Controller: "Controller",
+    PluginType.Streamer: "Streamer",
+    PluginType.Other: "Other",
+}
+
+
+AUDIO_IO_FLAGS = zzub.zzub_plugin_flag_has_audio_input | zzub.zzub_plugin_flag_has_audio_output | zzub.zzub_plugin_flag_is_cv_generator
+EVENT_IO_FLAGS = zzub.zzub_plugin_flag_has_event_output
+
 
 adapters = {
     "lv2adapter": "lv2", 
@@ -9,26 +47,11 @@ adapters = {
     "vst3adapter": "vst3",
 }
 
-class PluginType(Enum):
-    Root = 1
-    Generator = 2
-    Effect = 3
-    Controller = 4
-    Streamer = 5
-    Other = 6
 
-
-
-AUDIO_IO_FLAGS = zzub.zzub_plugin_flag_has_audio_input | zzub.zzub_plugin_flag_has_audio_output | zzub.zzub_plugin_flag_is_cv_generator
-EVENT_IO_FLAGS = zzub.zzub_plugin_flag_has_event_output
-
-
-
-def get_adapter_name(pluginloader):
-    # plugins using adapter plugins have a name made of:
-    #   the 10 char prefix "@zzub.org/"
-    #   the adapter plugin name
-    #   then "/" then the external plugin name
+def get_adapter_name(pluginloader: zzub.Pluginloader):
+    # adapter name is: lv2, vst, vst3 or zzub
+    # plugins using adapter plugins have a name like:
+    # "@zzub.org/adapter_name/external_plugin_name
     name = pluginloader.get_loader_name()
     typename = name[10:name.find("/", 10)]
     if typename in adapters.keys():
@@ -38,13 +61,15 @@ def get_adapter_name(pluginloader):
 
 
 
-def get_plugin_type(plugin):
+def get_plugin_type(plugin: zzub.Pluginloader | zzub.Plugin):
     flags = plugin.get_flags()
 
     if flags & zzub.zzub_plugin_flag_is_effect:
         return PluginType.Effect
-    elif flags & zzub.zzub_plugin_flag_is_instrument or zzub.zzub_plugin_flag_is_cv_generator:
-        return PluginType.Generator
+    elif flags & zzub.zzub_plugin_flag_is_instrument:
+        return PluginType.Instrument
+    elif flags & zzub.zzub_plugin_flag_is_cv_generator:
+        return PluginType.CV
     elif flags & zzub.zzub_plugin_flag_is_root:
         return PluginType.Root
     elif flags & zzub.zzub_plugin_flag_control_plugin:
@@ -55,33 +80,55 @@ def get_plugin_type(plugin):
     return PluginType.Other
 
 
-def is_other(plugin):
-    return not (is_effect(plugin) or is_generator(plugin) or is_controller(plugin) or is_root(plugin))
+
+def get_plugin_color_name(plugin: zzub.Pluginloader | zzub.Plugin, suffix: str | bool=False):
+    return "MV " + plugin_color_names[get_plugin_type(plugin)] + "" if not suffix else " " + suffix.strip()
 
 
 
-def is_effect(plugin):
+def get_plugin_type_name(plugin: zzub.Pluginloader | zzub.Plugin):
+    return plugin_type_names[get_plugin_type(plugin)] 
+
+
+
+def is_other(plugin: zzub.Pluginloader | zzub.Plugin):
+    return not (is_effect(plugin) or is_a_generator(plugin) or is_controller(plugin) or is_root(plugin))
+
+
+
+def is_effect(plugin: zzub.Pluginloader | zzub.Plugin):
     return plugin.get_flags() & zzub.zzub_plugin_flag_is_effect # or (plugin.get_flags() & AUDIO_IO_FLAGS) == AUDIO_IO_FLAGS
 
 
 
-def is_generator(plugin):
+def is_instrument(plugin: zzub.Pluginloader | zzub.Plugin):
+    return plugin.get_flags() & zzub.zzub_plugin_flag_is_instrument
+
+
+
+def is_cv_generator(plugin: zzub.Pluginloader | zzub.Plugin):
+    return plugin.get_flags() & zzub.zzub_plugin_flag_is_cv_generator
+
+
+
+def is_a_generator(plugin: zzub.Pluginloader | zzub.Plugin):
     return plugin.get_flags() & zzub.zzub_plugin_flag_is_instrument or (plugin.get_flags() & zzub.zzub_plugin_flag_is_cv_generator)
 
 
 
-def is_controller(plugin):
+def is_controller(plugin: zzub.Pluginloader | zzub.Plugin):
     return plugin.get_flags() & zzub.zzub_plugin_flag_control_plugin or ((plugin.get_flags() & EVENT_IO_FLAGS) and not (plugin.get_flags() & AUDIO_IO_FLAGS))
 
 
 
-def is_root(plugin):
+def is_root(plugin: zzub.Pluginloader | zzub.Plugin):
     return plugin.get_flags() & zzub.zzub_plugin_flag_is_root
 
 
 
-def is_streamer(plugin):
+def is_streamer(plugin: zzub.Pluginloader | zzub.Plugin):
     return plugin.get_flags() & zzub.zzub_plugin_flag_stream
+
 
 
 # used in the router view
@@ -143,9 +190,15 @@ __all__ = [
     'PluginType',
     'get_adapter_name',
     'get_plugin_type',
+    'get_plugin_color_name',
+    'plugin_color_names',
+    'get_plugin_type_name',
+    'plugin_type_names',
     'is_other',
     'is_effect',
-    'is_generator',
+    'is_instrument',
+    'is_a_generator',
+    'is_cv_generator',
     'is_controller',
     'is_root',
     'is_streamer',
@@ -153,5 +206,5 @@ __all__ = [
     'clone_plugin',
     'clone_plugin_and_patterns',
     'clone_preset',
-    'clone_plugin_patterns'
+    'clone_plugin_patterns',
 ]

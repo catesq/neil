@@ -10,7 +10,7 @@ import neil.common as common
 
 from neil.utils import (
     get_new_pattern_name, fixbn, bn2mn, mn2bn,
-    prepstr, roundint, ui
+    prepstr, roundint, ui, Sizes
 )
 
 from .utils import (
@@ -23,7 +23,8 @@ from .patternstatus import PatternStatus
 import config
 import zzub
 
-PATLEFTMARGIN = 48
+pat_sizes = Sizes(patleftmargin='margin * 8')
+
 CONN = 0
 GLOBAL = 1
 TRACK = 2
@@ -190,14 +191,14 @@ class PatternBackgroundPainter():
 
         ctx.set_source_rgb(*background)
         ctx.rectangle(0, 0, w, row_height)
-        ctx.rectangle(0, 0, PATLEFTMARGIN, h)
+        ctx.rectangle(0, 0, pat_sizes.get('patleftmargin'), h)
         ctx.fill()
 
         if self.widget.lines == None:
             return
 
         ctx.set_source_rgb(*pen)
-        x, y = PATLEFTMARGIN, self.widget.row_height
+        x, y = pat_sizes.get('patleftmargin'), self.widget.row_height
         start_row = self.widget.start_row
         row_count = self.widget.row_count
         # Draw the row numbers
@@ -332,8 +333,8 @@ class PatternDialog(Gtk.Dialog):
             Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
             None
         )
-        vbox = Gtk.VBox(False, common.MARGIN)
-        vbox.set_border_width(common.MARGIN)
+        vbox = Gtk.VBox(False, pat_sizes.get('margin'))
+        vbox.set_border_width(pat_sizes.get('margin'))
 
         self.btn_ok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
         self.btn_cancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
@@ -350,7 +351,7 @@ class PatternDialog(Gtk.Dialog):
         sgroup2 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
 
         def add_row(c1, c2):
-            row = Gtk.HBox(False, common.MARGIN)
+            row = Gtk.HBox(False, pat_sizes.get('margin'))
             c1.set_alignment(1, 0.5)
             row.pack_start(c1, False, True, 0)
             row.pack_start(c2, True, True, 0)
@@ -2171,7 +2172,7 @@ class PatternView(Gtk.DrawingArea):
         @rtype: (int, int)
         """
         x, y = self.pattern_to_charpos(row, group, track, index, subindex)
-        return ((x - self.start_col) * self.column_width) + PATLEFTMARGIN + 4, self.top_margin + ((y - self.start_row) * self.row_height)
+        return ((x - self.start_col) * self.column_width) + pat_sizes.get('patleftmargin') + 4, self.top_margin + ((y - self.start_row) * self.row_height)
 
     def charpos_to_pattern(self, position):
         """
@@ -2230,14 +2231,14 @@ class PatternView(Gtk.DrawingArea):
         @rtype: (int, int, int, int, int)
         """
         x, y = position
-        return self.charpos_to_pattern(( int((x - PATLEFTMARGIN - 4) / self.column_width) + self.start_col, int((y - self.top_margin) / self.row_height * 1) + self.start_row))
+        return self.charpos_to_pattern(( int((x - pat_sizes.get('patleftmargin') - 4) / self.column_width) + self.start_col, int((y - self.top_margin) / self.row_height * 1) + self.start_row))
 
     def get_charbounds(self):
         """
         Returns the outermost coordinates in characters.
         """
         w, h = self.get_client_size()
-        w -= PATLEFTMARGIN + 4
+        w -= pat_sizes.get('patleftmargin') + 4
         h -= self.top_margin
         return self.start_col + int(w / self.column_width) - 1, self.start_row + int(h / self.row_height) - 1
 
@@ -2439,7 +2440,7 @@ class PatternView(Gtk.DrawingArea):
         if not self.is_visible():
             return
         cx, cy = self.pattern_to_pos(self.row, self.group, self.track, self.index, self.subindex)
-        if (cx >= (PATLEFTMARGIN + 4)) and (cy >= self.top_margin):
+        if (cx >= (pat_sizes.get('patleftmargin') + 4)) and (cy >= self.top_margin):
             ctx.rectangle(cx + 0.5, cy + 0.5, self.column_width, self.row_height)
             ctx.set_source_rgba(1.0, 0.0, 0.0, 1.0)
             ctx.set_line_width(1)

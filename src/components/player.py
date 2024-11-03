@@ -20,16 +20,14 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib
 
-from neil.utils import is_generator, is_effect, is_streamer
+from neil.utils import is_instrument, is_effect, is_streamer, is_a_generator
 from neil.utils.ui import PropertyEventHandler, refresh_gui
 
 from zzub import Player
 
 from neil import components
 import neil.common as common
-import os
-import sys
-import time
+import os, sys, time
 import zzub
 
 DOCUMENT_UI = dict(
@@ -640,16 +638,16 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
                 info = common.get_plugin_infos().get(plugin)
                 plugin.set_mute(info.muted)
                 info.reset_plugingfx()
-        elif is_generator(plugin):
+        elif is_instrument(plugin):
             # mute all plugins except solo plugin
             self.solo_plugin = plugin
-            for plugin in self.get_plugin_list():
-                info = common.get_plugin_infos().get(plugin)
-                if plugin != self.solo_plugin and is_generator(plugin):
+            for check_plugin in self.get_plugin_list():
+                info = common.get_plugin_infos().get(check_plugin)
+                if check_plugin != self.solo_plugin and is_instrument(check_plugin):
                     plugin.set_mute(True)
                     info.reset_plugingfx()
-                elif plugin == self.solo_plugin:
-                    plugin.set_mute(info.muted)
+                elif check_plugin == self.solo_plugin:
+                    check_plugin.set_mute(info.muted)
                     info.reset_plugingfx()
 
 
@@ -717,7 +715,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
 
         # if it is a generator and has global or track parameters,
         # create a new default pattern.
-        if is_generator(mp) and \
+        if is_a_generator(mp) and \
                 (pluginloader.get_parameter_count(1) or pluginloader.get_parameter_count(2)):
 
             pattern = mp.create_pattern(self.sequence_step) #pylint: disable=no-member
@@ -737,7 +735,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         ##search plugins context box onto target effects.
 
         if plugin and not self.autoconnect_target: #pylint: disable=no-member
-            if not is_generator(mp):
+            if not is_instrument(mp):
                 # if we have a context plugin, prepend connections
                 inplugs = []
                 # first, record all connections

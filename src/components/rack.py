@@ -37,7 +37,7 @@ import zzub
 
 import neil.common as common
 import neil.preset as preset_module
-from neil.common import MARGIN
+from neil.utils import sizes
 
 from neil import components
 
@@ -91,15 +91,15 @@ class ParameterView(Gtk.VBox):
         self.btnrandom.set_tooltip_text("Randomise Values")
         self.btnhelp = ui.new_stock_image_button(Gtk.STOCK_HELP)
         self.btnhelp.set_tooltip_text("Help")
-        menugroup = Gtk.HBox(False, MARGIN)
+        menugroup = Gtk.HBox(False, sizes.get('margin'))
         menugroup.pack_start(self.presetbox, True, True, 0)
         menugroup.pack_start(self.btnadd, False, True, 0)
         menugroup.pack_start(self.btnremove, False, True, 0)
         menugroup.pack_start(self.btncopy, False, True, 0)
         menugroup.pack_start(self.btnrandom, False, True, 0)
         menugroup.pack_start(self.btnhelp, False, True, 0)
-        toplevelgroup = Gtk.VBox(False, MARGIN)
-        toplevelgroup.set_border_width(MARGIN)
+        toplevelgroup = Gtk.VBox(False, sizes.get('margin'))
+        toplevelgroup.set_border_width(sizes.get('margin'))
         toplevelgroup.pack_start(menugroup, False, False, 0)
         scrollwindow = Gtk.ScrolledWindow()
         scrollwindow.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
@@ -109,7 +109,7 @@ class ParameterView(Gtk.VBox):
         self.update_presets()
 
         rowgroup = Gtk.VBox()
-        rowgroup.set_border_width(MARGIN)
+        rowgroup.set_border_width(sizes.get('margin'))
         self.id2pid = {}
         self.pid2ctrls = {}
 
@@ -189,7 +189,7 @@ class ParameterView(Gtk.VBox):
             valuelabel = Gtk.Label(label="")
             valuelabel.set_alignment(0, 0)
             valuelabel.set_size_request(80, -1)
-            slidergroup = Gtk.HBox(False, MARGIN)
+            slidergroup = Gtk.HBox(False, sizes.get('margin'))
             slidergroup.pack_start(namelabel, False, True, 0)
             slidergroup.add(button)
             slidergroup.pack_end(valuelabel, False, True, 0)
@@ -221,7 +221,7 @@ class ParameterView(Gtk.VBox):
 #            valuelabel.set_size_request(100, -1)
             valuelabel.set_width_chars(8)
             valuelabel.set_width_chars(8)
-            slidergroup = Gtk.HBox(False, MARGIN)
+            slidergroup = Gtk.HBox(False, sizes.get('margin'))
             slidergroup.pack_start(namelabel, False, True, 0)
             slidergroup.add(button)
             slidergroup.pack_end(valuelabel, False, True, 0)
@@ -276,7 +276,7 @@ class ParameterView(Gtk.VBox):
             sslidergroup.add_widget(slider)
             svaluegroup.add_widget(valuelabel)
 
-            slidergroup = Gtk.HBox(False, MARGIN)
+            slidergroup = Gtk.HBox(False, sizes.get('margin'))
             slidergroup.pack_start(namelabel, False, True, 0)
             slidergroup.add(slider)
             slidergroup.pack_end(valuelabel, False, True, 0)

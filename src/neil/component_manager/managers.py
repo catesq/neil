@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 from .package import PackageInfo
 from .loader import NamedComponentLoader
-
+from .. import errordlg
 
 # the component manager is the main registry for the service locator
 # it has a factoryinfo for each class id 
@@ -55,6 +55,7 @@ class FactoryInfo:
 
 
 
+
 class ComponentManager():
     def __init__(self):
         self.clear()
@@ -75,7 +76,7 @@ class ComponentManager():
 
 
     #
-    def register(self, info: PackageInfo, neil_dict: Dict, modulefilename):
+    def register(self, info: PackageInfo, neil_dict: dict, modulefilename: str):
         self.packages.append(info)
         
         for class_ in get_neil_classes(neil_dict):
@@ -102,7 +103,7 @@ class ComponentManager():
         raise class_(arg)
 
 
-    def factory(self, id):
+    def factory(self, id) -> FactoryInfo:
         # get metainfo for object
         factory_info = self.factories.get(id, None)
         if not factory_info:
@@ -150,7 +151,6 @@ class ComponentManager():
             obj = factory.create_instance(*args, **kwargs)
         except:
             import traceback
-            from . import errordlg
             traceback.print_exc()
             msg = "<b><big>Could not create component</big></b>"
             msg2 = "while trying to create '" + id + "'"
@@ -179,22 +179,22 @@ class ComponentManager():
 
     def get_player(self) -> 'player.NeilPlayer':
         return self.get('neil.core.player')
-    
+
+    def get_config(self) -> 'config.NeilConfig':
+        return self.get('neil.core.config')
 
     def get_categories(self) -> Dict[str, List[str]]:
         return self.categories
-    
 
     def get_factories(self) -> Dict[str, Dict[str, str]]:
         return self.factories
-    
 
     def get_factory_names(self):
         return self.factories.keys()
     
-    
     def get_packages(self) -> List[PackageInfo]:
         return self.packages
+
 
 
 

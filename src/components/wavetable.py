@@ -28,14 +28,14 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GObject
 
 import os, stat
-from neil.utils import prepstr, db2linear, linear2db, note2str, format_filesize, ui
+from neil.utils import prepstr, db2linear, linear2db, note2str, format_filesize, ui, sizes
 
 import zzub
 import config
 from neil.envelope import EnvelopeView
 from neil.waveedit import WaveEditPanel
-from neil.common import MARGIN, MARGIN2, MARGIN3
 from neil import components
+
 
 class WavetablePanel(Gtk.VBox):
     """
@@ -71,7 +71,7 @@ class WavetablePanel(Gtk.VBox):
         self.needfocus = True
         Gtk.VBox.__init__(self)
         self.instrpanel = Gtk.HPaned()
-        self.instrpanel.set_border_width(MARGIN2)
+        self.instrpanel.set_border_width(sizes.twice('margin'))
         self.libpanel = \
             Gtk.FileChooserDialog(title="Open Sample",
                                   action=Gtk.FileChooserAction.OPEN,
@@ -79,7 +79,7 @@ class WavetablePanel(Gtk.VBox):
                                            Gtk.ResponseType.CANCEL,
                                            Gtk.STOCK_OPEN,
                                            Gtk.ResponseType.OK))
-        preview = Gtk.VBox(False, MARGIN)
+        preview = Gtk.VBox(False, sizes.get('margin'))
         #preview.set_size_request(100,-1)
 
         #btnopen = new_stock_image_button(Gtk.STOCK_ADD, "Add/Insert Instrument", self.tooltips)
@@ -111,7 +111,7 @@ class WavetablePanel(Gtk.VBox):
         btnpreviewstop = ui.new_stock_image_button(Gtk.STOCK_MEDIA_STOP, "Stop Preview")
         self.ohg.connect(btnpreviewstop, 'clicked', self.on_stop_wave)
 
-        hbox = Gtk.HBox(False, MARGIN)
+        hbox = Gtk.HBox(False, sizes.get('margin'))
         hbox.pack_start(btnpreviewplay, False, True, 0)
         hbox.pack_start(btnpreviewstop, False, True, 0)
         preview.pack_start(hbox, False, True, 0)
@@ -120,7 +120,7 @@ class WavetablePanel(Gtk.VBox):
         preview.show_all()
 
         self.libpanel.set_preview_widget(preview)
-        #self.libpanel.set_border_width(MARGIN2)
+        #self.libpanel.set_border_width(sizes.double('margin'))
         #self.libpanel.add_shortcut_folder(config.get_config().get_freesound_samples_folder())
         self.libpanel.add_filter(ui.file_filter('All Supported Formats',
                                              '*.mp3', '*.wav', '*.aif',
@@ -193,16 +193,16 @@ class WavetablePanel(Gtk.VBox):
         #self.btn_end_prev = Gtk.Button("<")
         #self.btn_end_next = Gtk.Button(">")
 
-        samplebuttons = Gtk.HBox(False, MARGIN)
+        samplebuttons = Gtk.HBox(False, sizes.get('margin'))
         samplebuttons.pack_start(self.btnloadsample, False, True, 0)
         samplebuttons.pack_start(self.btnstoresample, False, True, 0)
         samplebuttons.pack_start(self.btnrename, False, True, 0)
         samplebuttons.pack_start(self.btnclear, False, True, 0)
-        samplesel = Gtk.VBox(False, MARGIN)
+        samplesel = Gtk.VBox(False, sizes.get('margin'))
         scrollbars = ui.add_scrollbars(self.samplelist)
         samplesel.pack_start(samplebuttons, False, True, 0)
         samplesel.pack_end(scrollbars, True, True, 0)
-        loopprops = Gtk.HBox(False, MARGIN)
+        loopprops = Gtk.HBox(False, sizes.get('margin'))
         loopprops.pack_start(self.btnplay, False, True, 0)
         loopprops.pack_start(self.btnstop, False, True, 0)
         loopprops.pack_start(self.chkloop, False, True, 0)
@@ -216,15 +216,15 @@ class WavetablePanel(Gtk.VBox):
         loopprops.pack_start(self.edsamplerate, False, True, 0)
         #loopprops.pack_start(self.btnfitloop, False, True, 0)
         #loopprops.pack_start(self.btnstrloop, False, True, 0)
-        envprops = Gtk.HBox(False, MARGIN)
+        envprops = Gtk.HBox(False, sizes.get('margin'))
         #envprops.pack_start(self.cbmachine, False, True, 0)
         #envprops.pack_start(self.cbenvelope, False, True, 0)
         envprops.pack_start(self.chkenable, False, True, 0)
-        sampleprops = Gtk.VBox(False, MARGIN)
+        sampleprops = Gtk.VBox(False, sizes.get('margin'))
         sampleprops.pack_start(loopprops, False, True, 0)
         nbsampleprops = Gtk.VPaned()
-        envsection = Gtk.VBox(False, MARGIN)
-        envsection.set_border_width(MARGIN)
+        envsection = Gtk.VBox(False, sizes.get('margin'))
+        envsection.set_border_width(sizes.get('margin'))
         envsection.pack_start(envprops, False, True, 0)
         self.envscrollwin = ui.add_scrollbars(self.envelope)
         envsection.pack_start(self.envscrollwin, True, True, 0)

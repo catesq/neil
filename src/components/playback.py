@@ -31,9 +31,8 @@ from gi.repository import Gtk, GObject, Pango
 import time
 
 
-from neil.common import MARGIN, MARGIN2, MARGIN3
 from neil import components
-from neil.utils import format_time, ticks_to_time
+from neil.utils import format_time, ticks_to_time, sizes
 
 
 
@@ -75,7 +74,7 @@ class PlaybackInfo(Gtk.Dialog):
             c2 = Gtk.Label()
             c2.modify_font(Pango.FontDescription("Monospace 10"))
             c2.set_alignment(1, 0.5)
-            hbox = Gtk.HBox(False, MARGIN)
+            hbox = Gtk.HBox(False, sizes.get('margin'))
             hbox.pack_start(c1, False, True, 0)
             hbox.pack_start(c2, False, True, 0)
             sg1.add_widget(c1)

@@ -7,9 +7,8 @@ import os
 
 from neil import components
 
-from neil.common import MARGIN
 from config import get_config
-from neil.utils import sharedpath
+from neil.utils import sharedpath, sizes
 
 class GeneralPanel(Gtk.VBox):
     """
@@ -35,10 +34,10 @@ class GeneralPanel(Gtk.VBox):
         Initializing.
         """
         Gtk.VBox.__init__(self)
-        self.set_border_width(MARGIN)
+        self.set_border_width(sizes.get('margin'))
         frame1 = Gtk.Frame.new("General Settings")
-        fssizer = Gtk.VBox(False, MARGIN)
-        fssizer.set_border_width(MARGIN)
+        fssizer = Gtk.VBox(False, sizes.get('margin'))
+        fssizer.set_border_width(sizes.get('margin'))
         frame1.add(fssizer)
         incsave = get_config().get_incremental_saving()
         #rackpanel = get_config().get_experimental('RackPanel')
@@ -77,7 +76,7 @@ class GeneralPanel(Gtk.VBox):
         sg2 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
 
         def add_row(c1, c2):
-            row = Gtk.HBox(False, MARGIN)
+            row = Gtk.HBox(False, sizes.get('margin'))
             c1.set_alignment(1, 0.5)
             sg1.add_widget(c1)
             sg2.add_widget(c2)

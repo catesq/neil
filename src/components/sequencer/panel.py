@@ -9,8 +9,7 @@ from .toolbar import SequencerToolBar
 from .utils import Seq
 from .pattern_list import SequencerPatternListTreeView
 
-from neil import components
-from neil.common import MARGIN, MARGIN0
+from neil import components, sizes
 import config
 
 from patterns import show_pattern_dialog, DLGMODE_NEW, DLGMODE_COPY, DLGMODE_CHANGE
@@ -72,8 +71,8 @@ class SequencerPanel(Gtk.VBox):
         self.view = self.seqview
         self.toolbar = SequencerToolBar(self.seqview)
 
-        self.statusbar = Gtk.HBox(False, MARGIN)
-        self.statusbar.set_border_width(MARGIN0)
+        self.statusbar = Gtk.HBox(False, sizes.get('margin'))
+        self.statusbar.set_border_width(sizes.half('margin'))
 
         self.pack_start(self.toolbar, False, True, 0)
         self.pack_start(self.splitter, True, True, 0)

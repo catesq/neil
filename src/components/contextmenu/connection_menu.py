@@ -33,7 +33,7 @@ class ConnectionMenu(ui.EasyMenu):
             self.build_connections_submenu(self, connections)
         else:
             for (target, source), connections in self.group_by_plugin(connections):
-                submenu = self.build_connections_submenu(Menu(), connections)
+                submenu = self.build_connections_submenu(ui.MenuWrapper(), connections)
                 self.add_submenu("Connections from %s to %s" % (source.get_name(), target.get_name()), submenu)
 
             self.add_item("Disconnect all", on_popup_disconnect_all, connections)
@@ -58,9 +58,11 @@ class ConnectionMenu(ui.EasyMenu):
         return groups.items()
     
 
-    def build_connections_submenu(self, menu, connections):
+    def build_connections_submenu(self, menu: ui.EasyMenu, connections):
         """
-        
+        @param a menu to append menu items for when a connection is right clicked
+        @connections a list of 3 item tuples (target_plugin_id, connection_id, subconnector_id)
+        @return the menu with new items added
         """
 
         for target, conn_index, conntype in connections:
@@ -76,8 +78,8 @@ class ConnectionMenu(ui.EasyMenu):
 
                 for subconn_index, connector in enumerate(cv_connection.get_connectors()):
                     desc = self.describe_cv_link(source, target, connector)
-                    edits.append(Gtk.MenuItem("CV: edit %s" % desc, on_popup_edit_cv_connector, target, conn_index, subconn_index))
-                    cuts.append(Gtk.MenuItem("CV: remove %s" % desc, on_popup_remove_cv_connector, target, conn_index, subconn_index))
+                    edits.append(ui.quick_menu_item("CV: edit %s" % desc, on_popup_edit_cv_connector, target, conn_index, subconn_index))
+                    cuts.append(ui.quick_menu_item("CV: remove %s" % desc, on_popup_remove_cv_connector, target, conn_index, subconn_index))
                 
                 for edit_item in edits:
                     menu.append(edit_item)
@@ -104,19 +106,19 @@ class ConnectionMenu(ui.EasyMenu):
         return f"{node_from} -> {node_to}"
 
 
-    def describe_connector_node(self, plugin, node):
-        if node.type == zzub.zzub_cv_node_type_audio:
+    def describe_connector_node(self, plugin:zzub.Plugin, node:zzub.CvNode):
+        if node.port_type == zzub.zzub_port_type_audio:
             return "audio %s" % ( self.describe_cv_audio_node(node) )
-        elif node.type == zzub.zzub_cv_node_type_track_parameter:
+        elif node.port_type == zzub.zzub_port_type_track:
             return "param %s" % (self.describe_cv_parameter_node(plugin, node, zzub.zzub_parameter_group_track) )
-        elif node.type == zzub.zzub_cv_node_type_global_parameter:
+        elif node.port_type == zzub.zzub_port_type_parameter:
             return "param %s" % (self.describe_cv_parameter_node(plugin, node, zzub.zzub_parameter_group_global), )
-        elif node.type == zzub.zzub_cv_node_type_port_node:
+        elif node.port_type == zzub.zzub_port_type_cv:
             return "port  %d" % node.value
-        elif node.type == zzub.zzub_cv_node_type_midi_node:
-            return "midi  %d" % node.value
+        # elif node.type == zzub.zzub_cv_node_type_midi:
+        #     return "midi  %d" % node.value
         else:
-            return "unknown link"
+            return "unknown connector"
 
 
     def describe_cv_parameter_node(self, plugin, node, parameter_group):

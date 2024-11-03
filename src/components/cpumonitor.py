@@ -25,8 +25,7 @@ from gi.repository import GLib, Gtk
 
 
 from neil import components
-from neil.common import MARGIN
-from neil.utils import ui, prepstr
+from neil.utils import ui, prepstr, sizes
 
 
 class CPUMonitorDialog(Gtk.Dialog):
@@ -80,12 +79,12 @@ class CPUMonitorDialog(Gtk.Dialog):
         self.gaugetotal = Gtk.ProgressBar()
 
         scrollbars = ui.add_scrollbars(self.pluginlistview)
-        sizer = Gtk.VBox(False, MARGIN)
-        sizer.set_border_width(MARGIN)
+        sizer = Gtk.VBox(False, sizes.get('margin'))
+        sizer.set_border_width(sizes.get('margin'))
         sizer.pack_start(scrollbars, True, True, 0)
         scrollbars.set_vexpand(True)
 
-        hsizer = Gtk.HBox(False, MARGIN)
+        hsizer = Gtk.HBox(False, sizes.get('margin'))
         hsizer.pack_start(self.gaugetotal, False, False, 0)
         hsizer.pack_start(self.labeltotal, False, False, 0)
         sizer.pack_start(hsizer, False, False, 0)

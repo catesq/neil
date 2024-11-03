@@ -30,12 +30,14 @@ public:
     }
 };
 
-static int portaudio_callback(const void *inputBuffer,
-                              void *outputBuffer,
-                              unsigned long nBufferFrames,
-                              const PaStreamCallbackTimeInfo* timeInfo,
-                              PaStreamCallbackFlags statusFlags,
-                              void *data)
+static int portaudio_callback(
+    const void *inputBuffer,
+    void *outputBuffer,
+    unsigned long nBufferFrames,
+    const PaStreamCallbackTimeInfo* timeInfo,
+    PaStreamCallbackFlags statusFlags,
+    void *data
+)
 {
     audiodriver_portaudio *self = (audiodriver_portaudio *)data;
     double start_time = self->timer.frame();

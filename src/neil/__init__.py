@@ -18,7 +18,7 @@
 
 
 from neil.component_manager import ComponentManager, ViewComponentManager
-
+from .utils import sizes
 
 components = ComponentManager()
 

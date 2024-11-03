@@ -387,7 +387,7 @@ zzub::port* lv2_adapter::get_port(zzub::port_type port_type, zzub::port_flow por
             else
                 return audioOutPorts[index];
 
-        case zzub::port_type::parameter:
+        case zzub::port_type::param:
             if(port_flow == zzub::port_flow::input)
                 return paramPorts[index];
             else

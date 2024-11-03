@@ -21,8 +21,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GObject, Gtk, Gdk
 
-from neil.common import MARGIN, MARGIN0
-from neil.utils import ui, imagepath
+from neil.utils import ui, imagepath, sizes
 from neil import components
 
 import config
@@ -79,7 +78,7 @@ class TransportControls:
         self.update_all()
 
     def build_play_info(self):
-        box = Gtk.HBox(False, MARGIN0)
+        box = Gtk.HBox(False, sizes.half('margin'))
 
         self.bpmlabel = Gtk.Label(label="BPM")
         self.bpm = Gtk.SpinButton()
@@ -101,13 +100,13 @@ class TransportControls:
         self.cpuvalue = Gtk.Label(label="100%")
         self.cpuvalue.set_size_request(32, -1)
 
-        box.pack_start(self.bpmlabel, False, False, MARGIN0)
-        box.pack_start(self.bpm, False, False, MARGIN)
-        box.pack_start(self.tpblabel, False, False, MARGIN0)
-        box.pack_start(self.tpb, False, False, MARGIN)
+        box.pack_start(self.bpmlabel, False, False, sizes.half('margin'))
+        box.pack_start(self.bpm, False, False, sizes.get('margin'))
+        box.pack_start(self.tpblabel, False, False, sizes.half('margin'))
+        box.pack_start(self.tpb, False, False, sizes.get('margin'))
 
-        box.pack_start(self.cpulabel, False, False, MARGIN0)
-        box.pack_start(self.cpuvalue, False, False, MARGIN)
+        box.pack_start(self.cpulabel, False, False, sizes.half('margin'))
+        box.pack_start(self.cpuvalue, False, False, sizes.get('margin'))
 
         player = components.get('neil.core.player')
         player.get_plugin(0).set_parameter_value(1, 0, 1, config.get_config().get_default_int('BPM', 126), 1)
@@ -121,7 +120,7 @@ class TransportControls:
         return box
 
     def build_play_buttons(self):
-        box = Gtk.HBox(False, MARGIN0)
+        box = Gtk.HBox(False, sizes.half('margin'))
 
         self.btnplay = ui.new_image_toggle_button(imagepath("playback_play.svg"), "Play (F5/F6)")
         self.btnrecord = ui.new_image_toggle_button(imagepath("playback_record.svg"), "Record (F7)")
@@ -138,7 +137,7 @@ class TransportControls:
         box.pack_start(self.btnstop, False, False, 0)
         box.pack_start(self.btnloop, False, False, 0)
 
-        box.pack_start(Gtk.VSeparator(), False, False, MARGIN0)
+        box.pack_start(Gtk.VSeparator(), False, False, sizes.half('margin'))
         
         box.pack_start(self.btnpanic, False, False, 0)
         box.pack_start(self.volume_button, False, False, 0)

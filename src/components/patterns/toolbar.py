@@ -4,8 +4,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 from neil import components
-from neil.common import MARGIN
-from neil.utils import ui, show_machine_manual, filenameify
+from neil.utils import ui, show_machine_manual, filenameify, sizes
 
 
 
@@ -59,12 +58,12 @@ class PatternToolBar(Gtk.HBox):
         Initialization.
         """
         player = components.get('neil.core.player')
-        Gtk.HBox.__init__(self, False, MARGIN)
+        Gtk.HBox.__init__(self, False, sizes.get('margin'))
         
         self.has_focus = False
 
         self.pattern_view = pattern_view
-        self.set_border_width(MARGIN)
+        self.set_border_width(sizes.get('margin'))
         eventbus = components.get('neil.core.eventbus')
 
         self.pluginselect = Gtk.ComboBoxText()

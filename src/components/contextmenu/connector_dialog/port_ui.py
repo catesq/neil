@@ -5,7 +5,7 @@ from gi.repository import Gtk
 import zzub
 
 # a toggle switch which display port name and changes colour when clicked
-# would prefer to use a gtk.label but they inherit background color from enclosing widget which makes changing colour messy
+# can't use a gtk.label but they inherit background color from enclosing widget
 class BoxyLabel(Gtk.EventBox):
     def __init__(self, text):
         Gtk.EventBox.__init__(self, expand=True)
@@ -142,7 +142,6 @@ class TypedPorts(AbstractPortGroup):
 
 
 
-# there are two audiogrids in the connect dialog, the left side is ports on source source, right side is ports for target plugin
 # int used as a bitflag of which channels are selected
 class AudioPorts(AbstractPortGroup):
     def __init__(self, grid, is_target, name, port_count):

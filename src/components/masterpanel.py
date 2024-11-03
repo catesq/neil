@@ -26,8 +26,7 @@ from collections import deque
 from math import fabs
 import array
 
-from neil import utils, common
-from neil import components
+from neil import utils, sizes, components
 
 
 # pylint: disable=no-member
@@ -201,7 +200,7 @@ class MasterPanel(Gtk.VBox):
         self.ampr.connect('clip', self.on_clipped)
 
         hbox = Gtk.HBox()
-        hbox.set_border_width(common.MARGIN)
+        hbox.set_border_width(sizes.get('margin'))
         hbox.pack_start(self.ampl, expand=True, fill=True, padding=0)
         hbox.pack_start(self.masterslider, expand=True, fill=True, padding=0)
         hbox.pack_start(self.ampr, expand=True, fill=True, padding=0)

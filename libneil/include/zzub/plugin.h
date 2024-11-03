@@ -70,11 +70,12 @@ enum class port_flow {
 
 enum class port_type {
     audio = 1,     // audio in/out
-    parameter = 2, // global zzub parameter in/out
+    param = 2,     // global zzub parameter in/out
     cv = 3,        // cv stream in/out (treated as single channel audio)
     midi = 4,      // midi in/out
     track = 5,     // track zzub parameter in/out
 };
+
 
 struct port {
     virtual ~port() {}

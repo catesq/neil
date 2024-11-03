@@ -23,8 +23,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Pango
 
-from neil.common import MARGIN
-from neil import components
+from neil import components, sizes
 
 class InfoPanel(Gtk.VBox):
     """
@@ -50,9 +49,9 @@ class InfoPanel(Gtk.VBox):
         """
         Initializer.
         """
-        Gtk.VBox.__init__(self, False, MARGIN)
+        Gtk.VBox.__init__(self, False, sizes.get('margin'))
         # scrollbars = ui.add_scrollbars(self.view)
-        self.set_border_width(MARGIN)
+        self.set_border_width(sizes.get('margin'))
         self.info_view = InfoView()
         self.pack_start(self.info_view, True, True, 0)
         eventbus = components.get('neil.core.eventbus')

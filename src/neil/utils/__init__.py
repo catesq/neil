@@ -26,12 +26,20 @@ import struct
 import ctypes
 
 
+# avoid import the ui submodule here to break a recursive import
+# where ui imports from the components module and the components modules imports utils
 
 from .base import *
 from .paths import *
 from .plugin import *
 from .converters import *
 from .textify import *
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+sizes = Sizes()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -50,21 +58,7 @@ def distance_from_line(la_xy, lb_xy, pt_xy):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-# the X window pointer is needed by the lv2 and vst adapters to use the XEmbed protocol so 
-# the plugin ui is shown in the gtk host window that the lv2/vst adapters will open
 
-# https://stackoverflow.com/questions/23021327/how-i-can-get-drawingarea-window-handle-in-gtk3/27236258#27236258
-# http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=examples/gtkvlc.py;hb=HEAD
-def get_window_pointer(gtk_window):
-    """ Use the window.__gpointer__ PyCapsule to get the C void* pointer to the window
-    """
-    # get the c gpointer of the gdk window
-    ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
-    ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
-    return ctypes.pythonapi.PyCapsule_GetPointer(gtk_window.__gpointer__, None)
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 
@@ -163,9 +157,11 @@ def to_hsb(r,g,b):
         b = v
     return h,s,b
 
-
+# is a pixel (px, py) inside the rectangle (x1, y1, x2, y2)  
+# where x1,y1 is top left and x2,y2 is bottom right
 def box_contains(px, py, rect):
     return (px >= rect[0] and px <= rect[2] and py >= rect[1] and py <= rect[3])
+
 
 def format_filesize(size):
     if (size / (1<<40)):
@@ -354,3 +350,7 @@ if __name__ == '__main__':
     print(oldlist, newlist)
     synchronize_list(oldlist,newlist,insert_entry,del_entry,swap_entry)
     print(oldlist, newlist)
+
+
+    sizes = sizer(test1=2,test2="test1 * 2")
+    print(sizes.get('test1'), sizes.get('test2'))

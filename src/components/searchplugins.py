@@ -25,8 +25,8 @@ from gi.repository import Gtk, Gdk, GdkPixbuf
 from functools import cmp_to_key
 
 from neil.utils import  (
-    is_generator, is_effect, is_other, 
-    prepstr, get_adapter_name, ui
+    is_instrument, is_a_generator, is_effect, is_other, get_plugin_type,
+    prepstr, get_adapter_name, get_plugin_type_name, get_plugin_color_name, ui
 )
 
 from neil import common
@@ -100,7 +100,7 @@ class SearchPluginsDialog(Gtk.Window):
         self.vbox.pack_end(box_container, False, False, 0)
 
         self.machine_types = ["Generators", "Effects", "Others"]
-        self.machine_type_check = dict(zip(self.machine_types, [is_generator, is_effect, is_other]))
+        self.machine_type_check = dict(zip(self.machine_types, [is_a_generator, is_effect, is_other]))
 
         # labels and adapger names must be in the same order
         labels = ['Zzub', 'Ladspa', 'Dssi', 'LV2', 'VST 2', 'VST3']
@@ -155,7 +155,7 @@ class SearchPluginsDialog(Gtk.Window):
         self.treeview.set_headers_visible(False)
         self.treeview.set_rules_hint(True)
         self.treeview.set_tooltip_column(3)
-        self.treeview.drag_source_set( Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK, common.DRAG_TARGETS, Gdk.DragAction.COPY )
+        self.treeview.drag_source_set( Gdk.ModifierType.BUTTON1_MASK | Gdk.ModifierType.BUTTON3_MASK, common.PLUGIN_DRAG_TARGETS, Gdk.DragAction.COPY )
 
         scrollbars = ui.add_scrollbars(self.treeview)
         self.vbox.pack_start(scrollbars, True, True, 0)
@@ -180,27 +180,6 @@ class SearchPluginsDialog(Gtk.Window):
         self.hide()
         return True
 
-
-    def plugin_to_icon_name(self, pluginloader):
-        filename = pluginloader.get_name()
-        filename = filename.strip().lower()
-
-        for c in '():[]/,.!"\'$%&\\=?*#~+-<>`@ ':
-            filename = filename.replace(c, '_')
-
-        while '__' in filename:
-            filename = filename.replace('__','_')
-
-        return filename.strip('_')
-
-
-    def get_icon_name(self, pluginloader, icontheme):
-        plugin_icon_name = self.plugin_to_icon_name(pluginloader)
-
-        if icontheme.has_icon(plugin_icon_name):
-            return plugin_icon_name
-
-        return get_adapter_name(pluginloader)
 
 
     def on_treeview_drag_data_get(self, widget, context, selection_data, info, time):
@@ -266,7 +245,7 @@ class SearchPluginsDialog(Gtk.Window):
 
 
     def populate(self, liststore):
-        cfg = components.get('neil.core.config')
+        cfg = components.get_config()
         theme = Gtk.IconTheme.get_default()
 
         def get_type_rating(pluginloader):
@@ -275,36 +254,22 @@ class SearchPluginsDialog(Gtk.Window):
             return index
 
         def get_rating(pluginloader):
-            if is_generator(pluginloader):
-                return 0
-            # elif is_controller(pluginloader):
-            #     return 1
-            elif is_effect(pluginloader):
-                return 2
-            else:
-                return 3
+            return int(get_plugin_type(pluginloader))
 
         def cmp(a, b):
             return int(a > b) - int(a < b)
 
         def cmp_child(a,b):
-            c = cmp(get_type_rating(a), get_type_rating(b))
+            c = cmp(get_rating(a),get_rating(b))
             if c != 0:
                 return c
-            c = cmp(get_rating(a),get_rating(b))
+            c = cmp(get_type_rating(a), get_type_rating(b))
             if c != 0:
                 return c
             return cmp(a.get_name().lower(), b.get_name().lower())
 
         def get_type_text(pluginloader):
-            if is_generator(pluginloader):
-                return '<span color="' + cfg.get_color('MV Generator') + '">Generator</span>'
-            elif is_effect(pluginloader):
-                return '<span color="' + cfg.get_color('MV Effect') + '">Effect</span>'
-            # elif is_controller(pluginloader):
-            #     return '<span color="' + cfg.get_color('MV Controller') + '">Controller</span>'
-            else:
-                return '<span color="' + cfg.get_color('MV Other') + '">Other</span>'
+            return '<span color="' + cfg.get_color(get_plugin_color_name(pluginloader)) + '">' + get_plugin_type_name(pluginloader) + ' | '  + get_adapter_name(pl) + '</span>'
 
         plugins = {}
         player = components.get('neil.core.player')
@@ -315,7 +280,6 @@ class SearchPluginsDialog(Gtk.Window):
             name = prepstr(pl.get_name())
             text = '<b>' + name + '</b>\n<small>' + get_type_text(pl) + '</small>'
             pixbuf = None
-            icon = self.get_icon_name(pl, theme)
             tooltip = '<b>' + name + '</b> <i>(' + get_type_text(pl) + ')</i>\n'
             tooltip += '<small>' + prepstr(pl.get_uri()) + '</small>\n\n'
             gpcount = pl.get_parameter_count(zzub.zzub_parameter_group_global)
@@ -324,8 +288,6 @@ class SearchPluginsDialog(Gtk.Window):
             tooltip += '%i global parameters, %i track parameters, %i attributes\n\n' % (gpcount, tpcount, acount)
             author = pl.get_author().replace('<', '&lt;').replace('>', '&gt;')
             tooltip += 'Written by   ' + prepstr(author)
-            if icon and theme.has_icon(icon):
-                pixbuf = theme.load_icon(icon, Gtk.IconSize.MENU, 0)
             liststore.append([pixbuf, text, pl, tooltip])
 
 

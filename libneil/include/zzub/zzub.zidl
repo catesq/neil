@@ -407,20 +407,16 @@ namespace zzub:
 		def get_master_channel(): int
 		def set_master_channel(int index)
 
+
 	class EventConnectionBinding:
 		def get_group(): int
 	
-	enum CvNodeType:
-		set audio = 0
-		set global_parameter = 1
-		set track_parameter = 2
-		set port = 3
 
 	"no typedef"
 	class CvNode:
 		def static create(int plugin_id, uint type, uint value): CvNode
 		member int plugin_id
-		member uint type
+		member uint port_type
 		member uint value
 		
 
@@ -435,8 +431,8 @@ namespace zzub:
 		set copy = 6
 
 	"no typedef"
-	class CvConnectorData:
-		def static create(): CvConnectorData
+	class CvConnectorOpts:
+		def static create(): CvConnectorOpts
 		member float amp
 		member uint modulate_mode
 		member float offset_before
@@ -445,7 +441,7 @@ namespace zzub:
 	class CvConnector:
 		def get_source(): CvNode
 		def get_target(): CvNode
-		def get_data(): CvConnectorData
+		def get_opts(): CvConnectorOpts
 
 	class CvConnection:
 		def get_type(): int
@@ -880,10 +876,10 @@ namespace zzub:
 		# 0.3: DEAD # def get_midi_connection_device(int from_plugin): string
 
 
-		def add_cv_connector(Plugin from_plugin, CvNode source, CvNode target, CvConnectorData data)
+		def add_cv_connector(Plugin from_plugin, CvNode source, CvNode target, CvConnectorOpts data)
 		def get_cv_connector(Plugin from_Plugin, int connector_index): CvConnector
 		def remove_cv_connector(Plugin from_plugin, int connector_index)
-		def update_cv_connector(Plugin from_plugin, CvNode source, CvNode target, CvConnectorData data, int index)
+		def update_cv_connector(Plugin from_plugin, CvNode source, CvNode target, CvConnectorOpts data, int index)
 		
 
 		#/*@}*/

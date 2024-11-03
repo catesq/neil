@@ -69,7 +69,7 @@ ports_facade::get_ports(
                 return audio_out_ports;
             }
             
-        case zzub::port_type::parameter:
+        case zzub::port_type::param:
             return param_ports;
 
         case zzub::port_type::cv:

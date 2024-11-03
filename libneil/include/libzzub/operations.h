@@ -158,10 +158,9 @@ struct op_plugin_add_cv_connector : operation {
 
 struct op_plugin_edit_cv_connector : operation {
     int to_id, from_id;
-    cv_connector connector;
-    int conn_index;
+    cv_connector old_connector, new_connector;
 
-    op_plugin_edit_cv_connector(int to_id, int from_id, const cv_connector& connector, int conn_index);
+    op_plugin_edit_cv_connector(int to_id, int from_id, const cv_connector& old_connector, const cv_connector& new_connector);
 
     virtual bool prepare(zzub::song& song);
     virtual bool operate(zzub::song& song);

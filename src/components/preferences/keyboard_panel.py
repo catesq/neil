@@ -2,7 +2,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from neil.common import MARGIN
+from neil.utils import sizes
 from config import get_config
 
 class KeyboardPanel(Gtk.VBox):
@@ -30,9 +30,9 @@ class KeyboardPanel(Gtk.VBox):
     ]
 
     def __init__(self):
-        Gtk.VBox.__init__(self, False, MARGIN)
-        self.set_border_width(MARGIN)
-        hsizer = Gtk.HBox(False, MARGIN)
+        Gtk.VBox.__init__(self, False, sizes.get('margin'))
+        self.set_border_width(sizes.get('margin'))
+        hsizer = Gtk.HBox(False, sizes.get('margin'))
         hsizer.pack_start(Gtk.Label("Keyboard Map"), True, True, 0)
         self.cblanguage = Gtk.ComboBoxText()
         sel = 0

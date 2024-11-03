@@ -942,12 +942,12 @@ void player::plugin_remove_cv_connector(int to_id, int from_id, const zzub::cv_c
     end_plugin_operation(to_id);
 }
 
-void player::plugin_update_cv_connector(int to_id, int from_id, const zzub::cv_connector &old_link, const zzub::cv_connector &new_link, int connector_index) {
+void player::plugin_update_cv_connector(int to_id, int from_id, const zzub::cv_connector &old_link, const zzub::cv_connector &new_link) {
     begin_plugin_operation(to_id);
     begin_plugin_operation(from_id);
 
-    op_plugin_edit_cv_connector* redo = new op_plugin_edit_cv_connector(to_id, from_id, new_link, connector_index);
-    op_plugin_edit_cv_connector* undo = new op_plugin_edit_cv_connector(to_id, from_id, old_link, connector_index);
+    op_plugin_edit_cv_connector* redo = new op_plugin_edit_cv_connector(to_id, from_id, old_link, new_link);
+    op_plugin_edit_cv_connector* undo = new op_plugin_edit_cv_connector(to_id, from_id, new_link, old_link);
 
     prepare_operation_redo(redo);
     prepare_operation_undo(undo);

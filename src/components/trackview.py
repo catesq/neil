@@ -33,13 +33,8 @@ import random
 import config
 
 from neil import components
-import neil.common as common
-from neil.utils import (from_hsb, prepstr, synchronize_list, to_hsb)
+from neil.utils import (from_hsb, prepstr, synchronize_list, to_hsb, sizes)
 
-MARGIN = common.MARGIN
-MARGIN2 = common.MARGIN2
-MARGIN3 = common.MARGIN3
-MARGIN0 = common.MARGIN0
 
 SEQROWSIZE = 24
 

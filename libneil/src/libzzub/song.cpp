@@ -553,11 +553,13 @@ void song::make_work_order()
 
     cv_work_order.clear();
 
-    // iterator work order - if metaplugin has the cv_only_flag then add it to cv_work_order_order
+    // iterator work order - if metaplugin has cv_generator flag then add it to cv_work_order
     for (vector<plugin_descriptor>::iterator i = work_order.begin(); i != work_order.end(); ++i) {
+        int work_order_index = i - work_order.begin();
+        plugins[*i]->work_order_index = work_order_index;
+
         if (plugins[*i]->flags & zzub_plugin_flag_is_cv_generator) {
             cv_work_order.push_back(*i);
-            work_order.erase(i);
         }
     }
 
@@ -967,7 +969,7 @@ void song::plugin_add_input(int to_id, int from_id, connection_type type)
         break;
     case connection_type_cv:
         c.conn = new cv_connection(
-            from_mpl.info->flags & (plugin_flag_is_instrument + plugin_flag_has_cv_output)
+            from_mpl.info->flags & plugin_flag_is_cv_generator
         );
         break;
     }
@@ -1402,7 +1404,10 @@ void mixer::work_plugin(plugin_descriptor plugin, int sample_count)
 
     // process audio:
     int flags;
-    if (((mp.info->flags & zzub_plugin_flag_has_audio_output) != 0) && ((mp.info->flags & zzub_plugin_flag_has_audio_input) == 0)) {
+    if (
+        ((mp.info->flags & zzub_plugin_flag_has_audio_output) != 0) && 
+        ((mp.info->flags & zzub_plugin_flag_has_audio_input) == 0)
+    ) {
         flags = zzub::process_mode_write;
     } else {
 

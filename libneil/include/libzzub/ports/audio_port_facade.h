@@ -27,7 +27,6 @@ public:
       , name(std::vformat(fmt_name, std::make_format_args(channel)))
       , channel(channel)
     {
-
     }
 
         //

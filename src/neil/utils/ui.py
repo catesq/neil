@@ -7,6 +7,8 @@ from neil import components
 import weakref
 import types
 from .textify import prepstr
+import ctypes
+
 
 def set_clipboard_text(data):
     clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
@@ -72,6 +74,16 @@ def make_menu_item(label, desc, func, underline=False, *args):
         item.connect('activate', func, *args)
     return item
 
+def quick_menu_item(label, func, *args):
+    if '_' in label:
+        item = Gtk.MenuItem(label=label, use_underline=True)
+    else:
+        item = Gtk.MenuItem(label=label)
+
+    if func:
+        item.connect('activate', func, *args)
+
+    return item
 
 def make_check_item(label, desc, func, *args):
     item = Gtk.CheckMenuItem(label=label)
@@ -198,14 +210,7 @@ class MenuWrapper:
 
 
     def add_item(self, label, func = None, *args) -> Gtk.MenuItem:
-        if '_' in label:
-            item = Gtk.MenuItem(label=label, use_underline=True)
-        else:
-            item = Gtk.MenuItem(label=label)
-
-        if func:
-            item.connect('activate', func, *args)
-
+        item = quick_menu_item(label, func, *args)
         self.append(item)
         return item
     
@@ -742,3 +747,19 @@ def file_filter(name,*patterns):
         ff.add_pattern(pattern.upper())
         ff.add_pattern(pattern.lower())
     return ff
+
+
+
+
+# the X window pointer is needed by the lv2 and vst adapters to use the XEmbed protocol so 
+# the plugin ui is shown in the gtk host window that the lv2/vst adapters will open
+
+# https://stackoverflow.com/questions/23021327/how-i-can-get-drawingarea-window-handle-in-gtk3/27236258#27236258
+# http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=examples/gtkvlc.py;hb=HEAD
+def get_window_pointer(gtk_window):
+    """ Use the window.__gpointer__ PyCapsule to get the C void* pointer to the window
+    """
+    # get the c gpointer of the gdk window
+    ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
+    ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
+    return ctypes.pythonapi.PyCapsule_GetPointer(gtk_window.__gpointer__, None)

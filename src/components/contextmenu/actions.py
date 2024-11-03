@@ -15,16 +15,16 @@ from .connector_dialog import ConnectorDialog
 
 
 def on_popup_mute_selected(widget, plugins):
-    com.get('neil.core.player').mute_group(plugins)
+    components.get_player().mute_group(plugins)
 
 
 def on_popup_mute(widget, plugin):
-    com.get('neil.core.player').toggle_mute(plugin)
+    components.get_player().toggle_mute(plugin)
 
 
 def on_popup_unmute_all(widget, plugin):
-    player = com.get('neil.core.player')
-    common = com.get('neil.core.common')
+    player = components.get_player()
+    common = components.get('neil.core.common')
 
     for plugin in reversed(list(player.get_plugin_list())):
         info = common.get_plugin_infos().get(plugin)
@@ -34,7 +34,7 @@ def on_popup_unmute_all(widget, plugin):
 
 
 def on_popup_solo(widget, plugin):
-    player = com.get('neil.core.player')
+    player = components.get_player()
 
     if player.solo_plugin != plugin:
         player.solo(plugin)
@@ -43,43 +43,43 @@ def on_popup_solo(widget, plugin):
 
 
 def on_popup_bypass(widget, plugin):
-    com.get('neil.core.player').toggle_bypass(plugin)
+    components.get_player().toggle_bypass(plugin)
 
 
 def on_popup_show_params(widget, plugin):
-    com.get('neil.core.parameterdialog.manager').show(plugin, widget)
+    components.get('neil.core.parameterdialog.manager').show(plugin, widget)
 
 
 def on_popup_show_attribs(widget, plugin):
-    dlg = com.get('neil.core.attributesdialog', plugin, widget.get_toplevel())
+    dlg = components.get('neil.core.attributesdialog', plugin, widget.get_toplevel())
     dlg.run()
     dlg.destroy()
 
 
 def on_popup_show_presets(widget, plugin):
-    com.get('neil.core.presetdialog.manager').show(plugin, widget.get_toplevel())
+    components.get('neil.core.presetdialog.manager').show(plugin, widget.get_toplevel())
 
 
 def on_popup_rename(widget, plugin):
-    text = gettext(widget, "Enter new plugin name:", prepstr(plugin.get_name()))
+    text = ui.gettext(widget, "Enter new plugin name:", prepstr(plugin.get_name()))
     if text:
-        player = com.get('neil.core.player')
+        player = components.get('neil.core.player')
         plugin.set_name(text)
         player.history_commit("rename plugin")
 
 
 def on_popup_delete(widget, plugin):
-    com.get('neil.core.player').delete_plugin(plugin)
+    components.get_player().delete_plugin(plugin)
 
 
 def on_popup_delete_group(widget, plugins):
-    player = com.get('neil.core.player')
+    player = components.get_player()
     for plugin in plugins:
         player.delete_plugin(plugin)
 
 
 def on_popup_set_target(widget, plugin):
-    player = com.get('neil.core.player')
+    player = components.get_player()
     if player.autoconnect_target == plugin:
         player.autoconnect_target = None
     else:
@@ -112,13 +112,14 @@ def on_popup_edit_cv_connector(widget, to_plugin, connection_id, connector_id):
     """
     show a to edit dialog the cv connection between two plugins
     """
+    print("on_popup_edit_cv_connector")
     from_plugin = to_plugin.get_input_connection_plugin(connection_id)
     connection = to_plugin.get_input_connection(connection_id).as_cv_connection()
 
 
     connector = connection.get_connector(connector_id)
-    source, target, data = (connector.get_source(), connector.get_target(), connector.get_data())
-
+    source, target, data = (connector.get_source(), connector.get_target(), connector.get_opts())
+    print("open connector dialog")
     dialog = ConnectorDialog(widget, from_plugin, to_plugin, source, target, data)
     
     res = dialog.run()
@@ -126,7 +127,7 @@ def on_popup_edit_cv_connector(widget, to_plugin, connection_id, connector_id):
     if res == Gtk.ResponseType.OK:
         [source, target] = dialog.get_connectors()
         to_plugin.update_cv_connector(from_plugin, source, target, dialog.get_cv_data(), connector_id)
-        com.get_player().history_commit("edit cv connection")
+        components.get_player().history_commit("edit cv connection")
 
     dialog.destroy()
 
@@ -137,12 +138,12 @@ def on_popup_edit_cv_connector(widget, to_plugin, connection_id, connector_id):
 
 def on_popup_remove_cv_connector(widget, to_plugin, from_plugin, connector_id):
     to_plugin.remove_cv_connector(to_plugin, from_plugin, connector_id)
-    com.get_player().history_commit("remove cv connection")
+    components.get_player().history_commit("remove cv connection")
 
 
 def on_popup_disconnect(widget, plugin, index):
     disconnect_plugin(plugin, index)
-    com.get_player().history_commit("disconnect")
+    components.get_player().history_commit("disconnect")
 
 
 
@@ -151,7 +152,7 @@ def on_popup_disconnect_all(widget, connections):
     for plugin, index, conntype in connections:
         disconnect_plugin(plugin, index)
         
-    com.get_player().history_commit("disconnect")
+    components.get_player().history_commit("disconnect")
 
 
 
@@ -167,7 +168,7 @@ def on_popup_save_chain(widget, plugins):
 # get the output connections for this plugin then call get_plugin_chains recursively with each of plugin in the output connections
 def get_plugin_chain(plugin, chain = {}, player = None):
     if not player:
-        player = com.get('neil.core.player')
+        player = components.get_player()
 
     # if plugin is really a list of plugins then call get_plugin_chain on each plugin and merge the result
     if type(plugin) == list:
@@ -195,8 +196,7 @@ def get_plugin_chain(plugin, chain = {}, player = None):
 
 
 def clone_chain(src_plugins, offset = (0,0)):
-
-    player = com.get('neil.core.player')
+    player = components.get_player()
 
     plugins = {plugin_id: None for plugin_id in get_plugin_chain(src_plugins)}
     for src_id in plugins.keys():
@@ -234,7 +234,7 @@ def clone_chain(src_plugins, offset = (0,0)):
 
 def on_popup_clone_chain(widget, src_plugin):
     clone_chain(src_plugin, (0.1, 0.1))
-    com.get('neil.core.player').history_commit("Cloned plugin chain")
+    components.get_player().history_commit("Cloned plugin chain")
 
 
 def on_popup_clone_chains(widget, plugins, point = None):
@@ -253,22 +253,22 @@ def on_popup_clone_chains(widget, plugins, point = None):
 
     clone_chain(plugins, offset)
 
-    com.get('neil.core.player').history_commit("Cloned plugin chains")
+    components.get_player().history_commit("Cloned plugin chains")
 
 
 def on_popup_clone_plugin(widget, plugin):
-    player = com.get('neil.core.player')
+    player = components.get_player()
     new_plugin = clone_plugin(player, plugin)
     clone_preset(player, plugin, new_plugin)
     player.history_commit("Clone plugin %s" % new_plugin.get_pluginloader().get_short_name())
 
 
 def on_store_selection(widget, index, plugins):
-    com.get('neil.core.router.view').store_selection(index, plugins)
+    components.get('neil.core.router.view').store_selection(index, plugins)
 
 
 def on_restore_selection(widget, index):
-    com.get('neil.core.router.view').restore_selection(index)
+    components.get('neil.core.router.view').restore_selection(index)
 
 
 # file chooser dialog extensions.

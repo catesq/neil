@@ -29,7 +29,8 @@ struct midi_connection;
  ************************************************************************************/
 
 
-struct connection {
+struct connection 
+{
     connection_type type;
     void* connection_values;
     std::vector<const parameter*> connection_parameters;
@@ -55,22 +56,26 @@ protected:
  ************************************************************************/
 
 
-struct audio_connection_parameter_volume : parameter {
+struct audio_connection_parameter_volume : parameter 
+{
     audio_connection_parameter_volume();
 };
 
 
-struct audio_connection_parameter_panning : parameter {
+struct audio_connection_parameter_panning : parameter 
+{
     audio_connection_parameter_panning();
 };
 
 
-struct audio_connection_values {
+struct audio_connection_values 
+{
     unsigned short amp, pan;
 };
 
 
-struct audio_connection : connection {
+struct audio_connection : connection 
+{
     static audio_connection_parameter_volume para_volume;
     static audio_connection_parameter_panning para_panning;
 
@@ -92,7 +97,8 @@ struct audio_connection : connection {
  ************************************************************************/
 
 
-struct event_connection_binding {
+struct event_connection_binding 
+{
     int source_param_index;
     int target_group_index;
     int target_track_index;
@@ -105,11 +111,12 @@ struct event_connection_binding {
 };
 
 
-struct event_connection : connection {
-
+struct event_connection : connection 
+{
     std::vector<event_connection_binding> bindings;
 
     event_connection();
+
     virtual void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
     virtual bool work(zzub::song& player, const connection_descriptor& conn, uint sample_count, uint work_position);
 
@@ -149,23 +156,24 @@ struct event_connection : connection {
  ************************************************************************/
 
 
-struct cv_connector {
-    cv_node source;
-    cv_node target;
-    cv_connector_data data;
+struct cv_connector 
+{
+    cv_node source_node;
+    cv_node target_node;
+    cv_connector_opts opts;
 
     cv_connector(cv_node source, cv_node target);
-    cv_connector(cv_node source, cv_node target, cv_connector_data data);
+    cv_connector(cv_node source, cv_node target, cv_connector_opts opts);
 
     virtual void process_events(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to);
     virtual void work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, uint sample_count, uint work_position);
 
-    bool operator==(const cv_connector& other) const { return source == other.source && target == other.target; }
+    bool operator==(const cv_connector& other) const { return source_node == other.source_node && target_node == other.target_node; }
     void connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
 
 private:
-    std::shared_ptr<cv_input> input;
-    std::shared_ptr<cv_output> output;
+    std::shared_ptr<cv_data_source> source_data;
+    std::shared_ptr<cv_data_target> target_data;
 };
 
 
@@ -176,7 +184,8 @@ private:
  ************************************************************************/
 
 
-struct cv_connection : connection {
+struct cv_connection : connection 
+{
     std::vector<cv_connector> connectors;
 
     /**
@@ -185,17 +194,51 @@ struct cv_connection : connection {
      */
     bool is_from_controller;
 
-    cv_connection(bool is_from_controller);
+    cv_connection(
+        bool is_from_controller
+    );
 
-    void process_events(zzub::song& player, const zzub::connection_descriptor& conn);
-    virtual bool work(zzub::song& player, const connection_descriptor& conn, uint sample_count, uint work_position);
+    void process_events(
+        zzub::song& player, 
+        const zzub::connection_descriptor& conn
+    );
 
-    void add_connector(const cv_connector& link, zzub::song& song);
-    bool remove_connector(const cv_connector& link);
-    bool has_connector(const cv_connector& link);
-    int get_connector_count() const { return connectors.size(); }
-    const cv_connector* get_connector(int index);
-    bool update_connector(int index, const cv_connector& link);
+    virtual bool work(
+        zzub::song& player, 
+        const connection_descriptor& conn,
+        uint sample_count, 
+        uint work_position
+    );
+
+    void add_connector(
+        const cv_connector& link, 
+        zzub::metaplugin& from,
+        zzub::metaplugin& to
+    );
+
+    bool remove_connector(
+        const cv_connector& link
+    );
+
+    bool has_connector(
+        const cv_connector& link
+    );
+
+    int get_connector_count() const 
+    { 
+        return connectors.size(); 
+    }
+
+    const cv_connector* get_connector(
+        int index
+    );
+
+    bool update_connector(
+        const cv_connector& old_connector, 
+        const cv_connector& new_connector, 
+        zzub::metaplugin& from,
+        zzub::metaplugin& to
+    );
 };
 
 
@@ -206,7 +249,8 @@ struct cv_connection : connection {
  ************************************************************************/
 
 
-struct midi_connection : connection {
+struct midi_connection : connection 
+{
     int device;
     std::string device_name;
 

@@ -31,13 +31,12 @@ from gi.repository import GObject, Gtk, Pango
 import code
 import fnmatch
 
-from neil import components
+from neil import components, sizes
 import neil.contextlog as contextlog
 
 GObject.threads_init()
 
 
-MARGIN = 6
 
 VIEW_CLASS = Gtk.TextView
 BUFFER_CLASS = Gtk.TextBuffer

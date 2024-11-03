@@ -25,8 +25,7 @@ from gi.repository import Gtk, GObject
 
 from neil import components
 
-from neil.common import MARGIN
-from neil.utils import ui
+from neil.utils import ui, sizes
 
 #OPTIONS = [
 #       'Module',
@@ -58,11 +57,11 @@ class ComponentPanel(Gtk.VBox):
         Initializing.
         """
         Gtk.VBox.__init__(self)
-        self.set_border_width(MARGIN)
+        self.set_border_width(sizes.get('margin'))
 
         frame1 = Gtk.Frame(label="Components")
         fssizer = Gtk.Box()
-        fssizer.set_border_width(MARGIN)
+        fssizer.set_border_width(sizes.get('margin'))
         fssizer.set_size_request(700, 880)
         frame1.add(fssizer)
 

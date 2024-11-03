@@ -40,8 +40,8 @@ class OptionsBox(Gtk.Box):
     def populate(self, opts_group):
         pass
 
-    def export_connector_data(self, connectordata: zzub.CvConnectorData):
-        return zzub.CvConnectorData.create()
+    def export_connector_data(self, connectordata: zzub.CvConnectorOpts):
+        return zzub.CvConnectorOpts.create()
 
-    def import_connector_data(self, connectordata: zzub.CvConnectorData):
+    def import_connector_data(self, connectordata: zzub.CvConnectorOpts):
         pass
