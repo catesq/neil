@@ -9,7 +9,13 @@
 namespace zzub
 {
 
-class audio_port_facade : public zzub::port
+/**
+ * this is a placeholder so audio ports get an entry in port lists
+ * 
+ * the audio data copying is in:
+ *   libzzub/cv/source  libzzub/cv/target  libzzub/connections  
+ */
+class audio_port : public zzub::port
 {
     zzub::host* host;
     zzub::port_flow flow;
@@ -17,7 +23,7 @@ class audio_port_facade : public zzub::port
     int channel;
 
 public:
-    audio_port_facade(
+    audio_port(
         zzub::host* host, 
         zzub::port_flow port_flow,
         std::string fmt_name,
@@ -29,7 +35,7 @@ public:
     {
     }
 
-        //
+    //
     zzub::port_flow
     get_flow() 
     {

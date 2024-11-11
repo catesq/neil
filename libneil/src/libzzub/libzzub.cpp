@@ -94,13 +94,16 @@ int zzub_player_initialize(
     int samplesPerSec
 )
 {
-    if (!player->initialize())
+    zzub_master_event_filter* ev = new zzub_master_event_filter(player);
+
+    if (!player->initialize(ev))
         return -1;
 
     // NOTE: 0 == master
-    zzub_master_event_filter* ev = new zzub_master_event_filter(player, player->front.plugins[0]->proxy);
-    player->front.plugins[0]->event_handlers.push_back(ev);
+    // zzub_master_event_filter* ev = new zzub_master_event_filter(player, player->front.plugins[0]->proxy);
+    // player->front.plugins[0]->event_handlers.push_back(ev);
     player->reset();
+
     return 0;
 }
 

@@ -7,17 +7,17 @@ namespace zzub {
 
 
 /**
- * this wraps a zzub::parameter so a plugin can use ports_facade to use the parameter as
- * a port, for the cv feature - or as a parameter as before
- * 
- * the benefit is extra ports - like cv ports - can be added to old
- * zzub machines without affecting the existing parameters
+ * this wraps a zzub::parameter so the port facade can use zzub_paramaters 
+ * each zzub paramater has two param_ports, one in - one out,
+ * as merging the input and output ports conflicted with behaviour of lv2 ports  
  */
 class param_port : public zzub::port {
-    const zzub::parameter* param;
+public:
     zzub::host* host;
+    const zzub::parameter* param;
     int param_index;
-
+    zzub::port_flow flow;
+    char* name;
 
 public:
 
@@ -25,7 +25,8 @@ public:
     param_port(
         zzub::host* host,
         const zzub::parameter* param,
-        int param_index
+        int param_index,
+        zzub::port_flow flow
     );
 
 

@@ -8,8 +8,7 @@
 #include "zzub/plugin.h"
 #include "zzub/zzub_data.h"
 
-
-#include "cv_connections.h"
+#include "libzzub/cv/transporter.h"
 
 
 namespace zzub {
@@ -149,43 +148,23 @@ struct event_connection : connection
 };
 
 
-/*************************************************************************
- *
- * cv connector
- *
- ************************************************************************/
-
-
-struct cv_connector 
-{
-    cv_node source_node;
-    cv_node target_node;
-    cv_connector_opts opts;
-
-    cv_connector(cv_node source, cv_node target);
-    cv_connector(cv_node source, cv_node target, cv_connector_opts opts);
-
-    virtual void process_events(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to);
-    virtual void work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, uint sample_count, uint work_position);
-
-    bool operator==(const cv_connector& other) const { return source_node == other.source_node && target_node == other.target_node; }
-    void connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin);
-
-private:
-    std::shared_ptr<cv_data_source> source_data;
-    std::shared_ptr<cv_data_target> target_data;
-};
-
 
 /*************************************************************************
  *
  * cv_connection
  *
+ * cv_connections are between plugins. cv_connectors are between ports
+ * 
  ************************************************************************/
 
 
 struct cv_connection : connection 
 {
+    /**
+     * there is one data transporter for each targetted port
+     * one or more source ports shared this transporter 
+    */
+    std::vector<cv_transporter*> transporters;
     std::vector<cv_connector> connectors;
 
     /**
@@ -194,14 +173,17 @@ struct cv_connection : connection
      */
     bool is_from_controller;
 
+
     cv_connection(
         bool is_from_controller
     );
+
 
     void process_events(
         zzub::song& player, 
         const zzub::connection_descriptor& conn
     );
+
 
     virtual bool work(
         zzub::song& player, 
@@ -210,34 +192,51 @@ struct cv_connection : connection
         uint work_position
     );
 
+
     void add_connector(
         const cv_connector& link, 
         zzub::metaplugin& from,
         zzub::metaplugin& to
     );
 
+
     bool remove_connector(
         const cv_connector& link
     );
 
+
     bool has_connector(
         const cv_connector& link
     );
+
+
+    const cv_connector* get_connector(
+        int index
+    );
+
 
     int get_connector_count() const 
     { 
         return connectors.size(); 
     }
 
-    const cv_connector* get_connector(
-        int index
-    );
+
+    bool has_transporter(
+        const cv_connector& link
+    ); 
+
 
     bool update_connector(
         const cv_connector& old_connector, 
         const cv_connector& new_connector, 
         zzub::metaplugin& from,
         zzub::metaplugin& to
+    );
+
+protected:
+
+    cv_transporter* get_transporter(
+        const cv_connector& link
     );
 };
 

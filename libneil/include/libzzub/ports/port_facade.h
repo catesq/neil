@@ -15,18 +15,22 @@ namespace zzub {
  * zzub plugins use this class to provide zzub::ports for the cv connection ui
  *
  */
-class ports_facade {
+class port_facade {
     host* plugin_host;
     const info* plugin_info;
 
     std::vector<zzub::port*> audio_in_ports;
     std::vector<zzub::port*> audio_out_ports;
-    std::vector<zzub::port*> param_ports;
+
+    std::vector<zzub::port*> param_in_ports;
+    std::vector<zzub::port*> param_out_ports;
+
     std::vector<zzub::port*> cv_in_ports;
     std::vector<zzub::port*> cv_out_ports;
+
     std::vector<zzub::port*> ports;
 
-    std::vector<port*> build_param_ports();
+    std::vector<port*> build_param_ports(zzub::port_flow port_flow);
 
     std::vector<port*> build_audio_ports(
         uint plugin_flag,
@@ -41,7 +45,7 @@ class ports_facade {
     );
 
 public:
-    ports_facade() {}
+    port_facade() {}
 
 
 
@@ -53,8 +57,8 @@ public:
 
 
 
-    void
-    process_events(const std::vector<port_event*>& events);
+    // void
+    // process_events(const std::vector<port_event*>& events);
 
 
 
@@ -106,7 +110,7 @@ public:
     )
     {
         auto subports = get_ports(port_type, port_flow);
-
+        
         if (index < subports.size()) {
             return subports[index];
         } else {
@@ -117,18 +121,6 @@ public:
 
 
 
-class port_facade_plugin : public virtual zzub::plugin {
-    ports_facade ports{};
-
-public:
-    virtual ~port_facade_plugin() {};
-    void init_port_facade(host* plugin_host, std::vector<zzub::port*> cv_ports);
-
-    virtual int get_port_count();
-    virtual zzub::port* get_port(int index);
-    virtual int get_port_count(zzub::port_type type, zzub::port_flow flow);
-    virtual zzub::port* get_port(zzub::port_type type, zzub::port_flow flow, int index);
-};
 
 
 }

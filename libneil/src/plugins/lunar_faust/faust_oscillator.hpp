@@ -4,7 +4,7 @@
 #include <zzub/signature.h>
 #include <zzub/zzub.h>
 
-#include "libzzub/ports/ports_facade.h"
+#include "libzzub/ports/port_plugin.h"
 
 #include "faust/dsp/llvm-dsp.h"
 #include "faust_ui.hpp"
@@ -85,9 +85,7 @@ public:
         delete output;
     }
 
-    // virtual void init(zzub::archive *arc, zzub::init_config* init_config) override;
     virtual void init(zzub::archive* arc) override;
-
     virtual void process_cv(int numsamples) override;
     virtual void process_events() override;
 

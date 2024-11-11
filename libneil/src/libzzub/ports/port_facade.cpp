@@ -1,6 +1,4 @@
 #include "libzzub/ports.h"
-#include "libzzub/ports/param_port.h"
-#include "libzzub/ports/audio_port_facade.h"
 #include <ranges>
 
 
@@ -8,15 +6,17 @@ namespace zzub {
 
 
 void
-ports_facade::init(
-    host* plugin_host,
+port_facade::init(
+    host* host,
     std::vector<zzub::port*> cv_ports
 )
 {
-    plugin_host = plugin_host;
+    plugin_host = host;
+   
     plugin_info = plugin_host->get_info(plugin_host->_plugin);
-    param_ports = build_param_ports();
-    
+    param_in_ports = build_param_ports(port_flow::input);
+    param_out_ports = build_param_ports(port_flow::output);
+
     audio_in_ports = build_audio_ports(
         zzub_plugin_flag_has_audio_input, 
         zzub::port_flow::input,
@@ -43,7 +43,8 @@ ports_facade::init(
 
     for(std::vector<zzub::port*>* subports: {
         &audio_in_ports, &audio_out_ports, 
-        &param_ports, &cv_in_ports, &cv_out_ports
+        &param_in_ports, &param_out_ports, 
+        &cv_in_ports, &cv_out_ports
     }) {
         ports.insert(
             ports.end(), 
@@ -55,7 +56,7 @@ ports_facade::init(
 
 
 std::vector<zzub::port*>&
-ports_facade::get_ports(
+port_facade::get_ports(
     zzub::port_type port_type, 
     zzub::port_flow port_flow
 )
@@ -70,7 +71,11 @@ ports_facade::get_ports(
             }
             
         case zzub::port_type::param:
-            return param_ports;
+            if (port_flow == zzub::port_flow::input) {
+                return param_in_ports;
+            } else {
+                return param_out_ports;
+            }
 
         case zzub::port_type::cv:
             if (port_flow == zzub::port_flow::input) {
@@ -86,13 +91,13 @@ ports_facade::get_ports(
 
 
 std::vector<zzub::port*>
-ports_facade::build_param_ports()
+port_facade::build_param_ports(zzub::port_flow port_flow)
 {
     std::vector<zzub::port*> ports {};
 
     int index = 0;
     for (auto param : plugin_info->global_parameters) {
-        ports.push_back(new param_port(plugin_host, param, index++));
+        ports.push_back(new param_port(plugin_host, param, index++, port_flow));
     }
 
     return ports;
@@ -102,7 +107,7 @@ ports_facade::build_param_ports()
 
 
 std::vector<zzub::port*>
-ports_facade::build_audio_ports(
+port_facade::build_audio_ports(
     uint test_plugin_flag, 
     zzub::port_flow port_flow, 
     const std::string& prefix_name
@@ -112,7 +117,7 @@ ports_facade::build_audio_ports(
 
     if(plugin_info->flags & test_plugin_flag) {
         for(uint i = 0; i < 2; i++) {
-            ports.push_back(new audio_port_facade(plugin_host, port_flow, "audio in {}", i));
+            ports.push_back(new audio_port(plugin_host, port_flow, "audio in {}", i));
         }
     }
 
@@ -121,60 +126,18 @@ ports_facade::build_audio_ports(
 
 
 
-void ports_facade::process_events(
-    const std::vector<port_event*>& events
-)
-{
-    for (auto event : events) {
-        switch (event->event_type) {
-        case port_event_type::port_event_type_value:
-            param_ports[event->port_index]->set_value(event->value.f);
-            break;
-        }
-    }
-}
-
-
-void
-port_facade_plugin::init_port_facade(host* plugin_host, std::vector<zzub::port*> cv_ports){
-    ports.init(plugin_host, cv_ports);
-}
-
-
-
-zzub::port* 
-port_facade_plugin::get_port(int index)
-{
-    return ports.get_port(index);
-}
-
-
-int 
-port_facade_plugin::get_port_count()
-{
-    return ports.get_port_count();
-}
-
-
-zzub::port* 
-port_facade_plugin::get_port(
-    zzub::port_type type, 
-    zzub::port_flow flow, 
-    int index
-)
-{
-    return ports.get_port(type, flow, index);
-}
-
-
-int 
-port_facade_plugin::get_port_count(
-    zzub::port_type type, 
-    zzub::port_flow flow
-)
-{
-    return ports.get_port_count(type, flow);
-}
+// void ports_facade::process_events(
+//     const std::vector<port_event*>& events
+// )
+// {
+//     for (auto event : events) {
+//         switch (event->event_type) {
+//         case port_event_type::port_event_type_value:
+//             param_in_ports[event->port_index]->set_value(event->value.f);
+//             break;
+//         }
+//     }
+// }
 
 
 }

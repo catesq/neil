@@ -32,11 +32,16 @@
 #include "thread_id.h"
 #include "connections.h"
 
+#include "libzzub/events.h"
 
 using std::pair;
 using std::string;
 using std::vector;
 using std::stack;
+
+
+struct zzub_master_event_filter;
+
 
 namespace zzub {
 
@@ -58,7 +63,7 @@ struct player : undo_manager, audioworker, midiworker {
     virtual ~player(void);
 
     // initialization
-    bool initialize();
+    bool initialize(zzub_master_event_filter* ev);
     void initialize_plugin_libraries();
     void initialize_plugin_directory(string folder);
     void load_plugin_library(const string &fullpath);

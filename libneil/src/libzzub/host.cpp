@@ -446,7 +446,12 @@ void host::add_plugin_event_listener(zzub::event_type type, event_handler* handl
 }
 
 void host::add_event_type_listener(zzub::event_type type, event_handler* handler) {
+    // auto event_filter = (zzub_master_event_filter*) plugin_player->plugins[0]->event_handlers.front();
+    auto& plugins = plugin_player->plugins;
+    auto& plugin = plugins[0];
+    auto& handlers = plugin->event_handlers;
     auto event_filter = (zzub_master_event_filter*) plugin_player->plugins[0]->event_handlers.front();
+
     event_filter->add_event_listener(type, handler);
 }
 

@@ -8,6 +8,10 @@
 #include <vector>
 
 
+
+
+
+
 namespace zzub {
 
 inline bool is_plugin_event(zzub::event_type type)  {
@@ -46,47 +50,9 @@ inline bool is_plugin_event(zzub::event_type type)  {
     }
 }
 
-}
+} // namespace zzub
 
-struct zzub_player_callback_all_events : zzub::event_handler {
-    zzub::metaplugin_proxy* proxy;
-    zzub_flatapi_player* player;
 
-    std::map<int, zzub::event_handler*> handlers;
-
-    zzub_player_callback_all_events(zzub_flatapi_player* _player, zzub::metaplugin_proxy* _proxy) {
-        player = _player;
-        proxy = _proxy;
-    }
-
-    virtual bool invoke(zzub_event_data_t& data) {
-        // the master plugin checks for create/delete plugin events and maintains an
-        // array of handlers who forward all events to the player callback.
-        if (proxy->id == 0 && data.type == zzub_event_type_new_plugin) {
-            zzub::metaplugin_proxy* new_plugin = data.new_plugin.plugin;
-            zzub_player_callback_all_events *ev = new zzub_player_callback_all_events(player, new_plugin);
-            handlers[new_plugin->id] = ev;
-            player->front.plugins[new_plugin->id]->event_handlers.push_back(ev);
-        } else if (proxy->id == 0 && data.type == zzub_event_type_pre_delete_plugin) {
-            zzub::metaplugin_proxy* del_plugin = data.delete_plugin.plugin;
-            std::map<int, event_handler*>::iterator i = handlers.find(del_plugin->id);
-            if (i != handlers.end()) {
-                delete i->second;
-                handlers.erase(i);
-            }
-        }
-
-        if (player->callback) {
-            //int plugin = player->front.plugins[plugin_id]->descriptor;
-            int res = player->callback(player, proxy, &data, player->callbackTag);
-            if (!res)
-                return true;
-        } else {
-            player->push_event(data);
-        }
-        return false;
-    }
-};
 
 namespace {
 
@@ -97,7 +63,45 @@ inline int get_event_data_plugin_id(zzub_event_data_t& data) {
     else
         return -1;
 }
-}
+
+} // anonymous namespace
+
+
+
+struct zzub_player_callback_all_events : zzub::event_handler {
+    zzub::metaplugin_proxy* proxy = nullptr;
+    zzub_flatapi_player* player;
+
+    std::map<int, zzub::event_handler*> handlers;
+
+    zzub_player_callback_all_events(
+        zzub_flatapi_player* _player
+    ) 
+    {
+        player = _player;
+    }
+
+
+    zzub_player_callback_all_events(
+        zzub_flatapi_player* _player, 
+        zzub::metaplugin_proxy* _proxy
+    ) 
+    {
+        player = _player;
+        proxy = _proxy;
+    }
+
+    void set_proxy(
+        zzub::metaplugin_proxy* proxy
+    ) 
+    {
+        this->proxy = proxy;
+    }
+
+    virtual bool invoke(zzub_event_data_t& data);
+};
+
+
 
 // this is the event handler for the master plugin. 
 // it forwards all events to the player callback via zzub_player_callback_all_events::invoke
@@ -110,24 +114,45 @@ struct zzub_master_event_filter : zzub_player_callback_all_events {
     std::map<listener_id, std::vector<zzub::event_handler*>> listeners;
     
     
-    zzub_master_event_filter(zzub_flatapi_player* _player, zzub::metaplugin_proxy* _proxy) : zzub_player_callback_all_events(_player, _proxy) {
+    zzub_master_event_filter(zzub_flatapi_player* _player) 
+    : zzub_player_callback_all_events(_player) 
+    {
     }
 
 
-    void add_event_listener(int plugin_id, zzub::event_type event_type, zzub::event_handler* handler) {
+    void 
+    add_event_listener(
+        int plugin_id, 
+        zzub::event_type event_type, 
+        zzub::event_handler* handler
+    ) 
+    {
         listeners[{plugin_id, event_type}].push_back(handler);
     }
 
 
-    void add_event_listener(zzub::event_type event_type, zzub::event_handler* handler) {
+    void 
+    add_event_listener(
+        zzub::event_type event_type, 
+        zzub::event_handler* handler
+    ) 
+    {
         listeners[{-1, event_type}].push_back(handler);
     }
 
 
-    void remove_event_listener(zzub::event_handler* handler) {
+    void 
+    remove_event_listener(
+        zzub::event_handler* handler
+    ) 
+    {
         for(auto it = listeners.begin(); it != listeners.end();) {
             auto& handlers = it->second;
-            handlers.erase(std::remove(handlers.begin(), handlers.end(), handler), handlers.end());
+
+            handlers.erase(
+                std::remove(handlers.begin(), handlers.end(), handler), 
+                handlers.end()
+            );
 
             if(handlers.empty())
                 it = listeners.erase(it);
@@ -137,13 +162,22 @@ struct zzub_master_event_filter : zzub_player_callback_all_events {
     }
 
     
-    virtual bool invoke(zzub_event_data_t& data) {
+    virtual bool 
+    invoke(
+        zzub_event_data_t& data
+    ) 
+    {
         dispatch(data);
 
         return zzub_player_callback_all_events::invoke(data);
     }
 
-    void dispatch(zzub_event_data_t& data) {
+
+    void 
+    dispatch(
+        zzub_event_data_t& data
+    ) 
+    {
         auto plugin_id = get_event_data_plugin_id(data);
 
         if(plugin_id > 0 && listeners.contains({plugin_id, static_cast<zzub::event_type>(data.type)})) {
@@ -153,9 +187,15 @@ struct zzub_master_event_filter : zzub_player_callback_all_events {
         }
     }
 
+
 private:
 
-    void dispatch(zzub_event_data_t& data, std::vector<zzub::event_handler*>& handlers) {
+    void 
+    dispatch(
+        zzub_event_data_t& data, 
+        std::vector<zzub::event_handler*>& handlers
+    ) 
+    {
         for(auto handler: handlers)
             handler->invoke(data);
     }

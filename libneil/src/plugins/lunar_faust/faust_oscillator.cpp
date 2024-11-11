@@ -2,8 +2,6 @@
 #include <utility>
 #include "lanternfish.h"
 
-#include "libzzub/ports/ports_facade.h"
-
 #define PHASE_WIDGET 0
 #define RESET_WIDGET 1
 #define FREQ_WIDGET 2
@@ -91,8 +89,6 @@ void faust_oscillator::init(zzub::archive *arc) {
         dsp[i] = factories[i]->createDSPInstance();
         dsp[i]->init(_master_info->samples_per_second);
     }
-
-
 
 
 

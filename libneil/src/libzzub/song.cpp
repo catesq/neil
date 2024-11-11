@@ -1189,6 +1189,7 @@ void mixer::process_sequencer_events()
 
     if (!song_loop_enabled && song_position >= song_loop_end) {
         song_position = song_loop_begin;
+        printf("mixer::process_sequencer_events \n");
         set_state(player_state_stopped);
         zzub_event_data event_data;
         event_data.type = event_type_player_state_changed;
@@ -1282,7 +1283,6 @@ int mixer::generate_audio(int sample_count)
 
     // process plugins
     for (auto plugin_desc : work_order) {
-
         // process audio
         work_plugin(plugin_desc, work_chunk_size);
     }

@@ -1,5 +1,6 @@
 #include "libzzub/ports.h"
-
+#include <thread>
+#include <format>
 namespace zzub {
 
 //
@@ -9,30 +10,38 @@ namespace zzub {
 param_port::param_port(
     zzub::host* host,
     const zzub::parameter* param,
-    int param_index
+    int param_index,
+    zzub::port_flow flow
 ) : host(host)
   , param(param)
-  , param_index(param_index)
+  , param_index(param_index),
+    flow(flow)
 {
 }
 
 
-//
+/**
+ * @return input or output
+ */
 port_flow
 param_port::get_flow()
 {
-    return zzub::port_flow::input;
+    return flow;
 }
 
 
-//
+/**
+ * @return name of the port
+ */
 const char* param_port::get_name()
 {
     return param->name;
 }
 
 
-//
+/**
+ * @return zzub::port_type::param
+ */
 port_type
 param_port::get_type()
 {
@@ -40,7 +49,7 @@ param_port::get_type()
 }
 
 
-//
+
 void 
 param_port::set_value(
     float value
@@ -55,7 +64,8 @@ param_port::set_value(
     );
 }
 
-//
+
+
 void 
 param_port::set_value(
     int value
@@ -88,7 +98,8 @@ param_port::set_value(
 }
 
 
-//
+
+
 float
 param_port::get_value()
 {

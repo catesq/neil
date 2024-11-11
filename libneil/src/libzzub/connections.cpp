@@ -25,10 +25,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <functional>
 #include <sstream>
 
+#include "libzzub/cv/transporter.h"
 
 using namespace std;
 
 namespace zzub {
+
+
 
 audio_connection_parameter_volume::audio_connection_parameter_volume()
 {
@@ -71,7 +74,11 @@ audio_connection::audio_connection()
     connection_parameters.push_back(&para_panning);
 }
 
-void audio_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn)
+void 
+audio_connection::process_events(
+    zzub::song& player, 
+    const zzub::connection_descriptor& conn
+)
 {
     if (cvalues.amp != para_volume.value_none)
         values.amp = cvalues.amp;
@@ -79,7 +86,13 @@ void audio_connection::process_events(zzub::song& player, const zzub::connection
         values.pan = cvalues.pan;
 }
 
-bool audio_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, uint sample_count, uint work_position)
+bool 
+audio_connection::work(
+    zzub::song& player, 
+    const zzub::connection_descriptor& conn, 
+    uint sample_count,
+    uint work_position
+)
 {
 
     metaplugin& plugin_from = player.get_plugin(target(conn, player.graph));
@@ -117,12 +130,6 @@ bool audio_connection::work(zzub::song& player, const zzub::connection_descripto
     return result;
 }
 
-event_connection::event_connection()
-{
-    type = connection_type_event;
-    connection_values = 0;
-}
-
 // only used in commented out code in event_connection - replaced by player.get_parameter
 // const zzub::parameter *event_connection::getParam(struct metaplugin *mp, int group, int index)
 // {
@@ -142,7 +149,18 @@ event_connection::event_connection()
 // }
 
 
-int event_connection::convert(int value, const zzub::parameter* oldparam, const zzub::parameter* newparam)
+event_connection::event_connection()
+{
+    type = connection_type_event;
+    connection_values = 0;
+}
+
+int 
+event_connection::convert(
+    int value, 
+    const zzub::parameter* oldparam, 
+    const zzub::parameter* newparam
+)
 {
     int result = newparam->value_none;
     if (value != oldparam->value_none) {
@@ -157,7 +175,11 @@ int event_connection::convert(int value, const zzub::parameter* oldparam, const 
 }
 
 
-void event_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn)
+void 
+event_connection::process_events(
+    zzub::song& player, 
+    const zzub::connection_descriptor& conn
+)
 {
     const zzub::parameter* param_in;
     const zzub::parameter* param_out;
@@ -219,7 +241,13 @@ void event_connection::process_events(zzub::song& player, const zzub::connection
     }
 }
 
-bool event_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, uint sample_count, uint work_position)
+bool 
+event_connection::work(
+    zzub::song& player, 
+    const zzub::connection_descriptor& conn, 
+    uint sample_count, 
+    uint work_position
+)
 {
     return true;
 }
@@ -232,40 +260,40 @@ bool event_connection::work(zzub::song& player, const zzub::connection_descripto
  ************************************************************************/
 
 
-cv_connector::cv_connector(cv_node source, cv_node target)
-    : cv_connector(source, target, cv_connector_opts())
-{
-}
+// cv_connector::cv_connector(cv_node source, cv_node target)
+//     : cv_connector(source, target, cv_connector_opts())
+// {
+// }
 
 
-cv_connector::cv_connector(cv_node source, cv_node target, cv_connector_opts opts)
-    : source_node(source)
-    , target_node(target)
-    , opts(opts)
-{
+// cv_connector::cv_connector(cv_node source, cv_node target, cv_connector_opts opts)
+//     : source_node(source)
+//     , target_node(target)
+//     , opts(opts)
+// {
 
-}
-
-
-void cv_connector::connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin)
-{
-    source_data = build_cv_data_source(from_plugin, this->source_node, this->opts);
-    target_data = build_cv_data_target(to_plugin, this->target_node, this->opts, source_data.get());
-}
+// }
 
 
-void cv_connector::process_events(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to)
-{
-    source_data->process_events(from, to);
-    target_data->process_events(from, to);
-}
+// void cv_connector::connected(zzub::metaplugin& from_plugin, zzub::metaplugin& to_plugin)
+// {
+//     source_data = build_cv_data_source(from_plugin, this->source_node, this->opts);
+//     target_data = build_cv_data_target(to_plugin, this->target_node, this->opts, source_data.get());
+// }
 
 
-void cv_connector::work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, uint sample_count, uint work_position)
-{
-    source_data->work(from, to, sample_count);
-    target_data->work(from, to, sample_count);
-}
+// void cv_connector::process_events(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to)
+// {
+//     source_data->process_events(from, to);
+//     target_data->process_events(from, to);
+// }
+
+
+// void cv_connector::work(zzub::song& player, zzub::metaplugin& from, zzub::metaplugin& to, uint sample_count, uint work_position)
+// {
+//     source_data->work(from, to, sample_count);
+//     target_data->work(from, to, sample_count);
+// }
 
 
 
@@ -276,7 +304,9 @@ void cv_connector::work(zzub::song& player, zzub::metaplugin& from, zzub::metapl
  ************************************************************************/
 
 
-cv_connection::cv_connection(bool is_from_cv_generator)
+cv_connection::cv_connection(
+    bool is_from_cv_generator
+)
 {
     type = connection_type_cv;
     connection_values = 0;
@@ -284,48 +314,61 @@ cv_connection::cv_connection(bool is_from_cv_generator)
 }
 
 
-void cv_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn)
+void 
+cv_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn)
 {
-    auto& to = player.get_plugin(source(conn, player.graph));
-    auto& from = player.get_plugin(target(conn, player.graph));
 
-    for (auto& it : connectors) {
-        it.process_events(player, from, to);
-    }
 }
 
 
-bool cv_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, uint sample_count, uint work_position)
+bool 
+cv_connection::work(
+    zzub::song& player, 
+    const zzub::connection_descriptor& conn, 
+    uint sample_count, 
+    uint work_position
+)
 {
     auto& to = player.get_plugin(source(conn, player.graph));
     auto& from = player.get_plugin(target(conn, player.graph));
     bool use_curr_work = work_position == from.last_work_frame;
 
-    for (auto& it : connectors) {
-        it.work(player, from, to, sample_count, use_curr_work);
+    for(auto& transporter: transporters) {
+        transporter->work(from, to, sample_count, use_curr_work);
     }
 
     return true;
 }
 
 
-void cv_connection::add_connector(
+
+void 
+cv_connection::add_connector(
     const cv_connector& link, 
     zzub::metaplugin& from,
     zzub::metaplugin& to
 )
 {
-    for (auto& it : connectors) {
-        if (it == link)
-            return;
-    }
+    if (has_connector(link))
+        return;
 
     connectors.push_back(link);
-    connectors.back().connected(from, to);
+    
+    if(!has_transporter(link)) {
+        transporters.push_back(new cv_transporter(
+            link.target_node,
+            get_data_type(to, link.target_node, zzub::port_flow::input)
+        ));
+    }
+
+    get_transporter(link)->add_source(link, from, to);
 }
 
 
-bool cv_connection::remove_connector(const cv_connector& link)
+bool 
+cv_connection::remove_connector(
+    const cv_connector& link
+)
 {
     auto it = connectors.begin();
     bool deleted = false;
@@ -339,30 +382,72 @@ bool cv_connection::remove_connector(const cv_connector& link)
         }
     }
 
+    get_transporter(link)->remove_source(link);
+
     return deleted;
 }
 
 
-bool cv_connection::has_connector(const cv_connector& link)
+bool 
+cv_connection::has_connector(
+    const cv_connector& link
+)
 {
     for (auto& it : connectors) {
-        if (it == link)
+        if (it == link) {
             return true;
+        }
     }
+
     return false;
 }
 
 
-const cv_connector* cv_connection::get_connector(int index)
+
+bool 
+cv_connection::has_transporter(
+    const cv_connector& link
+)
 {
-    if (index >= 0 && index < connectors.size())
-        return &connectors[index];
-    else
-        return nullptr;
+    for (auto it : transporters) {
+        if(it->target_node == link.target_node) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
-bool cv_connection::update_connector(
+cv_transporter* cv_connection::get_transporter(
+    const cv_connector& link
+)
+{
+    for (auto it : transporters) {
+        if(it->target_node == link.target_node) {
+            return it;
+        }
+    }
+
+    return nullptr;
+}
+
+
+const 
+cv_connector* cv_connection::get_connector(
+    int index
+)
+{
+    if (index >= 0 && index < connectors.size()) {
+        return &connectors[index];
+    } else {
+        return nullptr;
+    }
+}
+
+
+bool 
+cv_connection::update_connector(
     const cv_connector& old_connector, 
     const cv_connector& new_connector, 
     zzub::metaplugin& from,
@@ -371,10 +456,17 @@ bool cv_connection::update_connector(
 {
     for(auto& it : connectors) {
         if (it == old_connector) {
-            it = new_connector;
+            auto transporter = get_transporter(old_connector);
+            auto old_pos = transporter->get_index(old_connector);
 
-            it.connected(from, to);
-            printf("assigned link");
+            it = new_connector;
+            
+            transporter->remove_source(old_connector);
+            transporter->add_source(new_connector, from, to);
+            auto new_pos = transporter->get_index(new_connector);
+
+            transporter->move_source(new_pos, old_pos);
+
             return true;
         }
     }
@@ -397,12 +489,14 @@ midi_connection::midi_connection()
 }
 
 
-void midi_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn)
+void 
+midi_connection::process_events(zzub::song& player, const zzub::connection_descriptor& conn)
 {
 }
 
 
-bool midi_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, uint sample_count, uint work_position)
+bool 
+midi_connection::work(zzub::song& player, const zzub::connection_descriptor& conn, uint sample_count, uint work_position)
 {
     int to_id = player.get_plugin_id(source(conn, player.graph));
     int from_id = player.get_plugin_id(target(conn, player.graph));
@@ -422,7 +516,8 @@ bool midi_connection::work(zzub::song& player, const zzub::connection_descriptor
     return true;
 }
 
-int midi_connection::get_midi_device(zzub::song& player, int plugin_id, std::string name)
+int 
+midi_connection::get_midi_device(zzub::song& player, int plugin_id, std::string name)
 {
     _midiouts midiouts;
     player.plugins[plugin_id]->plugin->get_midi_output_names(&midiouts);

@@ -18,6 +18,8 @@
 #include "libzzub/common.h"
 #include "libzzub/tools.h"
 #include <cstdio>
+#include <thread>
+#include <format>
 
 using namespace std;
 
@@ -41,12 +43,15 @@ const int NO_MASTER_BPM = 0xFFFF;
 const int NO_MASTER_TPB = 0xFF;
 
 
-master_plugin_info::master_plugin_info() {
+master_plugin_info::master_plugin_info() 
+{
     this->flags =
             zzub::plugin_flag_is_root |
             zzub::plugin_flag_has_audio_output |
             zzub::plugin_flag_has_audio_input |
-            zzub::plugin_flag_has_midi_input;
+            zzub::plugin_flag_has_midi_input |
+            zzub::plugin_flag_has_ports;
+
     this->name = "Master";
     this->short_name = "Master";
     this->author = "n/a";
@@ -81,14 +86,19 @@ master_plugin_info::master_plugin_info() {
             .set_value_none(NO_MASTER_TPB)
             .set_state_flag()
             .set_value_default(4);
-
 }
 
-zzub::plugin* master_plugin_info::create_plugin() const {
+
+zzub::plugin* master_plugin_info::create_plugin() const 
+{
     return new master_plugin();
 }
 
-bool master_plugin_info::store_info(zzub::archive *) const {
+
+bool master_plugin_info::store_info(
+    zzub::archive *
+) const 
+{
     return false;
 }
 
@@ -99,7 +109,8 @@ bool master_plugin_info::store_info(zzub::archive *) const {
 
   ***/
 
-master_plugin::master_plugin() {
+master_plugin::master_plugin() 
+{
     global_values = gvals = &dummy;
     track_values = 0;
     attributes = 0;
@@ -111,11 +122,59 @@ master_plugin::master_plugin() {
     gvals->volume = 0;
 }
 
-void master_plugin::init(zzub::archive*) {
-    update_midi_devices();
+
+bool master_plugin::invoke(
+    zzub_event_data_t &data
+) 
+{
+    // printf("master_plugin::invoke thread %d\n", std::hash<std::thread::id>{}(std::this_thread::get_id()) );
+    if(data.type == zzub::event_type_player_state_changed) {
+        auto state = data.player_state_changed.player_state;
+        printf("master_plugin::invoke state change to %d\n", data.player_state_changed.player_state);
+    }
+    return false;
 }
 
-void master_plugin::process_events() {
+
+void master_plugin::init(
+    zzub::archive* arc
+)
+{
+    update_midi_devices();
+
+    for(int index=0; index<32; index++) {
+        recorder_ports.push_back(new buffer_port<basic_buf>(
+            std::format("multi channel recorder {}", index), 
+            port_flow::input
+        ));
+    }
+
+    init_port_facade(_host, recorder_ports);
+}
+
+
+void master_plugin::created() 
+{
+    _host->add_event_type_listener(zzub::event_type_player_state_changed, this);
+}
+
+
+bool master_plugin::connect_ports(
+    cv_connector& connnector
+) 
+{
+}
+
+
+void master_plugin::disconnect_ports(
+    cv_connector& connnector
+)
+{
+}
+
+
+void master_plugin::process_events() 
+{
     bool changed = false;
     int bpm = gvals->bpm;
     if (bpm == NO_MASTER_BPM) {
@@ -143,35 +202,54 @@ void master_plugin::process_events() {
 }
 
 
-bool master_plugin::process_stereo(float **pin, float **pout, int numSamples, int mode) {
+bool master_plugin::process_stereo(
+    float **pin, 
+    float **pout, 
+    int numSamples, 
+    int mode
+)
+{
     using namespace std;
     if (mode == zzub::process_mode_write) {
         return false;
     }
+
     float db = ((float)master_volume / (float)0x4000) * -80.0f;
     float amp = dB_to_linear(db);
+
     for (int i = 0; i < numSamples; i++) {
         pout[0][i] *= amp;
         pout[1][i] *= amp;
     }
+
     return true;
 }
 
 
-void master_plugin::update_tempo(int bpm, int tpb) {
+void master_plugin::update_tempo(
+    int bpm, 
+    int tpb
+) 
+{
     float sps = _master_info->samples_per_second;
     _master_info->beats_per_minute = bpm;
     _master_info->ticks_per_beat = tpb;
+
     float ticks_per_second = (bpm * tpb) / 60.0;
     _master_info->ticks_per_second = ticks_per_second;
+
     float n;
-    _master_info->samples_per_tick_frac =
-            modf(sps / ticks_per_second, &n);
+    _master_info->samples_per_tick_frac = modf(sps / ticks_per_second, &n);
     _master_info->samples_per_tick = n;
     _master_info->tick_position = 0;
 }
 
-void master_plugin::process_midi_events(midi_message* pin, int nummessages) {
+
+void master_plugin::process_midi_events(
+    midi_message* pin, 
+    int nummessages
+) 
+{
     midi_io* driver = _host->_player->midiDriver;
     if (!driver) return ;
 
@@ -186,7 +264,9 @@ void master_plugin::process_midi_events(midi_message* pin, int nummessages) {
     }
 }
 
-void master_plugin::update_midi_devices() {
+
+void master_plugin::update_midi_devices() 
+{
     midi_devices.clear();
 
     midi_io* driver = _host->_player->midiDriver;
@@ -201,7 +281,11 @@ void master_plugin::update_midi_devices() {
     }
 }
 
-void master_plugin::get_midi_output_names(outstream *pout) {
+
+void master_plugin::get_midi_output_names(
+    outstream *pout
+) 
+{
 
     update_midi_devices();
 
@@ -211,5 +295,6 @@ void master_plugin::get_midi_output_names(outstream *pout) {
     }
 
 }
+
 
 } // namespace zzub

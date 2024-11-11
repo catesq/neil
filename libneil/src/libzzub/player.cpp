@@ -63,7 +63,7 @@ player::~player(void) {
 }
 
 
-bool player::initialize() {
+bool player::initialize(zzub_master_event_filter* filter) {
 #if defined(__SSE__)
     std::cout << "SSE optimization is enabled." << std::endl;
 #else
@@ -79,6 +79,12 @@ bool player::initialize() {
 
     std::vector<char> bytes;
     create_plugin(bytes, "Master", &front.master_plugininfo, 0);
+
+    // moved creation of event filter from libzzub zzub_player_initialize 
+    // so that master_plugin.created() can use event_handler
+    filter->set_proxy(back.plugins[0]->proxy);
+    back.plugins[0]->event_handlers.push_back(filter);
+
     flush_operations(0, 0, 0);
     flush_from_history();
 
@@ -196,6 +202,7 @@ void player::set_play_position(int pos) {
 /*	\brief Clears all data associated with current song from the player.
    */
 void player::clear() {
+    printf("player::clear() \n");
     using namespace std;
     set_state(player_state_muted);
     // make sure we flushed since we are manipulating the front buffer directly
@@ -239,6 +246,7 @@ void player::clear() {
     if (front.plugins.size() > 1)
         front.plugins.erase(front.plugins.begin() + 1, front.plugins.end());
     set_state(player_state_stopped);
+    printf("player::clear end \n");
 }
 
 

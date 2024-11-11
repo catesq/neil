@@ -1,9 +1,6 @@
-
 #pragma once
 
-
 #include "zzub/plugin.h"
-
 
 
 namespace zzub {

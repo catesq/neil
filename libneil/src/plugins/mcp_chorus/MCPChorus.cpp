@@ -40,10 +40,10 @@ MCPChorus::init(zzub::archive* pi)
     for (i = 0; i < 3; i++) {
         _ri[i] = _dr[i] = 0;
     }
-    
+
     std::vector<zzub::port*> lfo_ports = {
-        new lfo_port("lfo1_in", zzub::port_flow::input), 
-        new lfo_port("lfo2_in", zzub::port_flow::input)
+        new zzub::buffer_port<zzub::basic_rb>("lfo1_in", zzub::port_flow::input), 
+        new zzub::buffer_port<zzub::basic_rb>("lfo2_in", zzub::port_flow::input)
     };
 
     ports.init(
@@ -233,7 +233,7 @@ MCPChorus::describe_value(
 bool 
 MCPChorus::connect_ports(zzub::cv_connector& connnector) 
 {
-    printf("Connected a port\n");
+    printf("MCPChorus::connect_ports\n");
     return true;
 }
 
@@ -241,7 +241,7 @@ MCPChorus::connect_ports(zzub::cv_connector& connnector)
 void 
 MCPChorus::disconnect_ports(zzub::cv_connector& connnector) 
 {
-    printf("Disconnected a port\n");
+    printf("MCPChorus::disconnect_ports\n");
 }
 
 

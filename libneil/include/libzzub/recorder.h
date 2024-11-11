@@ -18,93 +18,14 @@
 
 #pragma once
 
-#include "zzub/plugin.h"
+#include "libzzub/recorder/wavetable_plugin.h"
+#include "libzzub/recorder/file_plugin.h"
+
 
 namespace zzub {
 
-struct recorder_wavetable_plugin_info : zzub::info {
 
-    recorder_wavetable_plugin_info() {
-        this->flags = zzub::plugin_flag_has_audio_input;
-        this->name = "Instrument Recorder";
-        this->short_name = "IRecorder";
-        this->author = "n/a";
-        this->uri = "@zzub.org/recorder/wavetable";
 
-        add_global_parameter()
-                .set_wavetable_index()
-                .set_name("Instrument")
-                .set_description("Instrument to use (01-C8)")
-                .set_value_default(wavetable_index_value_min)
-                .set_state_flag();
-
-        add_global_parameter()
-                .set_switch()
-                .set_name("Record")
-                .set_description("Turn automatic recording on/off")
-                .set_value_default(switch_value_off)
-                .set_state_flag();
-
-        add_attribute()
-                .set_name("Record Mode (0=wait for play/stop, 1=continous)")
-                .set_value_default(0)
-                .set_value_min(0)
-                .set_value_max(1);
-
-        add_attribute()
-                .set_name("Format (0=16bit, 1=32bit float, 2=32bit integer, 3=24bit)")
-                .set_value_default(0)
-                .set_value_min(0)
-                .set_value_max(3);
-    }
-
-    virtual zzub::plugin* create_plugin() const;
-    virtual bool store_info(zzub::archive *) const { return false; }
-};
-
-struct recorder_file_plugin_info : zzub::info {
-
-    recorder_file_plugin_info() {
-        this->flags = zzub::plugin_flag_has_audio_input;
-        this->name = "File Recorder";
-        this->short_name = "FRecorder";
-        this->author = "n/a";
-        this->uri = "@zzub.org/recorder/file";
-        this->commands = "Set Output File";
-
-        add_global_parameter()
-                .set_byte()
-                .set_name("File")
-                .set_description("Filename")
-                .set_value_default(0)
-                .set_value_min(0)
-                .set_value_max(0)
-                .set_state_flag();
-
-        add_global_parameter()
-                .set_switch()
-                .set_name("Record")
-                .set_description("Turn automatic recording on/off")
-                .set_value_default(switch_value_off)
-                .set_state_flag();
-
-        add_attribute()
-                .set_name("Record Mode (0=automatic, 1=manual)")
-                .set_value_default(0)
-                .set_value_min(0)
-                .set_value_max(1);
-
-        add_attribute()
-                .set_name("Format (0=16bit, 1=32bit float, 2=32bit integer, 3=24bit)")
-                .set_value_default(0)
-                .set_value_min(0)
-                .set_value_max(3);
-
-    }
-
-    virtual zzub::plugin* create_plugin() const;
-    virtual bool store_info(zzub::archive *) const { return false; }
-};
 
 // A plugin collection registers plugin infos and provides
 // serialization services for plugin info, to allow
