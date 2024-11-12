@@ -163,6 +163,7 @@ bool master_plugin::connect_ports(
     cv_connector& connnector
 ) 
 {
+    return true;
 }
 
 

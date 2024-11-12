@@ -62,14 +62,6 @@ recorder_file_plugin::recorder_file_plugin()
     waveFilePath(""),
     recorder(waveFilePath, format, 44100)
 {
-    updateRecording = false;
-    writeWave = false;
-    autoWrite = false;
-    ticksWritten = 0;
-
-    
-    format = wave_buffer_type_si16;
-
     global_values = &g;
     attributes = a;
     lg.enable = 0;
@@ -127,6 +119,7 @@ recorder_file_plugin::set_writewave(
     bool enabled
 ) 
 {
+    printf("set writewave %s\n", enabled ? "Y":"N");
     if (writeWave == enabled)
         return;
     writeWave = enabled;

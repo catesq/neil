@@ -78,6 +78,7 @@ file_recorder::write(float** samples, int num_samples) {
 void 
 file_recorder::close() {
     if (wave_file) {
+        printf("file_recorder::close found a wave file\n");
         sf_close(wave_file);
         wave_file = nullptr;
     }

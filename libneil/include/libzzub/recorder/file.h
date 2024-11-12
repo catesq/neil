@@ -24,10 +24,11 @@ public:
         uint sample_rate, 
         uint channels
     ) 
-    : path(path),
+    : channels(channels),
+      path(path),
       format(format),
       sample_rate(sample_rate),
-      channels(channels)
+      wave_file(nullptr)
     {
     }
 
