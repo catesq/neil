@@ -6,10 +6,9 @@ import cairo
 import zzub
 
 import config
-from neil.utils import ( PluginType,
+from neil.utils import ( 
     get_plugin_type, is_effect, is_a_generator, is_controller, is_root, is_instrument,
-    blend_float, box_contains, distance_from_line, plugin_color_names,
-    prepstr, linear2db, ui
+    box_contains, distance_from_line, prepstr, linear2db
 )
 
 from neil import components, views
@@ -20,6 +19,7 @@ from patterns import key_to_note
 
 from .volume_slider import VolumeSlider
 from .utils import draw_line, draw_wavy_line, draw_line_arrow, router_sizes
+from .colors import RouterColors
 
 AREA_ANY = 0
 AREA_PANNING = 1
@@ -43,21 +43,6 @@ class RouteView(Gtk.DrawingArea):
     dragoffset = 0, 0
     contextmenupos = 0, 0
 
-    COLOR_DEFAULT = 0
-    COLOR_MUTED = 1
-    COLOR_LED_OFF = 2
-    COLOR_LED_ON = 3
-    COLOR_LED_BORDER = 4
-    COLOR_LED_WARNING = 7
-    COLOR_CPU_OFF = 2
-    COLOR_CPU_ON = 3
-    COLOR_CPU_BORDER = 4
-    COLOR_CPU_WARNING = 4
-    COLOR_BORDER_IN = 8
-    COLOR_BORDER_OUT = 8
-    COLOR_BORDER_SELECT = 8
-    COLOR_TEXT = 9
-
     def __init__(self, parent):
         """
         Initializer.
@@ -67,15 +52,16 @@ class RouteView(Gtk.DrawingArea):
         """
         Gtk.DrawingArea.__init__(self)
 
-        self.panel                       = parent
-        self.surface                     = None
-        self.autoconnect_target          = None
-        self.chordnotes                  = []
-        self.volume_slider               = VolumeSlider(self)
-        self.selections                  = {}                        #selections stored using the remember selection option
-        self.area                        = Gdk.Rectangle(0, 0, 1, 1) # will be the pixel dimensions allocated to the drawingarea
-        self.connecting                  = False
-        self.drag_update_timer           = False
+        self.panel              = parent
+        self.surface            = None
+        self.autoconnect_target = None
+        self.chordnotes         = []
+        self.volume_slider      = VolumeSlider(self)
+        self.selections         = {}                        #selections stored using the remember selection option
+        self.area               = Gdk.Rectangle(0, 0, 1, 1) # will be the pixel dimensions allocated to the drawingarea
+        self.connecting         = False
+        self.drag_update_timer  = False
+        self.colors             = RouterColors(config.get_config())
 
         eventbus                         = components.get('neil.core.eventbus')
         eventbus.zzub_connect           += self.on_zzub_redraw_event
@@ -127,6 +113,7 @@ class RouteView(Gtk.DrawingArea):
 
     def on_active_plugins_changed(self, *args):
        # player = components.get('neil.core.player')
+        print("active plugins changed")
         common.get_plugin_infos().reset_plugingfx()
 
 
@@ -195,61 +182,30 @@ class RouteView(Gtk.DrawingArea):
 
     def update_colors(self):
         """
-        Updates the routers color scheme.
+        Updates the color scheme.
         """
-        cfg = config.get_config()
-        names = [
-                'MV ${PLUGIN}',
-                'MV ${PLUGIN} Mute',
-                'MV ${PLUGIN} LED Off',
-                'MV ${PLUGIN} LED On',
-                'MV Indicator Background',
-                'MV Indicator Foreground',
-                'MV Indicator Border',
-                'MV Indicator Warning',
-                'MV Border',
-                'MV Text',
-        ]
-
-        
-        self.plugintype2brushes = {}
-        for plugintype, name in plugin_color_names.items():
-            brushes = []
-            for name in [x.replace('${PLUGIN}', name) for x in names]:
-                brushes.append(cfg.get_float_color(name))
-            self.plugintype2brushes[plugintype] = brushes
-
-        self.default_brushes = self.plugintype2brushes[PluginType.Instrument]
+        self.colors.refresh()
 
         common.get_plugin_infos().reset_plugingfx()
 
-        self.arrowcolors = {
-            zzub.zzub_connection_type_audio: [
-                cfg.get_float_color("MV Arrow"),
-                cfg.get_float_color("MV Arrow Border In"),
-                cfg.get_float_color("MV Arrow Border Out"),
-            ],
-            zzub.zzub_connection_type_cv: [
-                cfg.get_float_color("MV Controller Arrow"),
-                cfg.get_float_color("MV Controller Arrow Border In"),
-                cfg.get_float_color("MV Controller Arrow Border Out"),
-            ],
-        }
-
-
     def on_zzub_plugin_changed(self, plugin):
+        print("zubb plugin changed event")
         common.get_plugin_infos().get(plugin).reset_plugingfx()
         self.redraw(True)
+
 
     def on_zzub_redraw_event(self, *args):
         print("zubb redraw event")
         self.redraw(True)
 
+
     def on_focus(self, event):
         self.redraw(True)
 
+
     def store_selection(self, index, plugins):
         self.selections[index] = [plugin.get_id() for plugin in plugins]
+
 
     def restore_selection(self, index):
         if self.has_selection(index):
@@ -257,11 +213,14 @@ class RouteView(Gtk.DrawingArea):
             plugins = player.get_plugin_list()
             player.active_plugins = [plugin for plugin in plugins if plugin.get_id() in self.selections[index]]
 
+
     def has_selection(self, index):
         return index in self.selections
 
+
     def selection_count(self):
         return len(self.selections)
+
 
     def on_context_menu(self, widget, event):
         """
@@ -688,11 +647,6 @@ class RouteView(Gtk.DrawingArea):
 
             rx, ry = rx - half_width, ry - half_height
 
-            # default_brushes = self.plugintype2brushes[PluginType.Generator];
-            brushes = self.plugintype2brushes.get(get_plugin_type(mp), self.default_brushes)
-
-            def flag2col(flag):
-                return brushes[flag]
 
             if pi.plugingfx:
                 pluginctx = cairo.Context(pi.plugingfx)
@@ -706,8 +660,8 @@ class RouteView(Gtk.DrawingArea):
                 pluginctx = cairo.Context(pi.plugingfx)
 
                 # adjust colour for muted plugins
-                color = brushes[self.COLOR_MUTED if pi.muted else self.COLOR_DEFAULT]
-                pluginctx.set_source_rgb(*color)
+                plugin_color = self.colors.default(pi.muted) 
+                pluginctx.set_source_rgb(*plugin_color)
 #                if pi.muted:
 #                    gc.set_foreground(cm.alloc_color(brushes[self.COLOR_MUTED]))
 #                else:
@@ -716,13 +670,13 @@ class RouteView(Gtk.DrawingArea):
                 pluginctx.fill()
 
                 # outer border
-                pluginctx.set_source_rgb(*flag2col(self.COLOR_BORDER_OUT))
+                pluginctx.set_source_rgb(*self.colors.border_out())
                 pluginctx.rectangle( 0, 0, plugin_width, plugin_height )
                 pluginctx.stroke()
 
                 #  inner border
-                border = blend_float(color, (1, 1, 1), 0.65)
-                pluginctx.set_source_rgb(*border)
+                in_border = self.colors.shade(plugin_color, 0.65)
+                pluginctx.set_source_rgb(*in_border)
                 pluginctx.rectangle( 1, 1, plugin_width - 2, plugin_height - 2 )
                 pluginctx.stroke()
 
@@ -738,24 +692,21 @@ class RouteView(Gtk.DrawingArea):
                 lw, lh = pango_layout.get_pixel_size()
                 half_lw, half_lh = lw / 2, lh / 2
                 if mp in player.active_plugins:
-                    pluginctx.set_source_rgb(*flag2col(self.COLOR_BORDER_SELECT))
+                    pluginctx.set_source_rgb(*self.colors.border())
                     pluginctx.rectangle(
                         half_width - lw / 2 - 3,
                         half_height - half_lh,
-                        lw + 6,
-                        lh)
+                        lw + 6, lh)
                     pluginctx.stroke()
 
-                pencol = flag2col(self.COLOR_MUTED if pi.muted else self.COLOR_DEFAULT)
-                blendedpen = blend_float(pencol, (1,1,1), 0.7)
-                pluginctx.set_source_rgb(*blendedpen)
+                pluginctx.set_source_rgb(*self.colors.shade(plugin_color, 0.7))
                 pluginctx.move_to(
                     half_width - half_lw + 1, 
                     half_height - half_lh + 1
                 )
                 PangoCairo.show_layout(pluginctx, pango_layout)
 
-                pluginctx.set_source_rgb(*flag2col(self.COLOR_TEXT))
+                pluginctx.set_source_rgb(*self.colors.text())
                 pluginctx.move_to(
                     half_width - half_lw, 
                     half_height - half_lh
@@ -764,8 +715,7 @@ class RouteView(Gtk.DrawingArea):
 
             if config.get_config().get_led_draw() == True:
                 # led border
-                col = flag2col(self.COLOR_MUTED if pi.muted else self.COLOR_DEFAULT)
-                border = blend_float(col, [0,0,0], 0.5)
+                border = self.colors.default(pi.muted, -0.5)
                 pluginctx.set_source_rgb(*border)
                 pluginctx.rectangle(
                     int(router_sizes.get('ledofsx')), 
@@ -781,7 +731,7 @@ class RouteView(Gtk.DrawingArea):
                     amp = 0
                 if amp != pi.amp:
                     if amp >= 1:
-                        pluginctx.set_source_rgb(*brushes[self.COLOR_LED_WARNING])
+                        pluginctx.set_source_rgb(*self.colors.led_warning())
                         pluginctx.rectangle(
                             int(router_sizes.get('ledofsx')) + 1, 
                             int(router_sizes.get('ledofsy')) + 1, 
@@ -790,7 +740,7 @@ class RouteView(Gtk.DrawingArea):
                         )
                         pluginctx.fill()
                     else:
-                        pluginctx.set_source_rgb(*brushes[self.COLOR_LED_OFF])
+                        pluginctx.set_source_rgb(*self.colors.led_off())
                         pluginctx.rectangle(
                             int(router_sizes.get('ledofsx')), 
                             int(router_sizes.get('ledofsy')), 
@@ -803,7 +753,7 @@ class RouteView(Gtk.DrawingArea):
                         height = int((router_sizes.get('ledheight') - 4) * amp + 0.5)
                         if (height > 0):
                             # led fill
-                            pluginctx.set_source_rgb(*brushes[self.COLOR_LED_ON])
+                            pluginctx.set_source_rgb(*self.colors.led_on())
                             pluginctx.rectangle(
                                 int(router_sizes.get('ledofsx')) + 1, 
                                 int(router_sizes.get('ledofsy') + router_sizes.get('ledheight')) - height - 1, 
@@ -901,12 +851,13 @@ class RouteView(Gtk.DrawingArea):
                 crx, cry = self.float_to_pixel(t_pos)
 
                 if (conn_type == zzub.zzub_connection_type_cv):
-                    draw_wavy_line(ctx, self.arrowcolors[zzub.zzub_connection_type_cv][0], int(crx), int(cry), int(rx), int(ry))
+                    draw_wavy_line(ctx, self.colors.arrow(False), int(crx), int(cry), int(rx), int(ry))
                 else:
                     amp = self.normalize_amp(mp.get_parameter_value(0, index, 0))
-                    blended = blend_float(cfg.get_float_color("MV Arrow"), (0.0, 0.0, 0.0), amp)
-                    self.arrowcolors[zzub.zzub_connection_type_audio][0] = blended
-                    draw_line_arrow(ctx, self.arrowcolors[mp.get_input_connection_type(index)], int(crx), int(cry), int(rx), int(ry), cfg)
+                    arrow_col = self.colors.arrow(True, amp)
+                    # blended = blend_float(cfg.get_float_color("MV Arrow"), (0.0, 0.0, 0.0), amp)
+                    # self.arrowcolors[zzub.zzub_connection_type_audio][0] = blended
+                    draw_line_arrow(ctx, arrow_col, int(crx), int(cry), int(rx), int(ry), cfg)
 
         ctx.translate(-0.5, -0.5)
 
@@ -921,23 +872,6 @@ class RouteView(Gtk.DrawingArea):
 
         cfg = config.get_config()
 
-        # rect = self.get_allocation()
-        # w, h = rect.width, rect.height
-
-        # arrowcolors = {
-        #         zzub.zzub_connection_type_audio: [
-        #                 cfg.get_float_color("MV Arrow"),
-        #                 cfg.get_float_color("MV Arrow Border In"),
-        #                 cfg.get_float_color("MV Arrow Border Out"),
-        #         ],
-        #         zzub.zzub_connection_type_event: [
-        #                 cfg.get_float_color("MV Controller Arrow"),
-        #                 cfg.get_float_color("MV Controller Arrow Border In"),
-        #                 cfg.get_float_color("MV Controller Arrow Border Out"),
-        #         ],
-        # }
-
-        # cx, cy = w * 0.5, h * 0.5
 
 
         pango_layout = Pango.Layout(self.get_pango_context())
@@ -950,7 +884,7 @@ class RouteView(Gtk.DrawingArea):
             self.surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.area.width, self.area.height)
             surfctx = cairo.Context(self.surface)
 
-            bg_color = cfg.get_float_color('MV Background')
+            bg_color = self.colors.background()
             surfctx.set_source_rgb(*bg_color)
             surfctx.rectangle(0, 0, w, h)
             surfctx.fill()
@@ -966,7 +900,7 @@ class RouteView(Gtk.DrawingArea):
             ctx.set_line_width(1)
             crx, cry = self.float_to_pixel(player.active_plugins[0].get_position())
             rx, ry = self.connectpos
-            linepen = cfg.get_float_color("MV Line")
+            linepen = self.colors.line()
 
             if self.connecting_alt:
                 draw_wavy_line(ctx, linepen, int(crx), int(cry), int(rx), int(ry))

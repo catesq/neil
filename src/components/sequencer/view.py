@@ -11,7 +11,7 @@ import sys
 
 from neil.utils import (
     prepstr, get_new_pattern_name, ui,
-    get_plugin_color_name, is_instrument
+    get_machine_color_key, is_instrument
 )
 
 import random
@@ -1276,9 +1276,9 @@ class SequencerView(Gtk.DrawingArea):
 
             # Draw a box that states the name of the machine on that track.
             if self.plugin_info[plugin].muted or self.plugin_info[plugin].bypassed:
-                name = get_plugin_color_name(plugin, "Bg Mute")
+                name = get_machine_color_key(plugin, "Bg Mute")
             else:
-                name = get_plugin_color_name(plugin, "Bg")
+                name = get_machine_color_key(plugin, "Bg")
 
             ctx.set_source_rgb(*colors[name])
 
@@ -1375,10 +1375,12 @@ class SequencerView(Gtk.DrawingArea):
             'Effect Bg': cfg.get_float_color('MV Effect'),
             'Generator Bg': cfg.get_float_color('MV Generator'),
             'Controller Bg': cfg.get_float_color('MV Controller'),
+            'Other Bg': cfg.get_float_color('MV Other'),
             'Master Bg Mute': cfg.get_float_color('MV Master Mute'),
             'Effect Bg Mute': cfg.get_float_color('MV Effect Mute'),
             'Generator Bg Mute': cfg.get_float_color('MV Generator Mute'),
-            'Controller Bg Mute': cfg.get_float_color('MV Controller Mute')
+            'Controller Bg Mute': cfg.get_float_color('MV Controller Mute'),
+            'Other Bg Mute': cfg.get_float_color('MV Other Mute')
         }
 
         player = components.get('neil.core.player')

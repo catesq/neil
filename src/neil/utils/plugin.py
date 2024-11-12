@@ -4,35 +4,39 @@ import zzub
 
 
 class PluginType(IntEnum):
-    Root = 1
-    Instrument = 2
+    Root = 0
+    Instrument = 1
+    Effect = 2
     CV = 3
-    Effect = 4
-    Controller = 5
-    Streamer = 6
-    Other = 7
+    Controller = 4
+    Streamer = 5
+    Other = 6
 
 
-plugin_color_names = {
-    PluginType.Effect: "Effect",
-    PluginType.Instrument: "Generator",
-    PluginType.CV: "Controller",
-    PluginType.Root: "Master",
-    PluginType.Controller: "Other",
-    PluginType.Streamer: "Other",
-    PluginType.Other: "Other",
-}
 
 
 plugin_type_names = {
     PluginType.Root: "Root",
     PluginType.Instrument: "Instrument",
-    PluginType.CV: "CV generator",
     PluginType.Effect: "Effect",
+    PluginType.CV: "CV generator",
     PluginType.Controller: "Controller",
     PluginType.Streamer: "Streamer",
     PluginType.Other: "Other",
 }
+
+# do not rearrange these, they must match the order of PluginType
+# so it is trivial to create lists by iterating these items eg router/colors.py
+plugin_color_schemes = {
+    PluginType.Root: "Master",
+    PluginType.Instrument: "Generator",
+    PluginType.Effect: "Effect",
+    PluginType.CV: "Controller",
+    PluginType.Controller: "Other",
+    PluginType.Streamer: "Other",
+    PluginType.Other: "Other",
+}
+
 
 
 AUDIO_IO_FLAGS = zzub.zzub_plugin_flag_has_audio_input | zzub.zzub_plugin_flag_has_audio_output | zzub.zzub_plugin_flag_is_cv_generator
@@ -49,9 +53,8 @@ adapters = {
 
 
 def get_adapter_name(pluginloader: zzub.Pluginloader):
-    # adapter name is: lv2, vst, vst3 or zzub
-    # plugins using adapter plugins have a name like:
-    # "@zzub.org/adapter_name/external_plugin_name
+    # get the adapter name: lv2, vst, vst3, ladspa or zzub
+    # from the internal machine url: '@zzub.org/adapter_name/external_plugin_name'
     name = pluginloader.get_loader_name()
     typename = name[10:name.find("/", 10)]
     if typename in adapters.keys():
@@ -64,10 +67,10 @@ def get_adapter_name(pluginloader: zzub.Pluginloader):
 def get_plugin_type(plugin: zzub.Pluginloader | zzub.Plugin):
     flags = plugin.get_flags()
 
-    if flags & zzub.zzub_plugin_flag_is_effect:
-        return PluginType.Effect
-    elif flags & zzub.zzub_plugin_flag_is_instrument:
+    if flags & zzub.zzub_plugin_flag_is_instrument:
         return PluginType.Instrument
+    elif flags & zzub.zzub_plugin_flag_is_effect:
+        return PluginType.Effect
     elif flags & zzub.zzub_plugin_flag_is_cv_generator:
         return PluginType.CV
     elif flags & zzub.zzub_plugin_flag_is_root:
@@ -80,14 +83,16 @@ def get_plugin_type(plugin: zzub.Pluginloader | zzub.Plugin):
     return PluginType.Other
 
 
-
-def get_plugin_color_name(plugin: zzub.Pluginloader | zzub.Plugin, suffix: str | bool=False):
-    return "MV " + plugin_color_names[get_plugin_type(plugin)] + "" if not suffix else " " + suffix.strip()
+def get_machine_color_key(plugin: zzub.Pluginloader | zzub.Plugin, suffix: str | bool=False):
+    if suffix:
+        return plugin_color_schemes[get_plugin_type(plugin)] + " " + suffix.strip()
+    else:
+        return plugin_color_schemes[get_plugin_type(plugin)]
 
 
 
 def get_plugin_type_name(plugin: zzub.Pluginloader | zzub.Plugin):
-    return plugin_type_names[get_plugin_type(plugin)] 
+    return plugin_color_schemes[get_plugin_type(plugin)] 
 
 
 
@@ -190,8 +195,8 @@ __all__ = [
     'PluginType',
     'get_adapter_name',
     'get_plugin_type',
-    'get_plugin_color_name',
-    'plugin_color_names',
+    'get_machine_color_key',
+    'plugin_color_schemes',
     'get_plugin_type_name',
     'plugin_type_names',
     'is_other',

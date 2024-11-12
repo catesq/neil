@@ -97,7 +97,7 @@ def blend_float(rgb1, rgb2, weight = 0.5):
         rgb1[2] * weight + rgb2[2] * (1 - weight)
     ]
 
-def blend (color1, color2, weight = 0.5):
+def blend(color1, color2, weight = 0.5):
     """
         Blend (lerp) two Gdk.Colors
     """

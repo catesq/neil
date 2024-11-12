@@ -105,7 +105,7 @@ class HDRecorderDialog(Gtk.Dialog):
         self.show_all()
 
     def on_zzub_parameter_changed(self,plugin,group,track,param,value):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         recorder = player.get_stream_recorder()
         if plugin == recorder:
             if (group,track,param) == (zzub.zzub_parameter_group_global,0,0):
@@ -115,7 +115,7 @@ class HDRecorderDialog(Gtk.Dialog):
 
     def update_rec_button(self, value=None):
 #        block = self.hgroup.autoblock()
-        player = components.get('neil.core.player')
+        player = components.get_player()
         recorder = player.get_stream_recorder()
         if value is None:
             value = recorder.get_parameter_value(zzub.zzub_parameter_group_global, 0, 1)
@@ -124,7 +124,7 @@ class HDRecorderDialog(Gtk.Dialog):
 
     # todo: the paramter change eveny should be received when new filename selected. todo: find out and fix it';kn X                                                                                                                            ?
     def update_label(self):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         recorder = player.get_stream_recorder()
         self.btnsaveas.set_label(recorder.describe_value(zzub.zzub_parameter_group_global, 0, 0))
 
@@ -173,7 +173,7 @@ class HDRecorderDialog(Gtk.Dialog):
         """
         dlg = Gtk.FileChooserDialog(title="Save", parent=self, action=Gtk.FileChooserAction.SAVE, )
         dlg.add_buttons( "_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.OK)
-        player = components.get('neil.core.player')
+        player = components.get_player()
         dlg.set_do_overwrite_confirmation(True)
         ffwav = Gtk.FileFilter()
         ffwav.set_name("PCM Waves (*.wav)")
@@ -195,7 +195,7 @@ class HDRecorderDialog(Gtk.Dialog):
         """
         Handler for the "Record" button.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         recorder = player.get_stream_recorder()
         recorder.set_parameter_value_direct(zzub.zzub_parameter_group_global, 0, 1, widget.get_active(), False)
 
