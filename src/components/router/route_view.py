@@ -7,23 +7,25 @@ import zzub
 
 import config
 from neil.utils import ( 
-    get_plugin_type, is_effect, is_a_generator, is_controller, is_root, is_instrument,
-    box_contains, distance_from_line, prepstr, linear2db
+    is_effect, is_a_generator, is_controller, is_root, is_instrument,
+    box_contains, distance_from_line, prepstr, linear2db, 
 )
+from typing import Tuple
 
 from neil import components, views
 import neil.common as common
-from rack import ParameterView
-from neil.presetbrowser import PresetView
 from patterns import key_to_note
 
 from .volume_slider import VolumeSlider
 from .utils import draw_line, draw_wavy_line, draw_line_arrow, router_sizes
 from .colors import RouterColors
+from contextmenu import ConnectDialog
+
 
 AREA_ANY = 0
 AREA_PANNING = 1
 AREA_LED = 2
+
 
 
 class RouteView(Gtk.DrawingArea):
@@ -91,6 +93,18 @@ class RouteView(Gtk.DrawingArea):
 
         if config.get_config().get_led_draw() == True:
             self.adjust_draw_led_timer()
+
+        self.plugin_layer = PluginLayer()
+        self.connection_layer = ConnectionLayer()
+        self.layers = LayerGroup(self.layers.plugins, self.layers.connections)
+        self.leds = LedLayer()
+        self.plugin_layer = PluginLayer()
+        self.connection_layer = ConnectLayer()
+        
+        self.update_ui_objects()
+
+    def update_ui_objects(self):
+        pass
 
 
     def on_realized(self, widget):
@@ -481,7 +495,6 @@ class RouteView(Gtk.DrawingArea):
 
     # called by on_left_up after alt plugin connection 
     def choose_cv_connectors_dialog(self, from_plugin, to_plugin):
-        from contextmenu import ConnectDialog
         dialog = ConnectDialog(self, from_plugin, to_plugin)
         response = dialog.run()
 

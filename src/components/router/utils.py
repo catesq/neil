@@ -1,24 +1,30 @@
-from neil.utils import Sizes
+from neil.utils import Sizes, Vec2
 
 router_sizes = Sizes(
     pluginwidth = 100,
     pluginheight = 25,
+    gap = 4,
     ledwidth = 6,
-    ledheight = 'pluginheight - 8',  # size of led
-    ledofsx = 4,
-    ledofsy = 4,  # offset of led
+    ledheight = 'pluginheight - gap * 2',  # size of led
+    ledofsx = 'gap',
+    ledofsy = 'gap',  # offset of led
     cpuwidth = 6,
-    cpuheight = 'pluginheight - 8',  # size of led
+    cpuheight = 'pluginheight - gap * 2',  # size of led
     cpuofsx = 'pluginwidth - cpuwidth - 4',
     cpuofsy = 4,  # offset of led
+    panwidth = 'pluginwidth - gap * 2',
+    panheight = 6,
     arrowradius = 8,
     quantizex = 'pluginwidth + arrowradius * 2',
     quantizey = 'pluginheight + arrowradius * 2',
     volbarwidth = 32,
     volbarheight = 128,
-    volknobheight = 16
-)
+    volknobheight = 16,
 
+    plugin = Vec2(100, 25),
+    led = Vec2(6, 'plugin.y - gap * 2'),
+
+)
 
 
 def draw_line(ctx, linepen, crx, cry, rx, ry):

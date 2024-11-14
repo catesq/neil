@@ -23,7 +23,6 @@ which have no specific module or class they belong to.
 
 import math, os
 import struct
-import ctypes
 
 
 # avoid import the ui submodule here to break a recursive import
