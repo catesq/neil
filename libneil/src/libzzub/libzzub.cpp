@@ -1201,6 +1201,11 @@ void zzub_plugin_configure(zzub_plugin_t* plugin, const char* key, const char* v
     plugin->_player->back.plugins[plugin->id]->plugin->configure(key, value);
 }
 
+const char* zzub_plugin_get_config(zzub_plugin_t* plugin, const char* key)
+{
+    return plugin->_player->back.plugins[plugin->id]->plugin->get_config(key);
+}
+
 int zzub_plugin_get_id(zzub_plugin_t* plugin)
 {
     return plugin->id;

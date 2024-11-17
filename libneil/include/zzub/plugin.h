@@ -166,6 +166,16 @@ struct plugin {
     // usually related to paths.
     virtual void configure(const char *key, const char *value) {}
 
+    // retrieve data set by configure()
+    // eg 'router_view' to change display in router
+    virtual const char* get_config(const char *key)
+    {
+         if(config_data.contains(key))
+            return config_data[key].c_str();
+        else
+            return "";
+    }
+
     virtual const char *get_preset_file_extensions() { return nullptr; }
     virtual bool load_preset_file(const char *) { return false; }
     virtual bool save_preset_file(const char *) { return false; }  // return pointer to data to be writter to a preset file - the memory will be freed after the preset file is saved
@@ -183,6 +193,7 @@ struct plugin {
     void *track_values;
     void *controller_values;
     int *attributes;
+    std::map<std::string, std::string> config_data{};
 
     master_info *_master_info;
     host *_host;

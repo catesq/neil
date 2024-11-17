@@ -670,6 +670,9 @@ namespace zzub:
 		"specify a file path to write to."
 		def configure(string key, string value)
 
+		"get values set by configure"
+		def get_config(string key):string
+
 		"Set whether plugin is bypassed. 1 for bypass, 0 for normal."
 		"Bypass causes no processing to occur in the given machine."
 		def set_bypass(int muted)
