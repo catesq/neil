@@ -234,7 +234,7 @@ class MenuWrapper:
 
 
     def add_image_item(self, label, icon_or_path, func, *args) -> Gtk.ImageMenuItem:
-        print("imagemenu.new_from_stock deprecated", label)
+        # print("imagemenu.new_from_stock deprecated", label)
         item = Gtk.ImageMenuItem.new_from_stock(stock_id=label)
         if isinstance(icon_or_path, str):
             image = Gtk.Image()

@@ -24,7 +24,9 @@ class VolumeSlider(Gtk.Window):
         self.add(self.drawingarea)
         self.drawingarea.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
         self.drawingarea.set_property('can-focus', True)
-        self.resize(router_sizes.get('volbarwidth'), router_sizes.get('volbarheight'))
+        self.size = router_sizes.get('vol_bar')
+        self.knob_size = router_sizes.get('vol_knob')
+        self.resize(self.size.x, self.size.y)
         self.hide()
         self.drawingarea.connect('motion-notify-event', self.on_motion)
         self.drawingarea.connect('draw', self.on_draw)
@@ -44,7 +46,7 @@ class VolumeSlider(Gtk.Window):
         if delta == 0:
             return
         self.y = newpos
-        self.amp = max(min(self.amp + (float(delta) / router_sizes.get('volbarheight')), 1.0), 0.0)
+        self.amp = max(min(self.amp + (float(delta) / self.size.y, 0.0)))
         amp = min(max(int(db2linear(self.amp * -48.0, -48.0) * 16384.0), 0), 16384)
         self.plugin.set_parameter_value_direct(0, self.index, 0, amp, False)
         self.redraw()
@@ -71,8 +73,8 @@ class VolumeSlider(Gtk.Window):
 
         if self.plugin:
             ctx.set_source_rgb(*blackbrush)
-            pos = int(self.amp * (router_sizes.get('volbarheight') - router_sizes.get('volknobheight')))
-            ctx.rectangle(1, pos + 1, router_sizes.get('volbarwidth') - 2, router_sizes.get('volknobheight') - 2)
+            pos = int(self.amp * (self.size.y - self.knob_size.y))
+            ctx.rectangle(1, pos + 1, self.size.x - 2, self.knob_size.y - 2)
             ctx.fill()
 
         black = (0, 0, 0)

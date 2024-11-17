@@ -97,6 +97,7 @@ EVENTS = [
 
 class EventHandlerList:
     def __init__(self, name, handlers=None):
+        self.debug_events = False
         self.name = name
         if not handlers:
             handlers = []
@@ -191,7 +192,8 @@ class EventHandlerList:
 
     def print_mapping(self):
         self.filter_dead_references()
-        print(("event [%s]" % self.name), end='\n')
+        if self.debug_events:
+            print(("event [%s]" % self.name), end='\n')
         for ref,funcname,args in self.handlers:
             if funcname:
                 func = getattr(ref(), funcname)
@@ -200,7 +202,8 @@ class EventHandlerList:
             funcname = func.__name__
             if hasattr(func, '__self__'):
                 funcname = func.__self__.__class__.__name__ + '.' + funcname
-            print((" => %s(%s)" % (funcname,','.join([repr(x) for x in args]))), end='\n')
+            if self.debug_events:
+                print((" => %s(%s)" % (funcname,','.join([repr(x) for x in args]))), end='\n')
 
 class EventBus:
     __readonly__ = False

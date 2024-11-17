@@ -1,7 +1,7 @@
 from typing import Dict, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import player, router, utils.ui
+    import player, router, utils.ui, eventbus
 
 from .package import PackageInfo
 from .loader import NamedComponentLoader
@@ -182,6 +182,9 @@ class ComponentManager():
 
     def get_config(self) -> 'config.NeilConfig':
         return self.get('neil.core.config')
+    
+    def get_eventbus(self) -> 'eventbus.EventBus':
+        return self.get('neil.core.eventbus')
 
     def get_categories(self) -> Dict[str, List[str]]:
         return self.categories

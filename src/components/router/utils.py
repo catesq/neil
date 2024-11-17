@@ -1,29 +1,40 @@
 from neil.utils import Sizes, Vec2
 
 router_sizes = Sizes(
-    pluginwidth = 100,
-    pluginheight = 25,
+    # pluginwidth = 120,
+    # pluginheight = 30,
     gap = 4,
-    ledwidth = 6,
-    ledheight = 'pluginheight - gap * 2',  # size of led
-    ledofsx = 'gap',
-    ledofsy = 'gap',  # offset of led
-    cpuwidth = 6,
-    cpuheight = 'pluginheight - gap * 2',  # size of led
-    cpuofsx = 'pluginwidth - cpuwidth - 4',
-    cpuofsy = 4,  # offset of led
-    panwidth = 'pluginwidth - gap * 2',
-    panheight = 6,
+    bar = 8,  # the width/height of the bars used for led, cpu and panning
+
+    # ledwidth = 'bar',
+    # ledheight = 'pluginheight - gap * 2',  # size of led
+    
+    # cpuwidth = 'bar',
+    # cpuheight = 'pluginheight - gap * 2',  # size of led
+
+    # panwidth = 'pluginwidth - gap * 2',
+    # panheight = 'bar',
     arrowradius = 8,
-    quantizex = 'pluginwidth + arrowradius * 2',
-    quantizey = 'pluginheight + arrowradius * 2',
-    volbarwidth = 32,
-    volbarheight = 128,
-    volknobheight = 16,
+    # quantizex = 'pluginwidth + arrowradius * 2',
+    # quantizey = 'pluginheight + arrowradius * 2',
+    # volbarwidth = 32,
+    # volbarheight = 128,
+    # volknobheight = 16,
 
-    plugin = Vec2(100, 25),
+    plugin = Vec2(120, 30),
+    quantize = Vec2('pluginwidth + arrowradius * 2', 'pluginheight + arrowradius * 2'),
+
     led = Vec2(6, 'plugin.y - gap * 2'),
+    led_offs = Vec2('gap', 'gap'),
 
+    cpu = Vec2(6, 'plugin.y - gap * 2'),
+    cpu_offs = Vec2('pluginwidth - gap', 'gap'),
+
+    pan = Vec2('pluginwidth - gap * 4 + bar * 2', 'bar'),
+    pan_offs = Vec2('gap*2 + bar', 'pluginheight - gap - bar'),
+
+    vol_bar = Vec2(32, 128),
+    vol_knob = Vec2(16,16),
 )
 
 

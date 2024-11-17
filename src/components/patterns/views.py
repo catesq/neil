@@ -1055,7 +1055,7 @@ class PatternView(Gtk.DrawingArea):
         """
         Loads and redraws the pattern view after the pattern has been changed.
         """
-        print("patterns.views.PatternView,pattern_changed()")
+        print("patterns/views.py PatternView.pattern_changed()")
         return
         self.init_values()
         self.show_cursor_left()

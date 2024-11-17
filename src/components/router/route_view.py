@@ -7,7 +7,7 @@ import zzub
 
 import config
 from neil.utils import ( 
-    is_effect, is_a_generator, is_controller, is_root, is_instrument,
+    Vec2, Area, is_effect, is_a_generator, is_controller, is_root, is_instrument,
     box_contains, distance_from_line, prepstr, linear2db, 
 )
 from typing import Tuple
@@ -20,13 +20,11 @@ from .volume_slider import VolumeSlider
 from .utils import draw_line, draw_wavy_line, draw_line_arrow, router_sizes
 from .colors import RouterColors
 from contextmenu import ConnectDialog
-
+from .view_layer import RouterLayers, PluginContainer, AreaType
 
 AREA_ANY = 0
 AREA_PANNING = 1
 AREA_LED = 2
-
-
 
 class RouteView(Gtk.DrawingArea):
     """
@@ -59,13 +57,13 @@ class RouteView(Gtk.DrawingArea):
         self.autoconnect_target = None
         self.chordnotes         = []
         self.volume_slider      = VolumeSlider(self)
-        self.selections         = {}                        #selections stored using the remember selection option
-        self.area               = Gdk.Rectangle(0, 0, 1, 1) # will be the pixel dimensions allocated to the drawingarea
+        self.selections         = {}                    #selections stored using the remember selection option
+        self.area               = Area()                # will be the pixel dimensions allocated to the drawingarea
         self.connecting         = False
         self.drag_update_timer  = False
         self.colors             = RouterColors(config.get_config())
 
-        eventbus                         = components.get('neil.core.eventbus')
+        eventbus                         = components.get_eventbus()
         eventbus.zzub_connect           += self.on_zzub_redraw_event
         eventbus.zzub_disconnect        += self.on_zzub_redraw_event
         eventbus.zzub_plugin_changed    += self.on_zzub_plugin_changed
@@ -94,21 +92,34 @@ class RouteView(Gtk.DrawingArea):
         if config.get_config().get_led_draw() == True:
             self.adjust_draw_led_timer()
 
-        self.plugin_layer = PluginLayer()
-        self.connection_layer = ConnectionLayer()
-        self.layers = LayerGroup(self.layers.plugins, self.layers.connections)
-        self.leds = LedLayer()
-        self.plugin_layer = PluginLayer()
-        self.connection_layer = ConnectLayer()
+        self.router_layer = RouterLayers(router_sizes)
         
-        self.update_ui_objects()
+        self.create_ui_objects()
 
-    def update_ui_objects(self):
-        pass
+    def create_ui_objects(self):
+        self.router_layer.clear()
 
+        for mp in components.get_player().get_plugin_list():
+            pos = Vec2(*mp.get_position())
+            info = common.get_plugin_infos().get(mp)
+            container_cls = self.get_plugin_container_class(mp)
+            container = container_cls(mp, info, pos, router_sizes, self.colors)
+            self.router_layer.add_container(container)
+
+
+    # either build a PluginContainer or a class defined by 
+    def get_plugin_container_class(self, mp):
+        if mp.get_config('router_area'):
+            cls_name = mp.get_config('router_area')
+
+            if cls_name in globals():
+                return globals()[cls_name]
+        else:
+            return PluginContainer
 
     def on_realized(self, widget):
-        self.update_area()
+        self.router_layer.set_parent(widget)
+        
 
     def adjust_draw_led_timer(self, timeout = 200):
         if getattr(self, 'ui_timeout', False):
@@ -116,18 +127,21 @@ class RouteView(Gtk.DrawingArea):
 
         self.ui_timeout = GObject.timeout_add(timeout, self.on_draw_led_timer)
 
+
     def on_configure_event(self, widget, requisition):
         self.update_area()
         
 
     def update_area(self):
-        self.area = self.get_allocation()
-        self.redraw(True)
+        area = self.get_allocation()
+        
+        if self.area != area:
+            self.router_layer.set_size(area.width, area.height)
+            self.redraw(True)
         
 
     def on_active_plugins_changed(self, *args):
        # player = components.get('neil.core.player')
-        print("active plugins changed")
         common.get_plugin_infos().reset_plugingfx()
 
 
@@ -159,6 +173,7 @@ class RouteView(Gtk.DrawingArea):
         self.drag_highlight()
         # context.drag_status(context.suggested_action, time)
         return True
+
 
     def on_drag_data_received(self, widget, context, x, y, data, info, time):
         if data.get_format() != 8:
@@ -202,6 +217,7 @@ class RouteView(Gtk.DrawingArea):
 
         common.get_plugin_infos().reset_plugingfx()
 
+
     def on_zzub_plugin_changed(self, plugin):
         print("zubb plugin changed event")
         common.get_plugin_infos().get(plugin).reset_plugingfx()
@@ -214,6 +230,7 @@ class RouteView(Gtk.DrawingArea):
 
 
     def on_focus(self, event):
+        print("on focus")
         self.redraw(True)
 
 
@@ -347,24 +364,25 @@ class RouteView(Gtk.DrawingArea):
         @return: A connection item, exact pixel position and area (AREA_ANY, AREA_PANNING, AREA_LED) or None.
         @rtype: (zzub.Plugin,(int,int),int) or None
         """
-        (x, y) = xy
-        mx, my = x, y
-        PW, PH = router_sizes.get('pluginwidth') / 2, router_sizes.get('pluginheight') / 2
-        area = AREA_ANY
-        player = components.get('neil.core.player')
-        for mp in reversed(list(player.get_plugin_list())):
-            pi = common.get_plugin_infos().get(mp)
-            if not pi.songplugin:
-                continue
-            x,y = self.float_to_pixel(mp.get_position())
-            plugin_box = (x - PW, y - PH, x + PW, y + PH)
+        return self.router_layer.get_object_group_at(xy[0], xy[1], AreaType.PLUGIN)
+        # (x, y) = xy
+        # mx, my = x, y
+        # PW, PH = router_sizes.get('pluginwidth') / 2, router_sizes.get('pluginheight') / 2
+        # area = AREA_ANY
+        # player = components.get('neil.core.player')
+        # for mp in reversed(list(player.get_plugin_list())):
+        #     pi = common.get_plugin_infos().get(mp)
+        #     if not pi.songplugin:
+        #         continue
+        #     x,y = self.float_to_pixel(mp.get_position())
+        #     plugin_box = (x - PW, y - PH, x + PW, y + PH)
 
-            if box_contains(mx, my, plugin_box):
-                led_tl_pos = (plugin_box[0] + router_sizes.get('ledofsx'), plugin_box[1] + router_sizes.get('ledofsy'))
-                led_br_pos = (led_tl_pos[0] + router_sizes.get('ledwidth'), led_tl_pos[1] + router_sizes.get('ledheight'))
-                if box_contains(mx, my, [*led_tl_pos, *led_br_pos]):
-                    area = AREA_LED
-                return mp, (x, y), area
+        #     if box_contains(mx, my, plugin_box):
+        #         led_tl_pos = (plugin_box[0] + router_sizes.get('ledofsx'), plugin_box[1] + router_sizes.get('ledofsy'))
+        #         led_br_pos = (led_tl_pos[0] + router_sizes.get('ledwidth'), led_tl_pos[1] + router_sizes.get('ledheight'))
+        #         if box_contains(mx, my, [*led_tl_pos, *led_br_pos]):
+        #             area = AREA_LED
+        #         return mp, (x, y), area
 
     def on_left_dclick(self, widget, event):
         """
@@ -487,7 +505,8 @@ class RouteView(Gtk.DrawingArea):
         else:
             res = self.get_plugin_at((event.x, event.y))
             if res:
-                mp, (mx, my), area = res
+                _, area, _ = res
+                # mp, (mx, my), area = res
                 self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1) if area == AREA_LED else None)
 
         return False
@@ -599,10 +618,10 @@ class RouteView(Gtk.DrawingArea):
         if self.is_visible():
             player = components.get('neil.core.player')
             
-            PW, PH = router_sizes.get('pluginwidth') / 2, router_sizes.get('pluginheight') / 2
+            PW, PH = router_sizes.get('plugin').x / 2, router_sizes.get('plugin').y / 2
             for mp, (rx, ry) in ((mp, self.float_to_pixel(mp.get_position())) for mp in player.get_plugin_list()):
                 rx, ry = rx - PW, ry - PH
-                rect = Gdk.Rectangle(int(rx), int(ry), int(router_sizes.get('pluginwidth')), int(router_sizes.get('pluginheight')))
+                rect = Gdk.Rectangle(int(rx), int(ry), int(router_sizes.get('plugin').x), int(router_sizes.get('plugin').y))
 
 #                self.get_window().invalidate_rect(rect, False)
         return True
@@ -621,13 +640,19 @@ class RouteView(Gtk.DrawingArea):
 
     def redraw(self, full_refresh=False):
         if full_refresh:
-            self.surface = None
+            self.router_layer.set_refresh()
 
-        if self.get_window():
-            alloc_rect = self.get_allocation()
-            rect = Gdk.Rectangle(0, 0, alloc_rect.width, alloc_rect.height)
-            self.get_window().invalidate_rect(rect, False)
-            self.queue_draw()
+        self.get_window().invalidate_rect(self.get_allocation(), False)
+        self.queue_draw()
+
+        # if full_srefresh:
+        #     self.surface = None
+
+        # if self.get_window():
+        #     alloc_rect = self.get_allocation()
+        #     rect = Gdk.Rectangle(0, 0, alloc_rect.width, alloc_rect.height)
+        #     self.get_window().invalidate_rect(rect, False)
+        #     self.queue_draw()
 
     def draw_leds(self, ctx, pango_layout):
         """
@@ -829,8 +854,10 @@ class RouteView(Gtk.DrawingArea):
 
 
     def on_draw(self, widget, ctx):
-        self.draw(ctx)
+        self.router_layer.draw(ctx)
         return True
+        # self.draw(ctx)
+        # return True
     
     def normalize_amp(self, amp):
         amp /= 16384.0
@@ -875,7 +902,7 @@ class RouteView(Gtk.DrawingArea):
         ctx.translate(-0.5, -0.5)
 
     
-    def draw(self, ctx):
+    def xdraw(self, ctx):
         """
         Draws plugins, connections and arrows to an offscreen buffer.
         """

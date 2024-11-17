@@ -22,7 +22,7 @@ from gi.repository import GLib
 
 from neil.utils import is_instrument, is_effect, is_streamer, is_a_generator
 from neil.utils.ui import PropertyEventHandler, refresh_gui
-
+from typing import Generator
 from zzub import Player
 
 from neil import components
@@ -449,7 +449,8 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             self.set_state(zzub.zzub_player_state_stopped)
 
 
-    def get_plugin_list(self):
+    # typehint generator of zzub.Plugin
+    def get_plugin_list(self) -> Generator[zzub.Plugin, None, None]:
         for plugin in zzub.Player.get_plugin_list(self):
             if plugin == self.__streamplayer:
                 continue
@@ -600,7 +601,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         return self.last_history_pos != self.history_get_position()
 
 
-    def get_track_list(self):
+    def get_track_list(self) -> list[zzub.Sequence]:
         """
         Returns a list of sequences
         """

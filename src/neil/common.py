@@ -25,12 +25,18 @@ from neil import components
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-import zzub
+import zzub, cairo
 
 
 PLUGIN_DRAG_TARGETS = [
     Gtk.TargetEntry.new('application/x-neil-plugin-uri', Gtk.TargetFlags.SAME_APP, 1)
 ]
+
+
+class PluginGfx:
+    def __init__(self):
+        self.surface:cairo.Surface = None
+        self.context:cairo.Context = None
 
 class PluginInfo(object):
     """
@@ -44,7 +50,7 @@ class PluginInfo(object):
         self.pattern_position = (0, 0, 0, 0, 0)
         self.selection = None
         self.songplugin = True
-        self.plugingfx = None
+        self.plugingfx = PluginGfx()
         self.patterngfx = {}
         self.gfx_cache = {}
         self.amp = -9999.0
@@ -60,7 +66,7 @@ class PluginInfo(object):
         self.gfx_cache[key] = item
     
     def reset_plugingfx(self):
-        self.plugingfx = None
+        self.plugingfx = PluginGfx()
         self.amp = -9999.0
         self.cpu = -9999.0
 
