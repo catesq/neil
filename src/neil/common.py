@@ -33,7 +33,7 @@ PLUGIN_DRAG_TARGETS = [
 ]
 
 
-class PluginGfx:
+class GfxCache:
     def __init__(self):
         self.surface:cairo.Surface = None
         self.context:cairo.Context = None
@@ -50,7 +50,7 @@ class PluginInfo(object):
         self.pattern_position = (0, 0, 0, 0, 0)
         self.selection = None
         self.songplugin = True
-        self.plugingfx = PluginGfx()
+        self.plugingfx = GfxCache()
         self.patterngfx = {}
         self.gfx_cache = {}
         self.amp = -9999.0
@@ -66,7 +66,7 @@ class PluginInfo(object):
         self.gfx_cache[key] = item
     
     def reset_plugingfx(self):
-        self.plugingfx = PluginGfx()
+        self.plugingfx = GfxCache()
         self.amp = -9999.0
         self.cpu = -9999.0
 

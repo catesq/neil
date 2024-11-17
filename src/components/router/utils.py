@@ -4,7 +4,7 @@ router_sizes = Sizes(
     # pluginwidth = 120,
     # pluginheight = 30,
     gap = 4,
-    bar = 8,  # the width/height of the bars used for led, cpu and panning
+    bar = 12,  # the width/height of the bars used for led, cpu and panning
 
     # ledwidth = 'bar',
     # ledheight = 'pluginheight - gap * 2',  # size of led
@@ -21,7 +21,7 @@ router_sizes = Sizes(
     # volbarheight = 128,
     # volknobheight = 16,
 
-    plugin = Vec2(120, 30),
+    plugin = Vec2(128, 32),
     quantize = Vec2('pluginwidth + arrowradius * 2', 'pluginheight + arrowradius * 2'),
 
     led = Vec2(6, 'plugin.y - gap * 2'),

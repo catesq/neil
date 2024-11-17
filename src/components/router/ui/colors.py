@@ -1,4 +1,4 @@
-from neil.utils import PluginType, plugin_color_schemes, blend_float
+from neil.utils import PluginType, plugin_color_schemes
 
 
 import zzub

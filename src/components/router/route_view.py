@@ -8,9 +8,8 @@ import zzub
 import config
 from neil.utils import ( 
     Vec2, Area, is_effect, is_a_generator, is_controller, is_root, is_instrument,
-    box_contains, distance_from_line, prepstr, linear2db, 
+    distance_from_line, prepstr, linear2db, 
 )
-from typing import Tuple
 
 from neil import components, views
 import neil.common as common
@@ -18,9 +17,11 @@ from patterns import key_to_note
 
 from .volume_slider import VolumeSlider
 from .utils import draw_line, draw_wavy_line, draw_line_arrow, router_sizes
-from .colors import RouterColors
+from .ui.area_type import AreaType
+from .ui.colors import RouterColors
+from .ui.containers import PluginContainer
 from contextmenu import ConnectDialog
-from .view_layer import RouterLayers, PluginContainer, AreaType
+from .view_layer import RouterLayers
 
 AREA_ANY = 0
 AREA_PANNING = 1
@@ -429,7 +430,9 @@ class RouteView(Gtk.DrawingArea):
         mx, my = int(event.x), int(event.y)
         res = self.get_plugin_at((mx, my))
         if res:
-            mp, (x, y), area = res
+            cont,area,type = res
+            print("conatiner {} area {} type {}".format(cont, area, type))
+            # mp, (x, y), area = res
             if area == AREA_LED:
                 player.toggle_mute(mp)
                 self.redraw()
