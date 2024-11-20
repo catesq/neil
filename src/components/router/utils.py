@@ -1,4 +1,4 @@
-from neil.utils import Sizes, Vec2
+from neil.utils import Sizes, Vec2, Area
 
 router_sizes = Sizes(
     # pluginwidth = 120,
@@ -22,19 +22,23 @@ router_sizes = Sizes(
     # volknobheight = 16,
 
     plugin = Vec2(128, 32),
-    quantize = Vec2('pluginwidth + arrowradius * 2', 'pluginheight + arrowradius * 2'),
+    quantize = Vec2('plugin.x + arrowradius*2', 'plugin.y + arrowradius*2'),
 
-    led = Vec2(6, 'plugin.y - gap * 2'),
-    led_offs = Vec2('gap', 'gap'),
+    led = Area(6, 'plugin.y - gap*2', 'gap', 'gap'),
 
-    cpu = Vec2(6, 'plugin.y - gap * 2'),
-    cpu_offs = Vec2('pluginwidth - gap', 'gap'),
+    cpu = Area(6, 'plugin.y - gap*2', 'plugin.x - gap', 'gap'),
 
-    pan = Vec2('pluginwidth - gap * 4 + bar * 2', 'bar'),
-    pan_offs = Vec2('gap*2 + bar', 'pluginheight - gap - bar'),
+    pan = Area(
+        'plugin.x - gap*4 + bar*2', 'bar',
+        'gap*2 + bar', 'plugin.y - gap - bar'
+    ),
 
     vol_bar = Vec2(32, 128),
-    vol_knob = Vec2(16,16),
+    vol_knob = Vec2(16, 16),
+
+    line_width = 'gap',
+    line_border = 'gap/2',
+
 )
 
 

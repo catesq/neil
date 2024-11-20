@@ -35,15 +35,14 @@ class Layer:
 
     
     # first called in Gtk.Widget::realize
-    def resized(self, size: Vec2, prev_size: Vec2):
+    def resized(self, size: Vec2):
         pass
         
 
     def set_size(self, x, y):
         if not self.size or self.size.x != x or self.size.y != y:
-            size = Vec2(x, y)
-            self.resized(size, self.size)
-            self.size = size
+            self.size = Vec2(x, y)
+            self.resized(self.size)
             self.do_create_surface = True
 
     # only called in Gtk.Widget::realize when the top layer has a Gtk.Widget parent

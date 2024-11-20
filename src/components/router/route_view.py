@@ -7,8 +7,8 @@ import zzub
 
 import config
 from neil.utils import ( 
-    Vec2, Area, is_effect, is_a_generator, is_controller, is_root, is_instrument,
-    distance_from_line, prepstr, linear2db, 
+    Area, is_effect, is_a_generator, is_controller, is_root, is_instrument,
+    distance_from_line, prepstr, linear2db, Colors
 )
 
 from neil import components, views
@@ -17,15 +17,12 @@ from patterns import key_to_note
 
 from .volume_slider import VolumeSlider
 from .utils import draw_line, draw_wavy_line, draw_line_arrow, router_sizes
-from .ui.area_type import AreaType
-from .ui.colors import RouterColors
-from .ui.containers import PluginContainer
+from .ui import AreaType, RouterLayer, EventHandler, Btn, PluginItem, ConnectionItem
 from contextmenu import ConnectDialog
-from .view_layer import RouterLayers
 
 AREA_ANY = 0
-AREA_PANNING = 1
-AREA_LED = 2
+AREA_PANNING = int(AreaType.PLUGIN_PAN)
+AREA_LED = int(AreaType.PLUGIN_LED)
 
 class RouteView(Gtk.DrawingArea):
     """
@@ -62,13 +59,13 @@ class RouteView(Gtk.DrawingArea):
         self.area               = Area()                # will be the pixel dimensions allocated to the drawingarea
         self.connecting         = False
         self.drag_update_timer  = False
-        self.colors             = RouterColors(config.get_config())
+        self.colors             = Colors(config.get_config())
 
         eventbus                         = components.get_eventbus()
         eventbus.zzub_connect           += self.on_zzub_redraw_event
         eventbus.zzub_disconnect        += self.on_zzub_redraw_event
         eventbus.zzub_plugin_changed    += self.on_zzub_plugin_changed
-        eventbus.document_loaded        += self.redraw
+        eventbus.document_loaded        += self.on_document_loaded
         eventbus.active_plugins_changed += self.on_active_plugins_changed
 
         self.last_drop_ts = 0
@@ -81,42 +78,124 @@ class RouteView(Gtk.DrawingArea):
         self.update_colors()
 
         self.set_can_focus(True)
-        self.connect('button-press-event', self.on_left_down)
-        self.connect('button-release-event', self.on_left_up)
-        self.connect('motion-notify-event', self.on_motion)
+        # self.connect('button-press-event', self.on_left_down)
+        # self.connect('button-release-event', self.on_left_up)
+        # self.connect('motion-notify-event', self.on_motion)
         self.connect("draw", self.on_draw)
         self.connect('key-press-event', self.on_key_jazz, None)
         self.connect('key-release-event', self.on_key_jazz_release, None)
         self.connect('configure-event', self.on_configure_event)
         self.connect('realize', self.on_realized)
 
+        self.setup_event_handler()
+
+        self.router_layer = RouterLayer(router_sizes)
+
         if config.get_config().get_led_draw() == True:
             self.adjust_draw_led_timer()
-
-        self.router_layer = RouterLayers(router_sizes)
         
         self.create_ui_objects()
 
+
+    def setup_event_handler(self):
+        events = EventHandler()
+
+        self.setup_left_click(events)
+        self.setup_left_release(events)
+        self.setup_motion(events)
+
+        events.connect(self)
+
+
+    def setup_left_click(self, events: EventHandler):
+        right_click = events.click_handler(Btn.RIGHT)
+        right_click.on_object(AreaType.PLUGIN).do(self.on_context_menu_plugins)
+        right_click.on_object(AreaType.CONNECTION).do(self.on_context_menu_connection)
+        right_click.do(self.on_context_menu_any)
+
+        double_click = events.double_click_handler(Btn.LEFT)
+        double_click.do(self.on_dbl_click_plugin).when_false(self.on_dbl_click_not_plugin)
+
+        left_click = events.click_handler(Btn.LEFT)
+        left_click.on_object(AreaType.PLUGIN_LED).do(self.on_click_mute)
+        left_click.on_object(AreaType.PLUGIN_PAN).do(self.on_click_pan)
+        left_click.on_object(AreaType.CONNECTION_ARROW).do(self.on_click_volume)
+
+        # left click on a plugin will update the active plugins list
+        plugin_handler = left_click.on_object(AreaType.PLUGIN)
+        plugin_handler.do(self.on_click_plugin_set_active)
+
+        # starts connecting between plugins
+        plugin_handler.when(lambda evt,_: (
+            (evt.get_state() & Gdk.ModifierType.CONTROL_MASK) or (evt.button == 2)
+        )).do(self.on_click_plugin_start_connect)
+
+        plugin_handler.if_not_attr('self.connecting').do(self.on_click_plugin_start_drag, True)
+
+    def setup_left_release(self, events: EventHandler):
+        release_handler = events.release_handler(Btn.LEFT)
+        release_handler.if_attr('self.dragging').do(self.on_release_dragging, True)
+        release_handler.if_attr('self.connecting').do(self.on_release_connecting, True)
+        release_handler.on_object(AreaType.PLUGIN_LED).do(self.on_release_mute_plugin)
+        
+    def setup_motion(self, events: EventHandler):
+        motion_handler = events.motion_handler()
+        motion_handler.if_attr('self.dragging').do(self.on_motion_drag)
+        motion_handler.if_attr('self.connecting').do(self.on_motion_connecting)
+        motion_handler.on_object(AreaType.PLUGIN).do(self.on_motion_over_plugin)
+
+
+        #draggin, connection else
+
+
+    # def on_select_plugin(self, event, context):
+    #     plugin, pos, _ = context['selected']
+    #     print("SELECTED PLUGIN", plugin)
+
+    def on_document_loaded(self):
+        self.create_ui_objects()
+        self.redraw()
+        
+
     def create_ui_objects(self):
         self.router_layer.clear()
-
+        
         for mp in components.get_player().get_plugin_list():
-            pos = Vec2(*mp.get_position())
+            print("creating ui obj")
+            # pos = Vec2(*mp.get_position())
             info = common.get_plugin_infos().get(mp)
-            container_cls = self.get_plugin_container_class(mp)
-            container = container_cls(mp, info, pos, router_sizes, self.colors)
-            self.router_layer.add_container(container)
+            plugin_item_cls = self.get_plugin_container_class(mp)
+            plugin_item = plugin_item_cls(mp, info, self.colors)
+            #, pos, router_sizes, self.colors
+            self.router_layer.add_item(plugin_item)
 
+        conn_item_cls = self.get_connection_item_class()
+        for target_plugin in components.get_player().get_plugin_list():
+            target_item = self.router_layer.get_plugin_item(target_plugin.get_id())
+            
+            for index in range(target_plugin.get_input_connection_count()):
+                source_plugin = target_plugin.get_input_connection_plugin(index)
+                source_item = self.router_layer.get_plugin_item(source_plugin)
+                
+                conn_item = conn_item_cls(index, source_item, target_item, self.colors)
+                #, router_sizes, self.colors
+                self.router_layer.add_item(conn_item)
 
-    # either build a PluginContainer or a class defined by 
+                
+    # either build a PluginContainer or a class defined by 'router_item' config
+    #
     def get_plugin_container_class(self, mp):
-        if mp.get_config('router_area'):
-            cls_name = mp.get_config('router_area')
+        if mp.get_config('router_item'):
+            cls_name = mp.get_config('router_item')
 
             if cls_name in globals():
                 return globals()[cls_name]
         else:
-            return PluginContainer
+            return PluginItem
+        
+    def get_connection_item_class(self):
+        return ConnectionItem
+
 
     def on_realized(self, widget):
         self.router_layer.set_parent(widget)
@@ -220,18 +299,15 @@ class RouteView(Gtk.DrawingArea):
 
 
     def on_zzub_plugin_changed(self, plugin):
-        print("zubb plugin changed event")
-        common.get_plugin_infos().get(plugin).reset_plugingfx()
+        common.get_plugin_infos().reset_plugin(plugin)
         self.redraw(True)
 
 
     def on_zzub_redraw_event(self, *args):
-        print("zubb redraw event")
         self.redraw(True)
 
 
     def on_focus(self, event):
-        print("on focus")
         self.redraw(True)
 
 
@@ -252,8 +328,7 @@ class RouteView(Gtk.DrawingArea):
 
     def selection_count(self):
         return len(self.selections)
-
-
+    
     def on_context_menu(self, widget, event):
         """
         Event handler for requests to show the context menu.
@@ -283,6 +358,44 @@ class RouteView(Gtk.DrawingArea):
         
         menu.easy_popup(self, event)
 
+    def on_context_menu_plugins(self, widget, plugin):
+        pass
+
+    def on_context_menu_connection(self, event, plugin):
+        pass
+
+    def on_context_menu_any(self, event, plugin):
+        pass
+
+    # def on_context_menu(self, widget, event):
+    #     """
+    #     Event handler for requests to show the context menu.
+
+    #     @param event: event.
+    #     @type event: wx.Event
+    #     """
+    #     mx, my = int(event.x), int(event.y)
+    #     player = components.get('neil.core.player')
+    #     player.plugin_origin = self.pixel_to_float((mx, my))
+    #     res = self.get_plugin_at((mx, my))
+
+    #     if res:
+    #         mp, (x, y), area = res
+    #         if mp in player.active_plugins and len(player.active_plugins) > 1:
+    #             menu = views.get_contextmenu('multipleplugins', player.active_plugins)
+    #         else:
+    #             menu = views.get_contextmenu('singleplugin', mp)
+    #     else:
+    #         conns = self.get_connections_at((mx, my))
+    #         if conns:
+    #             # metaplugin, index = res
+    #             menu = views.get_contextmenu('connection', conns)
+    #         else:
+    #             (x, y) = self.pixel_to_float((mx, my))
+    #             menu = views.get_contextmenu('router', x, y)
+        
+    #     menu.easy_popup(self, event)
+
 
     def float_to_pixel(self, xy):
         """
@@ -291,7 +404,8 @@ class RouteView(Gtk.DrawingArea):
         @param xy: tuple (x,y) coordinate in float
         @return: tuple (x, y) coordinate in pixels.
         """
-        return (xy[0] + 1) * self.area.width / 2, (xy[1] + 1) * self.area.height / 2
+        # return (xy[0] + 1) * self.area.width / 2, (xy[1] + 1) * self.area.height / 2
+        return (0,0) #self.router_layer.norm_pos_to_pixel(Vec2(*xy))
 
 
     def pixel_to_float(self, xy):
@@ -305,7 +419,9 @@ class RouteView(Gtk.DrawingArea):
         @return: A tuple returning the router coordinate.
         @rtype: (float, float)
         """
-        return (2 * xy[0] / self.area.width) - 1, (2 * xy[1] / self.area.height) - 1
+        # return (2 * xy[0] / self.area.width) - 1, (2 * xy[1] / self.area.height) - 1
+        return (0,0) #self.router_layer.pixel_to_norm_pos(Vec2(*xy))
+
 
     
     def get_audio_connection_at(self, xy):
@@ -353,21 +469,21 @@ class RouteView(Gtk.DrawingArea):
 
         return matches
 
-
+    def get_object_at(self, x, y) -> tuple[zzub.Plugin, tuple[int, int], int]:
+        """
+        Finds a plugin at a specific position.
+        @param xy: (x, y) coordinate in pixels.
+        @return: a tuple (zzub.Plugin, (x, y), AreaType) or None
+        """
+        return self.router_layer.get_object_at(x, y)
+    
     def get_plugin_at(self, xy) -> tuple[zzub.Plugin, tuple[int, int], int]:
         """
         Finds a plugin at a specific position.
-
-        @param x: X coordinate in pixels.
-        @type x: int
-        @param y: Y coordinate in pixels.
-        @type y: int
-        @return: A connection item, exact pixel position and area (AREA_ANY, AREA_PANNING, AREA_LED) or None.
-        @rtype: (zzub.Plugin,(int,int),int) or None
+        @param xy: (x, y) coordinate in pixels.
+        @return: a tuple (zzub.Plugin, (x, y), AreaType) or None
         """
-        return self.router_layer.get_object_group_at(xy[0], xy[1], AreaType.PLUGIN)
-        # (x, y) = xy
-        # mx, my = x, y
+        return self.router_layer.get_plugin_at(xy[0], xy[1])
         # PW, PH = router_sizes.get('pluginwidth') / 2, router_sizes.get('pluginheight') / 2
         # area = AREA_ANY
         # player = components.get('neil.core.player')
@@ -385,27 +501,43 @@ class RouteView(Gtk.DrawingArea):
         #             area = AREA_LED
         #         return mp, (x, y), area
 
-    def on_left_dclick(self, widget, event):
-        """
-        Event handler for left doubleclicks. If the doubleclick
-        hits a plugin, the parameter window is being shown.
-        """
-        player = components.get('neil.core.player')
-        mx, my = int(event.x), int(event.y)
-        res = self.get_plugin_at((mx, my))
-        if not res:
-            searchwindow = components.get('neil.core.searchplugins')
-            searchwindow.show_all()
-            searchwindow.present()
-            return
-        mp, (x, y), area = res
-        if area == AREA_ANY:
-            data = zzub.zzub_event_data_t()
 
-            event_result = mp.invoke_event(data, 1)
-            # plugins with custom guis are opened by the double click event
-            if not mp.get_flags() & zzub.zzub_plugin_flag_has_custom_gui:
-                components.get('neil.core.parameterdialog.manager').show(mp, self)
+
+    def on_dbl_click_plugin(self, widget, plugin):
+        data = zzub.zzub_event_data_t()
+
+        event_result = plugin.invoke_event(data, 1)
+        # plugins with custom guis are opened by the double click event
+        if not plugin.get_flags() & zzub.zzub_plugin_flag_has_custom_gui:
+            components.get('neil.core.parameterdialog.manager').show(plugin, self)
+
+    def on_dbl_click_not_plugin(self, widget):
+        searchwindow = components.get('neil.core.searchplugins')
+        searchwindow.show_all()
+        searchwindow.present()
+
+        
+    # def on_left_dclick(self, widget, event):
+    #     """
+    #     Event handler for left doubleclicks. If the doubleclick
+    #     hits a plugin, the parameter window is being shown.
+    #     """
+    #     player = components.get('neil.core.player')
+    #     mx, my = int(event.x), int(event.y)
+    #     res = self.get_plugin_at((mx, my))
+    #     if not res:
+    #         searchwindow = components.get('neil.core.searchplugins')
+    #         searchwindow.show_all()
+    #         searchwindow.present()
+    #         return
+    #     mp, (x, y), area = res
+    #     if area == AREA_ANY:
+    #         data = zzub.zzub_event_data_t()
+
+    #         event_result = mp.invoke_event(data, 1)
+    #         # plugins with custom guis are opened by the double click event
+    #         if not mp.get_flags() & zzub.zzub_plugin_flag_has_custom_gui:
+    #             components.get('neil.core.parameterdialog.manager').show(mp, self)
 
     def on_left_down(self, widget, event):
         """
@@ -426,12 +558,16 @@ class RouteView(Gtk.DrawingArea):
         if (event.button == 1) and (event.type == Gdk.EventType._2BUTTON_PRESS):
             self.get_window().set_cursor(None)
             return self.on_left_dclick(widget, event)
-            
+        # event_handler.on_left_down()
+        # .when_object()
+        # object state matcher -> tests if self.dragging or self.active_plugins
+        # click_area_matcher -> use click_area.get_object_at
+
+        # event
         mx, my = int(event.x), int(event.y)
         res = self.get_plugin_at((mx, my))
         if res:
-            cont,area,type = res
-            print("conatiner {} area {} type {}".format(cont, area, type))
+            mp, (x,y), area = res
             # mp, (x, y), area = res
             if area == AREA_LED:
                 player.toggle_mute(mp)
@@ -480,6 +616,67 @@ class RouteView(Gtk.DrawingArea):
             if mp.get_input_connection_type(index) == zzub.zzub_connection_type_audio:
                 self.volume_slider.display((ox + mx, oy + my), mp, index, my)
 
+
+    def on_click_mute(self, event, plugin: zzub.Plugin):
+        print("MUTE")
+        components.get_player().toggle_mute(plugin)
+        self.redraw()
+
+
+    def on_click_pan(self, event, plugin: zzub.Plugin):
+        print("PANNING")
+
+
+    def on_click_volume(self, event, plugin: zzub.Plugin):
+        print("VOLUME CLICK")
+
+
+    def on_click_plugin_set_active(self, event, plugin: zzub.Plugin):
+        print("PLUGIN SET ACTIVE")
+
+        player = components.get_player()
+        if not plugin in player.active_plugins:
+            if (event.get_state() & Gdk.ModifierType.SHIFT_MASK):
+                player.active_plugins = [plugin] + player.active_plugins
+            else:
+                player.active_plugins = [plugin]
+        if not plugin in player.active_patterns and is_a_generator(mp):
+            if (event.get_state() & Gdk.ModifierType.SHIFT_MASK):
+                player.active_patterns = [(plugin, 0)] + player.active_patterns
+            else:
+                player.active_patterns = [(plugin, 0)]
+        player.set_midi_plugin(plugin)
+
+
+    def on_click_plugin_start_connect(self, event, plugin):
+        print("PLUGIN START CONNECT")
+
+        if not is_controller(plugin):
+            self.connectpos = int(event.x), int(event.y)
+            self.connecting_alt = event.get_state() & Gdk.ModifierType.MOD1_MASK
+            self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR))
+            self.connecting = True
+
+
+    def on_click_plugin_start_drag(self, event, plugin, rect):
+        print("PLUGIN START DRAG")
+
+        mid = rect.get_mid()
+        player = self.get_player()
+        self.dragoffset = (mid.x - event.x, mid.y - event.y)
+
+        for plugin in player.active_plugins:
+            pinfo = self.get_plugin_info(plugin)
+            pinfo.dragpos = plugin.get_position()
+            px, py = self.float_to_pixel(pinfo.dragpos)
+            pinfo.dragoffset = px - event.x, py - event.y
+
+        self.adjust_draw_led_timer(100)
+        self.dragging = True
+        self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.FLEUR))
+        self.grab_add()
+
+
     def drag_update(self, x, y, state):
         player = components.get('neil.core.player')
         ox, oy = self.dragoffset
@@ -508,11 +705,21 @@ class RouteView(Gtk.DrawingArea):
         else:
             res = self.get_plugin_at((event.x, event.y))
             if res:
-                _, area, _ = res
+                _, _, area_type = res
                 # mp, (mx, my), area = res
-                self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1) if area == AREA_LED else None)
+                self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1) if area_type == AREA_LED else None)
 
         return False
+
+    def on_motion_drag(self, widget, event):
+        print("on_motion_drag")
+
+    def on_motion_connecting(self, widget, event):
+        print("on_motion_connecting")
+
+    def on_motion_over_plugin(self, widget, event):
+        print("on_motion_over_plugin")
+
 
 
     # called by on_left_up after alt plugin connection 
@@ -598,6 +805,18 @@ class RouteView(Gtk.DrawingArea):
         else:
             self.get_window().set_cursor(None)
 
+    def on_release_connecting(widget, plugin, rect):
+        print("on_release_connecting")
+        pass
+
+    def on_release_dragging(widget, plugin, rect):
+        print("on_release_dragging")
+        pass
+
+    def on_release_mute_plugin(widget, plugin):
+        print("on_release_mute_plugin")
+        pass
+
     def update_all(self):
         self.update_colors()
         self.redraw()
@@ -618,6 +837,7 @@ class RouteView(Gtk.DrawingArea):
         #if self.rootwindow.get_current_panel() != self.panel:
         #       return True
         # TODO: find a better way
+        return True
         if self.is_visible():
             player = components.get('neil.core.player')
             
@@ -661,7 +881,7 @@ class RouteView(Gtk.DrawingArea):
         """
         Draws only the leds into the offscreen buffer.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         if player.is_loading():
             return
 
@@ -687,7 +907,6 @@ class RouteView(Gtk.DrawingArea):
                 # print("drag pos in draw %.2f %.2f" % pi.dragpos, "%.2f %.2f" % self.float_to_pixel(pi.dragpos))
 
             rx, ry = rx - half_width, ry - half_height
-
 
             if pi.plugingfx:
                 pluginctx = cairo.Context(pi.plugingfx)
@@ -721,8 +940,7 @@ class RouteView(Gtk.DrawingArea):
                 pluginctx.rectangle( 1, 1, plugin_width - 2, plugin_height - 2 )
                 pluginctx.stroke()
 
-                if (player.solo_plugin and player.solo_plugin != mp
-                    and is_instrument(mp)):
+                if (player.solo_plugin and player.solo_plugin != mp and is_instrument(mp)):
                     title = prepstr('[' + mp.get_name() + ']')
                 elif pi.muted or pi.bypassed:
                     title = prepstr('(' + mp.get_name() + ')')
