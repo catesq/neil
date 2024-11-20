@@ -1,7 +1,6 @@
 from enum import IntEnum
 import zzub
-
-
+import cairo
 
 class PluginType(IntEnum):
     Root = 0
@@ -12,6 +11,9 @@ class PluginType(IntEnum):
     Streamer = 5
     Other = 6
 
+
+
+# used by PluginGfx and ConnectionGfx in router view to cache small graphics drawn onto a large canvas 
 
 
 
@@ -25,17 +27,6 @@ plugin_type_names = {
     PluginType.Other: "Other",
 }
 
-# do not rearrange these, they must match the order of PluginType
-# so it is trivial to create lists by iterating these items eg router/colors.py
-plugin_color_schemes = {
-    PluginType.Root: "Master",
-    PluginType.Instrument: "Generator",
-    PluginType.Effect: "Effect",
-    PluginType.CV: "Controller",
-    PluginType.Controller: "Other",
-    PluginType.Streamer: "Other",
-    PluginType.Other: "Other",
-}
 
 
 
@@ -82,17 +73,6 @@ def get_plugin_type(plugin: zzub.Pluginloader | zzub.Plugin):
 
     return PluginType.Other
 
-
-def get_machine_color_key(plugin: zzub.Pluginloader | zzub.Plugin, suffix: str | bool=False):
-    if suffix:
-        return plugin_color_schemes[get_plugin_type(plugin)] + " " + suffix.strip()
-    else:
-        return plugin_color_schemes[get_plugin_type(plugin)]
-
-
-
-def get_plugin_type_name(plugin: zzub.Pluginloader | zzub.Plugin):
-    return plugin_color_schemes[get_plugin_type(plugin)] 
 
 
 
@@ -195,9 +175,6 @@ __all__ = [
     'PluginType',
     'get_adapter_name',
     'get_plugin_type',
-    'get_machine_color_key',
-    'plugin_color_schemes',
-    'get_plugin_type_name',
     'plugin_type_names',
     'is_other',
     'is_effect',

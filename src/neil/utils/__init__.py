@@ -29,6 +29,7 @@ import struct
 # where ui imports from the components module and the components modules imports utils
 
 from .base import *
+from .colors import *
 from .paths import *
 from .plugin import *
 from .converters import *

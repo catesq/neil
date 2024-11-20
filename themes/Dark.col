@@ -6,7 +6,7 @@ MV Arrow Border Out 272727
 MV Background		424242
 MV Controller		60CC7B
 MV Controller Arrow	60CC7B
-MV Controller Arrow	Border In 272727
+MV Controller Arrow	Border In  272727
 MV Controller Arrow Border Out 272727
 MV Controller Mute	3E8550
 MV Effect			617CCD
@@ -15,8 +15,9 @@ MV Effect LED On	377AFF
 MV Effect Mute		254091
 MV Effect Pan BG	7F9AEB
 MV Generator		F2BF55
-MV Generator LED Off	C3A137
-MV Generator LED On	FFFF19
+MV Generator LED Off C3A137
+MV Generator LED On	 FFFF19
+MV LED Warning	    FF0000
 MV Generator Mute	B68319
 MV Generator Pan BG	FFDD73
 MV Machine Text		000000
@@ -35,7 +36,6 @@ PE BG Very Dark		3D3D3D
 PE BG Light			474747
 PE BG Very Light	4D4D4D
 PE Sel BG			AAAAAA
-PE Sel BG			AAAAAA
 PE Text				9E9E9E
 PE Track Numbers	ADADAD
 PE Row Numbers		7A7A7A
@@ -43,6 +43,7 @@ SA Amp BG			007D5D
 SA Amp Line			FFFFFF
 SA Freq BG			007D5D
 SA Freq Line		FFFFFF
+
 SE Background		424242
 SE BG Dark			383838
 SE BG Very Dark		323232
@@ -53,6 +54,7 @@ SE Sel BG			AAAAAA
 SE Text				000000
 SE Loop Line		FFFFFF
 SE Track Background	575757
+
 WE BG 				424242
 WE Line 			AAAAAA
 WE Fill 			FFFFFF
