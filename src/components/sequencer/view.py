@@ -11,7 +11,7 @@ import sys
 
 from neil.utils import (
     prepstr, get_new_pattern_name, ui,
-    get_machine_color_key, is_instrument
+    get_plugin_color_key, is_instrument
 )
 
 import random
@@ -1276,9 +1276,9 @@ class SequencerView(Gtk.DrawingArea):
 
             # Draw a box that states the name of the machine on that track.
             if self.plugin_info[plugin].muted or self.plugin_info[plugin].bypassed:
-                name = get_machine_color_key(plugin, "Bg Mute")
+                name = get_plugin_color_key(plugin, "Bg Mute")
             else:
-                name = get_machine_color_key(plugin, "Bg")
+                name = get_plugin_color_key(plugin, "Bg")
 
             ctx.set_source_rgb(*colors[name])
 
