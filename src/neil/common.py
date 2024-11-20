@@ -26,25 +26,30 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 import zzub, cairo
-
+from neil.utils import get_plugin_type, Vec2
 
 PLUGIN_DRAG_TARGETS = [
     Gtk.TargetEntry.new('application/x-neil-plugin-uri', Gtk.TargetFlags.SAME_APP, 1)
 ]
-
 
 class GfxCache:
     def __init__(self):
         self.surface:cairo.Surface = None
         self.context:cairo.Context = None
 
+
+
 class PluginInfo(object):
     """
     Encapsulates data associated with a plugin.
     """
     def __init__(self, plugin):
+        print("new PluginInfo for %s %s" % (plugin.get_id(), plugin.get_name()))
         self.plugin = plugin
+        self.solo_plugin = False
         self.muted = False
+        self.selected = False
+        self.hovered = False
         self.bypassed = False
         self.cpu = -9999.0
         self.pattern_position = (0, 0, 0, 0, 0)
@@ -55,21 +60,25 @@ class PluginInfo(object):
         self.gfx_cache = {}
         self.amp = -9999.0
         self.octave = 3
+        self.type = get_plugin_type(self.plugin)
+
+    def prepare_info(self):
+        pass
 
     def reset_patterngfx(self):
         self.patterngfx = {}
-
-    def get_cached_gfx(self, key):
-        return self.gfx_cache.get(key, None)
-
-    def add_cached_gfx(self, key, item):
-        self.gfx_cache[key] = item
     
     def reset_plugingfx(self):
         self.plugingfx = GfxCache()
         self.amp = -9999.0
         self.cpu = -9999.0
 
+    def __call__(self, name, *args):
+        # if name begins with 'set_' and property with that suffix exists and at least one arg then assign property
+        if name.startswith('set_') and hasattr(self, name[4:]) and len(args) > 0:
+            setattr(self, name[4:], args[0])
+
+        
 
 
 class PluginInfoCollection:
@@ -104,6 +113,10 @@ class PluginInfoCollection:
         for k,v in self.plugin_info.items():
             v.reset_plugingfx()
 
+    def reset_plugin(self, mp):
+        if mp in self.plugin_info:
+            self.plugin_info[mp].reset_plugingfx()
+
     def add_plugin(self, mp):
         self.plugin_info[mp] = PluginInfo(mp)
 
@@ -117,8 +130,14 @@ class PluginInfoCollection:
                 self.plugin_info[mp] = PluginInfo(mp)
 
 collection = None
+screen_size=Vec2(0,0)
 
+def set_screen_size(x, y):
+    global screen_size
+    screen_size.set(x, y)
 
+# def get_screen_size():
+#     return Vec2(screen_size)
 
 def get_plugin_infos() -> PluginInfoCollection:
     global collection

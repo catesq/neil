@@ -191,6 +191,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         eventbus = components.get('neil.core.eventbus')
         eventbus.zzub_pre_delete_plugin += self.on_pre_delete_plugin
         eventbus.zzub_pre_delete_pattern += self.on_pre_delete_pattern
+
         self._callback = zzub.zzub_callback_t(self.handle_event)
         self.set_callback(self._callback, None)
         GLib.timeout_add(int(1000 / 50), self.on_handle_events)
@@ -254,11 +255,13 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         if not loader:
             print("Can't find file recorder plugin loader.", file=sys.stderr)
             return
+        
         flags = zzub.zzub_plugin_flag_no_undo | zzub.zzub_plugin_flag_no_save
         self.__streamrecorder = zzub.Player.create_plugin(self, None, 0, "_RecorderPlugin", loader, flags)
         if not self.__streamrecorder:
             print("Can't create file recorder plugin instance.", file=sys.stderr)
             return
+        
         master = self.get_plugin(0)
         self.__streamrecorder.add_input(master, zzub.zzub_connection_type_audio)
         self.set_machine_non_song(self.__streamrecorder, True)
@@ -360,7 +363,6 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             sel.remove(pair)
             self.active_patterns = sel
 
-
     def on_pre_delete_plugin(self, plugin):
         sel = self.active_plugins
         if plugin in sel:
@@ -371,6 +373,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             if selplugin == plugin:
                 sel.remove((selplugin, index))
         self.active_patterns = sel
+
 
 
     def load_ccm(self, filename):
@@ -637,6 +640,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             self.solo_plugin = None
             for plugin in self.get_plugin_list():
                 info = common.get_plugin_infos().get(plugin)
+                info.set_solo_plugin(False)
                 plugin.set_mute(info.muted)
                 info.reset_plugingfx()
         elif is_instrument(plugin):
@@ -647,9 +651,11 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
                 if check_plugin != self.solo_plugin and is_instrument(check_plugin):
                     plugin.set_mute(True)
                     info.reset_plugingfx()
+                    info.set_solo_plugin(False)
                 elif check_plugin == self.solo_plugin:
                     check_plugin.set_mute(info.muted)
                     info.reset_plugingfx()
+                    info.set_solo_plugin(True)
 
 
     def group_is_muted(self, metaplugins):
