@@ -54,7 +54,6 @@ class NamedComponentLoader():
 
     # gets all .neil-component info files in path and path/package_info 
     # the matching .py file for each component in immediately under path
-    # did this for a cleaner file structure as the components subdir was very messy
     def get_component_files(self, top_path):
         return glob.glob(os.path.join(top_path, '*.neil-component')) + glob.glob(os.path.join(top_path, 'packages', '*.neil-component')) 
 
