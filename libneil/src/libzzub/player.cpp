@@ -202,7 +202,6 @@ void player::set_play_position(int pos) {
 /*	\brief Clears all data associated with current song from the player.
    */
 void player::clear() {
-    printf("player::clear() \n");
     using namespace std;
     set_state(player_state_muted);
     // make sure we flushed since we are manipulating the front buffer directly
@@ -246,7 +245,6 @@ void player::clear() {
     if (front.plugins.size() > 1)
         front.plugins.erase(front.plugins.begin() + 1, front.plugins.end());
     set_state(player_state_stopped);
-    printf("player::clear end \n");
 }
 
 

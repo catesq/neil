@@ -429,6 +429,7 @@ bool op_plugin_replace::prepare(zzub::song& song) {
 
 bool op_plugin_replace::operate(zzub::song& song) {
 
+    
     if (song.plugins[id] == 0) return true;
 
     song.plugins[id]->name = plugin.name;
