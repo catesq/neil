@@ -26,7 +26,7 @@ from functools import cmp_to_key
 
 from neil.utils import  (
     is_a_generator, is_effect, is_other, get_plugin_type,
-    prepstr, get_adapter_name, get_plugin_type_name, get_machine_color_key, ui
+    prepstr, get_adapter_name, get_plugin_color_key, get_plugin_color_group, ui
 )
 
 from neil import common
@@ -269,7 +269,7 @@ class SearchPluginsDialog(Gtk.Window):
             return cmp(a.get_name().lower(), b.get_name().lower())
 
         def get_type_text(pluginloader):
-            return '<span color="' + cfg.get_color("MV " + get_machine_color_key(pluginloader)) + '">' + get_plugin_type_name(pluginloader) + ' | '  + get_adapter_name(pl) + '</span>'
+            return '<span color="' + cfg.get_color("MV " + get_plugin_color_key(pluginloader)) + '">' + get_plugin_color_group(pluginloader) + ' | '  + get_adapter_name(pl) + '</span>'
 
         plugins = {}
         player = components.get('neil.core.player')
