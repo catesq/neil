@@ -240,29 +240,38 @@ KEYMAPS = {
 
 
 DEFAULT_THEME = {
+    'MV Line': 0x555753,
+    'MV Border': 0x000000,
+    'MV Text': 0x000000,
+    'MV Background': 0xffffff,
+
     'MV Amp BG': 0xffffff,
     'MV Amp Border': 0x000000,
     'MV Amp Handle': 0x999999,
+
     'MV Arrow': 0xffffff,
     'MV Arrow Border In': 0xafeb73,
     'MV Arrow Border Out': 0x000000,
+
     'MV Controller Arrow': 0x09c4cc,
     'MV Controller Arrow Border In': 0xf35d5d,
     'MV Controller Arrow Border Out': 0x000000,
-    'MV Background': 0xffffff,
+
     'MV Effect': 0xffa929,
     'MV Effect Mute': 0x996519,
     'MV Effect LED Off': 0x996519,
     'MV Effect LED On': 0x00ff00,
+
     'MV Generator': 0x7e991b,
     'MV Generator Mute': 0x546612,
     'MV Generator LED Off': 0x546612,
     'MV Generator LED On': 0x00ff00,
+
     'MV Controller': 0x09c4cc,
     'MV Controller Mute': 0x067b7f,
     'MV Controller LED On': 0x067b7f,
     'MV Controller LED Off': 0x00ff00,
-    'MV Line': 0x555753,
+
     'MV Master': 0xe50c05,
     'MV Master Mute': 0x990804,
     'MV Master LED Off': 0x990804,
@@ -273,12 +282,11 @@ DEFAULT_THEME = {
     'MV Other LED Off': 0x546612,
     'MV Other LED On': 0x00ff00,
 
-    'MV Border': 0x000000,
-    'MV Text': 0x000000,
     'MV Indicator Border': 0x000000,
     'MV Indicator Background': 0x000000,
     'MV Indicator Foreground': 0x00ff00,
     'MV Indicator Warning': 0xff0000,
+
     'PE BG': 0xffffff,
     'PE BG Dark': 0xdddddd,
     'PE BG Very Dark': 0xcccccc,
@@ -288,11 +296,14 @@ DEFAULT_THEME = {
     'PE Row Numbers': 0x000000,
     'PE Track Numbers': 0x000000,
     'PE Text': 0x303021,
+
     'SA Amp BG': 0x007d5d,
     'SA Amp Line': 0xffffff,
     'SA Freq BG': 0x007d5d,
     'SA Freq Line': 0xffffff,
+    
     'SE Background': 0xffffff,
+
     'SE Border': 0x000000,
     'SE Strong Line': 0xa0a0a0,
     'SE Weak Line': 0xe0e0e0,
