@@ -22,15 +22,17 @@ class Handler:
     def matches(self, evt, context):
         return True
     
-    # if return True then don't run any more handler 
+    # if True then stop 
     def handle(self, evt, context):
-        return False
+        return self.end
     
     # 
-    def when_false(self):
-        handler_cls = get_class('ActionHandler')
-        self.anti_handler = handler_cls
-        return 
+    def when_false(self) -> 'ActionHandler':
+        if not hasattr(self, 'anti_handler'):
+            handler_cls = get_class('ActionHandler')
+            self.anti_handler = handler_cls()
+
+        return self.anti_handler
 
 
 
@@ -49,12 +51,12 @@ class ContextCallbackHandler(Handler):
 
 # applies the callback with gtk argument list (widget, event)
 class GtkEventCallbackHandler(Handler):
-    def __init__(self, callback = None):
+    def __init__(self, callback):
         self.callback = callback
 
-    # if return True then don't run any more handler 
     def handle(self, evt, context):
         return self.callback and self.callback(context['self'], evt)
+    
     
 class SelectedCallback(Handler):
     def __init__(self, callback, send_rect):
@@ -75,7 +77,6 @@ class SelectedCallback(Handler):
             return self.callback(evt, selected.object, selected.rect)
         else:
             return self.callback(evt, selected.object)
-
 
 
 class ListHandler(Handler):
@@ -132,17 +133,17 @@ class ActionHandler(ListHandler):
         eventhandler.click_handler(Btn.Left).if_attr('self.dragging').do(callback) 
         will call the callback when left mouse button clicked and self.dragging=True
         """
-        return self.if_attr_eq(attr, True)
+        return self.if_attr_eq(attr, cmp=True)
 
 
     def if_not_attr(self, attr) -> 'ActionHandler':
         """
         Like if_attr but checks if value False/None
         """
-        return self.if_attr_eq(attr, False)
+        return self.if_attr_eq(attr, cmp=False)
 
 
-    def if_attr_eq(self, attr, match_value) -> 'ActionHandler':
+    def if_attr_eq(self, attr, cmp) -> 'ActionHandler':
         """
         """
         # if '.' in attr:
@@ -151,7 +152,7 @@ class ActionHandler(ListHandler):
         attrs = {'attr_name': attr_name, 'object_name': obj_name}
         handler = self.get_matching_handler(handler_class, attrs)
         
-        return handler if handler else self.add_handler(handler_class(obj_name, attr_name, match_value))
+        return handler if handler else self.add_handler(handler_class(obj_name, attr_name, cmp))
         # else:
         #     handler_class = get_class('ContextAttrHandler')
         #     attrs = {'attr_name': attr_name}
@@ -166,6 +167,7 @@ class ActionHandler(ListHandler):
         """
         return self.get_object_matcher().on_object(area_type)
     
+
     def get_object_matcher(self) -> 'GetSelectedObject':
         area_class = get_class('GetSelectedObject')
         handler = self.get_handler_for_class(area_class)
@@ -193,7 +195,7 @@ class ActionHandler(ListHandler):
         self.add_handler(ContextCallbackHandler(callback))
         return self
 
-    def do(self, callback, send_rect=False) -> 'ActionHandler':
+    def do(self, callback, want_pos=True, end=False) -> 'ActionHandler':
         """
         The callback receives arguments 
         where object is the value of context['selected'] 
@@ -201,7 +203,7 @@ class ActionHandler(ListHandler):
         @param send_rect: send the rectangle of the selected object as the third argument
 
         """
-        self.add_handler(SelectedCallback(callback, send_rect))
+        self.add_handler(SelectedCallback(callback, want_pos))
         return self
 
     def do_gtk(self, gtk_callback) -> 'ActionHandler':
@@ -214,7 +216,7 @@ class ActionHandler(ListHandler):
         return self
 
 
-    def when(self, matcher) -> 'CallbackMatcher':
+    def when(self, matcher, end=False) -> 'CallbackMatcher':
         handler_cls = get_class('CallbackMatcher')
         handler = handler_cls(matcher)
         return self.add_handler(handler)

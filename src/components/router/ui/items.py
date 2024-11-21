@@ -133,7 +133,8 @@ class PluginItem(Item):
         self.shift_pos = (self.init_canvas / 2 + self.scroll).ints()
         self.plugin_pos = (self.norm_plugin_pos * size / 2).ints()
         self.update_dimensions()
-
+        print("update plugin areas zoom", self.zoom)
+        top_left = (self.plugin_pos * self.zoom + self.shift_pos - self.half_plugin)
 
 
     # use current plugin pos, scroll position and zoom level to recalculate screen coordinates

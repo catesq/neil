@@ -7,7 +7,7 @@ import zzub
 
 import config
 from neil.utils import ( 
-    Area, is_effect, is_a_generator, is_controller, is_root, is_instrument,
+    Vec2, Area, is_effect, is_a_generator, is_controller, is_root, is_instrument,
     distance_from_line, prepstr, linear2db, Colors
 )
 
@@ -111,10 +111,9 @@ class RouteView(Gtk.DrawingArea):
         right_click = events.click_handler(Btn.RIGHT)
         right_click.on_object(AreaType.PLUGIN).do(self.on_context_menu_plugins)
         right_click.on_object(AreaType.CONNECTION).do(self.on_context_menu_connection)
-        right_click.do(self.on_context_menu_any)
 
         double_click = events.double_click_handler(Btn.LEFT)
-        double_click.do(self.on_dbl_click_plugin).when_false(self.on_dbl_click_not_plugin)
+        double_click.do(self.on_dbl_click_plugin).when_false().do(self.on_dbl_click_not_plugin)
 
         left_click = events.click_handler(Btn.LEFT)
         left_click.on_object(AreaType.PLUGIN_LED).do(self.on_click_mute)
@@ -358,14 +357,25 @@ class RouteView(Gtk.DrawingArea):
         
         menu.easy_popup(self, event)
 
-    def on_context_menu_plugins(self, widget, plugin):
-        pass
 
-    def on_context_menu_connection(self, event, plugin):
-        pass
+    def on_context_menu_plugins(self, event, plugin):
+        player = components.get_player()
 
-    def on_context_menu_any(self, event, plugin):
-        pass
+        if plugin in player.active_plugins and len(player.active_plugins) > 1:
+            menu = views.get_contextmenu('multipleplugins', player.active_plugins)
+        else:
+            menu = views.get_contextmenu('singleplugin', plugin)
+
+        return menu.easy_popup(self, event)
+
+    def on_context_menu_connection(self, event, conn_id):
+        player = components.get_player()
+        views.get_contextmenu('connection', conn_id)
+
+    def on_context_menu_any(self, event):
+        (x, y) = self.router_layer.normalise_screen_pos(Vec2(event.x, event.y))
+        print("normalised screen pos", x, y)
+        menu = views.get_contextmenu('router', x, y)
 
     # def on_context_menu(self, widget, event):
     #     """
@@ -656,6 +666,8 @@ class RouteView(Gtk.DrawingArea):
             self.connecting_alt = event.get_state() & Gdk.ModifierType.MOD1_MASK
             self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR))
             self.connecting = True
+
+        return True
 
 
     def on_click_plugin_start_drag(self, event, plugin, rect):

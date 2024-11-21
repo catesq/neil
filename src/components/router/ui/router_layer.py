@@ -66,6 +66,10 @@ class RouterLayer(Layer):
     def prepare(self, parent:Gtk.Widget):
         self.pango = parent.get_pango_context()
 
+    def normalise_screen_pos(self, screen_pos) -> Vec2:
+        norm_screen_pos = (screen_pos - self.size / 2) / self.size
+        return norm_screen_pos / self.zoom_level 
+        
 
     def resized(self, size):
         if not self.painted:
