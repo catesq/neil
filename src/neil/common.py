@@ -37,6 +37,9 @@ class GfxCache:
         self.surface:cairo.Surface = None
         self.context:cairo.Context = None
 
+    def clear(self):
+        self.__init__()
+
 
 
 class PluginInfo(object):
@@ -62,6 +65,12 @@ class PluginInfo(object):
         self.octave = 3
         self.type = get_plugin_type(self.plugin)
 
+        # the normalized position from -1 to +1, maintained in router.drag_update
+        # by offsetting from the current mouse dragpos then scaling/normalizing 
+        self.dragpos = Vec2(0)
+        # screen offset of the plugin from the click that started the drag 
+        self.dragoffset = Vec2(0)
+
     def prepare_info(self):
         pass
 
@@ -69,9 +78,12 @@ class PluginInfo(object):
         self.patterngfx = {}
     
     def reset_plugingfx(self):
-        self.plugingfx = GfxCache()
+        self.plugingfx.clear()
         self.amp = -9999.0
         self.cpu = -9999.0
+        self.dragpos.clear()
+        # screen offset of the plugin from the click that started the drag 
+        self.dragoffset.clear()
 
     def __call__(self, name, *args):
         # if name begins with 'set_' and property with that suffix exists and at least one arg then assign property

@@ -7,15 +7,28 @@ from .package import PackageInfo
 from .loader import NamedComponentLoader
 from .. import errordlg
 
-# the component manager is the main registry for the service locator
+# The component manager is the main registry for the service locator
 # it has a factoryinfo for each class id 
-# there is almost always only one class for each class id
-# only more than one when custom components in ~/.local/neil/components made to override the default ones 
+# usually only one class for each class id
+# custom components eg in ~/.local/neil/components can override the default ones 
 
 
 def get_neil_classes(neil_dict) -> List[type]:
     return neil_dict.get('classes', [])
 
+class ComponentInfo:
+    def __init__(self, pkg_info: PackageInfo):
+        self.id = id
+        self.singleton = False
+        self.categories = []
+        self.package = pkg_info
+
+    def add_custom_builder(self, custom: 'FactoryInfo'):
+        if custom.priority > self.priority:
+            self.priority = custom.priority
+            self._classobj = custom._classobj
+
+        self._builders.append(custom._classobj)
 
 
 class FactoryInfo:
@@ -72,6 +85,7 @@ class ComponentManager():
     def init(self):
         loader = NamedComponentLoader()
         loader.load(self)
+        print("Categories:", self.categories)
         self.is_loaded = True
 
 
@@ -91,19 +105,25 @@ class ComponentManager():
                 self.factories[factory_info.id].add_custom_builder(factory_info)
             else:
                 self.factories[factory_info.id] = factory_info
-
+            
             for category in factory_info.categories:
-                catlist = self.categories.get(category, [])
-                catlist.append(factory_info.id)
-                self.categories[category] = catlist
+                self.add_category(category, factory_info.id)
 
 
     def throw(self, id, arg):
-        class_ = self.factory(id)
+        class_ = self.get_factory(id)
         raise class_(arg)
 
 
-    def factory(self, id) -> FactoryInfo:
+    def add_category(self, category_name, component_id):
+        if not category_name in self.categories:
+            self.categories[category_name] = []
+
+        self.categories[category_name].append(component_id)
+
+
+
+    def get_factory(self, id) -> FactoryInfo:
         # get metainfo for object
         factory_info = self.factories.get(id, None)
         if not factory_info:
@@ -118,7 +138,7 @@ class ComponentManager():
 
 
     def exception(self, id):
-        return self.factory(id)
+        return self.get_factory(id)
 
 
     def singleton(self, id):
@@ -137,7 +157,7 @@ class ComponentManager():
             return instance
         
         # retrieve factory
-        factory = self.factory(id)
+        factory = self.get_factory(id)
 
         if not factory:
             return None
@@ -180,21 +200,27 @@ class ComponentManager():
     def get_player(self) -> 'player.NeilPlayer':
         return self.get('neil.core.player')
 
+
     def get_config(self) -> 'config.NeilConfig':
         return self.get('neil.core.config')
     
+
     def get_eventbus(self) -> 'eventbus.EventBus':
         return self.get('neil.core.eventbus')
+
 
     def get_categories(self) -> Dict[str, List[str]]:
         return self.categories
 
+
     def get_factories(self) -> Dict[str, Dict[str, str]]:
         return self.factories
+
 
     def get_factory_names(self):
         return self.factories.keys()
     
+
     def get_packages(self) -> List[PackageInfo]:
         return self.packages
 
@@ -208,12 +234,32 @@ class ViewComponentManager:
 
 
     def get_contextmenu(self, menu_name, *args, prefix='neil.core.contextmenu') -> 'utils.ui.EasyMenu':
-        return self.get_menu(menu_name, *args, prefix=prefix)
+        return self.components.get(prefix + '.' + menu_name, *args)
     
 
-    def get_menu(self, menu_name, *args, prefix) -> 'utils.ui.EasyMenu':
-        return self.components.get(prefix + '.' + menu_name, *args)
+    def get_dialog(self, dialog_name, *args):
+        close_matches = []
+        
+        for id in self.components.get_ids_from_category('viewdialog'):
+            if id == dialog_name:
+                return self.components.get(id, *args)
+            elif id.endswith(dialog_name):
+                close_matches.append(id)
 
+        if len(close_matches) == 1:
+            return self.components.get(close_matches[0], *args)
+        elif len(close_matches) > 1:
+            top_id = self.get_best_match(close_matches)
+            return self.components.get(top_id, *args)
+        else:
+            error = "Dialog '{}' not found in {}".format(dialog_name, self.components.get_ids_from_category('viewdialog'))
+            self.components.throw('neil.core.error', error)
+
+
+    def get_closest_match(self, close_matches):
+        close_matches.sort(key=lambda id: self.components.get_factory(id).priority)
+        return close_matches[0]
+    
 
     def get_router(self) -> 'router.RouteView':
         return self.components.get('neil.core.router.view')
