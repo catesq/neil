@@ -28,7 +28,6 @@ class ConnectionMenu(ui.EasyMenu):
     # the list is often one item long 
     def __init__(self, connections):
         ui.EasyMenu.__init__(self)
-
         if len(connections) == 1:
             self.build_connections_submenu(self, connections)
         else:

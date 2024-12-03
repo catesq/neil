@@ -16,18 +16,14 @@ class RouterMenu(ui.EasyMenu):
         categories = [],
     )
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, router, player):
         ui.EasyMenu.__init__(self)
-
-        router = components.get("neil.core.router.view")
-        player = components.get_player()
-
         self.add_submenu("_Add machine", machine_tree_submenu(connection=False))
 
         if player.active_plugins or router.selection_count() > 0:
             self.add_separator()
             if player.active_plugins:
-                self.add_item("_Clone selected", on_popup_clone_chains, player.active_plugins, router.pixel_to_float((x, y)))
+                self.add_item("_Clone selected", on_popup_clone_chains, player.active_plugins, (x, y))
                 self.add_submenu("_Keep selection", store_selection_submenu(player.active_plugins))
 
             if router.selection_count() > 0:
