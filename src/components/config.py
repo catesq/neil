@@ -239,7 +239,7 @@ KEYMAPS = {
 
 
 
-DEFAULT_THEME = {
+LIGHT_THEME = {
     'MV Line': 0x555753,
     'MV Border': 0x000000,
     'MV Text': 0x000000,
@@ -335,6 +335,105 @@ DEFAULT_THEME = {
     'PT Background': 0xe0e0e0,
 }
 
+
+
+DARK_THEME = {
+    'MV Line': 0x303030,
+    'MV Border': 0x000000,
+    'MV Text': 0x000000,
+    'MV Background': 0x000000,
+
+    'MV Amp BG': 0xFFFFFF,
+    'MV Amp Border': 0x000000,
+    'MV Amp Handle': 0x999999,
+
+    'MV Arrow': 0xffffff,
+    'MV Arrow Border In': 0xafeb73,
+    'MV Arrow Border Out': 0x000000,
+
+    'MV Controller Arrow': 0x09c4cc,
+    'MV Controller Arrow Border In': 0xf35d5d,
+    'MV Controller Arrow Border Out': 0x000000,
+
+    'MV Effect': 0x617CCD,
+    'MV Effect Mute': 0x254091,
+    'MV Effect LED Off': 0x435EAF,
+    'MV Effect LED On': 0x377AFF,
+
+    'MV Generator': 0xF2BF55,
+    'MV Generator Mute': 0xB68319,
+    'MV Generator LED Off': 0xC3A137,
+    'MV Generator LED On': 0xFFFF19,
+
+    'MV Controller': 0x09c4cc,
+    'MV Controller Mute': 0x067b7f,
+    'MV Controller LED On': 0x067b7f,
+    'MV Controller LED Off': 0x00ff00,
+
+    'MV Master': 0xe50c05,
+    'MV Master Mute': 0x990804,
+    'MV Master LED Off': 0x990804,
+    'MV Master LED On': 0x00ff00,
+
+    'MV Other': 0xe59c25,
+    'MV Other Mute': 0x996824,
+    'MV Other LED Off': 0x546612,
+    'MV Other LED On': 0x00ff00,
+
+    'MV Indicator Border': 0x000000,
+    'MV Indicator Background': 0x000000,
+    'MV Indicator Foreground': 0x00ff00,
+    'MV Indicator Warning': 0xff0000,
+
+    'PE BG': 0xffffff,
+    'PE BG Dark': 0xdddddd,
+    'PE BG Very Dark': 0xcccccc,
+    'PE BG Light': 0xdddddd,
+    'PE BG Very Light': 0xeeeeee,
+    'PE Sel BG': 0xaaaaaa,
+    'PE Row Numbers': 0x000000,
+    'PE Track Numbers': 0x000000,
+    'PE Text': 0x303021,
+
+    'SA Amp BG': 0x007d5d,
+    'SA Amp Line': 0xffffff,
+    'SA Freq BG': 0x007d5d,
+    'SA Freq Line': 0xffffff,
+    
+    'SE Background': 0xffffff,
+
+    'SE Border': 0x000000,
+    'SE Strong Line': 0xa0a0a0,
+    'SE Weak Line': 0xe0e0e0,
+    'SE Text': 0x000000,
+    'SE Track Background': 0xcccc99,
+    'SE Track Foreground': 0xf0f0f0,
+    'SE Loop Line': 0x000000,
+    'SE End Marker': 0xff0000,
+    'EE Line': 0x6060c0,
+    'EE Fill': 0xe0e0ff,
+    'EE Dot': 0x6060c0,
+    'EE Sustain': 0xff6040,
+    'EE Dot Selected': 0x000000,
+    'EE BG': 0xffffff,
+    'EE Grid': 0xe0e0e0,
+    'WE BG': 0xffffff,
+    'WE Line': 0x000000,
+    'WE Fill': 0xc0c0c0,
+    'WE Peak Fill': 0x6060c0,
+    'WE Grid': 0xd0d0d0,
+    'WE Selection': 0xff0000,
+    'WE Stretch Cue': 0x00ff00,
+    'WE Split Bar': 0x800080,
+    'WE Slice Bar': 0xFF0080,
+    'WE Wakeup Peaks': 0xff0080,
+    'WE Sleep Peaks': 0x8000ff,
+    'PT Outer Border': 0x606060,
+    'PT Inner Border': 0xf0f0f0,
+    'PT Background': 0xe0e0e0,
+}
+
+DEFAULT_THEME = DARK_THEME
 
 class NeilConfig(configparser.ConfigParser):
     """
