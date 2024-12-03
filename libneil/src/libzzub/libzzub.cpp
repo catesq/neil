@@ -1886,7 +1886,7 @@ void zzub_plugin_get_last_peak(zzub_plugin_t* plugin, float* maxL, float* maxR)
 int zzub_plugin_add_input(zzub_plugin_t* to_plugin, zzub_plugin_t* from_plugin, int type)
 {
 
-    bool result = to_plugin->_player->plugin_add_input(to_plugin->id, from_plugin->id, (zzub::connection_type)type);
+    bool result = to_plugin->_player->plugin_add_input(to_plugin->id, from_plugin->id, (zzub::connection_type) type);
     return result ? 0 : -1;
 }
 
