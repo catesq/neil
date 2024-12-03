@@ -34,30 +34,33 @@ class Vec2:
         self.x = int(self.x)
         self.y = int(self.y)
         return self
+    
+    def clear(self):
+        self.x = self.y = 0
 
     def __sub__(self, o):
-        if isinstance(o, Vec2):
-            return Vec2(self.x - o.x, self.y - o.y)
-        else:
+        if isinstance(o, float | int):
             return Vec2(self.x - o, self.y - o)
+        else:
+            return Vec2(self.x - o.x, self.y - o.y)
 
     def __add__(self, o):
-        if isinstance(o, Vec2):
-            return Vec2(self.x + o.x, self.y + o.y)
-        else:
+        if isinstance(o, float | int):
             return Vec2(self.x + o, self.y + o)
+        else:
+            return Vec2(self.x + o.x, self.y + o.y)
     
     def __truediv__(self, o):
-        if isinstance(o, Vec2):
-            return Vec2(self.x / o.x, self.y / o.y)
-        else:
+        if isinstance(o, float | int):
             return Vec2(self.x / o, self.y / o)
+        else:
+            return Vec2(self.x / o.x, self.y / o.y)
     
     def __mul__(self, o):
-        if isinstance(o, Vec2):
-            return Vec2(self.x * o.x, self.y * o.y)
-        else:
+        if isinstance(o, float | int):
             return Vec2(self.x * o, self.y * o)
+        else:
+            return Vec2(self.x * o.x, self.y * o.y)
     
     def __str__(self):
         return f"Vec2({self.x}, {self.y})"
@@ -69,10 +72,6 @@ class Vec2:
         yield from (self.x, self.y)
 
 
-# def __init__(self, pos = None, size = None):
-# self.pos = pos if pos is not None else Vec2(0, 0)
-# self.size = size if size is not None else Vec2(0, 0)
-# this is the abstract canvas area in made up dimensions , not the screen pos in pixels
 class Area:
     def __init__(self, first = None, second = None, x2 = None, y2 = None):
         if isinstance(first, Area):
@@ -93,6 +92,10 @@ class Area:
         self.pos.set(rect.x, rect.y)
         self.size.set(rect.width, rect.height)
         return self
+        
+    def clear(self):
+        self.pos.clear()
+        self.size.clear()
     
     def __mul__(self, o):
         return Area(self.pos * o, self.size * o)
@@ -127,7 +130,6 @@ class Area:
         return (self.pos.x <= x <= self.pos.x + self.size.x and 
                 self.pos.y <= y <= self.pos.y + self.size.y)
 
-    
     def ints(self):
         self.pos.ints()
         self.size.ints()
@@ -137,40 +139,24 @@ class Area:
         return f"Area({self.pos}, {self.size})"
 
     def __eq__(self, o):
+        print(self, o)
         return (self.x == o.x and self.y == o.y and 
                self.width == o.width and self.height == o.height)
 
 
     
 
+# if the value is a string then calculate sizes using arithmetic with on values set earlier in the dict
+# accepts lists and tuples and can access them in definitions using numbers as index (see pos & pos2 in example) 
+# accepts Vec2, Area and floats
+# everything else is converted to an int
 
-# class OffsetArea(Area):
-#     def __init__(self, pos, offset, size):
-#         super().__init__(pos, size)
-#         self._offset = offset
-
-#     @property
-#     def x(self):
-#         return self._pos.x + self._offset.x
-
-#     @property
-#     def y(self):
-#         return self._pos.y + self._offset.y
-
-#     def contains(self, x, y):
-#         return super().contains(x - self._offset.x, y - self._offset.y)
-
-#     def __str__(self):
-#         return f"OffsetArea(pos={self._pos}, offset={self._offset}, size={self._size})"
-
-# it can scale for hidpi &
-# calculate sizes based on earlier values using parse_size())
-#
-# eg values={
+# Sizes{
 #   'width': 4, 
 #   'height': 2, 
-#   'area': 'width * height',
-#   'pos': (10, 5)
+#   'size': 'width * height',
+#   'rect': Area(0, 0, 'width', 'height'),
+#   'pos': (10, 5),
 #   'pos2': Vec2('pos.0 + width', 'pos.1 + height')
 # }
 
@@ -182,55 +168,38 @@ class Sizes():
 
     def __init__(self, defaults = {'margin' : 6}, **kwargs):
         self.__defaults = defaults
-        self.__init_args = kwargs
-        # self.__scale = 1.0
-        self.__values = []
-        self.set_values(kwargs)
+        #copy defaults
 
-    # def set_scale(self, new_scale):
-    #     self.__scale = new_scale
-    #     self.set_values(self.__init_args)
+        self.__values = defaults.copy()
 
-    # def get_scale(self, new_scale):
-    #     return self.__scale
-    
+        if kwargs:
+            self.set_values(kwargs)
+
+
     def __getitem__(self, name):
         if name in self.__values:
             return self.__values[name]
     
+
     def get(self, name):
         if name in self.__values:
             return self.__values[name]
-            # if isinstance(self.__values[name], Vec2):
-            #     return Vec2(
-            #         self.__values[name].x * self.__scale, 
-            #         self.__values[name].y * self.__scale
-            #     )
-            # elif isinstance(self.__values[name], Area):
-            #     return Area(
-            #         self.__values[name].pos.x * self.__scale, 
-            #         self.__values[name].pos.y * self.__scale, 
-            #         self.__values[name].size.x * self.__scale, 
-            #         self.__values[name].size.y * self.__scale
-            #     )
-            # elif isinstance(self.__values[name], list):
-            #     return [v * self.__scale for v in self.__values[name]]
-            # elif isinstance(self.__values[name], tuple):
-            #     return (v * self.__scale for v in self.__values[name])
-            # else:
-            #     return self.__values[name] * self.__scale
     
+
     def half(self, name):
         return self.get(name) / 2
+
+
 
     def twice(self, name):
         return self.get(name) * 2
 
     
     def set_values(self, values):
-        self.__values = self.__defaults
+        self.__values = self.__defaults.copy()
         for key, value in values.items():
             self.__values[key.lower()] = self.parse_value(value)
+    
     
     def parse_value(self, value):
         if isinstance(value, str):
@@ -250,6 +219,7 @@ class Sizes():
             return value
         else:
             return int(value)
+        
         
     # uses eval to do basic math
     # treat text as the property name of an object in self.__values
