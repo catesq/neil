@@ -1,40 +1,59 @@
-from typing import Tuple
 from neil.utils import Area
 
-class Clicked:
-    def __init__(self, object, rect:Area, area_type):
+
+class ClickedArea:
+    def __init__(self, id, object, rect:Area, area_type):
+        self.id = id
         self.object = object
         self.rect = rect
         self.type = area_type
+
+    def __repr__(self):
+        return f"ClickedArea({self.id} {self.object}, {self.rect}, {self.type})"
+
 
 class ClickArea:
     def __init__(self):
         self.objects = []
 
-    def add_object(self, obj, area: Area, area_type: int):
+
+    def add_object(self, id, obj, area: Area, area_type: int):
         """
         Registers a new object.
 
         @param obj: The ui object to associate with the click box.
-        @param area: The x coordinate of the top-left corner of the click box.
-       
+        @param area: The click box rectangle
+        @param area_type Area type
         """
-        self.objects.append(Clicked(obj, area, area_type))
+        self.objects.append(ClickedArea(id, obj, area, area_type))
+
 
     def remove_object(self, obj):
         """
         Removes an object.
 
-        @param obj: The object whose click box should be removed.
+        @param obj: The object to remove
         @return: The number of objects removed.
         """
         prev_size = self.objects.size()
         self.objects = [click_box for click_box in self.objects if click_box.object != obj]
         return prev_size - self.objects.size()
     
-    def get_object_at(self, x, y) -> Clicked:
+    def remove_by_id(self, id):
         """
-        Finds the object at a specific position.
+        Removes an object.
+
+        @param id: id of the oject to remove. It's is an int for plugins and ConnID for connections
+        @return: The number of objects removed.
+        """
+        prev_size = self.objects.size()
+        self.objects = [click_box for click_box in self.objects if click_box.id != id]
+        return prev_size - self.objects.size()
+    
+
+    def get_object_at(self, x, y) -> ClickedArea:
+        """
+        Finds the first object at a specific position.
 
         @param x: The x coordinate.
         @param y: The y coordinate.
@@ -43,18 +62,33 @@ class ClickArea:
         for item in self.objects:
             if item.rect.contains(x, y):
                 return item
+            
+        return False
 
-    def get_object_group_at(self, x, y, obj_group) -> Clicked:
+    def get_object_group_at(self, x, y, obj_group) -> ClickedArea:
         """
-        Finds the object at a specific position.
+        Finds the first object of type 'obj_group' at a specific position.
 
         @param x: The x coordinate.
         @param y: The y coordinate.
         @return: The object and area at the specified position, or None,None if no object is found.
         """
-        for item in self.objects:
-            if (item.type & obj_group) == obj_group and item.rect.contains(x, y):
-                return item
+        for found in self.objects:
+            # print(found)
+            if (found.type & obj_group) and found.rect.contains(x, y):
+                return found
+            
+        return False
+
+    def get_all_type_at(self, x, y, obj_type) -> list[ClickedArea]:
+        """
+        Finds all objects of type 'obj_group' at a specific position.
+
+        @param x: The x coordinate.
+        @param y: The y coordinate.
+        @return: A list of objects and areas at the specified position.
+        """
+        return [found for found in self.objects if (found.type & obj_type) and found.rect.contains(x, y)]
 
     def clear(self):
         self.objects.clear()
