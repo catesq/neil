@@ -148,8 +148,8 @@ def set_screen_size(x, y):
     global screen_size
     screen_size.set(x, y)
 
-# def get_screen_size():
-#     return Vec2(screen_size)
+def get_screen_size():
+    return Vec2(screen_size)
 
 def get_plugin_infos() -> PluginInfoCollection:
     global collection
