@@ -689,13 +689,14 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         plugin.set_bypass(pi.bypassed)
         pi.reset_plugingfx()
 
+    def get_first_active_plugin(self) -> zzub.Plugin:
+        return self.active_plugins[0] if self.active_plugins and len(self.active_plugins) > 0 else None
 
     def get_active_plugins(self) -> list[zzub.Plugin]:
         return self.active_plugins
     
     def set_active_plugins(self, plugins: list[zzub.Plugin]):
         self.active_plugins = plugins
-
 
     def create_plugin(self, pluginloader, connection=None, plugin=None):
         # find an unique name for the new plugin

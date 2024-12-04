@@ -257,7 +257,6 @@ class NeilFrame(Gtk.Window):
         geometry = monitor.get_geometry()
         common.set_screen_size(geometry.width, geometry.height)
         
-        
         self.open_dlg.add_shortcut_folder(filepath('demosongs'))
 
         for filefilter in self.OPEN_SONG_FILTER:
