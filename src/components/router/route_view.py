@@ -1,3 +1,4 @@
+from typing import Generator, Tuple
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GObject, Pango, PangoCairo
@@ -7,8 +8,8 @@ import zzub
 
 import config
 from neil.utils import ( 
-    Vec2, Area, is_effect, is_a_generator, is_controller, is_root, is_instrument,
-    distance_from_line, prepstr, linear2db, Colors
+    is_effect, is_a_generator, has_audio_output, has_output, has_cv_output, is_root, is_instrument, 
+    prepstr, linear2db, Colors, Vec2, Area
 )
 
 from neil import components, views
@@ -17,7 +18,7 @@ from patterns import key_to_note
 
 from .volume_slider import VolumeSlider
 from .utils import draw_line, draw_wavy_line, draw_line_arrow, router_sizes
-from .ui import AreaType, RouterLayer, EventHandler, Btn, PluginItem, ConnectionItem
+from .ui import AreaType, RouterLayer, ClickedArea
 from contextmenu import ConnectDialog
 
 AREA_ANY = 0
@@ -38,7 +39,7 @@ class RouteView(Gtk.DrawingArea):
     connecting = False
     connecting_alt = False
     dragging = False
-    dragoffset = 0, 0
+    # dragoffset = 0, 0
     contextmenupos = 0, 0
 
     def __init__(self, parent):
@@ -57,9 +58,12 @@ class RouteView(Gtk.DrawingArea):
         self.volume_slider      = VolumeSlider(self)
         self.selections         = {}                    #selections stored using the remember selection option
         self.area               = Area()                # will be the pixel dimensions allocated to the drawingarea
-        self.connecting         = False
-        self.drag_update_timer  = False
-        self.colors             = Colors(config.get_config())
+        self.colors             = Colors(config.get_config()) 
+
+        self.dragoffset         = Vec2(0,0)  # pixel offset of the mouse click that initiated a drag to the mid point
+
+        self.connecting         = False  # is a connection being drawn
+        self.connecting_alt     = False  # is the connection audio(not alt) or cv (is alt)
 
         eventbus                         = components.get_eventbus()
         eventbus.zzub_connect           += self.on_zzub_redraw_event
@@ -68,163 +72,81 @@ class RouteView(Gtk.DrawingArea):
         eventbus.document_loaded        += self.on_document_loaded
         eventbus.active_plugins_changed += self.on_active_plugins_changed
 
-        self.last_drop_ts = 0
-        self.connect('drag-motion', self.on_drag_motion)
+        self.last_drop_ts = 0  # there was a multiple drop bug in drag/drop, ignore several milliseconds
+
+        # self.connect('drag-motion', self.on_drag_motion)
         self.connect('drag-data-received', self.on_drag_data_received)
         self.connect('drag-leave', self.on_drag_leave)
         self.drag_dest_set(Gtk.DestDefaults.ALL, common.PLUGIN_DRAG_TARGETS, Gdk.DragAction.COPY)
 
         self.add_events(Gdk.EventMask.ALL_EVENTS_MASK)
-        self.update_colors()
 
         self.set_can_focus(True)
-        # self.connect('button-press-event', self.on_left_down)
-        # self.connect('button-release-event', self.on_left_up)
-        # self.connect('motion-notify-event', self.on_motion)
         self.connect("draw", self.on_draw)
         self.connect('key-press-event', self.on_key_jazz, None)
         self.connect('key-release-event', self.on_key_jazz_release, None)
         self.connect('configure-event', self.on_configure_event)
         self.connect('realize', self.on_realized)
 
-        self.setup_event_handler()
+        self.router_layer = RouterLayer(router_sizes, self.colors)
+        self.locator = self.router_layer.get_item_locator()
 
-        self.router_layer = RouterLayer(router_sizes)
+        self.connect('button-press-event', self.on_click)
+        self.connect('button-release-event', self.on_release)
+        self.connect('motion-notify-event', self.on_mousemove)
+        # self.setup_event_handler(self.router_layer.clickareas)
 
         if config.get_config().get_led_draw() == True:
-            self.adjust_draw_led_timer()
+            self.set_overlay_timer()
         
-        self.create_ui_objects()
+        self.recreate_ui_objects()
+        self.update_color_scheme()
 
-
-    def setup_event_handler(self):
-        events = EventHandler()
-
-        self.setup_left_click(events)
-        self.setup_left_release(events)
-        self.setup_motion(events)
-
-        events.connect(self)
-
-
-    def setup_left_click(self, events: EventHandler):
-        right_click = events.click_handler(Btn.RIGHT)
-        right_click.on_object(AreaType.PLUGIN).do(self.on_context_menu_plugins)
-        right_click.on_object(AreaType.CONNECTION).do(self.on_context_menu_connection)
-
-        double_click = events.double_click_handler(Btn.LEFT)
-        double_click.do(self.on_dbl_click_plugin).when_false().do(self.on_dbl_click_not_plugin)
-
-        left_click = events.click_handler(Btn.LEFT)
-        left_click.on_object(AreaType.PLUGIN_LED).do(self.on_click_mute)
-        left_click.on_object(AreaType.PLUGIN_PAN).do(self.on_click_pan)
-        left_click.on_object(AreaType.CONNECTION_ARROW).do(self.on_click_volume)
-
-        # left click on a plugin will update the active plugins list
-        plugin_handler = left_click.on_object(AreaType.PLUGIN)
-        plugin_handler.do(self.on_click_plugin_set_active)
-
-        # starts connecting between plugins
-        plugin_handler.when(lambda evt,_: (
-            (evt.get_state() & Gdk.ModifierType.CONTROL_MASK) or (evt.button == 2)
-        )).do(self.on_click_plugin_start_connect)
-
-        plugin_handler.if_not_attr('self.connecting').do(self.on_click_plugin_start_drag, True)
-
-    def setup_left_release(self, events: EventHandler):
-        release_handler = events.release_handler(Btn.LEFT)
-        release_handler.if_attr('self.dragging').do(self.on_release_dragging, True)
-        release_handler.if_attr('self.connecting').do(self.on_release_connecting, True)
-        release_handler.on_object(AreaType.PLUGIN_LED).do(self.on_release_mute_plugin)
-        
-    def setup_motion(self, events: EventHandler):
-        motion_handler = events.motion_handler()
-        motion_handler.if_attr('self.dragging').do(self.on_motion_drag)
-        motion_handler.if_attr('self.connecting').do(self.on_motion_connecting)
-        motion_handler.on_object(AreaType.PLUGIN).do(self.on_motion_over_plugin)
-
-
-        #draggin, connection else
-
-
-    # def on_select_plugin(self, event, context):
-    #     plugin, pos, _ = context['selected']
-    #     print("SELECTED PLUGIN", plugin)
 
     def on_document_loaded(self):
-        self.create_ui_objects()
+        self.recreate_ui_objects()
         self.redraw()
         
 
-    def create_ui_objects(self):
-        self.router_layer.clear()
-        
-        for mp in components.get_player().get_plugin_list():
-            print("creating ui obj")
-            # pos = Vec2(*mp.get_position())
-            info = common.get_plugin_infos().get(mp)
-            plugin_item_cls = self.get_plugin_container_class(mp)
-            plugin_item = plugin_item_cls(mp, info, self.colors)
-            #, pos, router_sizes, self.colors
-            self.router_layer.add_item(plugin_item)
-
-        conn_item_cls = self.get_connection_item_class()
-        for target_plugin in components.get_player().get_plugin_list():
-            target_item = self.router_layer.get_plugin_item(target_plugin.get_id())
-            
-            for index in range(target_plugin.get_input_connection_count()):
-                source_plugin = target_plugin.get_input_connection_plugin(index)
-                source_item = self.router_layer.get_plugin_item(source_plugin)
-                
-                conn_item = conn_item_cls(index, source_item, target_item, self.colors)
-                #, router_sizes, self.colors
-                self.router_layer.add_item(conn_item)
+    def recreate_ui_objects(self):
+        self.router_layer.populate(components.get_player())
 
                 
     # either build a PluginContainer or a class defined by 'router_item' config
-    #
-    def get_plugin_container_class(self, mp):
-        if mp.get_config('router_item'):
-            cls_name = mp.get_config('router_item')
-
-            if cls_name in globals():
-                return globals()[cls_name]
-        else:
-            return PluginItem
-        
-    def get_connection_item_class(self):
-        return ConnectionItem
 
 
     def on_realized(self, widget):
         self.router_layer.set_parent(widget)
         
-
-    def adjust_draw_led_timer(self, timeout = 200):
-        if getattr(self, 'ui_timeout', False):
-            GObject.source_remove(self.ui_timeout)
-
-        self.ui_timeout = GObject.timeout_add(timeout, self.on_draw_led_timer)
-
-
     def on_configure_event(self, widget, requisition):
         self.update_area()
         
 
     def update_area(self):
         area = self.get_allocation()
-        
+        print(self.area, area)
         if self.area != area:
-            self.router_layer.set_size(area.width, area.height)
+            self.area.size.set(area.width, area.height)
+            self.router_layer.set_size(Vec2(area.width, area.height))
             self.redraw(True)
         
+
+    # LED's usually redraw 5 fps.
+    # Dragging plugins/connections is laggy (recent change, not sure if me or Gtk)
+    # Temporarily speedup this timer to 10/20fps when mouse move handler active
+    def set_overlay_timer(self, fps = 5):
+        if getattr(self, 'ui_timeout', False):
+            GObject.source_remove(self.ui_timeout)
+
+        self.ui_timeout = GObject.timeout_add(1000/fps, self.on_draw_overlay)
+
 
     def on_active_plugins_changed(self, *args):
        # player = components.get('neil.core.player')
         common.get_plugin_infos().reset_plugingfx()
 
 
-    def get_plugin_info(self, plugin):
+    def get_plugin_info(self, plugin) -> common.PluginInfo:
         return common.get_plugin_infos().get(plugin)
 
 
@@ -281,14 +203,17 @@ class RouteView(Gtk.DrawingArea):
                 if is_effect(mp) or is_instrument(mp):
                     plugin = mp
 
-        player.create_plugin(pluginloader, connection=conn, plugin=plugin)
+        metaplugin = player.create_plugin(pluginloader, connection=conn, plugin=plugin)
+        
+        self.router_layer.add_plugin(metaplugin)
+
         Gtk.drag_finish(context, True, False, time)
         Gdk.drop_finish(context, True, time)
-            
+
         return True
 
 
-    def update_colors(self):
+    def update_color_scheme(self):
         """
         Updates the color scheme.
         """
@@ -306,7 +231,7 @@ class RouteView(Gtk.DrawingArea):
         self.redraw(True)
 
 
-    def on_focus(self, event):
+    def on_focus(self):
         self.redraw(True)
 
 
@@ -327,38 +252,65 @@ class RouteView(Gtk.DrawingArea):
 
     def selection_count(self):
         return len(self.selections)
-    
-    def on_context_menu(self, widget, event):
-        """
-        Event handler for requests to show the context menu.
 
-        @param event: event.
-        @type event: wx.Event
-        """
-        mx, my = int(event.x), int(event.y)
-        player = components.get('neil.core.player')
-        player.plugin_origin = self.pixel_to_float((mx, my))
-        res = self.get_plugin_at((mx, my))
 
-        if res:
-            mp, (x, y), area = res
-            if mp in player.active_plugins and len(player.active_plugins) > 1:
-                menu = views.get_contextmenu('multipleplugins', player.active_plugins)
-            else:
-                menu = views.get_contextmenu('singleplugin', mp)
-        else:
-            conns = self.get_connections_at((mx, my))
-            if conns:
-                # metaplugin, index = res
-                menu = views.get_contextmenu('connection', conns)
-            else:
-                (x, y) = self.pixel_to_float((mx, my))
-                menu = views.get_contextmenu('router', x, y)
+    def on_click(self, widget, event):
+        self.grab_focus()
+
+        found = self.locator.get_object_at(event.x, event.y)
+        if event.button == Gdk.BUTTON_SECONDARY:
+            return self.right_click(event, found)
         
-        menu.easy_popup(self, event)
+        if event.type == Gdk.EventType._2BUTTON_PRESS: # and event.button == Gdk.BUTTON_PRIMARY:
+            return self.double_click(event, found)
+        
+        if found:
+            if found.type & AreaType.CONNECTION:
+                return self.click_connection(event, found)
+            elif found.type & AreaType.PLUGIN:
+                return self.click_plugin(event, found)
+        
+
+    # main handler for right button clicks 
+    def right_click(self, event, found):
+        if not found:
+            return self.context_menu_any(event)
+        elif found.type & AreaType.PLUGIN:
+            return self.context_menu_plugins(event, found.object)
+        elif found and found.type & AreaType.CONNECTION:
+            return self.context_menu_connection(event)
+
+            
 
 
-    def on_context_menu_plugins(self, event, plugin):
+    def double_click(self, event, found):
+        if found and found.type == AreaType.PLUGIN:
+            return self.double_click_plugin(event, found)
+        else:
+            return self.double_click_not_plugin(event)
+  
+
+    def click_connection(self, event, found):
+        if found.type == AreaType.CONNECTION_ARROW:
+            return self.click_volume(event, found.object)
+
+
+    def click_plugin(self, event, found):
+        self.click_set_active_plugin(event, found.object)
+
+        start_connect = (event.button == Gdk.BUTTON_MIDDLE or (event.get_state() & Gdk.ModifierType.CONTROL_MASK))
+        print("start connect:", str(start_connect), ", has_output:", str(has_output(found.object)))
+        if start_connect and has_output(found.object):
+            return self.click_start_connecting(event, found.object)
+        else:
+            self.click_start_dragging(event, found)
+
+
+ 
+
+
+    def context_menu_plugins(self, event, plugin):
+        print("context menu plugins")
         player = components.get_player()
 
         if plugin in player.active_plugins and len(player.active_plugins) > 1:
@@ -366,283 +318,65 @@ class RouteView(Gtk.DrawingArea):
         else:
             menu = views.get_contextmenu('singleplugin', plugin)
 
-        return menu.easy_popup(self, event)
+        menu.easy_popup(self, event)
+        return True
 
-    def on_context_menu_connection(self, event, conn_id):
+
+    def context_menu_connection(self, event):
         player = components.get_player()
-        views.get_contextmenu('connection', conn_id)
+        connection_items = self.locator.get_all_type_at(event.x, event.y, AreaType.CONNECTION)
 
-    def on_context_menu_any(self, event):
-        (x, y) = self.router_layer.normalise_screen_pos(Vec2(event.x, event.y))
+        # the connection submenu expects: tuple(target_plugin, connection_index, connection_type)
+        connections = [(
+            player.get_plugin(item.id.target_id),
+            item.id.conn_index,
+            item.object.get_type()
+        ) for item in connection_items]
+
+        print("context menu connection", connections)
+        views.get_contextmenu('connection', connections).easy_popup(self, event)
+        return True
+
+
+    def context_menu_any(self, event):
+        print("context menu any")
+        (x, y) = self.router_layer.to_normal_pos_pair(event.x, event.y)
         print("normalised screen pos", x, y)
-        menu = views.get_contextmenu('router', x, y)
-
-    # def on_context_menu(self, widget, event):
-    #     """
-    #     Event handler for requests to show the context menu.
-
-    #     @param event: event.
-    #     @type event: wx.Event
-    #     """
-    #     mx, my = int(event.x), int(event.y)
-    #     player = components.get('neil.core.player')
-    #     player.plugin_origin = self.pixel_to_float((mx, my))
-    #     res = self.get_plugin_at((mx, my))
-
-    #     if res:
-    #         mp, (x, y), area = res
-    #         if mp in player.active_plugins and len(player.active_plugins) > 1:
-    #             menu = views.get_contextmenu('multipleplugins', player.active_plugins)
-    #         else:
-    #             menu = views.get_contextmenu('singleplugin', mp)
-    #     else:
-    #         conns = self.get_connections_at((mx, my))
-    #         if conns:
-    #             # metaplugin, index = res
-    #             menu = views.get_contextmenu('connection', conns)
-    #         else:
-    #             (x, y) = self.pixel_to_float((mx, my))
-    #             menu = views.get_contextmenu('router', x, y)
-        
-    #     menu.easy_popup(self, event)
+        views.get_contextmenu('router', x, y, self, components.get_player()).easy_popup(self, event)
 
 
-    def float_to_pixel(self, xy):
-        """
-        Converts a router coordinate to an on-screen pixel coordinate.
-
-        @param xy: tuple (x,y) coordinate in float
-        @return: tuple (x, y) coordinate in pixels.
-        """
-        # return (xy[0] + 1) * self.area.width / 2, (xy[1] + 1) * self.area.height / 2
-        return (0,0) #self.router_layer.norm_pos_to_pixel(Vec2(*xy))
-
-
-    def pixel_to_float(self, xy):
-        """
-        Converts an on-screen pixel coordinate to a router coordinate.
-
-        @param x: X coordinate.
-        @type x: int
-        @param y: Y coordinate.
-        @type y: int
-        @return: A tuple returning the router coordinate.
-        @rtype: (float, float)
-        """
-        # return (2 * xy[0] / self.area.width) - 1, (2 * xy[1] / self.area.height) - 1
-        return (0,0) #self.router_layer.pixel_to_norm_pos(Vec2(*xy))
-
-
-    
-    def get_audio_connection_at(self, xy):
-        """
-        @param xy coordinate in pixels
-        @return tuple (target_plugin, connection_index)
-        """
-        conns = self.get_connections_at(xy, (zzub.zzub_connection_type_audio,))
-
-        if len(conns) == 0:
-            return None
-        
-        if len(conns) == 1:
-            return conns[0][:2]
-
-        #TODO: implement a better way to select the connection
-        return conns[0][:2]
-
-    
-    def get_connections_at(self, xy, types = (zzub.zzub_connection_type_audio, zzub.zzub_connection_type_cv)):
-        """
-        Finds all connections at a specific position. 
-        By default it only matches audio + cv connections
-
-        @param xy: (x, y) coordinate in pixels.
-        @param types: a list of zzub connection types to match
-        @return: a list of tuples [(target_plugin, connection_index, connection_type), (target_plugin, connection_index, connection_type), ...]
-        """
-        player = components.get('neil.core.player')
-
-        matches = []
-        for tplugin in player.get_plugin_list():
-            tpos = self.float_to_pixel(tplugin.get_position()) # target plugin
-
-            for index in range(tplugin.get_input_connection_count()):
-                splugin = tplugin.get_input_connection_plugin(index) # source plugin
-                spos = self.float_to_pixel(splugin.get_position()) 
-                conn_type = tplugin.get_input_connection_type(index)
-
-                if conn_type not in types:
-                    continue
-
-                if distance_from_line(spos, tpos, xy) < 13.5:
-                    matches.append((tplugin, index, conn_type))
-
-        return matches
-
-    def get_object_at(self, x, y) -> tuple[zzub.Plugin, tuple[int, int], int]:
-        """
-        Finds a plugin at a specific position.
-        @param xy: (x, y) coordinate in pixels.
-        @return: a tuple (zzub.Plugin, (x, y), AreaType) or None
-        """
-        return self.router_layer.get_object_at(x, y)
-    
-    def get_plugin_at(self, xy) -> tuple[zzub.Plugin, tuple[int, int], int]:
-        """
-        Finds a plugin at a specific position.
-        @param xy: (x, y) coordinate in pixels.
-        @return: a tuple (zzub.Plugin, (x, y), AreaType) or None
-        """
-        return self.router_layer.get_plugin_at(xy[0], xy[1])
-        # PW, PH = router_sizes.get('pluginwidth') / 2, router_sizes.get('pluginheight') / 2
-        # area = AREA_ANY
-        # player = components.get('neil.core.player')
-        # for mp in reversed(list(player.get_plugin_list())):
-        #     pi = common.get_plugin_infos().get(mp)
-        #     if not pi.songplugin:
-        #         continue
-        #     x,y = self.float_to_pixel(mp.get_position())
-        #     plugin_box = (x - PW, y - PH, x + PW, y + PH)
-
-        #     if box_contains(mx, my, plugin_box):
-        #         led_tl_pos = (plugin_box[0] + router_sizes.get('ledofsx'), plugin_box[1] + router_sizes.get('ledofsy'))
-        #         led_br_pos = (led_tl_pos[0] + router_sizes.get('ledwidth'), led_tl_pos[1] + router_sizes.get('ledheight'))
-        #         if box_contains(mx, my, [*led_tl_pos, *led_br_pos]):
-        #             area = AREA_LED
-        #         return mp, (x, y), area
-
-
-
-    def on_dbl_click_plugin(self, widget, plugin):
+    def double_click_plugin(self, widget, plugin):
         data = zzub.zzub_event_data_t()
-
+        print("double click plugin")
         event_result = plugin.invoke_event(data, 1)
         # plugins with custom guis are opened by the double click event
         if not plugin.get_flags() & zzub.zzub_plugin_flag_has_custom_gui:
             components.get('neil.core.parameterdialog.manager').show(plugin, self)
 
-    def on_dbl_click_not_plugin(self, widget):
-        searchwindow = components.get('neil.core.searchplugins')
+
+    def double_click_not_plugin(self, event):
+        print("double click not plugin")
+        searchwindow = views.get_dialog('searchplugins')
         searchwindow.show_all()
         searchwindow.present()
 
-        
-    # def on_left_dclick(self, widget, event):
-    #     """
-    #     Event handler for left doubleclicks. If the doubleclick
-    #     hits a plugin, the parameter window is being shown.
-    #     """
-    #     player = components.get('neil.core.player')
-    #     mx, my = int(event.x), int(event.y)
-    #     res = self.get_plugin_at((mx, my))
-    #     if not res:
-    #         searchwindow = components.get('neil.core.searchplugins')
-    #         searchwindow.show_all()
-    #         searchwindow.present()
-    #         return
-    #     mp, (x, y), area = res
-    #     if area == AREA_ANY:
-    #         data = zzub.zzub_event_data_t()
 
-    #         event_result = mp.invoke_event(data, 1)
-    #         # plugins with custom guis are opened by the double click event
-    #         if not mp.get_flags() & zzub.zzub_plugin_flag_has_custom_gui:
-    #             components.get('neil.core.parameterdialog.manager').show(mp, self)
-
-    def on_left_down(self, widget, event):
-        """
-        Event handler for left mouse button presses. Initiates
-        plugin dragging or connection volume adjustments.
-
-        @param event: Mouse event.
-        @type event: wx.MouseEvent
-        """
-        self.grab_focus()
-        player = components.get_player()
-        if (event.button == 3):
-            return self.on_context_menu(widget, event)
-
-        if not event.button in (1, 2):
-            return
-
-        if (event.button == 1) and (event.type == Gdk.EventType._2BUTTON_PRESS):
-            self.get_window().set_cursor(None)
-            return self.on_left_dclick(widget, event)
-        # event_handler.on_left_down()
-        # .when_object()
-        # object state matcher -> tests if self.dragging or self.active_plugins
-        # click_area_matcher -> use click_area.get_object_at
-
-        # event
-        mx, my = int(event.x), int(event.y)
-        res = self.get_plugin_at((mx, my))
-        if res:
-            mp, (x,y), area = res
-            # mp, (x, y), area = res
-            if area == AREA_LED:
-                player.toggle_mute(mp)
-                self.redraw()
-            else:
-                if not mp in player.active_plugins:
-                    if (event.get_state() & Gdk.ModifierType.SHIFT_MASK):
-                        player.active_plugins = [mp] + player.active_plugins
-                    else:
-                        player.active_plugins = [mp]
-                if not mp in player.active_patterns and is_a_generator(mp):
-                    if (event.get_state() & Gdk.ModifierType.SHIFT_MASK):
-                        player.active_patterns = [(mp, 0)] + player.active_patterns
-                    else:
-                        player.active_patterns = [(mp, 0)]
-                player.set_midi_plugin(mp)
-                if (event.get_state() & Gdk.ModifierType.CONTROL_MASK) or (event.button == 2):
-                    if is_controller(mp):
-                        pass
-                    else:
-                        self.connectpos = int(mx), int(my)
-                        self.connecting_alt = event.get_state() & Gdk.ModifierType.MOD1_MASK
-                        self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR))
-                        self.connecting = True
-                if not self.connecting:
-                    # self.dragstart = (mx, my)
-                    self.dragoffset = (x - mx, y - my)
-                    for plugin in player.active_plugins:
-                        pinfo = self.get_plugin_info(plugin)
-                        pinfo.dragpos = plugin.get_position()
-                        px, py = self.float_to_pixel(pinfo.dragpos)
-                        pinfo.dragoffset = px - mx, py - my
-
-                    self.adjust_draw_led_timer(100)
-                    self.dragging = True
-                    self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.FLEUR))
-                    self.grab_add()
-        else:
-            conn_at = self.get_audio_connection_at((mx, my))
-
-            if not conn_at:
-                return
-            
-            mp, index = conn_at
-            (ret, ox, oy) = self.get_window().get_origin()
-            if mp.get_input_connection_type(index) == zzub.zzub_connection_type_audio:
-                self.volume_slider.display((ox + mx, oy + my), mp, index, my)
-
-
-    def on_click_mute(self, event, plugin: zzub.Plugin):
+    def click_mute(self, event, plugin: zzub.Plugin):
         print("MUTE")
         components.get_player().toggle_mute(plugin)
         self.redraw()
 
 
-    def on_click_pan(self, event, plugin: zzub.Plugin):
+    def click_pan(self, event, plugin: zzub.Plugin):
         print("PANNING")
 
 
-    def on_click_volume(self, event, plugin: zzub.Plugin):
+    def click_volume(self, event, plugin: zzub.Plugin):
         print("VOLUME CLICK")
 
 
-    def on_click_plugin_set_active(self, event, plugin: zzub.Plugin):
-        print("PLUGIN SET ACTIVE")
+    def click_set_active_plugin(self, event, plugin: zzub.Plugin):
+        print("PLUGIN SET ACTIVE", plugin)
 
         player = components.get_player()
         if not plugin in player.active_plugins:
@@ -650,7 +384,7 @@ class RouteView(Gtk.DrawingArea):
                 player.active_plugins = [plugin] + player.active_plugins
             else:
                 player.active_plugins = [plugin]
-        if not plugin in player.active_patterns and is_a_generator(mp):
+        if not plugin in player.active_patterns and is_a_generator(plugin):
             if (event.get_state() & Gdk.ModifierType.SHIFT_MASK):
                 player.active_patterns = [(plugin, 0)] + player.active_patterns
             else:
@@ -658,192 +392,224 @@ class RouteView(Gtk.DrawingArea):
         player.set_midi_plugin(plugin)
 
 
-    def on_click_plugin_start_connect(self, event, plugin):
+    def click_start_connecting(self, event, plugin):
         print("PLUGIN START CONNECT")
 
-        if not is_controller(plugin):
-            self.connectpos = int(event.x), int(event.y)
-            self.connecting_alt = event.get_state() & Gdk.ModifierType.MOD1_MASK
-            self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR))
-            self.connecting = True
-
+        player = components.get_player()
+        self.connectpos = int(event.x), int(event.y)
+        self.connecting_alt = event.get_state() & Gdk.ModifierType.MOD1_MASK
+        self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR))
+        self.connecting = True
+        self.router_layer.add_drag_connection(event.x, event.y, player.get_first_active_plugin())
+        self.set_overlay_timer(10)
+        self.grab_add()
         return True
 
 
-    def on_click_plugin_start_drag(self, event, plugin, rect):
-        print("PLUGIN START DRAG")
+    def click_start_dragging(self, event, found):
+        print("PLUGIN START DRAG: self", self)
+        self.dragging = True
 
-        mid = rect.get_mid()
-        player = self.get_player()
-        self.dragoffset = (mid.x - event.x, mid.y - event.y)
+        player = components.get_player()
+        self.dragoffset = found.rect.get_mid() - event
 
         for plugin in player.active_plugins:
-            pinfo = self.get_plugin_info(plugin)
-            pinfo.dragpos = plugin.get_position()
-            px, py = self.float_to_pixel(pinfo.dragpos)
-            pinfo.dragoffset = px - event.x, py - event.y
+            pinfo = self.get_plugin_info(found.object)
+            pinfo.dragpos = Vec2(*plugin.get_position())
+            screen_pos = self.router_layer.to_screen_pos(pinfo.dragpos)
+            pinfo.dragoffset = screen_pos - event
 
-        self.adjust_draw_led_timer(100)
-        self.dragging = True
+        # self.adjust_draw_led_timer(100)
+        
         self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.FLEUR))
         self.grab_add()
+        self.set_overlay_timer(10)
 
 
     def drag_update(self, x, y, state):
-        player = components.get('neil.core.player')
-        ox, oy = self.dragoffset
-        mx, my = int(x), int(y)
-        x, y = (mx - ox, my - oy)
+        drop_pos = Vec2(x, y) - self.dragoffset
+
         if (state & Gdk.ModifierType.CONTROL_MASK):
+            scaled = router_sizes['plugin'] * self.router_layer.get_zoom()
             # quantize position
-            x = int(float(x) / router_sizes('quantizex') + 0.5) * router_sizes('quantizex')
-            y = int(float(y) / router_sizes('quantizey') + 0.5) * router_sizes('quantizey')
-        for plugin in player.active_plugins:
+            drop_pos = (drop_pos / scaled + 0.5).ints() * scaled
+            x = int(x / scaled.x + 0.5) * scaled.x
+            y = int(y / scaled.y + 0.5) * scaled.y
+
+        for plugin in components.get('neil.core.player').active_plugins:
             pinfo = self.get_plugin_info(plugin)
-            dx, dy = pinfo.dragoffset
-            pinfo.dragpos = self.pixel_to_float((x + dx, y + dy))
-        
+            pinfo.dragpos = self.router_layer.to_normal_pos(drop_pos + pinfo.dragoffset)
+            self.router_layer.move_plugin(plugin, pinfo.dragpos)
+
         self.redraw(True)
 
 
-    def on_motion(self, widget, event):
+    def on_mousemove(self, widget, event):
         if self.dragging:
-            self.drag_update(event.x, event.y, event.state)
+            return self.on_motion_drag(event)
         elif self.connecting:
-            self.connectpos = int(event.x), int(event.y)
-            # if False: connect as stereo audio. if True: connect as control port
-            self.connecting_alt = event.state & Gdk.ModifierType.MOD1_MASK
-            self.redraw()
+            return self.on_motion_connecting(event)
+        
+        found = self.locator.get_object_group_at(event.x, event.y, AreaType.PLUGIN)
+        if found:
+            self.on_motion_over_plugin(event, found)
         else:
-            res = self.get_plugin_at((event.x, event.y))
-            if res:
-                _, _, area_type = res
-                # mp, (mx, my), area = res
-                self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1) if area_type == AREA_LED else None)
+            self.on_motion_elsewhere(event)
+    
 
-        return False
+    def on_motion_drag(self, event):
+        self.drag_update(event.x, event.y, event.state)
+        return True
 
-    def on_motion_drag(self, widget, event):
-        print("on_motion_drag")
 
-    def on_motion_connecting(self, widget, event):
-        print("on_motion_connecting")
+    def on_motion_connecting(self, event):
+        # print("on_motion_connecting")
+        self.connectpos = int(event.x), int(event.y)
+        self.connecting_alt = event.state & Gdk.ModifierType.MOD1_MASK
+        self.router_layer.update_drag_connection(event.x, event.y)
+        return True
 
-    def on_motion_over_plugin(self, widget, event):
-        print("on_motion_over_plugin")
 
+    def on_motion_over_plugin(self, event, result: ClickedArea):
+        # print("on_motion_over_plugin")
+        if result.type == AreaType.PLUGIN_LED:
+            self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1))
+        else:
+            self.get_window().set_cursor(None)
+
+
+    def on_motion_elsewhere(self, event):
+        self.redraw()
+
+
+    def on_release(self, widget, event):
+        self.set_overlay_timer()
+
+        if self.connecting:
+            return self.on_release_connecting(event)
+        elif self.dragging:
+            return self.on_release_dragging(event)
+        elif self.locator.get_object_at(event.x, event.y):
+             self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1))
+        else:
+            self.get_window().set_cursor(None)
+
+        self.redraw(True)
+  
+
+    def on_release_dragging(self, event):
+        self.dragging = False
+        self.get_window().set_cursor(None)
+        self.redraw()
+        self.grab_remove()
+
+        for plugin in components.get_player().active_plugins:
+            plugin.set_position(*self.get_plugin_info(plugin).dragpos)
+            
+        components.get_player().history_commit("move plugin")
+        self.set_overlay_timer()
+        # self.adjust_draw_led_timer()
+
+
+    def on_release_connecting(self, event):
+        self.set_overlay_timer()
+        self.router_layer.remove_drag_connection()
+        self.redraw()
+        self.grab_remove()
+
+        self.connecting = False
+        self.connecting_alt = False
+
+        self.get_window().set_cursor(None)
+
+        target_item = self.locator.get_object_group_at(event.x, event.y, AreaType.PLUGIN)
+        
+        source_plugin = components.get_player().get_first_active_plugin()
+        if not target_item or not source_plugin:
+            return
+        
+        target_plugin = target_item.object
+        if event.get_state() & Gdk.ModifierType.MOD1_MASK:
+            if has_cv_output(source_plugin):
+                (source_connector, target_connector, data) = self.choose_cv_connectors_dialog(source_plugin, target_plugin)
+
+                if source_connector and target_connector and data:
+                    print("cv connector data", data, data.amp, data.modulate_mode, data.offset_before, data.offset_after)
+                    target_plugin.add_cv_connector(source_plugin, source_connector, target_connector, data)
+                    components.get_player().history_commit("new cv connection")
+                    
+        elif has_audio_output(source_plugin):
+            target_plugin.add_input(source_plugin, zzub.zzub_connection_type_audio)
+            components.get_player().history_commit("new audio connection")
+
+        self.recreate_ui_objects()
+
+
+
+
+    def on_release_over_led(self, event, plugin):
+        self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1))
+
+
+    def on_release_elsewhere(self, event):
+        self.get_window().set_cursor(None)
+
+
+    def update_all(self):
+        self.update_color_scheme()
+        self.redraw()
+
+
+    def get_audio_connection_at(self, x, y):
+        """
+        get the first audio connection at location
+
+        @param x 
+        @param y 
+        @return zzub.Connection
+        """
+        for conn_item in self.router_layer.get_connections_at(x, y):
+            if conn_item.type == zzub.zzub_connection_type_audio:
+                return conn_item
 
 
     # called by on_left_up after alt plugin connection 
-    def choose_cv_connectors_dialog(self, from_plugin, to_plugin):
+    def choose_cv_connectors_dialog(self, from_plugin: zzub.Plugin, to_plugin):
+        """
+        open dialog to choose which ports to connect 
+
+        @param from_plugin
+        @param to_plugin
+        @return (source: zzub.CvNode, target: CvNode, data: CvData)
+        """
         dialog = ConnectDialog(self, from_plugin, to_plugin)
         response = dialog.run()
 
         if response == Gtk.ResponseType.OK:
-            source, target = dialog.get_connectors()
+            source_node, target_node = dialog.get_connectors()
         else:
-            source = target = False
+            source_node = target_node = False
 
         data = dialog.get_cv_data()
-        print("chosen connector", data)
 
         dialog.destroy()
 
-        return (source, target, data)
+        return (source_node, target_node, data)
 
 
-    def on_left_up(self, widget, event):
+
+    def on_draw_overlay(self):
         """
-        Event handler for left mouse button releases.
-
-        @param event: Mouse event.
-        @type event: wx.MouseEvent
-        """
-        mx, my = int(event.x), int(event.y)
-        player = components.get_player()
-
-        if self.dragging:
-            self.dragging = False
-            self.get_window().set_cursor(None)
-            self.grab_remove()
-            self.grab_focus()
-            ox, oy = self.dragoffset
-            size = self.get_allocation()
-            x, y = max(0, min(mx - ox, size.width)), max(0, min(my - oy, size.height))
-            if (event.get_state() & Gdk.ModifierType.CONTROL_MASK):
-                # quantize position
-                x = int(float(x) / router_sizes.get('quantizex') + 0.5) * router_sizes.get('quantizex')
-                y = int(float(y) / router_sizes.get('quantizey') + 0.5) * router_sizes.get('quantizey')
-            for plugin in player.active_plugins:
-                pinfo = self.get_plugin_info(plugin)
-                dx, dy = pinfo.dragoffset
-                plugin.set_position(*self.pixel_to_float((dx + x, dy + y)))
-            player.history_commit("move plugin")
-
-            self.redraw(True)
-            self.adjust_draw_led_timer(200)
-
-        if self.connecting:
-            res = self.get_plugin_at((mx, my))
-
-            if res:
-                mp, (x, y), area = res
-                active_plugins = player.get_active_plugins()
-                
-                if active_plugins:
-                    if event.get_state() & Gdk.ModifierType.MOD1_MASK:
-                        (source_connector, target_connector, data) = self.choose_cv_connectors_dialog(active_plugins[0], mp)
-
-                        if source_connector and target_connector and data:
-                            print("cv connector data", data, data.amp, data.modulate_mode, data.offset_before, data.offset_after)
-                            mp.add_cv_connector(active_plugins[0], source_connector, target_connector, data)
-                            player.history_commit("new cv connection")
-                            
-                    elif not is_controller(active_plugins[0]):
-                        mp.add_input(active_plugins[0], zzub.zzub_connection_type_audio)
-                        player.history_commit("new event connection")
-
-            self.connecting = False
-            self.connecting_alt = False
-
-            self.redraw(True)
-
-        res = self.get_plugin_at((mx, my))
-
-        if res:
-            mp, (x, y), area = res
-            if area == AREA_LED:
-                self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1))
-        else:
-            self.get_window().set_cursor(None)
-
-    def on_release_connecting(widget, plugin, rect):
-        print("on_release_connecting")
-        pass
-
-    def on_release_dragging(widget, plugin, rect):
-        print("on_release_dragging")
-        pass
-
-    def on_release_mute_plugin(widget, plugin):
-        print("on_release_mute_plugin")
-        pass
-
-    def update_all(self):
-        self.update_colors()
-        self.redraw()
-
-    def on_draw_led_timer(self):
-        """
-        Timer event that used to only update the plugin leds 5 times a second. 
-        Temporarily fix for on-motion handlers being laggy for unknown reasons
+        Some on-motion handlers were laggy for unknown reasons so forcing an update here
         """
         if self.dragging:
-            self.prepare_drag_update()
+            self.force_drag_update()
             return True
         
         if self.connecting:
             self.redraw()
+        # print("on draw led")
+        # self.update_led_overlay()
 
         # TODO: find some other way to find out whether we are really visible
         #if self.rootwindow.get_current_panel() != self.panel:
@@ -861,8 +627,9 @@ class RouteView(Gtk.DrawingArea):
 #                self.get_window().invalidate_rect(rect, False)
         return True
     
-    # dragging plugins was very jumpy, this is a backup till i figure out the proper fix
-    def prepare_drag_update(self):
+    # dragging plugins was very jumpy, 
+    # have to get set a timer and get the pointer position to simulate a motion event
+    def force_drag_update(self):
         display = Gdk.Display.get_default()
         seat = display.get_default_seat()
         device = seat.get_pointer()
@@ -1087,7 +854,7 @@ class RouteView(Gtk.DrawingArea):
 
 
     def on_draw(self, widget, ctx):
-        self.router_layer.draw(ctx)
+        self.router_layer.draw_router(ctx)
         return True
         # self.draw(ctx)
         # return True
@@ -1144,8 +911,6 @@ class RouteView(Gtk.DrawingArea):
             return
 
         cfg = config.get_config()
-
-
 
         pango_layout = Pango.Layout(self.get_pango_context())
         #~ layout.set_font_description(self.fontdesc)
@@ -1234,3 +999,406 @@ class RouteView(Gtk.DrawingArea):
                 self.chordnotes.remove(note)
                 n = ((note[0] + octave) << 4 | note[1] + 1)
                 plugin.play_midi_note(zzub.zzub_note_value_off, n, 0)
+
+
+
+
+    # def on_motion(self, widget, event):
+    #     if self.dragging:
+    #         self.drag_update(event.x, event.y, event.state)
+    #     elif self.connecting:
+    #         self.connectpos = int(event.x), int(event.y)
+    #         # if False: connect as stereo audio. if True: connect as control port
+    #         self.connecting_alt = event.state & Gdk.ModifierType.MOD1_MASK
+    #         self.redraw()
+    #     else:
+    #         res = self.get_plugin_at((event.x, event.y))
+    #         if res:
+    #             _, _, area_type = res
+    #             # mp, (mx, my), area = res
+    #             self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1) if area_type == AREA_LED else None)
+
+    #     return False
+
+#    def context_menu(self, widget, event):
+#         """
+#         Event handler for requests to show the context menu.
+
+#         @param event: event.
+#         @type event: wx.Event
+#         """
+#         mx, my = int(event.x), int(event.y)
+#         player = components.get('neil.core.player')
+#         player.plugin_origin = self.pixel_to_float((mx, my))
+#         res = self.get_plugin_at((mx, my))
+
+#         if res:
+#             mp, (x, y), area = res
+#             if mp in player.active_plugins and len(player.active_plugins) > 1:
+#                 menu = views.get_contextmenu('multipleplugins', player.active_plugins)
+#             else:
+#                 menu = views.get_contextmenu('singleplugin', mp)
+#         else:
+#             conns = self.router_layer.get_connections_at(mx, my)
+#             if conns:
+#                 # metaplugin, index = res
+#                 menu = views.get_contextmenu('connection', conns)
+#             else:
+#                 (x, y) = self.pixel_to_float((mx, my))
+#                 menu = views.get_contextmenu('router', x, y)
+        
+#         menu.easy_popup(self, event)
+
+
+    # def on_context_menu(self, widget, event):
+    #     """
+    #     Event handler for requests to show the context menu.
+
+    #     @param event: event.
+    #     @type event: wx.Event
+    #     """
+    #     mx, my = int(event.x), int(event.y)
+    #     player = components.get('neil.core.player')
+    #     player.plugin_origin = self.pixel_to_float((mx, my))
+    #     res = self.get_plugin_at((mx, my))
+
+    #     if res:
+    #         mp, (x, y), area = res
+    #         if mp in player.active_plugins and len(player.active_plugins) > 1:
+    #             menu = views.get_contextmenu('multipleplugins', player.active_plugins)
+    #         else:
+    #             menu = views.get_contextmenu('singleplugin', mp)
+    #     else:
+    #         conns = self.get_connections_at((mx, my))
+    #         if conns:
+    #             # metaplugin, index = res
+    #             menu = views.get_contextmenu('connection', conns)
+    #         else:
+    #             (x, y) = self.pixel_to_float((mx, my))
+    #             menu = views.get_contextmenu('router', x, y)
+        
+    #     menu.easy_popup(self, event)
+
+
+    # def on_left_up(self, widget, event):
+    #     """
+    #     Event handler for left mouse button releases.
+
+    #     @param event: Mouse event.
+    #     @type event: wx.MouseEvent
+    #     """
+    #     mx, my = int(event.x), int(event.y)
+    #     player = components.get_player()
+
+    #     if self.dragging:
+    #         self.dragging = False
+    #         self.get_window().set_cursor(None)
+    #         self.grab_remove()
+    #         self.grab_focus()
+    #         ox, oy = self.dragoffset
+    #         size = self.get_allocation()
+    #         x, y = max(0, min(mx - ox, size.width)), max(0, min(my - oy, size.height))
+    #         if (event.get_state() & Gdk.ModifierType.CONTROL_MASK):
+    #             # quantize position
+    #             x = int(float(x) / router_sizes.get('quantizex') + 0.5) * router_sizes.get('quantizex')
+    #             y = int(float(y) / router_sizes.get('quantizey') + 0.5) * router_sizes.get('quantizey')
+    #         for plugin in player.active_plugins:
+    #             pinfo = self.get_plugin_info(plugin)
+    #             dx, dy = pinfo.dragoffset
+    #             plugin.set_position(*self.pixel_to_float((dx + x, dy + y)))
+    #         player.history_commit("move plugin")
+
+    #         self.redraw(True)
+    #         self.adjust_draw_led_timer(200)
+
+    #     if self.connecting:
+    #         res = self.get_plugin_at((mx, my))
+
+    #         if res:
+    #             mp, (x, y), area = res
+    #             active_plugins = player.get_active_plugins()
+                
+    #             if active_plugins:
+    #                 if event.get_state() & Gdk.ModifierType.MOD1_MASK:
+    #                     (source_connector, target_connector, data) = self.choose_cv_connectors_dialog(active_plugins[0], mp)
+
+    #                     if source_connector and target_connector and data:
+    #                         print("cv connector data", data, data.amp, data.modulate_mode, data.offset_before, data.offset_after)
+    #                         mp.add_cv_connector(active_plugins[0], source_connector, target_connector, data)
+    #                         player.history_commit("new cv connection")
+                            
+    #                 elif not has_output(active_plugins[0]):
+    #                     mp.add_input(active_plugins[0], zzub.zzub_connection_type_audio)
+    #                     player.history_commit("new event connection")
+
+    #         self.connecting = False
+    #         self.connecting_alt = False
+
+    #         self.redraw(True)
+
+    #     res = self.get_plugin_at((mx, my))
+
+    #     if res:
+    #         mp, (x, y), area = res
+    #         if area == AREA_LED:
+    #             self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.HAND1))
+    #     else:
+    #         self.get_window().set_cursor(None)
+     
+    # def on_left_dclick(self, widget, event):
+    #     """
+    #     Event handler for left doubleclicks. If the doubleclick
+    #     hits a plugin, the parameter window is being shown.
+    #     """
+    #     player = components.get('neil.core.player')
+    #     mx, my = int(event.x), int(event.y)
+    #     res = self.get_plugin_at((mx, my))
+    #     if not res:
+    #         searchwindow = components.get('neil.core.searchplugins')
+    #         searchwindow.show_all()
+    #         searchwindow.present()
+    #         return
+    #     mp, (x, y), area = res
+    #     if area == AREA_ANY:
+    #         data = zzub.zzub_event_data_t()
+
+    #         event_result = mp.invoke_event(data, 1)
+    #         # plugins with custom guis are opened by the double click event
+    #         if not mp.get_flags() & zzub.zzub_plugin_flag_has_custom_gui:
+    #             components.get('neil.core.parameterdialog.manager').show(mp, self)
+
+
+
+    # #
+    # def get_plugin_container_class(self, mp):
+    #     if mp.get_config('router_item'):
+    #         cls_name = mp.get_config('router_item')
+
+    #         if cls_name in globals():
+    #             return globals()[cls_name]
+    #     else:
+    #         return PluginItem
+
+
+
+    # def setup_event_handler(self, click_areas: ClickArea):
+    #     events = EventHandler(click_areas)
+
+    #     self.setup_btn_clicks(events)
+    #     self.setup_btn_release(events)
+    #     self.setup_motion(events)
+
+    #     events.connect(self)
+
+
+    # def setup_btn_clicks(self, events: EventHandler):
+    #     right_click = events.click_handler(Btn.RIGHT)
+    #     right_click.on_object(AreaType.PLUGIN).do(self.on_context_menu_plugins)
+    #     right_click.on_object(AreaType.CONNECTION).do(self.on_context_menu_connection)
+    #     right_click.do(self.on_context_menu_any)
+        
+    #     middle_click_plugin = events.click_handler(Btn.MIDDLE).when(lambda evt, _: not self.dragging and not self.connecting).on_object(AreaType.PLUGIN)
+    #     middle_click_plugin.do(self.on_click_set_active_plugin).do(self.on_click_start_connect)
+
+    #     plugin_double_click = events.double_click_handler(Btn.LEFT).on_object(AreaType.PLUGIN)
+    #     plugin_double_click.do(self.on_dbl_click_plugin).if_false().do(self.on_dbl_click_not_plugin)
+
+    #     left_click = events.click_handler(Btn.LEFT)
+    #     left_click.on_object(AreaType.PLUGIN_LED).do(self.on_click_mute)
+    #     left_click.on_object(AreaType.PLUGIN_PAN).do(self.on_click_pan)
+    #     left_click.on_object(AreaType.CONNECTION_ARROW).do(self.on_click_volume)
+
+    #     # left click on a plugin will update the active plugins list
+    #     plugin_handler = left_click.on_object(AreaType.PLUGIN)
+    #     plugin_handler.do(self.on_click_set_active_plugin)
+
+    #     # starts connecting between plugins
+    #     plugin_handler.when(lambda evt,_: (
+    #         evt.get_state() & Gdk.ModifierType.CONTROL_MASK
+    #     )).do(self.on_click_start_connect)
+
+    #     plugin_handler.if_not_attr('self.connecting').do(self.on_click_start_drag, True)
+
+
+
+
+    # def setup_motion(self, events: EventHandler):
+    #     motion_handler = events.motion_handler()
+    #     motion_handler.if_attr('self.dragging').do(self.on_motion_drag)
+    #     motion_handler.if_attr('self.connecting').do(self.on_motion_connecting)
+
+    #     motion_handler.on_group(AreaType.PLUGIN).do_result(self.on_motion_over_plugin)
+
+
+
+    # def setup_btn_release(self, events: EventHandler):
+    #     release_handler = events.release_handler(Btn.LEFT)
+    #     release_handler.if_attr('self.dragging').do(self.on_release_dragging)
+    #     release_handler.if_attr('self.connecting').do(self.on_release_connecting)
+        
+    #     release_handler = events.release_handler(Btn.MIDDLE)
+    #     release_handler.if_attr('self.connecting').do(self.on_release_connecting)
+
+    #     led_release_handler = release_handler.on_object(AreaType.PLUGIN_LED)
+    #     led_release_handler.do(self.on_release_over_led).if_false().do(self.on_release_elsewhere)
+
+
+
+
+    # def on_left_down(self, widget, event):
+    #     """
+    #     Event handler for left mouse button presses. Initiates
+    #     plugin dragging or connection volume adjustments.
+
+    #     @param event: Mouse event.
+    #     @type event: wx.MouseEvent
+    #     """
+    #     self.grab_focus()
+    #     player = components.get_player()
+    #     if (event.button == 3):
+    #         return self.on_context_menu(widget, event)
+
+    #     if not event.button in (1, 2):
+    #         return
+
+    #     if (event.button == 1) and (event.type == Gdk.EventType._2BUTTON_PRESS):
+    #         self.get_window().set_cursor(None)
+    #         return self.on_left_dclick(widget, event)
+    #     # event_handler.on_left_down()
+    #     # .when_object()
+    #     # object state matcher -> tests if self.dragging or self.active_plugins
+    #     # click_area_matcher -> use click_area.get_object_at
+
+    #     # event
+    #     mx, my = int(event.x), int(event.y)
+    #     res = self.get_plugin_at((mx, my))
+    #     if res:
+    #         mp, (x,y), area = res
+    #         # mp, (x, y), area = res
+    #         if area == AREA_LED:
+    #             player.toggle_mute(mp)
+    #             self.redraw()
+    #         else:
+    #             if not mp in player.active_plugins:
+    #                 if (event.get_state() & Gdk.ModifierType.SHIFT_MASK):
+    #                     player.active_plugins = [mp] + player.active_plugins
+    #                 else:
+    #                     player.active_plugins = [mp]
+    #             if not mp in player.active_patterns and is_a_generator(mp):
+    #                 if (event.get_state() & Gdk.ModifierType.SHIFT_MASK):
+    #                     player.active_patterns = [(mp, 0)] + player.active_patterns
+    #                 else:
+    #                     player.active_patterns = [(mp, 0)]
+    #             player.set_midi_plugin(mp)
+    #             if (event.get_state() & Gdk.ModifierType.CONTROL_MASK) or (event.button == 2):
+    #                 if is_controller(mp):
+    #                     pass
+    #                 else:
+    #                     self.connectpos = int(mx), int(my)
+    #                     self.connecting_alt = event.get_state() & Gdk.ModifierType.MOD1_MASK
+    #                     self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR))
+    #                     self.connecting = True
+    #             if not self.connecting:
+    #                 # self.dragstart = (mx, my)
+    #                 self.dragoffset = (x - mx, y - my)
+    #                 for plugin in player.active_plugins:
+    #                     pinfo = self.get_plugin_info(plugin)
+    #                     pinfo.dragpos = plugin.get_position()
+    #                     px, py = self.float_to_pixel(pinfo.dragpos)
+    #                     pinfo.dragoffset = (px - mx, py - my)
+
+    #                 # self.adjust_draw_led_timer(100)
+    #                 self.dragging = True
+    #                 self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.FLEUR))
+    #                 self.grab_add()
+    #     else:
+    #         conn_at = self.get_audio_connection_at((mx, my))
+
+    #         if not conn_at:
+    #             return
+            
+    #         mp, index = conn_at
+    #         (ret, ox, oy) = self.get_window().get_origin()
+    #         if mp.get_input_connection_type(index) == zzub.zzub_connection_type_audio:
+    #             self.volume_slider.display((ox + mx, oy + my), mp, index, my)
+
+
+
+
+    # def get_connections_at(self, xy, types = (zzub.zzub_connection_type_audio, zzub.zzub_connection_type_cv)):
+    #     """
+    #     Finds all audio and cv connections at a specific position, currently it only matches amplitude arrows
+
+    #     @param xy: (x, y) coordinate in pixels.
+    #     @param types: a list of zzub connection types to match
+    #     @return: a list of tuples [(target_plugin, connection_index, connection_type), (target_plugin, connection_index, connection_type), ...]
+    #     """
+        # player = components.get('neil.core.player')
+
+        # matches = []
+        # for tplugin in player.get_plugin_list():
+        #     tpos = self.float_to_pixel(tplugin.get_position()) # target plugin
+
+        #     for index in range(tplugin.get_input_connection_count()):
+        #         splugin = tplugin.get_input_connection_plugin(index) # source plugin
+        #         spos = self.float_to_pixel(splugin.get_position()) 
+        #         conn_type = tplugin.get_input_connection_type(index)
+
+        #         if conn_type not in types:
+        #             continue
+
+        #         if distance_from_line(spos, tpos, xy) < 13.5:
+        #             matches.append((tplugin, index, conn_type))
+
+        # # return matches
+        # return self.locator.get_all_type_at(xy[0], xy[1], AreaType.CONNECTION)
+
+
+    # def get_object_at(self, x, y) -> ClickedArea:
+    #     """
+    #     Finds a plugin at a specific position.
+    #     @param xy: (x, y) coordinate in pixels.
+    #     @return: a tuple (zzub.Plugin, (x, y), AreaType) or None
+    #     """
+    #     return self.locator.get_object_at(x, y)
+
+
+    # def get_object_group_at(self, x, y, area_group) -> ClickedArea:
+    #     return self.locator.get_object_group_at(x, y, area_group)
+
+    
+    # def get_connections_at(self, xy) -> zzub.Plugin:
+    #     """
+    #     Finds a plugin at a specific position.
+    #     @param xy: (x, y) coordinate in pixels.
+    #     @return: a tuple (zzub.Plugin, (x, y), AreaType) or None
+    #     """
+    #     return self.locator.get_plugin_at(xy[0], xy[1])
+        # PW, PH = router_sizes.get('pluginwidth') / 2, router_sizes.get('pluginheight') / 2
+        # area = AREA_ANY
+        # player = components.get('neil.core.player')
+        # for mp in reversed(list(player.get_plugin_list())):
+        #     pi = common.get_plugin_infos().get(mp)
+        #     if not pi.songplugin:
+        #         continue
+        #     x,y = self.float_to_pixel(mp.get_position())
+        #     plugin_box = (x - PW, y - PH, x + PW, y + PH)
+
+        #     if box_contains(mx, my, plugin_box):
+        #         led_tl_pos = (plugin_box[0] + router_sizes.get('ledofsx'), plugin_box[1] + router_sizes.get('ledofsy'))
+        #         led_br_pos = (led_tl_pos[0] + router_sizes.get('ledwidth'), led_tl_pos[1] + router_sizes.get('ledheight'))
+        #         if box_contains(mx, my, [*led_tl_pos, *led_br_pos]):
+        #             area = AREA_LED
+        #         return mp, (x, y), area
+
+
+    
+    # def get_connections_at(self, xy, types = (zzub.zzub_connection_type_audio, zzub.zzub_connection_type_cv)):
+    #     """
+    #     Finds all audio and cv connections at a specific position, currently it only matches amplitude arrows
+
+    #     @param xy: (x, y) coordinate in pixels.
+    #     @param types: a list of zzub connection types to match
+    #     @return: a list of tuples [(target_plugin, connection_index, connection_type), (target_plugin, connection_index, connection_type), ...]
+    #     """
+    #     return self.locator.get_all_type_at(xy[0], xy[1], AreaType.CONNECTION)

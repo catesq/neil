@@ -1,22 +1,24 @@
-from .click_area import ClickArea
+from .click_area import ClickArea, ClickedArea
 from .area_type import AreaType
 from .items import *
 from .event_handler import EventHandler, Btn
-from .layer import Layer
+from .layers import Layer
 from .plugin_gfx import *
 from .overlay_gfx import *
 from .router_layer import RouterLayer
 
+
 __all__ = [
     'AreaType',
     'ClickArea',
+    'ClickedArea',
     'Layer',
     'Container',
     'Btn',
     'EventHandler',
     'Item',
     'PluginItem',
-    'ConnId',
+    'ConnID',
     'ConnectionItem',
     'OverlayGfx',
     'LedOverlay',
