@@ -355,19 +355,20 @@ class DragId:
 # plugin_moved or uses_plugin
 class DragConnectionItem(Item):
     def __init__(self, source_item:PluginItem, target_pos: Vec2, colors: Colors):
-        self.source_id = source_item.metaplugin.get_id()
+        Item.__init__(self, DragId(source_item.id), colors)
+
+        self.source_id = source_item.id
         self.source_item = source_item
         self.target_pos = target_pos
         self.display = plugin_gfx.DragConnectionGfx(self)
         self.source_pos = Vec2(0, 0)
         self.hidden = True                  # plugin's can't connect to themself so initally hidden
         self.target_item:PluginItem = None  # this is only set when drag point is over a plugin
-        Item.__init__(self, DragId(self.source_id), colors)
 
 
     def draw_item(self, context: cairo.Context):
         if not self.hidden:
-            self.display.draw_gfx(context, self)
+            self.display.draw_gfx(context)
 
         if self.target_item:
             pass # todo outline target with green or red depending if valid target

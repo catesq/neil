@@ -376,8 +376,6 @@ class RouteView(Gtk.DrawingArea):
 
 
     def click_set_active_plugin(self, event, plugin: zzub.Plugin):
-        print("PLUGIN SET ACTIVE", plugin)
-
         player = components.get_player()
         if not plugin in player.active_plugins:
             if (event.get_state() & Gdk.ModifierType.SHIFT_MASK):
@@ -393,8 +391,6 @@ class RouteView(Gtk.DrawingArea):
 
 
     def click_start_connecting(self, event, plugin):
-        print("PLUGIN START CONNECT")
-
         player = components.get_player()
         self.connectpos = int(event.x), int(event.y)
         self.connecting_alt = event.get_state() & Gdk.ModifierType.MOD1_MASK
@@ -407,7 +403,6 @@ class RouteView(Gtk.DrawingArea):
 
 
     def click_start_dragging(self, event, found):
-        print("PLUGIN START DRAG: self", self)
         self.dragging = True
 
         player = components.get_player()
@@ -750,7 +745,7 @@ class RouteView(Gtk.DrawingArea):
                     half_height - half_lh
                 )
                 PangoCairo.show_layout(pluginctx, pango_layout)
-
+            
             if config.get_config().get_led_draw() == True:
                 # led border
                 border = self.colors.default(pi.muted, -0.5)
