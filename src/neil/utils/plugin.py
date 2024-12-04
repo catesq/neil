@@ -30,8 +30,8 @@ plugin_type_names = {
 
 
 
-AUDIO_IO_FLAGS = zzub.zzub_plugin_flag_has_audio_input | zzub.zzub_plugin_flag_has_audio_output | zzub.zzub_plugin_flag_is_cv_generator
-EVENT_IO_FLAGS = zzub.zzub_plugin_flag_has_event_output
+# AUDIO_IO_FLAGS = zzub.zzub_plugin_flag_has_audio_input | zzub.zzub_plugin_flag_has_audio_output
+# EVENT_IO_FLAGS = zzub.zzub_plugin_flag_has_event_output
 
 
 adapters = {
@@ -77,12 +77,29 @@ def get_plugin_type(plugin: zzub.Pluginloader | zzub.Plugin):
 
 
 def is_other(plugin: zzub.Pluginloader | zzub.Plugin):
-    return not (is_effect(plugin) or is_a_generator(plugin) or is_controller(plugin) or is_root(plugin))
+    return not (is_effect(plugin) or is_a_generator(plugin) or is_root(plugin))
+
+def has_audio_input(plugin: zzub.Pluginloader | zzub.Plugin):
+    return plugin.get_flags() & zzub.zzub_plugin_flag_has_audio_input 
 
 
+def has_audio_output(plugin: zzub.Pluginloader | zzub.Plugin):
+    return plugin.get_flags() & zzub.zzub_plugin_flag_has_audio_output
+
+
+def has_cv_output(plugin: zzub.Pluginloader | zzub.Plugin):
+    return plugin.get_flags() & zzub.zzub_plugin_flag_has_cv_output | plugin.get_flags() & zzub.zzub_plugin_flag_is_cv_generator
+
+
+def has_output(plugin: zzub.Pluginloader | zzub.Plugin):
+    return plugin.get_flags() & (
+        zzub.zzub_plugin_flag_has_cv_output | 
+        zzub.zzub_plugin_flag_has_audio_output | 
+        zzub.zzub_plugin_flag_has_midi_output 
+    )
 
 def is_effect(plugin: zzub.Pluginloader | zzub.Plugin):
-    return plugin.get_flags() & zzub.zzub_plugin_flag_is_effect # or (plugin.get_flags() & AUDIO_IO_FLAGS) == AUDIO_IO_FLAGS
+    return plugin.get_flags() & zzub.zzub_plugin_flag_is_effect 
 
 
 
@@ -101,8 +118,8 @@ def is_a_generator(plugin: zzub.Pluginloader | zzub.Plugin):
 
 
 
-def is_controller(plugin: zzub.Pluginloader | zzub.Plugin):
-    return plugin.get_flags() & zzub.zzub_plugin_flag_control_plugin or ((plugin.get_flags() & EVENT_IO_FLAGS) and not (plugin.get_flags() & AUDIO_IO_FLAGS))
+# def is_controller(plugin: zzub.Pluginloader | zzub.Plugin):
+#     return plugin.get_flags() & zzub.zzub_plugin_flag_control_plugin or ((plugin.get_flags() & EVENT_IO_FLAGS) and not (plugin.get_flags() & AUDIO_IO_FLAGS))
 
 
 
@@ -181,9 +198,12 @@ __all__ = [
     'is_instrument',
     'is_a_generator',
     'is_cv_generator',
-    'is_controller',
     'is_root',
     'is_streamer',
+    'has_audio_input',
+    'has_audio_output',
+    'has_cv_output',
+    'has_output',
     'rename_plugin',
     'clone_plugin',
     'clone_plugin_and_patterns',

@@ -31,12 +31,6 @@ def get_plugin_color_key(plugin: zzub.Pluginloader | zzub.Plugin, suffix: str | 
         return plugin_color_group[get_plugin_type(plugin)]
     
 
-# 'get_machine_color_key',
-# 'plugin_color_group',
-# 'plugin_led_group',
-# 'get_plugin_type_name',
-
-# def get_plugin_type_name(plugin: zzub.Pluginloader | zzub.Plugin):
 
 def get_plugin_color_group(plugin: zzub.Pluginloader | zzub.Plugin):
     return plugin_color_group[get_plugin_type(plugin)] 
@@ -52,8 +46,6 @@ theme_properties = [
     "MV Amp BG", 
 
     "MV Border",
-    # "MV Machine Border",    
-    # "MV Selected Border", 
 
     "MV Arrow",             "MV Arrow Border In",            "MV Arrow Border Out",
     "MV Controller Arrow",  "MV Controller Arrow Border In", "MV Controller Arrow Border Out", 
@@ -66,8 +58,6 @@ theme_properties = [
     "MV Generator LED Off", "MV Generator LED On",
     "MV Effect LED Off",    "MV Effect LED On",
     "MV Master LED Off",    "MV Master LED On",
-
-
 
     # Pattern colors
     "PE BG Very Dark", "PE BG Dark", "PE BG", "PE BG Light", "PE BG Very Light",
