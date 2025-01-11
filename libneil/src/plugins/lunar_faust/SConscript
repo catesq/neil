@@ -1,7 +1,7 @@
 Import('pluginenv', 'build_plugin')
 
 localenv = pluginenv.Clone()
-localenv.Append(LIBS=['faust', 'zzub'])
+localenv.Append(LIBS=['faustwithllvm', 'zzub'])
 localenv.Append(CPPPATH=["${LANTERNFISH_SRC_PATH}"])
 localenv.Append(LIBS=['lanternfish'])
 

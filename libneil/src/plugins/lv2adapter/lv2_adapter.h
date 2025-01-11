@@ -31,8 +31,8 @@
 #endif
 
 #include "features/worker.h"
-#include "zix/ring.h"
-#include "zix/sem.h"
+#include "./zix/ring.h"
+#include "./zix/sem.h"
 
 void program_changed(
     LV2_Programs_Handle handle,

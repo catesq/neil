@@ -330,7 +330,7 @@ int osc_exiting_handler(struct dssidapter *instance, lo_arg **argv) {
 }
 
 int osc_debug_handler(const char *path, const char *types, lo_arg **argv,
-                      int argc, void *data, void *user_data) {
+                      int argc, struct lo_message_* data, void *user_data) {
     int i;
 
     printf("%s: got unhandled OSC message:\npath: <%s>\n", myName, path);
@@ -345,7 +345,7 @@ int osc_debug_handler(const char *path, const char *types, lo_arg **argv,
 }
 
 int osc_message_handler(const char *path, const char *types, lo_arg **argv,
-                        int argc, void *data, void *user_data) {
+                        int argc, struct lo_message_* data, void *user_data) {
     // int i;
     struct dssidapter *instance = (struct dssidapter *)user_data;
     const char *method;

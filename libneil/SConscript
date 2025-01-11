@@ -22,6 +22,7 @@ VERSION = "0.3"
 
 import os, sys, platform
 import ext_modules
+from distutils.version import LooseVersion
 
 posix = os.name == 'posix'
 linux = sys.platform == 'linux'
@@ -31,13 +32,11 @@ Import('main_env', 'tools_converter', 'bool_converter', 'install_recursive')
 
 
 
-
 ##############################################
 #
 # important install paths
 #
 #############################################
-
 
 rootpath = "${DESTDIR}${PREFIX}"
 binpath = "${DESTDIR}${PREFIX}/bin"
@@ -46,7 +45,6 @@ includepath = "${DESTDIR}${PREFIX}/include"
 pluginpath = "${DESTDIR}${PREFIX}${LIBDIR}/zzub"
 
 pyextpath = main_env['SITE_PACKAGE_PATH']
-
 
 
 
@@ -63,10 +61,14 @@ class LibraryNotFound:
         return "error: unable to find dev headers for '%s'" % self.lib
 
 class ExecNotFound:
-    def __init__(self, prog):
+    def __init__(self, prog, extra_msg):
         self.prog = prog
+        self.extra_msg = extra_msg
     def __str__(self):
-        return "error: unable to find executable file for '%s'" % self.prog
+        if self.extra_msg:
+            return "error: unable to find executable file for '%s': %s" % (self.prog, self.extra_msg)
+        else:
+            return "error: unable to find executable file for '%s'" % self.prog
 
 class SubModuleNotFound:
     def __init__(self, name, url):
@@ -123,6 +125,10 @@ def build_submodules(env):
         module.build(env)
 
 
+def install_submodules(env):
+    for module in env['submodules']:
+        module.install(env)
+
 
 
 ######################################
@@ -154,12 +160,15 @@ opts.Add("REVISION", 'Revision number (will be set automatically), default=0', '
 opts.Add("SIGNATURE", 'Host signature (will be set automatically)', '')
 opts.Add("CONFIGURED", 'Version for which the build is configured (will be set automatically)', '')
 opts.Add("TOOLS", 'Compiler suite to use', 'default', None, tools_converter)
-opts.Add("LLVMGCCPATH", 'Path to llvm-gcc', '')
+# opts.Add("LLVMGCCPATH", 'Path to llvm-gcc', '')
+opts.Add("LLVM_CONFIG", 'Path to llvm-config', 'llvm-config')
+
 opts.Add("SSE", "Support SSE instructions", False, None, bool_converter)
 opts.Add("SSE2", "Support SSE2 instructions", False, None, bool_converter)
 opts.Add("LADSPA", "Support LADSPA plugins", False, None, bool_converter)
 opts.Add("DSSI", "Support DSSI plugins", False, None, bool_converter)
 opts.Add("LV2", "Support LV2 plugins", False, None, bool_converter)
+opts.Add("MINIZIP", 'Name of package containing "mz_compat.h" (usually found automatically)', '')
 opts.Add("JOBS", "Number of threads to compile with", '2')
 opts.Add("PYZZUB", "Support pyzzub", True, None, bool_converter)
 opts.Add("GTK3", "Support GTK3 GUIs", False, None, bool_converter)
@@ -196,6 +205,8 @@ env.SConsignFile()
 
 env['SRC_PATH'] = main_env['SRC_PATH']
 env['BUILD_PATH'] = main_env['BUILD_PATH']
+env['INSTALL_ROOT'] = "${DESTDIR}${PREFIX}"
+
 
 env.Append(CCFLAGS=['-D__SCONS__'])
 env.Append(LIBPATH=['${BUILD_PATH}/lib'])
@@ -382,14 +393,41 @@ def install_plugin_help(name, files):
 #
 ######################################
 
+
+
+#######################
+# faust build is messy
+#######################
+
 faust_backends = [ 
     'C_BACKEND', 'CODEBOX_BACKEND', 'CPP_BACKEND', 'CMAJOR_BACKEND', 'CMAJOR_BACKEND', 'CSHARP_BACKEND', 
     'DLANG_BACKEND', 'FIR_BACKEND', 'INTERP_BACKEND', 'JAVA_BACKEND', 'JAX_BACKEND', 'JULIA_BACKEND',
     'JSFX_BACKEND', 'OLDCPP_BACKEND', 'RUST_BACKEND', 'TEMPLATE_BACKEND', 'VHDL_BACKEND', 'WASM_BACKEND'
 ]
 
-faust_options = '-C ../../build/backends/all.cmake -D LLVM_BACKEND=STATIC -D INCLUDE_STATIC=On -D INCLUDE_DYNAMIC=off -D INCLUDE_EXECUTABLE=off -D SELF_CONTAINED_LIBRARY=on '
-faust_options += ' '.join(["-D{}=off".format(backend) for backend in faust_backends])
+faust_main = '-C ../../build/backends/all.cmake'
+faust_vars = "-DLLVM_BACKEND=STATIC -DINCLUDE_STATIC=On -DINCLUDE_DYNAMIC=off -DINCLUDE_EXECUTABLE=off -DSELF_CONTAINED_LIBRARY=on -DUSE_LLVM_CONFIG=On"
+faust_backends = ' '.join(["-D{}=off".format(backend) for backend in faust_backends])
+faust_options = faust_vars + ' ' + faust_main + ' ' + faust_backends
+
+
+def install_faust(self, env):
+    install_recursive(env['INSTALL_ROOT'] + "/lib/faustlibraries", os.path.join(env['SRC_PATH'], 'libneil/src/faustlibraries'), '*')
+
+
+faust_module = ext_modules.cmake_module('faust', 
+                             lib_name='faustwithllvm',
+                             src_subdir='architecture', 
+                             cmake_opts=faust_options,
+                             cmake_env='LLVM_CONFIG=%s' % env['LLVM_CONFIG'],
+                             lib_path='../lib',
+                             cmakelists_dir='..'
+                )
+
+faust_module.install = install_faust
+
+######################################
+
 
 submodules = [
     # cpp_path is not really a submodule.
@@ -400,7 +438,10 @@ submodules = [
 
     ext_modules.scons_module('kiss_fft'),
 
-    ext_modules.cmake_module('gist', 'Gist', src_subdir = 'src', cpp_defines = ['USE_KISS_FFT'], ),
+    ext_modules.cmake_module('gist', 
+                             'Gist', 
+                             src_subdir = 'src', 
+                             cpp_defines = ['USE_KISS_FFT']),
 
     ext_modules.cmake_module('loguru', 
                              'logurud' if env['DEBUG'] else 'loguru', 
@@ -408,9 +449,7 @@ submodules = [
 
     # faust build structure uses the same location for release and debug build
     # currently you have to manually delete the build when switching between debug and release
-    # i tend to build debug first and rarely rebuilding a release version 
-    ext_modules.cmake_module('faust', src_subdir='build', cmake_opts=faust_options, 
-                             lib_path='../lib', always_link=True, cmakelists_dir='..'),
+    faust_module,
 
     ext_modules.scons_module('lanternfish'),
 
@@ -454,11 +493,28 @@ def check_has_executable(conf, name):
 def check_command_is_version(conf, command, version):
     conf.Message("Checking for version of '%s'... " % command)
     ver = os.popen(command).read().strip()
+
     if ver[:len(version)] == version:
-        conf.Result(ver)
-        return ver
-    conf.Result(ver)
-    return None
+        conf.Result("yes")
+        return True
+    else:
+        conf.Result("no")
+        return False
+
+
+
+def check_command_at_least_version(conf, command, version):
+    conf.Message("Checking '%s' is at least version %s..." % (command, version))
+    retver = os.popen(command).read().strip()
+
+    if LooseVersion(retver) >= LooseVersion(str(version)):
+        conf.Result("yes")
+        return True
+    else:
+        conf.Result("no")
+        return False
+
+
 
 def check_cpu_flag(conf, flag):
     conf.Message("Checking for '%s' CPU flag... " % flag)
@@ -516,6 +572,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         custom_tests = {
             'HasExecutable' : check_has_executable,
             'CommandIsVersion' : check_command_is_version,
+            'CommandAtLeastVersion' : check_command_at_least_version,
             'CheckCPUFlag' : check_cpu_flag,
             'CheckPKGConfig' : check_pkg_config,
             'CheckPKG' : check_pkg,
@@ -523,15 +580,14 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         }
     )
 
+
+
     # check if dev libs installed
 
     lib_errors = []
 
     if not conf.CheckCXXHeader('loguru.cpp'):
         lib_errors.append(SubModuleNotFound('loguru', 'https://github.com/martinmoene/clue'))
-
-    if not conf.CheckCHeader('minizip/minizip-compat.h'):
-        lib_errors.append(LibraryNotFound('minizip-compat (aka minizip-ng-compat)'))
 
     if not conf.CheckCHeader('zlib.h'):
         lib_errors.append(LibraryNotFound("zlib"))
@@ -582,6 +638,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     else:
         env['DSSI'] = False
 
+
     # need  about uninstalled lv2 packages 
     missing_lv2 = []
     for pkg, header in (('lilv-0', 'lilv-0/lilv/lilv.h'), ('lv2', 'lv2.h'), ('suil-0', 'suil-0/suil/suil.h')):
@@ -604,6 +661,24 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         env['GTK3'] = True
     else:
         env['GTK3'] = False
+
+
+    if conf.CommandAtLeastVersion(env['LLVM_CONFIG'] + ' --version', 18):
+        if os.system(env['LLVM_CONFIG'] + ' --link-static --ldflags') != 0:
+            lib_errors.append(LibraryNotFound('llvm-config does not have static libs such as libLLVMBinaryFormat.a, use a different llvm-config'))
+    else:
+        lib_errors.append(LibraryNotFound('llvm-config not found, install llvm with static libs such as libLLVMBinaryFormat.a'))
+
+    if not env['MINIZIP']:
+        if conf.CheckPKG('minizip-ng'):
+            env['MINIZIP'] = 'minizip-ng'
+        elif conf.CheckPkg('minizip-ng-compat'):
+            env['MINIZIP'] = 'minizip-ng-compat'
+        elif conf.CheckPkg('minizip-compat'):
+            env['MINIZIP'] = 'minizip-compat'
+        elif not conf.CheckCHeader('mz_compat.h'):
+            lib_errors.append(LibraryNotFound('couldn\'t find mz_compat.h: install minizip-ng/minizip-ng-compat or whatever contains contains mz_compat.h'))    
+
 
     if not conf.CheckPKGConfig('0.15.0'):
         lib_errors.append(PkgVersionErr("pkg-config", "0.15.0"))
@@ -757,7 +832,7 @@ Export(
 env.Signature(target='include/zzub/signature.h', source=options_conf_file)
 env.Signature(target='${SRC_PATH}/libneil/include/zzub/signature.h', source=options_conf_file)
 
-
+env.ParseConfig("${LLVM_CONFIG} --system-libs")
 ##############################################################################
 #
 # build projects in subdir of libneil which have SConscruct files

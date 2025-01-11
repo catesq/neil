@@ -80,7 +80,7 @@ struct livejump : public zzub::plugin {
 	virtual void midi_note(int channel, int note, int velocity);
 	virtual void event(unsigned int) {}
 	virtual const zzub::envelope_info** get_envelope_infos() { return 0; }
-	virtual void stop_wave() {}
+	virtual void stop_wave() { }
 	virtual int get_wave_envelope_play_position(int) { return -1; }
 	virtual const char* describe_param(int) { return 0; }
 	virtual bool set_instrument(const char*) { return false; }

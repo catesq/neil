@@ -1,0 +1,11 @@
+--- a/libneil/src/plugins/vst3adapter/vst3sdk/vstgui4/vstgui/lib/finally.h	2025-01-08 21:50:47.592158941 +0000
++++ b/libneil/src/plugins/vst3adapter/vst3sdk/vstgui4/vstgui/lib/finally.h	2025-01-08 21:51:30.568872620 +0000
+@@ -18,7 +18,7 @@
+ 	FinalAction (FinalAction&& other) noexcept
+ 	{
+ 		action = std::move (other.action);
+-		other.invoke (false);
++		other.invoke = false;
+ 	}
+ 	FinalAction (const FinalAction&) = delete;
+ 	FinalAction& operator= (const FinalAction&) = delete;

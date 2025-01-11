@@ -84,7 +84,6 @@ localenv.Append(
         localenv['LIB_DL'],
         localenv['LIB_COMPAT'],
         'pugixml',
-        'minizip',
         'lanternfish',
         'kissfft',
         'ssl',
@@ -99,6 +98,7 @@ localenv.Append(
     ]
 )
 
+localenv.ParseConfig("pkg-config ${MINIZIP} --cflags --libs")
 
 if localenv['USE_SIGNATURE'] == True:
     localenv.Append(CCFLAGS=['-DUSE_SIGNATURE'])

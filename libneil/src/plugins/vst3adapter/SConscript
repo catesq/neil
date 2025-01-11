@@ -16,15 +16,25 @@ def build_vstdsk(build_dir, src_dir, build_type):
     if not os.path.exists(build_dir):
         os.mkdir(build_dir)
     os.chdir(build_dir)
-    vst3_pluginenv.Execute('cmake ' + vst3sdk_dir + ' -DCMAKE_CXX_FLAGS="-include stdint.h" -DSMTG_ADD_VST3_PLUGINS_SAMPLES=0 -DSMTG_ADD_VST3_HOSTING_SAMPLES=0')
-    vst3_pluginenv.Execute('cmake --build . --config ' + build_type)
+
+    make_ret = vst3_pluginenv.Execute('cmake ' + src_dir + ' -DCMAKE_CXX_FLAGS="-include stdint.h" -DSMTG_ADD_VST3_PLUGINS_SAMPLES=0 -DSMTG_ADD_VST3_HOSTING_SAMPLES=0')
+    build_ret = vst3_pluginenv.Execute('cmake --build . --config ' + build_type)
+
     os.chdir(prev_dir)
+
+    if make_ret and not build_ret:
+        print("CMake failed for VST3 SDK")
+        os.rmdir(build_dir)
+
+    
 
 
 if not os.path.exists(vst3sdk_cmakelists_file):
     print("vst3sdk in '%s' not ok. Maybe 'git submodule --init --update' to get the VST3 SDK." % vst3sdk_cmakelists_file)
     sys.exit()
 
+if vst3_pluginenv.Execute('git apply --check -p5 finally.patch -q') == 0:
+    vst3_pluginenv.Execute('git apply finally.patch')
 
 if not os.path.exists(os.path.join(vst3sdk_build_dir, 'lib')):
     build_vstdsk(vst3sdk_build_dir, vst3sdk_dir, build_type)

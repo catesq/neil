@@ -2,9 +2,9 @@
 // from https://git.zrythm.org/zrythm/zrythm/src/branch/master/inc/plugins/lv2/lv2_worker.h
 
 
-#include "zix/ring.h"
-#include "zix/sem.h"
-#include "zix/thread.h"
+#include "../zix/ring.h"
+#include "../zix/sem.h"
+#include "../zix/thread.h"
 #include "lilv/lilv.h"
 #include "lv2/worker/worker.h"
 
