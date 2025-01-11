@@ -15,3 +15,6 @@
 [submodule "libneil/src/faustlibraries"]
 	path = libneil/src/faustlibraries
 	url = https://github.com/grame-cncm/faustlibraries
+[submodule "libneil/src/plugins/vstadapter/VST_SDK_2.4"]
+	path = libneil/src/plugins/vstadapter/VST_SDK_2.4
+	url = https://github.com/R-Tur/VST_SDK_2.4.git
