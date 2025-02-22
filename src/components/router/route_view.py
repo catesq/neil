@@ -65,12 +65,7 @@ class RouteView(Gtk.DrawingArea):
         self.connecting         = False  # is a connection being drawn
         self.connecting_alt     = False  # is the connection audio(not alt) or cv (is alt)
 
-        eventbus                         = components.get_eventbus()
-        eventbus.zzub_connect           += self.on_zzub_redraw_event
-        eventbus.zzub_disconnect        += self.on_zzub_redraw_event
-        eventbus.zzub_plugin_changed    += self.on_zzub_plugin_changed
-        eventbus.document_loaded        += self.on_document_loaded
-        eventbus.active_plugins_changed += self.on_active_plugins_changed
+
 
         self.last_drop_ts = 0  # there was a multiple drop bug in drag/drop, ignore several milliseconds
 
@@ -117,10 +112,19 @@ class RouteView(Gtk.DrawingArea):
 
     def on_realized(self, widget):
         self.router_layer.set_parent(widget)
+        self.register_eventbus()
         
     def on_configure_event(self, widget, requisition):
         self.update_area()
         
+    def register_eventbus(self):
+        eventbus = components.get_eventbus()
+        eventbus.zzub_connect           += self.on_zzub_redraw_event
+        eventbus.zzub_disconnect        += self.on_zzub_redraw_event
+        eventbus.zzub_plugin_changed    += self.on_zzub_plugin_changed
+        eventbus.document_loaded        += self.on_document_loaded
+        eventbus.active_plugins_changed += self.on_active_plugins_changed
+
 
     def update_area(self):
         area = self.get_allocation()
