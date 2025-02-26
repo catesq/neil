@@ -16,12 +16,14 @@ The build is slow and messy, fixing it is in the top ten todo. Proper sidechain 
 
 ### Installation
 
-git clone --recursive https://github.com/catesq/neil
+```git clone --recursive https://github.com/catesq/neil```
 
-Put the vst2 sdk in libneil/src/plugins/vstadapter/VST_SDK_2.4
+Copy vst2 sdk to libneil/src/plugins/vstadapter/VST_SDK_2.4
 
-scons configure DEBUG=false DESTDIR="/home/mylogin/orwherever/apps/neil.v.0.4" PREFIX=""
+```
+scons configure DEBUG=false DESTDIR="/home/me/orwherever/apps/neil.v.0.4" PREFIX=""
 scons
 scons install
+```
 
-Run /home/mylogin/orwherever/apps/neil.v.0.4/bin/neil
+Run /home/me/orwherever/apps/neil.v.0.4/bin/neil
