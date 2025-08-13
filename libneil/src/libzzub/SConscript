@@ -51,7 +51,6 @@ files = [
     'ccm_helpers.cpp',
     'connections.cpp',
     'events.cpp',
-    # 'cv_connections.cpp',
     'input.cpp',
     'operations.cpp',
     'output.cpp',

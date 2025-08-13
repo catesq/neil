@@ -45,6 +45,7 @@ audio_connection_parameter_volume::audio_connection_parameter_volume()
         .set_value_default(0x4000);
 }
 
+
 audio_connection_parameter_panning::audio_connection_parameter_panning()
 {
     set_word()
@@ -57,12 +58,15 @@ audio_connection_parameter_panning::audio_connection_parameter_panning()
         .set_value_default(0x4000);
 }
 
+
 audio_connection_parameter_volume audio_connection::para_volume;
 audio_connection_parameter_panning audio_connection::para_panning;
+
 
 connection::connection()
 {
 }
+
 
 audio_connection::audio_connection()
 {
@@ -73,6 +77,7 @@ audio_connection::audio_connection()
     connection_parameters.push_back(&para_volume);
     connection_parameters.push_back(&para_panning);
 }
+
 
 void 
 audio_connection::process_events(
@@ -85,6 +90,7 @@ audio_connection::process_events(
     if (cvalues.pan != para_panning.value_none)
         values.pan = cvalues.pan;
 }
+
 
 bool 
 audio_connection::work(
@@ -154,6 +160,7 @@ event_connection::event_connection()
     type = connection_type_event;
     connection_values = 0;
 }
+
 
 int 
 event_connection::convert(
@@ -240,6 +247,7 @@ event_connection::process_events(
         }*/
     }
 }
+
 
 bool 
 event_connection::work(
@@ -516,6 +524,7 @@ midi_connection::work(zzub::song& player, const zzub::connection_descriptor& con
     return true;
 }
 
+
 int 
 midi_connection::get_midi_device(zzub::song& player, int plugin_id, std::string name)
 {
@@ -527,5 +536,6 @@ midi_connection::get_midi_device(zzub::song& player, int plugin_id, std::string 
     // we really need to find the _global_ device index, not the target machine one.... ? ?? ???
     return (int)(i - midiouts.names.begin());
 }
+
 
 } // namespace zzub
