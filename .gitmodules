@@ -11,10 +11,14 @@
 [submodule "libneil/src/faust"]
 	path = libneil/src/faust
 	url = https://github.com/grame-cncm/faust
-	ignore = untracked
+	ignore = dirty
 [submodule "libneil/src/faustlibraries"]
 	path = libneil/src/faustlibraries
 	url = https://github.com/grame-cncm/faustlibraries
 [submodule "libneil/src/plugins/vstadapter/VST_SDK_2.4"]
 	path = libneil/src/plugins/vstadapter/VST_SDK_2.4
 	url = https://github.com/R-Tur/VST_SDK_2.4.git
+[submodule "libneil/src/minizip"]
+	path = libneil/src/minizip
+	url = https://github.com/rogerou/minizip.git
+	ignore = dirty

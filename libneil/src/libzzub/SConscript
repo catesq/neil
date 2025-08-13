@@ -73,17 +73,19 @@ files = [
     'driver_rainout.cpp',
 ]
 
-
+print("MINIZIP NAME:", localenv['MINIZIP_LIB_NAME'])
 localenv.Append(
     LIBS=[
         'FLAC',
         'z',
+        'bz2',
         'mad',
         'mpg123',
         'pthread',
         localenv['LIB_DL'],
         localenv['LIB_COMPAT'],
         'pugixml',
+        localenv['MINIZIP_LIB_NAME'],
         'lanternfish',
         'kissfft',
         'ssl',
@@ -97,8 +99,6 @@ localenv.Append(
         '-D_LIBZZUB',
     ]
 )
-
-localenv.ParseConfig("pkg-config ${MINIZIP} --cflags --libs")
 
 if localenv['USE_SIGNATURE'] == True:
     localenv.Append(CCFLAGS=['-DUSE_SIGNATURE'])

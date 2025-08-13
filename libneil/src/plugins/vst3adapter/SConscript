@@ -1,23 +1,54 @@
 import sys, os
 Import('plugin_dir', 'pluginenv', 'build_plugin')
 
+
+# the vst3 adapter is placed into a subdirectory of the main build directory 
+# defaults to <project_dir>/build/debug/vst3 or <project_dir>/build/release/vst3
+
 src_dir = plugin_dir
 vst3_pluginenv = pluginenv.Clone()
 
 vst3sdk_dir = os.path.join(src_dir, 'vst3sdk')
-vst3sdk_cmakelists_file = os.path.join(vst3sdk_dir, 'CMakeLists.txt')
-
 vst3sdk_build_dir = os.path.join(pluginenv['BUILD_PATH'], 'vst3')
+
+
 build_type = 'Debug' if vst3_pluginenv['DEBUG'] else 'Release'
+# the static libs to link against are found here
+lib_dir = os.path.join(vst3sdk_build_dir, 'lib')
+
+vst_static_libs = [
+    'base', 'pluginterfaces', 'sdk', 'sdk_common', 
+    'sdk_hosting', 'vstgui', 'vstgui_standalone', 
+    'vstgui_support', 'vstgui_uidescription'
+]
 
 
+
+# check for libbase.a etc in vst_lib_dir/lib
+def check_libs_exist(lib_dir, libs):
+    for lib in libs:
+        lib_path = os.path.join(lib_dir, 'lib' + lib + vst3_pluginenv['LIBSUFFIX'])
+        if not os.path.exists(lib_path):
+            print("Library '%s' not found in '%s'" % (lib, lib_dir))
+            return False
+
+# this creates the build path and runs cmake for the vst3sdk 
 def build_vstdsk(build_dir, src_dir, build_type):
     prev_dir = os.getcwd()
     if not os.path.exists(build_dir):
         os.mkdir(build_dir)
     os.chdir(build_dir)
 
-    make_ret = vst3_pluginenv.Execute('cmake ' + src_dir + ' -DCMAKE_CXX_FLAGS="-include stdint.h" -DSMTG_ADD_VST3_PLUGINS_SAMPLES=0 -DSMTG_ADD_VST3_HOSTING_SAMPLES=0')
+    # make_ret = vst3_pluginenv.Execute('cmake ' + src_dir + ' )
+    # cmake_flags = '-DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_FLAGS="-include stdint.h" -DSMTG_ADD_VST3_PLUGINS_SAMPLES=0 -DSMTG_ADD_VST3_HOSTING_SAMPLES=0'
+    cmake_flags = [
+        '-DCMAKE_POLICY_VERSION_MINIMUM=3.5',
+        '-DCMAKE_CXX_FLAGS="-include stdint.h"',
+        '-DSMTG_ADD_VST3_PLUGINS_SAMPLES=0',
+        '-DSMTG_ADD_VST3_HOSTING_SAMPLES=0',
+    ]
+    
+    make_ret = vst3_pluginenv.Execute('cmake {} {}'.format(src_dir, " ".join(cmake_flags)))
     build_ret = vst3_pluginenv.Execute('cmake --build . --config ' + build_type)
 
     os.chdir(prev_dir)
@@ -25,26 +56,28 @@ def build_vstdsk(build_dir, src_dir, build_type):
     if make_ret and not build_ret:
         print("CMake failed for VST3 SDK")
         os.rmdir(build_dir)
+        sys.exit(1)
 
     
 
-
+vst3sdk_cmakelists_file = os.path.join(vst3sdk_dir, 'CMakeLists.txt')
 if not os.path.exists(vst3sdk_cmakelists_file):
-    print("vst3sdk in '%s' not ok. Maybe 'git submodule --init --update' to get the VST3 SDK." % vst3sdk_cmakelists_file)
+    print("vst3sdk in '%s' not found. Maybe 'git submodule --init --update' to get the VST3 SDK." % vst3sdk_cmakelists_file)
     sys.exit()
 
-if vst3_pluginenv.Execute('git apply --check -p5 finally.patch -q') == 0:
-    vst3_pluginenv.Execute('git apply finally.patch')
+# 
 
-if not os.path.exists(os.path.join(vst3sdk_build_dir, 'lib')):
+
+if not os.path.exists(lib_dir):
+    if vst3_pluginenv.Execute('git apply --check -p5 finally.patch -q') == 0:
+        vst3_pluginenv.Execute('git apply finally.patch')
+
     build_vstdsk(vst3sdk_build_dir, vst3sdk_dir, build_type)
 
+# 
 
-vst_static_libs = [
-    'base', 'pluginterfaces', 'sdk', 'sdk_common', 
-    'sdk_hosting', 'vstgui', 'vstgui_standalone', 
-    'vstgui_support', 'vstgui_uidescription'
-]
+
+
 
 
 vst3_pluginenv.Append(
@@ -58,8 +91,10 @@ vst3_pluginenv.Append(
     -Ilibneil/src/plugins/vst3adapter/vst4gui/vstgui
     ''',
     LIBS=['boost_system', 'boost_filesystem', 'stdc++fs', 'zzub'] + vst_static_libs, 
+    # LIBPATH=os.path.join(vst3sdk_build_dir, 'lib', build_type),
     LIBPATH=os.path.join(vst3sdk_build_dir, 'lib'),
 )
+
 
 
 sdk_src = [

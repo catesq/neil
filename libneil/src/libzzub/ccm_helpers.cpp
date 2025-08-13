@@ -125,8 +125,11 @@ bool ArchiveWriter::createFileInArchive(std::string fileName) {
         closeFileInArchive();
     }
 
-    if (MZ_OK!=zipOpenNewFileInZip(f, fileName.c_str(), 0, 0, 0, 0, 0, 0, MZ_COMPRESS_METHOD_DEFLATE, MZ_ZIP_FLAG_DEFLATE_NORMAL))
+    if (MZ_OK!=zipOpenNewFileInZip3(f, fileName.c_str(), 0, 0, 0, 0, 0, 0, MZ_COMPRESS_METHOD_DEFLATE, MZ_ZIP_FLAG_DEFLATE_NORMAL, 0,0,0,0,0,0))
         return false;
+
+    // if (MZ_OK!=zipOpenNewFileInZip(f, fileName.c_str(), 0, 0, 0, 0, 0, 0, MZ_COMPRESS_METHOD_DEFLATE, MZ_ZIP_FLAG_DEFLATE_NORMAL))
+    //     return false;
 
     currentFileInArchive=fileName;
 

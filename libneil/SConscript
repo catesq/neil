@@ -50,7 +50,7 @@ pyextpath = main_env['SITE_PACKAGE_PATH']
 
 ##############################################
 #
-# error types use by the configuration check
+# error types used by the configuration check
 #
 ##############################################
 
@@ -61,7 +61,7 @@ class LibraryNotFound:
         return "error: unable to find dev headers for '%s'" % self.lib
 
 class ExecNotFound:
-    def __init__(self, prog, extra_msg):
+    def __init__(self, prog, extra_msg = None):
         self.prog = prog
         self.extra_msg = extra_msg
     def __str__(self):
@@ -85,11 +85,15 @@ class PkgVersionErr:
         return "error: '%s' version needs to be > %s" % (self.lib, self.version)
 
 
-
+class LlvmConfigError:
+    def __init__(self, err):
+        self.err = err
+    def __str__(self):
+        return "llvm-config error: " + self.err + "\n\nInstall llvm or rocm-llvm with static llvm libraries and add LLVM_CONFIG=<new llvm-config> to scons configure"
 
 ######################################
 #
-# submodule tools
+# submodule helpers
 #
 ######################################
 
@@ -168,7 +172,6 @@ opts.Add("SSE2", "Support SSE2 instructions", False, None, bool_converter)
 opts.Add("LADSPA", "Support LADSPA plugins", False, None, bool_converter)
 opts.Add("DSSI", "Support DSSI plugins", False, None, bool_converter)
 opts.Add("LV2", "Support LV2 plugins", False, None, bool_converter)
-opts.Add("MINIZIP", 'Name of package containing "mz_compat.h" (usually found automatically)', '')
 opts.Add("JOBS", "Number of threads to compile with", '2')
 opts.Add("PYZZUB", "Support pyzzub", True, None, bool_converter)
 opts.Add("GTK3", "Support GTK3 GUIs", False, None, bool_converter)
@@ -176,6 +179,7 @@ opts.Add("MAD", "Support libmad encoder", False, None, bool_converter)
 
 env = Environment(ENV = os.environ, options = opts)
 
+# syntax sugar to allow env.AddSubmodule() etc
 env.AddMethod(add_submodule, "AddSubmodule")
 env.AddMethod(add_submodules, "AddSubmodules")
 env.AddMethod(build_submodules, "BuildSubmodules")
@@ -284,6 +288,8 @@ if gcc:
                 '-msse',
         ])
 
+
+
 ######################################
 # 64-bit fixes
 ######################################
@@ -319,6 +325,7 @@ import socket
 
 env['LIBZZUB_VERSION'] = VERSION
 env['SIGNATURE'] = 'libzzub %s r%s %s-%s %s' % (env['LIBZZUB_VERSION'],env['REVISION'],env['CC'],sys.platform,socket.gethostname())
+
 
 
 ######################################
@@ -399,14 +406,16 @@ def install_plugin_help(name, files):
 # faust build is messy
 #######################
 
+
 faust_backends = [ 
     'C_BACKEND', 'CODEBOX_BACKEND', 'CPP_BACKEND', 'CMAJOR_BACKEND', 'CMAJOR_BACKEND', 'CSHARP_BACKEND', 
     'DLANG_BACKEND', 'FIR_BACKEND', 'INTERP_BACKEND', 'JAVA_BACKEND', 'JAX_BACKEND', 'JULIA_BACKEND',
     'JSFX_BACKEND', 'OLDCPP_BACKEND', 'RUST_BACKEND', 'TEMPLATE_BACKEND', 'VHDL_BACKEND', 'WASM_BACKEND'
 ]
 
+
 faust_main = '-C ../../build/backends/all.cmake'
-faust_vars = "-DLLVM_BACKEND=STATIC -DINCLUDE_STATIC=On -DINCLUDE_DYNAMIC=off -DINCLUDE_EXECUTABLE=off -DSELF_CONTAINED_LIBRARY=on -DUSE_LLVM_CONFIG=On"
+faust_vars = """-DLLVM_BACKEND=STATIC -DINCLUDE_STATIC=On -DINCLUDE_DYNAMIC=off -DINCLUDE_EXECUTABLE=off -DSELF_CONTAINED_LIBRARY=on -DUSE_LLVM_CONFIG=On -DLLVM_CONFIG=%s""" % env['LLVM_CONFIG']
 faust_backends = ' '.join(["-D{}=off".format(backend) for backend in faust_backends])
 faust_options = faust_vars + ' ' + faust_main + ' ' + faust_backends
 
@@ -415,28 +424,21 @@ def install_faust(self, env):
     install_recursive(env['INSTALL_ROOT'] + "/lib/faustlibraries", os.path.join(env['SRC_PATH'], 'libneil/src/faustlibraries'), '*')
 
 
-faust_module = ext_modules.cmake_module('faust', 
-                             lib_name='faustwithllvm',
-                             src_subdir='architecture', 
-                             cmake_opts=faust_options,
-                             cmake_env='LLVM_CONFIG=%s' % env['LLVM_CONFIG'],
-                             lib_path='../lib',
-                             cmakelists_dir='..'
-                )
 
-faust_module.install = install_faust
+
 
 ######################################
 
+# site_scons/ext_modules.py contains the code for the ext_modules.helpers()
+# 
 
 submodules = [
-    # cpp_path is not really a submodule.
-    # it just adds libneil/src to the cpppath and defines LIBNEIL_SRC_PATH.
-    # some other submodules also change the cpppath and use the same naming scheme
-    # for the source path env var <MODULENAME>_SRC_PATH so it seems convenient doing it here for libneil 
     ext_modules.cpp_path('libneil', '${BUILD_PATH}/libneil/include'),
 
     ext_modules.scons_module('kiss_fft'),
+
+    ext_modules.cmake_module('minizip',
+                             'minizipd' if env['DEBUG'] else 'minizip'),
 
     ext_modules.cmake_module('gist', 
                              'Gist', 
@@ -448,8 +450,15 @@ submodules = [
                              always_link = True),
 
     # faust build structure uses the same location for release and debug build
-    # currently you have to manually delete the build when switching between debug and release
-    faust_module,
+    # so manually delete the build when switching between debug and release
+    ext_modules.cmake_module('faust', 
+                             lib_name='faustwithllvm',
+                             src_subdir='architecture', 
+                             cmake_opts=faust_options,
+                             cmake_env='LLVM_CONFIG=%s' % env['LLVM_CONFIG'],
+                             lib_path='../lib',
+                             cmakelists_dir='..',
+                             install=install_faust),
 
     ext_modules.scons_module('lanternfish'),
 
@@ -457,14 +466,11 @@ submodules = [
         'LIB_BUILD_PATH': '${BUILD_PATH}/lib',
         'BIN_BUILD_PATH': '${BUILD_PATH}/bin',
     }),
-    
+
     ext_modules.scons_module('plugins'),
 
     ext_modules.scons_module('pyzzub'),
 ]
-
-
-
 
 
 env.AddSubmodules(submodules)
@@ -480,44 +486,51 @@ env.AddSubmodules(submodules)
 
 USE_SNDFILE = env['SNDFILE']
 
-def check_has_executable(conf, name):
-    conf.Message("Checking for %s in PATH... " % name)
+
+def try_finding_executable(name):
     for path in os.environ['PATH'].split(os.pathsep):
         fullpath = os.path.join(path,name)
         if os.path.isfile(fullpath):
-            conf.Result(fullpath)
             return fullpath
-    conf.Result("missing")
-    return None
 
-def check_command_is_version(conf, command, version):
-    conf.Message("Checking for version of '%s'... " % command)
+def check_has_executable(context, name):
+    context.Message("Checking for %s in PATH... " % name)
+    fullpath = try_finding_executable(name)
+
+    if fullpath:
+        context.Result(fullpath)
+        return fullpath
+    else:
+        context.Result("missing")
+        return None
+
+
+def check_command_is_version(context, command, version):
+    context.Message("Checking for version of '%s'... " % command)
     ver = os.popen(command).read().strip()
 
     if ver[:len(version)] == version:
-        conf.Result("yes")
+        context.Result("yes")
         return True
     else:
-        conf.Result("no")
+        context.Result("no")
         return False
 
 
-
-def check_command_at_least_version(conf, command, version):
-    conf.Message("Checking '%s' is at least version %s..." % (command, version))
+def check_command_at_least_version(context, command, version):
+    context.Message("Checking '%s' is at least version %s..." % (command, version))
     retver = os.popen(command).read().strip()
 
     if LooseVersion(retver) >= LooseVersion(str(version)):
-        conf.Result("yes")
+        context.Result("yes")
         return True
     else:
-        conf.Result("no")
+        context.Result("no")
         return False
 
 
-
-def check_cpu_flag(conf, flag):
-    conf.Message("Checking for '%s' CPU flag... " % flag)
+def check_cpu_flag(context, flag):
+    context.Message("Checking for '%s' CPU flag... " % flag)
     if linux:
         for line in open('/proc/cpuinfo','r'):
             if ':' in line:
@@ -527,13 +540,14 @@ def check_cpu_flag(conf, flag):
                 value = value.strip()
                 if key == 'flags':
                     if flag in value.split(' '):
-                        conf.Result("yes")
+                        context.Result("yes")
                         return True
-        conf.Result('no')
+        context.Result('no')
         return False
     # XXX: add cpu flag check for other platforms
-    conf.Result('ERROR: not supported for this platform.')
+    context.Result('ERROR: not supported for this platform.')
     return False
+
 
 def check_pkg_config(context, version):
     context.Message( 'Checking for pkg-config... ' )
@@ -541,11 +555,13 @@ def check_pkg_config(context, version):
     context.Result( ret )
     return ret
 
+
 def check_pkg(context, name):
     context.Message( 'Checking for %s... ' % name )
     ret = context.TryAction('pkg-config --exists \'%s\'' % name)[0]
     context.Result( ret )
     return ret
+
 
 def check_pkg_version(context, name, version):
     context.Message("Checking to see if %s is at least version %s... " % (name, version))
@@ -553,16 +569,19 @@ def check_pkg_version(context, name, version):
     context.Result(ret)
     return ret
 
+
 def is_cleaning():
     import SCons.Script.Main
     try: return SCons.Script.Main.GetOption('clean')
     except: return SCons.Script.Main.options.clean
 
 
+
 ##############################################
 # configuration
 ##############################################
-    
+
+
 if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     import os
 
@@ -591,6 +610,9 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
 
     if not conf.CheckCHeader('zlib.h'):
         lib_errors.append(LibraryNotFound("zlib"))
+
+    if not conf.CheckCHeader('bz2.h'):
+        lib_errors.append(LibraryNotFound("bzip2"))
 
     if not conf.CheckCHeader('sndfile.h'):
         lib_errors.append(LibraryNotFound("libsndfile"))
@@ -629,7 +651,6 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         if not conf.CheckCHeader('X11/Xlib.h'):
             lib_errors.append(LibraryNotFound("Xlib.h"))
 
-        
     if conf.CheckCHeader('ladspa.h'):
         env['LADSPA'] = True
 
@@ -643,6 +664,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     missing_lv2 = []
     for pkg, header in (('lilv-0', 'lilv-0/lilv/lilv.h'), ('lv2', 'lv2.h'), ('suil-0', 'suil-0/suil/suil.h')):
         if not conf.CheckCHeader(header):
+            print("MISSING", header, pkg)    
             missing_lv2.append(pkg)
     
     if missing_lv2:
@@ -663,22 +685,35 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         env['GTK3'] = False
 
 
-    if conf.CommandAtLeastVersion(env['LLVM_CONFIG'] + ' --version', 18):
-        if os.system(env['LLVM_CONFIG'] + ' --link-static --ldflags') != 0:
-            lib_errors.append(LibraryNotFound('llvm-config does not have static libs such as libLLVMBinaryFormat.a, use a different llvm-config'))
-    else:
-        lib_errors.append(LibraryNotFound('llvm-config not found, install llvm with static libs such as libLLVMBinaryFormat.a'))
+    # faust depends on llvm-config > version 18 with static libraries
+    # most llvm packages on linux only have dynamic libraries
+    # options: compile llvm and or install llvm with static libraries (rocm-llvm is on most linux distros)
 
-    if not env['MINIZIP']:
-        if conf.CheckPKG('minizip-ng'):
-            env['MINIZIP'] = 'minizip-ng'
-        elif conf.CheckPkg('minizip-ng-compat'):
-            env['MINIZIP'] = 'minizip-ng-compat'
-        elif conf.CheckPkg('minizip-compat'):
-            env['MINIZIP'] = 'minizip-compat'
-        elif not conf.CheckCHeader('mz_compat.h'):
-            lib_errors.append(LibraryNotFound('couldn\'t find mz_compat.h: install minizip-ng/minizip-ng-compat or whatever contains contains mz_compat.h'))    
+    def try_llvm_config(llvm_config_path, errors):
+        if not os.path.isfile(llvm_config_path):
+            errors.append(LlvmConfigError('llvm-config not found at %s' % llvm_config_path))
+            return False
+        
+        #check version 18
+        if not conf.CommandAtLeastVersion(llvm_config_path + ' --version', 18):
+            errors.append(LlvmConfigError('llvm-config version is too low, needs to be at least 18'))
+            return False
+        
+        #check static libraries are available
+        if os.system(llvm_config_path + ' --link-static --libfiles > /dev/null') != 0:
+            errors.append(LlvmConfigError('static llvm libraries not found (ie libLLVMBinaryFormat.a)'))
+            return False
 
+        print("Checking llvm-config ", llvm_config_path, '.. ok')
+        return True 
+
+    llvm_errors = []
+    if not try_llvm_config(env['LLVM_CONFIG'], llvm_errors):
+        print("llvm-config failed, try rocm llvm config")
+        if try_llvm_config('/opt/rocm/llvm/bin/llvm-config', []):
+            env['LLVM_CONFIG'] = '/opt/rocm/llvm/bin/llvm-config'
+        else:
+            lib_errors.extend(llvm_errors)
 
     if not conf.CheckPKGConfig('0.15.0'):
         lib_errors.append(PkgVersionErr("pkg-config", "0.15.0"))
@@ -690,7 +725,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
         lib_errors.append(ExecNotFound("xmlto"))
 
     if lib_errors:
-        print("Could not build, dependency problems:")
+        print("\nBuild failed...\n")
         print("\n".join((str(err) for err in lib_errors)))
         sys.exit(1)
 
@@ -787,7 +822,7 @@ env['BUILDERS'].update(builders)
 
 #######################################
 #
-# generate zidl
+# generate zidl headers
 #
 #######################################
 
@@ -802,7 +837,7 @@ output.append(env.ZIDLPyCtypes(  '${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__
 env.Depends(output, '${SRC_PATH}/libneil/tools/zidl')
 
 
-# clone header files just generated by scons to the source dir  - (for vscode completion)   
+# clone zidl header files - generated immediately above - to the source dir for IDE code completion   
 for obj in output[0:3]:
     header_name = str(obj[0])
     src = env['BUILD_PATH'] + '/libneil/' + header_name
@@ -833,10 +868,10 @@ env.Signature(target='include/zzub/signature.h', source=options_conf_file)
 env.Signature(target='${SRC_PATH}/libneil/include/zzub/signature.h', source=options_conf_file)
 
 env.ParseConfig("${LLVM_CONFIG} --system-libs")
+
 ##############################################################################
 #
-# build projects in subdir of libneil which have SConscruct files
-# this does not link the libraties like the cmake builder does
+# build projects in subdir of libnei
 #
 ##############################################################################
 

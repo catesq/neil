@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mz_compat.h"
+#include "mz.h"
 
 #include <string>
 #include "zzub/consts.h"

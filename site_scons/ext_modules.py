@@ -4,26 +4,27 @@ import os, typing
 
 
 
-    # used by build_cmake_module() to check if the library is has been built 
+# used by build_cmake_module() to check if the library is has been built 
 def check_lib_exists(lib_name, lib_path, is_shared):
     suffixes = ['.so'] if is_shared else ['.a', '.lib']
     return any([os.path.exists(os.path.join(lib_path, 'lib' + lib_name + suffix)) for suffix in suffixes])
 
 
 
-# base class
-class cpp_module:
+# base class of external modules
+# these methods are used heavily in the add_submodule() functon in libneil/SConscript
+
+# base_module.src_path_key() and base_module.get_src_path()
+#    used by add_submodule to create scons env var: <base_module.name()>_SRC_PATH = base_module.get_src_path() 
+# base_module.get_env_flags() adds extra scons env vars
+# base_module.get_cpp_defines() appends to CPPDEFINES
+
+class base_module:
     def get_src_path(self):
         return '${SRC_PATH}/libneil/src/' + self.name
 
     def get_src_path_key(self):
         return self.name.upper() + '_SRC_PATH'
-
-    def build(self, env):
-        pass
-
-    def install(self, env):
-        pass
 
     def get_env_flags(self) -> {}:
         return {}
@@ -31,10 +32,17 @@ class cpp_module:
     def get_cpp_defines(self):
         return {}
 
+    def build(self, env):
+        pass
+
+    def install(self, env):
+        pass
+
+    def __str__(self):
+        return type(self).__name__ + ": " + self.name
 
 
-
-class cmake_module(cpp_module):
+class cmake_module(base_module):
     def __init__(
                 self, 
                 name, 
@@ -46,7 +54,8 @@ class cmake_module(cpp_module):
                 cmake_opts = '', 
                 cmake_env='',
                 cmakelists_dir = '../..', 
-                shared_libs=False
+                shared_libs=False,
+                install=None
             ):
         #, cmakelists_subdir = ''):
         """
@@ -70,6 +79,13 @@ class cmake_module(cpp_module):
         self.rel_lib_path = lib_path         # the location of the library relative to '<proj_dir>/build/release' - usually blank
         self.cmakelists_dir = cmakelists_dir # the location of CMakeLists.txt relative to '<proj_dir>/build/release' - usually '../..'
         self.shared_libs=shared_libs         # 
+
+        if install:
+            if callable(install):
+                self.install = install               # install function to call after build
+            else:
+                raise Exception("install must be a function")
+            
 
 
     def get_env_flags(self) -> typing.Dict[str, str]:
@@ -119,7 +135,7 @@ class cmake_module(cpp_module):
         
         shared_libs_opt = " -DBUILD_SHARED_LIBS={} ".format("on" if self.shared_libs else "off")
 
-        cmake_opts = self.extra_opts + shared_libs_opt + ' -DCMAKE_POLICY_DEFAULT_CMP0177=OLD -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=' + cmake_build_type
+        cmake_opts = self.extra_opts + shared_libs_opt + ' -DCMAKE_POLICY_DEFAULT_CMP0177=OLD -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=' + cmake_build_type
         env.Execute(self.cmake_env_vars + ' cmake ' + cmake_opts  + ' ' + self.cmakelists_dir)
         env.Execute(self.cmake_env_vars + ' cmake --build .')
         os.chdir(cwd)
@@ -134,6 +150,7 @@ class cmake_module(cpp_module):
         return check_lib_exists(self.lib_name, lib_path, self.shared_libs)
 
 
+    # always add the library path
     def link_env(self, lib_path, env):
         if self.always_link:
             env.Append(LINKFLAGS=['-L' + lib_path], LIBS=[self.lib_name])
@@ -147,8 +164,7 @@ class cmake_module(cpp_module):
 
     
 
-
-class scons_module(cpp_module):
+class scons_module(base_module):
     def __init__(self, name, env_flags = {}):
         self.name = name
         self.env_flags = env_flags
@@ -159,7 +175,6 @@ class scons_module(cpp_module):
     def build(self, env):
         src_path = '${%s}/SConscript' % self.get_src_path_key()
         module_build_path = '${BUILD_PATH}/libneil/src/' + self.name
-        
         env.SConscript(
             src_path, 
             variant_dir=module_build_path, 
@@ -168,18 +183,15 @@ class scons_module(cpp_module):
 
 
 
-
-
-class cpp_path(cpp_module):
+# cpp_path is not really a submodule. it is a a convenience class that adds LIBNEIL_SRC_PATH
+# libneil uses the same naming convention for the SRC_PATH env var as real submodules so reuse the get_src_path_key of base_module
+class cpp_path(base_module):
     def __init__(self, name, path):
         self.name = name
         self.path = path
     
     def get_src_path(self):
         return self.path
-
-    def get_src_path_key(self):
-        return self.name.upper() + '_SRC_PATH'
 
 
 
