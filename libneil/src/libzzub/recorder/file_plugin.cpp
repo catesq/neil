@@ -1,6 +1,7 @@
 
 #include "libzzub/recorder/file_plugin.h"
-
+#include "libzzub/host.h"
+#include "libzzub/song.h"
 
 namespace zzub {
 
@@ -81,6 +82,25 @@ recorder_file_plugin::init(zzub::archive *arc)
     recorder.set_rate(_master_info->samples_per_second);
 }
 
+void 
+recorder_file_plugin::add_input(const char *name, zzub::connection_type type)
+{
+    if(!name || strcmp(name, "Master") != 0) {
+        return;
+    }
+
+    auto master = dynamic_cast<master_plugin*>(_host->get_plugin_by_id(0));
+
+    if(!master) {
+        return;
+    }
+
+    for(auto& conn : master->recorder_connections) {
+        connect_ports(conn);
+    }
+
+    printf("Link to master\n");
+}
 
 void 
 recorder_file_plugin::process_events() 

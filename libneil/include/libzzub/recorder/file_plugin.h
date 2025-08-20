@@ -29,13 +29,14 @@ struct recorder_file_plugin : plugin {
 
     virtual bool process_stereo(float **pin, float **pout, int numsamples, int mode);
 
-    virtual void stop() ;
+    virtual void stop();
 
     virtual void command(int index);
 
     virtual const char * describe_value(int param, int value);
 
     virtual void configure(const char *key, const char *value);
+    virtual void add_input(const char *name, zzub::connection_type type);
 
 private:
     bool writeWave;
