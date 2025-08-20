@@ -138,7 +138,7 @@ class EventHandlerList:
 
 
     def __add__(self, funcargs):
-        ref,funcname,args = self.define_handler(funcargs)
+        ref, funcname, args = self.define_handler(funcargs)
 
         self.handlers.append((ref,funcname,args))
         # handler = EventHandlerList(self.name, self.handlers)

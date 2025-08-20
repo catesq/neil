@@ -21,7 +21,7 @@ Provides dialog class for hd recorder control.
 """
 
 import gi
-gi.require_version("Gtk", "3.0")
+gi.require_version("Gtk", "3")
 from gi.repository import Gtk, GLib
 
 import os, stat
@@ -81,7 +81,7 @@ class HDRecorderDialog(Gtk.Dialog):
         self.chkauto = chkauto
         # 0.3: DEAD
         #self.chkauto.set_active(self.master.get_auto_write())
-        sizer = Gtk.VBox(homogeneous=False, spacing=sizes.get('margin'))
+        sizer = Gtk.HBox(homogeneous=False, spacing=sizes.get('margin'))
         sizer.pack_start(btnsaveas, False, True, 0)
         sizer.pack_start(textposition, False, True, 0)
         sizer2 = Gtk.HBox(homogeneous=False, spacing=sizes.get('margin'))
@@ -182,7 +182,7 @@ class HDRecorderDialog(Gtk.Dialog):
         dlg.add_filter(ffwav)
         result = dlg.run()
         if result == Gtk.ResponseType.OK:
-            self.filename = dlg.get_filename()
+            self.filename = dlg.get_filename() or ''
             if (dlg.get_filter() == ffwav) and not self.filename.endswith('.wav'):
                 self.filename += '.wav'
             #self.btnsaveas.set_label(self.filename)

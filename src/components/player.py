@@ -263,6 +263,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             return
         
         master = self.get_plugin(0)
+        # self.__streamrecorder.add_source(master)
         self.__streamrecorder.add_input(master, zzub.zzub_connection_type_audio)
         self.set_machine_non_song(self.__streamrecorder, True)
         self.flush(None, None)
