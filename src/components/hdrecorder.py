@@ -96,7 +96,7 @@ class HDRecorderDialog(Gtk.Dialog):
         self.get_content_area().add(sizer)
         self.filename = ''
         GLib.timeout_add(100, self.on_timer)
-        eventbus = components.get('neil.core.eventbus')
+        eventbus = components.get_eventbus()
         eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
         self.update_label()
         self.update_rec_button()
@@ -136,7 +136,7 @@ class HDRecorderDialog(Gtk.Dialog):
         @param event: Command event.
         @type event: wx.CommandEvent
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         recorder = player.get_stream_recorder()
         recorder.set_attribute_value(0, not widget.get_active())
         player.history_flush()
@@ -154,7 +154,7 @@ class HDRecorderDialog(Gtk.Dialog):
         state of recording.
         """
         if self.is_visible():
-            player = components.get('neil.core.player')
+            player = components.get_player()
             master = player.get_plugin(0)
             bpm = master.get_parameter_value(1, 0, 1)
             tpb = master.get_parameter_value(1, 0, 2)
