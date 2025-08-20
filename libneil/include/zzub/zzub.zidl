@@ -288,6 +288,7 @@ namespace zzub:
 		set save_presets = bit 11         # the ui will open a file browser to save a preset/bank file
 	
 		# bits 12, 13, 14, 15 unused - 
+		set hidden = bit 12               # the plugin is hidden from machine list but can be created 
 
 		set is_root = bit 16              # master plugin only
 		set has_audio_input = bit 17      # for audio effects
