@@ -4,4 +4,14 @@ localenv = pluginenv.Clone()
 localenv.Append(LIBS=['lanternfish', 'faustwithllvm', 'zzub'])
 localenv.Append(CPPPATH=["${LANTERNFISH_SRC_PATH}"])
 
-build_plugin(localenv, "faust_oscillator", ['faust_oscillator.cpp', 'faust_oscillator_info.cpp', 'faust_ui.cpp'])
+build_plugin(localenv, "cv_oscillator", [
+    'cv_oscillator/cv_oscillator.cpp', 
+    'cv_oscillator/cv_oscillator_info.cpp', 
+    'faust_ui.cpp'
+])
+
+build_plugin(localenv, "lunar_distorter", [
+    'distorter/distorter.cpp', 
+    'distorter/distorter_info.cpp', 
+    'faust_ui.cpp'
+])

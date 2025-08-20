@@ -1,4 +1,4 @@
-#include "faust_oscillator.hpp"
+#include "cv_oscillator.hpp"
 #include <utility>
 #include "lanternfish.h"
 
@@ -7,12 +7,12 @@
 #define FREQ_WIDGET 2
 
 
-zzub::plugin* faust_oscillator_info::create_plugin() const {
-    return new faust_oscillator(this);
+zzub::plugin* cv_oscillator_info::create_plugin() const {
+    return new cv_oscillator(this);
 }
 
 
-void faust_oscillator::init(zzub::archive *arc) {
+void cv_oscillator::init(zzub::archive *arc) {
     global_values = &gval;
     metaplugin = _host->get_metaplugin();
     
@@ -131,7 +131,7 @@ void faust_oscillator::init(zzub::archive *arc) {
 }
 
 
-void faust_oscillator::process_events() 
+void cv_oscillator::process_events() 
 {
     if (gval.wave_type != info->wave_type->value_none) {
         state.wave_type = gval.wave_type;
@@ -161,7 +161,7 @@ void faust_oscillator::process_events()
 }
 
 
-float faust_oscillator::calculate_freq(unsigned short int freq, unsigned char freq_type) const
+float cv_oscillator::calculate_freq(unsigned short int freq, unsigned char freq_type) const
 {
     switch(freq_type) {
         case 0: // Hz
@@ -178,7 +178,7 @@ float faust_oscillator::calculate_freq(unsigned short int freq, unsigned char fr
 }
 
 
-void faust_oscillator::process_cv(int numsamples) 
+void cv_oscillator::process_cv(int numsamples) 
 {
     // the phasor generates a offset into a faust rdtable from 0 to tablesize
     auto phasor = dsp[4];

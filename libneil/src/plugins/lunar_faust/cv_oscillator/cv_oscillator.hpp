@@ -7,9 +7,9 @@
 #include "libzzub/ports/port_plugin.h"
 
 #include "faust/dsp/llvm-dsp.h"
-#include "faust_ui.hpp"
+#include "../faust_ui.hpp"
 
-#include "faust_oscillator_info.hpp"
+#include "cv_oscillator_info.hpp"
 
 
 const char* zzub_get_signature()
@@ -67,10 +67,10 @@ public:
 };
 
 
-class faust_oscillator : public zzub::port_facade_plugin {
+class cv_oscillator : public zzub::port_facade_plugin {
 public:
-    faust_oscillator(
-        const faust_oscillator_info* info
+    cv_oscillator(
+        const cv_oscillator_info* info
     )
       : info(info)
       , lfo("lfo", zzub::port_flow::output)
@@ -80,7 +80,7 @@ public:
         phase = new float[zzub_buffer_size];
     }
 
-    virtual ~faust_oscillator()
+    virtual ~cv_oscillator()
     {
         delete output;
     }
@@ -95,7 +95,7 @@ private:
 
     float calculate_freq(unsigned short int freq, unsigned char freq_type) const;
 
-    const faust_oscillator_info* info;
+    const cv_oscillator_info* info;
     llvm_dsp_factory* factories[5]; // builders for the sin,tri,saw,sqr,phasor faust computers
     llvm_dsp* dsp[5]; // the faust computers
 
@@ -120,7 +120,7 @@ private:
 
 
 struct faust_oscillator_collection : zzub::plugincollection {
-    faust_oscillator_info info {};
+    cv_oscillator_info info {};
 
     virtual void initialize(zzub::pluginfactory* factory)
     {

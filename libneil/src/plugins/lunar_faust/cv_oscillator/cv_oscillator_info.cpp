@@ -1,15 +1,15 @@
-#include "faust_oscillator_info.hpp"
+#include "cv_oscillator_info.hpp"
 
 
-faust_oscillator_info::faust_oscillator_info() 
+cv_oscillator_info::cv_oscillator_info() 
 {
     this->flags = zzub::plugin_flag_has_cv_output | zzub::plugin_flag_is_cv_generator | zzub::plugin_flag_has_ports;
     this->min_tracks = 0;
     this->max_tracks = 0;
-    this->name = "faust_oscillator";
-    this->short_name = "faust_oscillator";
+    this->name = "cv_oscillator";
+    this->short_name = "cv_oscillator";
     this->author = "tnh";
-    this->uri = "@libneil/effect/faust_oscillator";
+    this->uri = "@libneil/effect/lunar_cv_oscillator";
 
     wave_type = &add_global_parameter()
         .set_byte()
