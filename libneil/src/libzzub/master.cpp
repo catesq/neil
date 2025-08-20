@@ -17,6 +17,8 @@
 */
 #include "libzzub/common.h"
 #include "libzzub/tools.h"
+#include "libzzub/ports/buffers.h" // Add this if buffer_port and basic_buf are defined here
+#include "libzzub/ports/buffer_port.h" // Add this if buffer_port and basic_buf are defined here
 #include <cstdio>
 #include <thread>
 #include <format>
@@ -142,7 +144,7 @@ void master_plugin::init(
 {
     update_midi_devices();
 
-    for(int index=0; index<32; index++) {
+    for(int index=0; index < 32; index++) {
         recorder_ports.push_back(new buffer_port<basic_buf>(
             std::format("multi channel recorder {}", index), 
             port_flow::input
@@ -163,6 +165,12 @@ bool master_plugin::connect_ports(
     cv_connector& connnector
 ) 
 {
+    auto it = std::find(recorder_connections.begin(), recorder_connections.end(), connnector);
+    
+    if (it == recorder_connections.end()) {
+        recorder_connections.push_back(connnector);
+    }
+
     return true;
 }
 
@@ -171,6 +179,10 @@ void master_plugin::disconnect_ports(
     cv_connector& connnector
 )
 {
+    auto it = std::find(recorder_connections.begin(), recorder_connections.end(), connnector);
+    if (it != recorder_connections.end()) {
+        recorder_connections.erase(it);
+    }
 }
 
 

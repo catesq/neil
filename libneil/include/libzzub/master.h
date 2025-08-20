@@ -45,6 +45,7 @@ struct master_plugin : public port_facade_plugin, public event_handler {
     std::vector<std::pair<int, std::string> > midi_devices;
     int master_volume;
     int samples_per_second;
+    std::vector<cv_connector> recorder_connections;
 
     master_plugin();
 

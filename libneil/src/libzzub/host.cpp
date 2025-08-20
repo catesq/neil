@@ -398,6 +398,13 @@ plugin *host::get_plugin(metaplugin_proxy* _metaplugin) {
     return plugin_player->plugins[_metaplugin->id]->plugin;//_metaplugin->plugin;
 }
 
+plugin *host::get_plugin_by_id(int id) {
+    if (id < 0 || id >= plugin_player->plugins.size())
+        return nullptr;
+    else
+        return plugin_player->plugins[id]->plugin;
+}
+
 int host::get_plugin_id(metaplugin_proxy* _metaplugin) {
     return _metaplugin->id;
 }
