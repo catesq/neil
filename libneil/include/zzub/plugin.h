@@ -41,6 +41,7 @@
 #include "libzzub/streams.h"
 #include "libzzub/sequence_info.h"
 #include "libzzub/wave_info.h"
+#include "libzzub/cv/node.h"
 
 
 namespace zzub {
@@ -142,12 +143,18 @@ struct plugin {
     virtual void set_stream_source(const char *resource) {}
     virtual const char *get_stream_source() { return 0; }
 
-    // used by cv_connections
-    virtual zzub::port* get_port(int index) { return nullptr; }
+    // This version of get_port is only used when iterating the full port list.
+    // Prefer get_port(cv_node, port flow) or get_port(port_type, port_flow, index), 
+    // as usually only the sub_index for that port_type is known (when using cv_node/cv_connector)
+    virtual zzub::port* get_port(int full_index) { return nullptr; }
     virtual int get_port_count() { return 0; }
 
-    virtual zzub::port* get_port(zzub::port_type, zzub::port_flow, int index) { return nullptr; }
+    virtual zzub::port* get_port(zzub::port_type, zzub::port_flow, int sub_index) { return nullptr; }
     virtual int get_port_count(zzub::port_type, zzub::port_flow) { return 0; }
+
+    virtual zzub::port* get_port(zzub::cv_node& node, zzub::port_flow flow) {
+        return get_port((zzub::port_type) node.port_type, flow, node.value);
+    }
 
     // only used for cv ports connecting & disconnecting
     // return true if the connection was successful

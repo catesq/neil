@@ -12,25 +12,17 @@
 
 namespace zzub {
 
-
 /**
- * for audio rate cv stream IO
+ * for buffers using audio rate + cv stream IO
  */
 template<class B>
-requires(std::derived_from<B, port_buffer>)
+    requires std::derived_from<B, port_buffer>
 class buffer_port : public zzub::port {
     B buffer;
     
     std::string port_name;
 
     const zzub::port_flow direction;
-
-    // mostly unused but here for plugins to use in plugin::connect_ports()
-    // the lfo ports in mcp_chorus/MCPChorus.cpp use it to track when the optional lfo
-    // signal is connected
-    // the master_plugin uses it to track when a audio signal is attached
-    // to the multi channel recorder ports
-    bool connected;
 
 public:
     /**

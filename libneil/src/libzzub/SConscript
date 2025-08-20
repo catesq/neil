@@ -72,7 +72,6 @@ files = [
     'driver_rainout.cpp',
 ]
 
-print("MINIZIP NAME:", localenv['MINIZIP_LIB_NAME'])
 localenv.Append(
     LIBS=[
         'FLAC',

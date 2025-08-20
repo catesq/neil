@@ -5,8 +5,6 @@ namespace zzub {
 
 
 
-
-
 bool 
 file_recorder::open() {
     if (wave_file) 
