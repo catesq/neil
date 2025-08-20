@@ -813,8 +813,12 @@ bool op_plugin_add_cv_connector::operate(zzub::song& song) {
         *song.plugins[to_id]
     );
 
-    song.plugins[to_id]->plugin->connect_ports(connector);
-    song.plugins[from_id]->plugin->connect_ports(connector);
+    auto dest_plugin = song.plugins[to_id]->plugin;
+    auto src_plugin = song.plugins[from_id]->plugin;
+    
+    if(dest_plugin->connect_ports(connector) && src_plugin->connect_ports(connector)) {
+        // ok
+    }
     
     return true;
 }
