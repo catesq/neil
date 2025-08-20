@@ -606,7 +606,7 @@ if (not is_cleaning()) and ('configure' in COMMAND_LINE_TARGETS):
     lib_errors = []
 
     if not conf.CheckCXXHeader('loguru.cpp'):
-        lib_errors.append(SubModuleNotFound('loguru', 'https://github.com/martinmoene/clue'))
+        lib_errors.append(SubModuleNotFound('loguru', 'https://github.com/emilk/loguru'))
 
     if not conf.CheckCHeader('zlib.h'):
         lib_errors.append(LibraryNotFound("zlib"))
