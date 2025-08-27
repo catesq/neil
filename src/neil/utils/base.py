@@ -38,6 +38,9 @@ class Vec2:
     def clear(self):
         self.x = self.y = 0
 
+    def is_zero(self):
+        return self.x == 0 and self.y == 0
+
     def __sub__(self, o):
         if isinstance(o, float | int):
             return Vec2(self.x - o, self.y - o)
@@ -184,6 +187,8 @@ class Sizes():
     def get(self, name):
         if name in self.__values:
             return self.__values[name]
+        else:
+            return 0  
     
 
     def half(self, name):
@@ -197,6 +202,7 @@ class Sizes():
     
     def set_values(self, values):
         self.__values = self.__defaults.copy()
+        
         for key, value in values.items():
             self.__values[key.lower()] = self.parse_value(value)
     

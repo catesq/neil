@@ -1082,7 +1082,12 @@ def get_config(*args) -> NeilConfig:
 
     @rtype: {NeilConfig}.
     """
-    return components.get(NeilConfigSingleton.__neil__['id'])
+    config = components.get(NeilConfigSingleton.__neil__['id'])
+    
+    if config is None:
+        raise RuntimeError("NeilConfig not initialized")
+    
+    return config
 
 
 def get_plugin_blacklist():

@@ -197,7 +197,7 @@ class RouteView(Gtk.DrawingArea):
 
         # autoconnect if dragged onto an existing audio connection
         if is_effect(pluginloader):
-            conn = self.get_audio_connection_at((x, y))
+            conn = self.get_audio_connection_at(x, y)
 
         # autoconnect if dragged onto an existing plugin
         if not conn:
@@ -393,12 +393,11 @@ class RouteView(Gtk.DrawingArea):
                 player.active_patterns = [(plugin, 0)]
         player.set_midi_plugin(plugin)
 
-
     def click_start_connecting(self, event, plugin):
         player = components.get_player()
         self.connectpos = int(event.x), int(event.y)
         self.connecting_alt = event.get_state() & Gdk.ModifierType.MOD1_MASK
-        self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR))
+        self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR)) # type: ignore reportOptionalMemberAccess
         self.connecting = True
         self.router_layer.add_drag_connection(event.x, event.y, player.get_first_active_plugin())
         self.set_overlay_timer(10)
@@ -420,7 +419,7 @@ class RouteView(Gtk.DrawingArea):
 
         # self.adjust_draw_led_timer(100)
         
-        self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.FLEUR))
+        self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.FLEUR)) # type: ignore reportOptionalMemberAccess
         self.grab_add()
         self.set_overlay_timer(10)
 
@@ -630,12 +629,12 @@ class RouteView(Gtk.DrawingArea):
     # have to get set a timer and get the pointer position to simulate a motion event
     def force_drag_update(self):
         display = Gdk.Display.get_default()
-        seat = display.get_default_seat()
-        device = seat.get_pointer()
+        seat = display.get_default_seat()   #type: ignore reportOptionalMemberAccess
+        device = seat.get_pointer()         #type: ignore reportOptionalMemberAccess
 
-        pos = self.get_window().get_device_position(device)
-
-        self.drag_update(pos.x, pos.y, pos.mask)
+        pos = self.get_window().get_device_position(device) #type: ignore reportOptionalMemberAccess
+        print("route_view.force_drag_update:", pos)
+        # self.drag_update(pos.x, pos.y, pos.mask)
 
         # self.translate_coordinates(parent, position[0], position[1], self.dragoffset)
 

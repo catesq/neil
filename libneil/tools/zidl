@@ -62,6 +62,7 @@ def load_library(*names,**kw):
 		assert 0, "Unknown OS: %s" % os.name
 	if 'paths' in kw:
 		searchpaths += kw['paths']
+	m = None
 	for name in names:
 		if os.name == 'nt':
 			libname = name + '.dll'
@@ -73,7 +74,6 @@ def load_library(*names,**kw):
 			libname = 'lib' + name + '.so'
 			if 'version' in kw:
 				libname += '.' + kw['version']
-		m = None
 		for path in searchpaths:
 			if os.path.isdir(path):
 				libpath = os.path.join(path,libname)
@@ -126,7 +126,7 @@ def callback_from_param(cls, obj):
 	\"""
 	if obj is None:
 		return None # return a NULL pointer
-	from ctypes import _CFuncPtr
+	from ctypes import _CFuncPtr # type: ignore
 	return _CFuncPtr.from_param(obj)
 """
 

@@ -249,7 +249,7 @@ class ViewComponentManager:
         if len(close_matches) == 1:
             return self.components.get(close_matches[0], *args)
         elif len(close_matches) > 1:
-            top_id = self.get_best_match(close_matches)
+            top_id = self.get_closest_match(close_matches)
             return self.components.get(top_id, *args)
         else:
             error = "Dialog '{}' not found in {}".format(dialog_name, self.components.get_ids_from_category('viewdialog'))

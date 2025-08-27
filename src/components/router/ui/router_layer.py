@@ -31,8 +31,10 @@ class RouterItems(layers.Layer):
 
 
 class RouterLayer():
+    pango: Pango.Context
+
     def __init__(self, sizes, colors: Colors):
-        self.pango:Pango.Context = None
+        # self.pango:Pango.Context = None
 
         self.sizes = sizes
         self.colors = colors
@@ -40,13 +42,13 @@ class RouterLayer():
         self.zoom_level = Vec2(1, 1)
 
         # precalculated zoom_level * size
-        self.size:Vec2 = None
+        self.size:Vec2 = Vec2(0)
         self.precalc_scale  = Vec2(1, 1)
         self.half_size = Vec2(1,1)
 
-        self.center_pos = (0,0)
+        self.center_pos = Vec2(0,0)
 
-        self.items: dict[area_type.AreaType, items.Item] = {
+        self.items: dict[area_type.AreaType, list[items.Item]] = {
             area_type.AreaType.PLUGIN: [],
             area_type.AreaType.CONNECTION: [],
         }
@@ -75,8 +77,10 @@ class RouterLayer():
 
     def to_normal_pos(self, pos: Vec2) -> Vec2:
         """
-        normalise a screen position
-        @param pos: Vec2 screen pos in pixels
+        scale a pixel position to normal range -1.0 to +1.0
+
+        @param pos: Vec2 coordinate in pixels
+        @return: Vec2
 
         """
         return Vec2(
@@ -85,15 +89,23 @@ class RouterLayer():
         )
 
 
-    def to_screen_pos(self, pos) -> Vec2:
+    def to_screen_pos(self, pos: Vec2) -> Vec2:
+        """
+        expand from normal range(-1.0 to +1.0) to pixel position
+
+        @param pos: Vec2 coordinate normal range -1.0 to +1.0
+        @return: Vec2
+        """
         return Vec2(
-            pos.x * self.precalc_scale.x +  self.half_size.x,
-            pos.y * self.precalc_scale.y +  self.half_size.y
+            int(pos.x * self.precalc_scale.x +  self.half_size.x),
+            int(pos.y * self.precalc_scale.y +  self.half_size.y)
         )
 
 
     def to_normal_pos_pair(self, x, y) -> Tuple[float,float]:
         """
+        scale a pixel position to normal range -1.0 to +1.0 
+
         @param x: x coordinate in pixels
         @param y: y coordinate in pixels
         @return: (float, float) from -1 to +1
@@ -106,11 +118,13 @@ class RouterLayer():
 
     def to_screen_pos_pair(self, x, y) -> Tuple[int,int]:
         """
+        expand from notmal range to pixel position
+
         @param x: normalized x coordinate from -1 to +1
         @param y: normalized y coordinate from -1 to +1
         @return: (int, int) in pixels
         """
-        return Vec2(
+        return (
             int(x * self.precalc_scale.x +  self.half_size.x),
             int(y * self.precalc_scale.y +  self.half_size.y)
         )
@@ -123,7 +137,11 @@ class RouterLayer():
 
 
     def add_drag_connection(self, x, y, plugin):
-        plugin_item = self.find_by_id(plugin.get_id(), area_type.AreaType.PLUGIN)
+        plugin_item = self.find_plugin(plugin.get_id())
+
+        if plugin_item is None:
+            return
+        
         item = items.DragConnectionItem(plugin_item, Vec2(x, y), self.colors)
         self.drag_connection = item
         self.extra_items.append(item)
@@ -195,7 +213,8 @@ class RouterLayer():
 
 
     def get_plugins(self) -> Generator['items.PluginItem', None, None]:
-        return self.items[area_type.AreaType.PLUGIN]
+        for item in self.items[area_type.AreaType.PLUGIN]:
+            yield item # pyright: ignore[reportReturnType]
 
 
     def get_plugin_by_id(self, id):
@@ -205,13 +224,14 @@ class RouterLayer():
 
 
     def get_connections(self) -> Generator['items.ConnectionItem', None, None]:
-        return area_type.AreaType.CONNECTION
+        for item in self.items[area_type.AreaType.CONNECTION]:
+            yield item # pyright: ignore[reportReturnType]
 
 
     def get_connections_at(self, x, y) -> Generator['items.ConnectionItem', None, None]:
-        for item in self.clickareas.get_all_type_at(x, y, area_type.AreaType.CONNECTION):
-            if item.type == area_type.AreaType.CONNECTION_ARROW:
-                yield item
+        for clicked_area in self.clickareas.get_all_type_at(x, y, area_type.AreaType.CONNECTION):
+            if clicked_area.type == area_type.AreaType.CONNECTION_ARROW:
+                yield clicked_area # pyright: ignore[reportReturnType]
 
     # 
     def set_zoom(self, zoom):
@@ -296,7 +316,7 @@ class RouterLayer():
         for index in range(metaplugin.get_input_connection_count()):
             connection = metaplugin.get_input_connection(index)
             source_plugin = metaplugin.get_input_connection_plugin(index)
-            source_item = self.find_by_id(source_plugin.get_id(), area_type.AreaType.PLUGIN)
+            source_item = self.find_plugin(source_plugin.get_id())
             conn_item_cls = self.get_connection_item_class(connection, metaplugin, source_plugin)
             conn_item = conn_item_cls(index, connection, source_item, plugin_item, self.colors)
 
@@ -311,7 +331,7 @@ class RouterLayer():
             item.init_dimensions(self.sizes)
             self.items[item_type].append(item)
             item.add_click_areas(self.clickareas)
-            if self.size is not None:
+            if not self.size.is_zero():
                 item.init_canvas_size(self.size)
 
 
@@ -323,7 +343,7 @@ class RouterLayer():
         @param area_type  AreaType.PLUGIN | AreaType.CONNECTION
         @return           items.Item or None
         """
-        item = self.find_item(id, area_type)
+        item = self.find_by_id(id, area_type)
         if item:
             self.items[area_type].remove(item)
             item.remove_click_areas(self.clickareas)
@@ -344,6 +364,25 @@ class RouterLayer():
         @return           items.Item or None
         """
         return next((item for item in self.items[area_type] if item.id == id), None)
+
+
+    def find_plugin(self, id) -> items.PluginItem | None:
+        """
+        Find a PluginItem in self.items by its id.
+ 
+        @param id: int
+        @return: items.PluginItem or None
+        """
+        return self.find_by_id(id, area_type.AreaType.PLUGIN) # pyright: ignore[reportReturnType]
+
+    def find_connection(self, id) -> items.ConnectionItem | None:
+        """
+        Find a ConnectionItem in self.items by its id.
+ 
+        @param id: items.ConnID
+        @return: items.ConnectionItem or None
+        """
+        return self.find_by_id(id, area_type.AreaType.CONNECTION) # pyright: ignore[reportReturnType]
 
 
     def find_by_attr(self, match_val, attr, area_type):

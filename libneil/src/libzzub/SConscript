@@ -60,6 +60,7 @@ files = [
     'ports/port_facade.cpp',
     'ports/port_plugin.cpp',
     "cv/data.cpp",
+    "cv/node.cpp",
     "cv/source.cpp",
     "cv/target.cpp",
     "cv/transporter.cpp",
