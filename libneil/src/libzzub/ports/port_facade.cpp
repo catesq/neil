@@ -6,9 +6,9 @@ namespace zzub {
 
 
 void
-port_facade::init(
+port_facade::prepare(
     host* host,
-    std::vector<zzub::port*> cv_ports
+    std::vector<zzub::port*>* cv_ports
 )
 {
     plugin_host = host;
@@ -30,13 +30,13 @@ port_facade::init(
     );
 
     std::ranges::copy_if(
-        cv_ports,
+        *cv_ports,
         std::back_inserter(cv_in_ports),
         [](auto i) { return i->get_flow() == zzub::port_flow::input; }
     );
 
     std::ranges::copy_if(
-        cv_ports,
+        *cv_ports,
         std::back_inserter(cv_out_ports),
         [](auto i) { return i->get_flow() == zzub::port_flow::output; }
     );

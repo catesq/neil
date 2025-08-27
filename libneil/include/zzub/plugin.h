@@ -41,7 +41,6 @@
 #include "libzzub/streams.h"
 #include "libzzub/sequence_info.h"
 #include "libzzub/wave_info.h"
-#include "libzzub/cv/node.h"
 
 
 namespace zzub {
@@ -60,7 +59,10 @@ struct event_handler {
 };
 
 
-
+/**
+ * port params are supported but have not replaced the param api
+ * will transfer fully sometime
+ */
 
 enum class port_flow {
     input = 0,
@@ -91,6 +93,58 @@ struct port {
     virtual void set_value(int val) {};
     virtual void set_value(float* buf, uint count) {};
 };
+
+
+
+/*******************************************************************************************************
+ *
+ * cv_node_value
+ *
+ * node->value depends on node->port_type
+ *
+ * node type = audio:
+ *     value is channel 0 or 1 -> left or right
+ *
+ * node_type = zzub_global_param_node:
+ *     value is the index of the zzub_parameter in zzub_plugins globals
+ *
+ * node_type = zzub_track_param_node:
+ *     upper 16 bits of value is track number
+ *     lower 16 bits of param is the index of the parameter in that track
+ *
+ * node_type = ext_port_node
+ *     value is index of the zzub_port (if that plugin supports zzub::port)
+ *
+ * node_type is midi_track_node
+ *      value is ? - not supporting midi yet
+ *
+ *******************************************************************************************************/
+
+union cv_node_value {
+    uint32_t channels; // audio channel: 0 left, 1 right
+    uint32_t index; // port or param id
+    struct {
+        uint16_t track;
+        uint16_t param;
+    };
+};
+
+
+// represents a link to a plugin parameter, audio or cv port
+struct cv_node {
+    int32_t plugin_id = -1;
+
+    // this is a zzub::port_type, use a uint32_t here because the current python bindings are limited 
+    // todo: migrate to pybind/pybind11
+    uint32_t port_type;
+
+    uint32_t value;
+
+    bool operator==(const cv_node& other) const { return plugin_id == other.plugin_id && port_type == other.port_type && value == other.value; }
+};
+
+
+
 
 
 

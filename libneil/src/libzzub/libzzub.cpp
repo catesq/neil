@@ -1176,7 +1176,6 @@ void zzub_plugin_command(zzub_plugin_t* plugin, int i)
 
 int zzub_plugin_set_name(zzub_plugin_t* plugin, const char* name)
 {
-
     plugin->_player->plugin_set_name(plugin->id, name);
     return 0;
 }

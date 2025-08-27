@@ -405,6 +405,15 @@ plugin *host::get_plugin_by_id(int id) {
         return plugin_player->plugins[id]->plugin;
 }
 
+plugin *host::get_plugin_by_name(const char *name) {
+    auto metaplugin = get_metaplugin(name);
+
+    if (!metaplugin) 
+        return nullptr;
+        
+    return get_plugin(metaplugin);
+}
+
 int host::get_plugin_id(metaplugin_proxy* _metaplugin) {
     return _metaplugin->id;
 }
@@ -514,6 +523,13 @@ metaplugin_proxy* host::get_metaplugin(char const *name) {
     plugin_descriptor plugindesc = plugin_player->get_plugin_descriptor(name);
     if (plugindesc == graph_traits<plugin_map>::null_vertex()) return 0;
     int id = plugin_player->get_plugin_id(plugindesc);
+    return plugin_player->plugins[id]->proxy;
+}
+
+metaplugin_proxy* host::get_metaplugin_by_id(int id) {
+    if(id < 0 || id >= plugin_player->plugins.size())
+        return 0;
+
     return plugin_player->plugins[id]->proxy;
 }
 

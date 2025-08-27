@@ -1,6 +1,7 @@
 #pragma once
 
 #include "libzzub/ports/port_facade.h"
+#include <initializer_list>
 
 
 namespace zzub {
@@ -10,7 +11,8 @@ class port_facade_plugin : public virtual zzub::plugin {
 
 public:
     virtual ~port_facade_plugin() {};
-    void init_port_facade(host* plugin_host, std::vector<zzub::port*> cv_ports);
+    void init_port_facade(host* plugin_host, std::initializer_list<zzub::port*> cv_ports);
+    void init_port_facade(host* plugin_host, std::vector<zzub::port*>* cv_ports);
 
     virtual int get_port_count();
     virtual zzub::port* get_port(int index);

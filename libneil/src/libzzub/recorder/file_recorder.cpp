@@ -1,7 +1,51 @@
 
-#include "libzzub/recorder/file.h"
+#include "libzzub/recorder/file_recorder.h"
+#include <sstream>
 
 namespace zzub {
+
+
+bwf_channel_data::bwf_channel_data(
+    std::vector<std::string> channel_names
+) {
+
+
+}
+
+
+
+void
+bwf_channel_data::write(
+    SNDFILE* sndfile
+) {
+
+}
+
+
+
+polywav_channel_data::polywav_channel_data(
+    std::vector<std::string> channel_names
+) {
+    std::ostringstream oss;
+
+    oss << "Channel names: ";
+
+    for (size_t i = 0; i < channel_names.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << channel_names[i];
+    }
+
+    comment=oss.str();
+}
+
+
+
+void
+polywav_channel_data::write(
+    SNDFILE* sf
+) {
+    sf_set_string(sf, SF_STR_COMMENT, comment.c_str());
+}
 
 
 
@@ -14,13 +58,28 @@ file_recorder::open() {
     
     wave_file = sf_open(path.c_str(), SFM_WRITE, &sfinfo);
 
-    if (wave_file)
-        return true;
+    if (!wave_file) {
+        printf("file_recorder.open '%s' failed\n", path.c_str());
+        return false;
+    }
 
-    printf("file_recorder.open '%s' failed\n", path.c_str());
+    sf_samples = new float[zzub::buffer_size * channels];
 
-    return false;
+    // do not delete the channel_data_writer until sf_close_called
+    // the ixml string in bwf_channel_data needs to be exist until then
+    if(sfinfo.channels > 2) {
+        // if(use_ibwf) {
+        //      
+        // } else {
+        channel_data_writer = new polywav_channel_data(channel_names);
+        //}
+        channel_data_writer->write(wave_file);
+    }
+
+
+    return true;
 }
+
 
 
 SF_INFO
@@ -55,13 +114,29 @@ file_recorder::build_info()
 }
 
 
+
 void 
-file_recorder::write(float** samples, int num_samples) {
+file_recorder::set_channels(
+    std::vector<std::string> names
+) 
+{
+    channels = names.size();
+    channel_names = names;
+}
+
+
+
+void 
+file_recorder::write(
+    float** samples, 
+    int num_samples
+)
+{
     if (!num_samples || !wave_file) 
         return;
         
-    float ilsamples[zzub::buffer_size * channels];
-    float *p = ilsamples;
+
+    float *p = sf_samples;
 
     for (int i = 0; i < num_samples; i++) {
         for(int c = 0; c < channels; c++) {
@@ -70,17 +145,29 @@ file_recorder::write(float** samples, int num_samples) {
         }
     }
 
-    sf_writef_float(wave_file, ilsamples, num_samples);
+    sf_writef_float(wave_file, sf_samples, num_samples);
 }
+
+
 
 void 
 file_recorder::close() {
     if (wave_file) {
         printf("file_recorder::close found a wave file\n");
         sf_close(wave_file);
+
+        if(channel_data_writer)
+            delete channel_data_writer;
+
+        if(sf_samples)
+            delete sf_samples;
+
+        channel_data_writer = nullptr;
         wave_file = nullptr;
+        sf_samples = nullptr;
     }
 }
+
 
 
 bool 

@@ -110,6 +110,7 @@ public:
     }
 };
 
-
+using basic_buf_port = buffer_port<basic_buf>;
+using ringbuf_port = buffer_port<basic_rb>;
 
 }

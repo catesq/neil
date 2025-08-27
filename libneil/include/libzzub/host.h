@@ -77,6 +77,8 @@ struct host {
     virtual void set_internal_wave_name(zzub_plugin_t *_metaplugin, int index, const char *name);
     virtual void get_plugin_names(outstream *os);
     virtual zzub_plugin_t *get_metaplugin(const char *name);
+    virtual zzub_plugin_t *get_metaplugin_by_id(int id);
+
     virtual info const *get_info(zzub_plugin_t *_metaplugin);
     virtual char const *get_name(zzub_plugin_t *_metaplugin);
     virtual bool get_input(int index, float *samples, int buffersize, bool stereo, float *extrabuffer);
@@ -91,6 +93,7 @@ struct host {
     virtual int get_plugin_id(zzub_plugin_t *_metaplugin);
     
     virtual plugin *get_plugin_by_id(int id);
+    virtual plugin *get_plugin_by_name(const char *name);
 
     // hacked extensions
     virtual int get_song_begin();

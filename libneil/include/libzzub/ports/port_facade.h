@@ -49,11 +49,22 @@ public:
 
 
 
-    void
-    init(
+    virtual void
+    prepare(
         host* plugin_host,
-        std::vector<zzub::port*> cv_ports = {}
+        std::vector<zzub::port*>* cv_ports
     );
+
+
+
+    
+    void
+    prepare(
+        host* plugin_host
+    ) {
+        std::vector<zzub::port*> cv_ports {};
+        prepare(plugin_host, &cv_ports);
+    }
 
 
 
@@ -61,12 +72,6 @@ public:
     // process_events(const std::vector<port_event*>& events);
 
 
-
-    //
-    void
-    init(zzub::archive* arc = nullptr)
-    {
-    }
 
 
 

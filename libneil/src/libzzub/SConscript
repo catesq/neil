@@ -44,7 +44,7 @@ files = [
     'midi_track.cpp',
     'recorder.cpp',
     'recorder/file_plugin.cpp',
-    'recorder/file.cpp',
+    'recorder/file_recorder.cpp',
     'recorder/wavetable_plugin.cpp',
     'ccm_read.cpp',
     'ccm_write.cpp',

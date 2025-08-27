@@ -39,12 +39,14 @@ struct master_plugin : public port_facade_plugin, public event_handler {
     master_values* gvals;
     master_values dummy;
 
-    // any ports connected here are used by the multi track recorder
-    std::vector<zzub::port*> recorder_ports{};
-    
     std::vector<std::pair<int, std::string> > midi_devices;
     int master_volume;
     int samples_per_second;
+
+    // always 32 cv ports, initally unconnected
+    std::vector<basic_buf_port*> input_ports;
+    
+    // connections to the ports, initially 0
     std::vector<cv_connector> recorder_connections;
 
     master_plugin();

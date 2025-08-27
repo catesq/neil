@@ -37,10 +37,10 @@ namespace zzub {
     \brief Built-in recording plugin loader
 */
 
-struct input_plugin : plugin {
+struct audio_input : plugin {
     int attributeValues[1];
 
-    input_plugin() {
+    audio_input() {
         attributes = attributeValues;
         attributeValues[0] = 0;
     }
@@ -113,7 +113,7 @@ struct input_plugin : plugin {
 };
 
 zzub::plugin* input_plugin_info::create_plugin() const { 
-    return new input_plugin();
+    return new audio_input();
 }
 
 void input_plugincollection::initialize(zzub::pluginfactory *factory) {

@@ -46,9 +46,9 @@ MCPChorus::init(zzub::archive* pi)
         new zzub::buffer_port<zzub::basic_rb>("lfo2_in", zzub::port_flow::input)
     };
 
-    ports.init(
+    ports.prepare(
         _host, 
-        lfo_ports
+        &lfo_ports
     );
 }
 

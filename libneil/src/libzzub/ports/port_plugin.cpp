@@ -3,11 +3,19 @@
 
 namespace zzub {
 
+void
+port_facade_plugin::init_port_facade(host* plugin_host, std::initializer_list<zzub::port*> port_list){
+    std::vector<zzub::port*> cv_ports = port_list;
+    ports.prepare(plugin_host, &cv_ports);
+}
+
 
 void
-port_facade_plugin::init_port_facade(host* plugin_host, std::vector<zzub::port*> cv_ports){
-    ports.init(plugin_host, cv_ports);
+port_facade_plugin::init_port_facade(host* plugin_host, std::vector<zzub::port*>* cv_ports){
+    ports.prepare(plugin_host, cv_ports);
 }
+
+
 
 
 

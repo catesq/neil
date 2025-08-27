@@ -145,13 +145,14 @@ void master_plugin::init(
     update_midi_devices();
 
     for(int index=0; index < 32; index++) {
-        recorder_ports.push_back(new buffer_port<basic_buf>(
+        input_ports.push_back(new basic_buf_port(
             std::format("multi channel recorder {}", index), 
             port_flow::input
         ));
     }
 
-    init_port_facade(_host, recorder_ports);
+    // Cast input_ports to std::vector<zzub::port*>* for compatibility
+    init_port_facade(_host, reinterpret_cast<std::vector<zzub::port*>*>(&input_ports));
 }
 
 

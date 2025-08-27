@@ -126,6 +126,7 @@ void StereoToMulti::copy(float **src, float **dest, int num_samples) {
 }
 }
 
+// add stereo to stereo pan
 void AddS2SPanMC(float** output, float** input, int numSamples, float inAmp, float inPan) {
     if (!numSamples)
         return;
@@ -439,6 +440,8 @@ int getNoValue(const zzub::parameter* para) {
         return para->value_none;
     }
 }
+
+
 
 
 bool validateParameter(int value, const zzub::parameter* p) {
