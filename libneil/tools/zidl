@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # zzub IDL parser
 
+# ignore errors from functions built by match_scan_try_funcs such as: scan_symbol, scan_name
+# type:  ignore reportAttributeAccessIssue
+
 import sys,re,os
 from optparse import OptionParser
 from io import StringIO
@@ -134,7 +137,7 @@ class ParseError(Exception):
 	pass
 
 class Token:
-	def __init__(self, name, exp, vgroup = 1, rgroup = 2, **kargs):
+	def __init__(self, name, exp, vgroup: list | tuple | int = 1, rgroup = 2, **kargs):
 		self.name = name
 		self.rname = kargs.get('rname', self.name)
 		self.exp = re.compile('^[ ]*(%s)[ ]*(.*)$' % exp)
@@ -267,13 +270,13 @@ class Parser:
 		return value
 		
 	def match_name(self):
-		m = self.match_symbol()
+		m = self.match_symbol() 
 		if m and (m[0] in self.consts):
 			return None
 		return m
 		
 	def try_name(self):
-		m = self.match_symbol()
+		m = self.match_symbol() 
 		if m and (m[0] in self.consts):
 			return None
 		value = self.try_symbol()
@@ -282,7 +285,7 @@ class Parser:
 		return value
 		
 	def scan_name(self):
-		m = self.match_symbol()
+		m = self.match_symbol() 
 		if m and (m[0] in self.consts):
 			self.error('symbol expected, but got constant.')
 		value = self.scan_symbol()
