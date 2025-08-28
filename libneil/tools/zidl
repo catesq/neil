@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # zzub IDL parser
 
-# ignore errors from functions built by match_scan_try_funcs such as: scan_symbol, scan_name
+# ignore errors from Parser functions built by match_scan_try_funcs eg: scan_symbol, scan_name, scan_...
 # type:  ignore reportAttributeAccessIssue
 
 import sys,re,os
@@ -28,8 +28,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */"""
 
 py_header = """#!/usr/bin/env python3
+#type: ignore
 
-from ctypes import *
+from ctypes import * 
 
 import sys, os
 
@@ -129,7 +130,7 @@ def callback_from_param(cls, obj):
 	\"""
 	if obj is None:
 		return None # return a NULL pointer
-	from ctypes import _CFuncPtr # type: ignore
+	from ctypes import _CFuncPtr
 	return _CFuncPtr.from_param(obj)
 """
 
@@ -659,6 +660,7 @@ class Class(zzubIDLObject):
 			member.solve_py_ctypes_deps(f)
 		print ('class ' + self.struct_name + '(Structure):', file=f)
 		self.write_py_docstr(f, 1)
+		# print("CLASS", self.name)
 		print ('\t_fields_ = [', file=f)
 		for member in self.members:
 			member.write_py_ctypes(self, f)
@@ -1037,7 +1039,18 @@ class ClassMember(zzubIDLObject):
 		
 	def write_py_ctypes(self, parent, f):
 		self.solve_py_ctypes_deps(f)
-		print ('\t\t("' + self.specs.name + '", ' + self.specs.py_c_type + '),', file=f)
+
+		# zzub_event_data_all_t has a fields: POINTER("zzub_event_data_t") which triggered errors in pyright. 
+		# Can't change it to POINTER(zzub_event_data_t) as zzub_event_data_t is not defined yet 
+		# There's a reference to zzub_event_data_all_t in zzub_event_data_union_00000000_t which is a field in zzub_event_data_t 
+
+		# There is no straighforward way to resolve the circular definition except using POINTER("name_of_structure_defined_later") 
+		# Which works in python but is not recognised by pyright
+		# So ignore the pyright/pylance error 
+		if self.specs.py_c_type.startswith('POINTER("'):
+			print ('\t\t("' + self.specs.name + '", ' + self.specs.py_c_type + '),', file=f)
+		else:
+			print ('\t\t("' + self.specs.name + '", ' + self.specs.py_c_type + '),', file=f)
 	
 class Function(zzubIDLObject):
 	def __init__(self):
