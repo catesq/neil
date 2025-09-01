@@ -1,11 +1,20 @@
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING, cast as typecast
 
 if TYPE_CHECKING:
-    import player, router, utils.ui, eventbus
+    from components.router import RouteView
+    from components.player import NeilPlayer
+    from components.config import NeilConfig
+    from components.eventbus import EventBus
+    from components.driver import AudioDriver, MidiDriver
+    from ..utils import ui
 
 from .package import PackageInfo
 from .loader import NamedComponentLoader
 from .. import errordlg
+
+import gi
+gi.require_version('Gdk', '3.0')
+from gi.repository import Gtk
 
 # The component manager is the main registry for the service locator
 # it has a factoryinfo for each class id 
@@ -16,12 +25,14 @@ from .. import errordlg
 def get_neil_classes(neil_dict) -> List[type]:
     return neil_dict.get('classes', [])
 
+
 class ComponentInfo:
     def __init__(self, pkg_info: PackageInfo):
         self.id = id
         self.singleton = False
         self.categories = []
         self.package = pkg_info
+        self._builders = []
 
     def add_custom_builder(self, custom: 'FactoryInfo'):
         if custom.priority > self.priority:
@@ -112,7 +123,7 @@ class ComponentManager():
 
     def throw(self, id, arg):
         class_ = self.get_factory(id)
-        raise class_(arg)
+        raise class_(arg) # type: ignore
 
 
     def add_category(self, category_name, component_id):
@@ -121,11 +132,13 @@ class ComponentManager():
 
         self.categories[category_name].append(component_id)
 
+    def has_factory(self, id) -> bool:
+        return id in self.factories
 
-
-    def get_factory(self, id) -> FactoryInfo:
+    def get_factory(self, id) -> FactoryInfo | None:
         # get metainfo for object
         factory_info = self.factories.get(id, None)
+
         if not factory_info:
             print("no factory info found for classid '%s'" % id)
             return None
@@ -135,6 +148,11 @@ class ComponentManager():
             return None
         
         return factory_info
+
+    def get_factory_priority(self, id) -> int:
+        factory_info = self.get_factory(id)
+
+        return 0 if factory_info is None else factory_info.priority
 
 
     def exception(self, id):
@@ -197,18 +215,20 @@ class ComponentManager():
         return [self.get(classid, *args, **kwargs) for classid in self.categories.get(category, [])]
 
 
-    def get_player(self) -> 'player.NeilPlayer':
-        return self.get('neil.core.player')
+    def get_player(self) -> 'NeilPlayer':
+        return self.get('neil.core.player') # pyright: ignore[reportReturnType]
 
 
-    def get_config(self) -> 'config.NeilConfig':
-        return self.get('neil.core.config')
+    def get_config(self) -> 'NeilConfig':
+        return self.get('neil.core.config') # pyright: ignore[reportReturnType]
     
 
-    def get_eventbus(self) -> 'eventbus.EventBus':
-        return self.get('neil.core.eventbus')
+    def get_eventbus(self) -> 'EventBus':
+        return self.get('neil.core.eventbus')  # pyright: ignore[reportReturnType]
 
-
+    def get_audio_driver(self) -> 'AudioDriver':
+        return self.get('neil.core.driver.audio') # pyright: ignore[reportReturnType]
+    
     def get_categories(self) -> Dict[str, List[str]]:
         return self.categories
 
@@ -233,36 +253,52 @@ class ViewComponentManager:
         self.components = components
 
 
-    def get_contextmenu(self, menu_name, *args, prefix='neil.core.contextmenu') -> 'utils.ui.EasyMenu':
-        return self.components.get(prefix + '.' + menu_name, *args)
+    def get_contextmenu(self, menu_name, *args, prefix='neil.core.contextmenu') -> 'ui.EasyMenu':
+        return self.components.get(prefix + '.' + menu_name, *args) # pyright: ignore[reportReturnType]
     
+    def get_view(self, view_name, prefix='neil.core', *args) -> Gtk.Widget:
+        if not self.components.has_factory(view_name):
+            view_name = prefix + '.' + view_name
+            if not self.components.has_factory(view_name):
+                error = "View '{}' not found".format(view_name, self.components.get_ids_from_category('view'))
+                self.components.throw('neil.core.error', error)
 
-    def get_dialog(self, dialog_name, *args):
+        component = self.components.get(view_name, *args)
+
+        if not component:
+            error = "Unable to build view '{}'".format(view_name, self.components.get_ids_from_category('view'))
+            self.components.throw('neil.core.error', error)
+
+        
+        return component # pyright: ignore[reportReturnType]
+        
+
+    def get_dialog(self, dialog_name, *args) -> 'Gtk.Widget':
         close_matches = []
         
         for id in self.components.get_ids_from_category('viewdialog'):
             if id == dialog_name:
-                return self.components.get(id, *args)
+                return self.components.get(id, *args) # pyright: ignore[reportReturnType]
             elif id.endswith(dialog_name):
                 close_matches.append(id)
 
         if len(close_matches) == 1:
-            return self.components.get(close_matches[0], *args)
+            return self.components.get(close_matches[0], *args) # pyright: ignore[reportReturnType]
         elif len(close_matches) > 1:
             top_id = self.get_closest_match(close_matches)
-            return self.components.get(top_id, *args)
+            return self.components.get(top_id, *args) # pyright: ignore[reportReturnType]
         else:
             error = "Dialog '{}' not found in {}".format(dialog_name, self.components.get_ids_from_category('viewdialog'))
             self.components.throw('neil.core.error', error)
 
 
     def get_closest_match(self, close_matches):
-        close_matches.sort(key=lambda id: self.components.get_factory(id).priority)
+        close_matches.sort(key=lambda id: self.components.get_factory_priority(id))
         return close_matches[0]
     
 
-    def get_router(self) -> 'router.RouteView':
-        return self.components.get('neil.core.router.view')
+    def get_router(self) -> 'RouteView':
+        return self.components.get('neil.core.router.view') # pyright: ignore[reportReturnType]
 
 
 

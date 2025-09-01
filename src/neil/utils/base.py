@@ -1,16 +1,21 @@
-# utils with zero internal dependencies that can be imported first when other utils depend on them  
+# Base utils have zero internal dependencies because other utils depend on them and these need to be imported first  
 
+from __future__ import annotations
 import os, sys, re
-
+from typing import Optional
 
 class Vec2:
-    def __init__(self, x, y=None):
+    x: int | float
+    y: int | float
+    
+    # The str argument version of x and y is used internally by utils.Sizes class to parse int and float values
+    def __init__(self, x: int | float | str | Vec2, y: Optional[int | float | str] = None):
         if isinstance(x, Vec2):
             self.x = x.x
             self.y = x.y
         else:
-            self.x = x
-            self.y = y if y is not None else x
+            self.x = x                          # type: ignore
+            self.y = y if y is not None else x  # type: ignore
 
     def set(self, x, y=None):
         if isinstance(x, Vec2):
@@ -179,9 +184,11 @@ class Sizes():
             self.set_values(kwargs)
 
 
-    def __getitem__(self, name):
+    def __getitem__(self, name) -> int | float | Area | Vec2 | list[int | float]:
         if name in self.__values:
             return self.__values[name]
+        else:
+            return 0
     
 
     def get(self, name):

@@ -6,7 +6,7 @@ from .click_area import ClickArea
 
 import zzub
 import neil.common as common
-from neil.utils import Vec2, Area, Colors
+from neil.utils import Vec2, Area, ui
 # import plugin_gfx 
 
 
@@ -44,17 +44,22 @@ def get_nearest_rect_edges(source_rect, target_rect):
 
 # router_layer.RouterLayer manages the lists of Containers and updates the position etc
 class Item:
-    def __init__(self, id, colors: Colors):
+    init_canvas: Vec2
+    size: Vec2
+    pos: Vec2
+    zoom: Vec2
+
+    def __init__(self, id, colors: ui.Colors):
         
         # self.type = type
         self.id = id
-        self.init_canvas:Vec2 = None
-        self.canvas_size:Vec2 = None 
-        self.size:Vec2 = None,
-        self.pos:Vec2 = None
-        self.zoom:Vec2 = Vec2(1,1)
+        # self.init_canvas:Vec2 = None
+        # self.canvas_size:Vec2 = None 
+        # self.size:Vec2 = None,
+        # self.pos = None
+        self.zoom = Vec2(1,1)
 
-        self.colors: Colors = colors          
+        self.colors: ui.Colors = colors          
 
         # self.display: plugin_gfx.DisplayGfx = self.create_display()
         # self.overlays: dict[AreaType, overlay_gfx.OverlayGfx] = self.create_overlays()
@@ -63,10 +68,11 @@ class Item:
         """draw the main graphics"""
         pass
 
-            
+
     def set_zoom(self, zoom):
         self.zoom.set(zoom)
         self.update_dimensions()
+
 
     # geometry is screen size 
     # sizes is a usable neil.utils.Sizes subclass  components.router.ui.utils.router_sizes
@@ -102,14 +108,11 @@ class Item:
         """ Screen scrolled, adjust item locations"""
         pass
 
-    def set_zoom(self, zoom):
-        """ View zoomed, adjust the screen positions of the item based on zoom and scroll"""
-        pass
-
     
     def uses_plugin(self, plugin):
         """ Returns true if the item is/connects to the plugin"""
         return False
+
 
     def plugin_moved(self, plugin, norm_pos:Vec2):
         # updates the display position of the plugin 
@@ -131,7 +134,7 @@ class Item:
 
 # each plugin in the router has one of these
 class PluginItem(Item):
-    def __init__(self, mp:zzub.Plugin, info:common.PluginInfo, colors: Colors):
+    def __init__(self, mp:zzub.Plugin, info:common.PluginInfo, colors: ui.Colors):
         Item.__init__(self, mp.get_id(), colors)
 
         self.metaplugin:zzub.Plugin = mp
@@ -267,6 +270,9 @@ def get_nearest_points(sources: Sequence[Tuple[str, Vec2]], targets: Sequence[Tu
 
 
 class ConnectionItem(Item):
+    source_pos: Vec2
+    target_pos: Vec2
+
     edge_offsets = {
         'top':    Vec2(1,0),
         'bottom': Vec2(1,0),
@@ -274,7 +280,7 @@ class ConnectionItem(Item):
         'right':  Vec2(0,1)
     }
 
-    def __init__(self, index: int, connection:zzub.Connection, source_item:PluginItem, target_item:PluginItem, colors: Colors):
+    def __init__(self, index: int, connection:zzub.Connection, source_item:PluginItem, target_item:PluginItem, colors: ui.Colors):
         conn_id = ConnID(source_item.id, target_item.id, index)
 
         Item.__init__(self, conn_id, colors)
@@ -354,7 +360,10 @@ class DragId:
 # can't drag plugin and connection at same time so don't override
 # plugin_moved or uses_plugin
 class DragConnectionItem(Item):
-    def __init__(self, source_item:PluginItem, target_pos: Vec2, colors: Colors):
+    source_pos: Vec2
+    target_pos: Vec2
+
+    def __init__(self, source_item:PluginItem, target_pos: Vec2, colors: ui.Colors):
         Item.__init__(self, DragId(source_item.id), colors)
 
         self.source_id = source_item.id

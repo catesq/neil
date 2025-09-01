@@ -4,12 +4,40 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Pango
 from typing import Generator, Tuple
-from neil.utils import Vec2, Colors
+from neil.utils import Vec2, Area, ui
 import neil.common as common
+from typing import cast
 
 from . import click_area, items, layers, area_type
 
 import zzub
+
+
+
+# used to typecast from ClickedArea 
+class RouterPlugin:
+    def __init__(self, id, plugin: zzub.Plugin, rect: Area, area_type):
+        self.id = id
+        self.object = plugin
+        self.rect = rect
+        self.type = area_type
+
+    def __repr__(self):
+        return f"SelectedPlugin({self.id} {self.object}, {self.rect}, {self.type})"
+
+
+# used to typecast from ClickedArea 
+class RouterConnection:
+    def __init__(self, id, connection: zzub.Connection, rect: Area, area_type):
+        self.id = id
+        self.object = connection
+        self.rect = rect
+        self.type = area_type
+
+    def __repr__(self):
+        return f"SelectedConnection({self.id} {self.object}, {self.rect}, {self.type})"
+    
+
 
 
 
@@ -33,7 +61,7 @@ class RouterItems(layers.Layer):
 class RouterLayer():
     pango: Pango.Context
 
-    def __init__(self, sizes, colors: Colors):
+    def __init__(self, sizes, colors: ui.Colors):
         # self.pango:Pango.Context = None
 
         self.sizes = sizes
@@ -71,8 +99,6 @@ class RouterLayer():
         self.pango = parent.get_pango_context()
 
 
-    def get_item_locator(self) -> click_area.ClickArea:
-        return self.clickareas
     
 
     def to_normal_pos(self, pos: Vec2) -> Vec2:
@@ -200,39 +226,6 @@ class RouterLayer():
 
         self.set_refresh()
 
-
-    def get_items(self) -> Generator['items.Item', None, None]:
-        for item in self.items[area_type.AreaType.PLUGIN]:
-            yield item
-
-        for item in self.items[area_type.AreaType.CONNECTION]:
-            yield item
-
-        for item in self.extra_items:
-            yield item
-
-
-    def get_plugins(self) -> Generator['items.PluginItem', None, None]:
-        for item in self.items[area_type.AreaType.PLUGIN]:
-            yield item # pyright: ignore[reportReturnType]
-
-
-    def get_plugin_by_id(self, id):
-        for item in self.items[area_type.AreaType.PLUGIN]:
-            if item.id == id:
-                return item
-
-
-    def get_connections(self) -> Generator['items.ConnectionItem', None, None]:
-        for item in self.items[area_type.AreaType.CONNECTION]:
-            yield item # pyright: ignore[reportReturnType]
-
-
-    def get_connections_at(self, x, y) -> Generator['items.ConnectionItem', None, None]:
-        for clicked_area in self.clickareas.get_all_type_at(x, y, area_type.AreaType.CONNECTION):
-            if clicked_area.type == area_type.AreaType.CONNECTION_ARROW:
-                yield clicked_area # pyright: ignore[reportReturnType]
-
     # 
     def set_zoom(self, zoom):
         self.zoom_level.set(zoom.x, zoom.y)
@@ -287,6 +280,9 @@ class RouterLayer():
         return items.ConnectionItem
 
 
+
+
+
     # add plugin then connection items
     def populate(self, player: zzub.Player):
         self.clear()
@@ -317,6 +313,10 @@ class RouterLayer():
             connection = metaplugin.get_input_connection(index)
             source_plugin = metaplugin.get_input_connection_plugin(index)
             source_item = self.find_plugin(source_plugin.get_id())
+
+            if not source_item:
+                continue
+
             conn_item_cls = self.get_connection_item_class(connection, metaplugin, source_plugin)
             conn_item = conn_item_cls(index, connection, source_item, plugin_item, self.colors)
 
@@ -354,6 +354,33 @@ class RouterLayer():
         for items in self.items.values():
             items.clear()
 
+    # the items being found here are the view classes, items.PluginItems and items.ConnectionItems
+    # all the coordinates and colours and draw functions used for rendering connections and plugins on the router 
+
+    def get_items(self) -> Generator['items.Item', None, None]:
+        for item in self.items[area_type.AreaType.PLUGIN]:
+            yield item
+
+        for item in self.items[area_type.AreaType.CONNECTION]:
+            yield item
+
+        for item in self.extra_items:
+            yield item
+
+
+    def get_plugins(self) -> Generator['items.PluginItem', None, None]:
+        for item in self.items[area_type.AreaType.PLUGIN]:
+            yield cast(RouterPlugin, item) # pyright: ignore[reportReturnType]
+
+    def get_connections(self) -> Generator['items.ConnectionItem', None, None]:
+        for item in self.items[area_type.AreaType.CONNECTION]:
+            yield cast(RouterConnection, item) # pyright: ignore[reportReturnType]
+
+    def get_plugin_by_id(self, id):
+        for item in self.items[area_type.AreaType.PLUGIN]:
+            if item.id == id:
+                return cast(RouterPlugin, item)
+
 
     def find_by_id(self, id, area_type):
         """
@@ -364,7 +391,6 @@ class RouterLayer():
         @return           items.Item or None
         """
         return next((item for item in self.items[area_type] if item.id == id), None)
-
 
     def find_plugin(self, id) -> items.PluginItem | None:
         """
@@ -395,5 +421,27 @@ class RouterLayer():
         @return:              items.Item or None
         """
         return next((item for item in self.items[area_type] if getattr(item, attr) == match_val), None)
+    
+
+    # the items found below are the outline/area of the rendered objects, used to determine what has been clicked
+    # the connection can only be clicked on the small volume adjust button in the center point of the connection
+    # the plugins can be clicked on the plugin_led, the plugin_pan bar and anywhere else
+
+
+    def get_item_locator(self) -> click_area.ClickArea:
+        return self.clickareas
+
+
+    def get_plugins_at(self, x, y) -> Generator['RouterPlugin', None, None]:
+        for item in self.clickareas.get_all_type_at(x, y, area_type.AreaType.PLUGIN):
+            yield cast(RouterPlugin, item) # pyright: ignore[reportReturnType]
+
+
+    def get_connections_at(self, x, y) -> Generator['RouterConnection', None, None]:
+        for item in self.clickareas.get_all_type_at(x, y, area_type.AreaType.CONNECTION):
+            if item.type == area_type.AreaType.CONNECTION_ARROW:
+                yield cast(RouterConnection, item) # pyright: ignore[reportReturnType]
+
+
     
 

@@ -1,7 +1,8 @@
-from neil.common import GfxCache, PluginInfo
-from neil.utils import prepstr, is_a_generator, RouterColors
+from __future__ import annotations
+from neil.common import GfxCache
+from neil.utils import prepstr, is_a_generator, ui
 import cairo
-from . import layers, items
+from . import items
 
 
 class DisplayGfx:
@@ -10,6 +11,7 @@ class DisplayGfx:
 
 
 class CachedGfx(DisplayGfx):
+    item: items.Item
     def draw_gfx(self, context: cairo.Context):
         cached = self.get_cached_gfx()
         context.set_source_surface(cached.surface, self.item.pos.x, self.item.pos.y)
@@ -18,7 +20,7 @@ class CachedGfx(DisplayGfx):
     def draw_cache(self, context):
         pass
 
-    def get_cache(self) -> GfxCache:
+    def get_cache(self) -> GfxCache: # type: ignore
         pass
 
     def get_cached_gfx(self) -> GfxCache:
@@ -44,9 +46,9 @@ class CachedGfx(DisplayGfx):
 
 
 class PluginGfx(CachedGfx):
-    def __init__(self, item):
-        self.item: 'items.PluginItem' = item
-        self.colors: RouterColors = item.colors.router
+    def __init__(self, item: items.PluginItem):
+        self.item: items.PluginItem = item                # type: ignore
+        self.colors: ui.RouterColors = item.colors.router
 
     def draw_cache(self, context: cairo.Context):
         self.draw_bg(context)
@@ -107,7 +109,7 @@ class ConnectionGfx(DisplayGfx):
 
 #needs: source_pos:Vec2 and target_pos:Vec2 on the item
 class DragConnectionGfx(DisplayGfx):
-    def __init__(self, item: 'items.ConnectionItem'):
+    def __init__(self, item: 'items.DragConnectionItem'):
         self.item = item
         self.colors = item.colors
     

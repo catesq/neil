@@ -10,8 +10,7 @@ import cairo
 import sys
 
 from neil.utils import (
-    prepstr, get_new_pattern_name, ui,
-    get_plugin_color_key, is_instrument
+    prepstr, get_new_pattern_name, ui, is_instrument
 )
 
 import random
@@ -1190,7 +1189,7 @@ class SequencerView(Gtk.DrawingArea):
         """
         Draw tracks and pattern boxes.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         width, height = self.get_client_size()
         x, y = self.seq_left_margin, self.seq_top_margin
         pango_layout.set_font_description(Pango.FontDescription("sans 8"))
@@ -1276,9 +1275,9 @@ class SequencerView(Gtk.DrawingArea):
 
             # Draw a box that states the name of the machine on that track.
             if self.plugin_info[plugin].muted or self.plugin_info[plugin].bypassed:
-                name = get_plugin_color_key(plugin, "Bg Mute")
+                name = ui.get_plugin_color_key(plugin, "Bg Mute")
             else:
-                name = get_plugin_color_key(plugin, "Bg")
+                name = ui.get_plugin_color_key(plugin, "Bg")
 
             ctx.set_source_rgb(*colors[name])
 

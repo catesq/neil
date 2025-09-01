@@ -1,5 +1,8 @@
 from .plugin import PluginType, get_plugin_type
 import zzub
+from typing import TYPE_CHECKING, Optional
+
+from neil.common import PluginInfo
 
 
 plugin_color_group = {
@@ -24,11 +27,11 @@ plugin_led_group = {
 }
 
 
-def get_plugin_color_key(plugin: zzub.Pluginloader | zzub.Plugin, suffix: str | bool=False):
-    if suffix:
-        return plugin_color_group[get_plugin_type(plugin)] + " " + suffix.strip()
-    else:
-        return plugin_color_group[get_plugin_type(plugin)]
+def get_plugin_color_key(plugin: zzub.Pluginloader | zzub.Plugin, suffix: Optional[str] = None, prefix: Optional[str] = None):
+    prefix = prefix.strip() + ' ' if prefix else ''
+    suffix = ' ' + suffix.strip() if suffix else ''
+        
+    return prefix + plugin_color_group[get_plugin_type(plugin)] + suffix
     
 
 
@@ -100,17 +103,24 @@ theme_properties = [
 
 
 class BaseColors:
-    def shade(self, color, weight, *args, **kwargs):
+    colors:dict[str, tuple[float,float,float]]
+
+
+    def shade(self, color: str | tuple[float, float, float], weight: int | float, *args, **kwargs) -> tuple[float, float, float]:
         if isinstance(color, str):
             if color in self.colors:
                 color = self.colors[color]
+            else:
+                return (0, 0, 0)
 
         if weight >= 0:       # lighter rgb color
             weight = min(1, weight)
-            return (col + (1 - col) * weight for col in color)
-        else:                  # darker rgb color
+        else:                # darker rgb color
             weight = -max(-1, weight)
-            return (col - (col * weight) for col in color)
+
+        return (color[0] + (1 - color[0]) * weight,
+                color[1] + (1 - color[1]) * weight,
+                color[2] + (1 - color[2]) * weight)
 
 
 
@@ -120,31 +130,54 @@ class RouterColors(BaseColors):
     def __init__(self, colors):
         self.colors = colors
 
+
     def amp(self, is_handle):
         return self.colors["MV Amp Handle" if is_handle else "MV Amp BG"]
+
 
     def arrow(self, is_audio, is_border=False, border_direction=False):
         prefix = "MV Arrow" if is_audio else "MV Controller Arrow"
         suffix = (" Border In" if border_direction else " Border Out") if is_border else ""
         return self.colors[prefix + suffix]
 
-    def plugin(self, type, is_selected=False, is_muted=False):
+
+    def plugin(self, type: PluginType | PluginInfo, shade_or_selected:float | bool = False, muted=False):
+        if isinstance(type, PluginInfo):
+            shade_or_selected = type.selected
+            muted = type.muted
+            type = type.type
+
         prefix = "MV " + plugin_color_group[type]
-        suffix = " Mute" if is_muted else ""
+        suffix = " Mute" if muted else ""
         key = prefix + suffix
-        return self.shade(key, 0.2) if is_selected else self.colors[key]
+
+        if isinstance(shade_or_selected, float):
+            return self.shade(key, shade_or_selected)
+        elif shade_or_selected:
+            return self.shade(key, 0.2)
+        else:
+            return self.colors[key]
+
 
     def text(self):
         return self.colors["MV Text"]
 
-    def plugin_border(self, type, is_selected=False):
+
+    def plugin_border(self, type : PluginType | PluginInfo, is_selected=False):
+        if isinstance(type, PluginInfo):
+            is_selected = type.selected
+            type = type.type
+
         key = "MV " + plugin_color_group[type]
         shade = -0.2 if is_selected else -0.5
+
         return self.shade(key, shade)
+
 
     def border(self):
         return self.colors["MV Border"]
     
+
     #state 0=off, 1=on 2=warning
     def led(self, type, state):
         if state == 2:
@@ -154,8 +187,10 @@ class RouterColors(BaseColors):
         suffix = " LED On" if state else " LED Off"
         return self.colors[prefix + suffix]
     
+
     def background(self):
         return self.colors["MV Background"]
+
 
     def line(self):
         return self.colors["MV Line"]
@@ -178,11 +213,14 @@ class PatternColors(BaseColors):
         
         return self.colors[shade]
 
+
     def text(self, is_selected=False):
         return self.colors["PE Text"]
 
+
     def track_numbers(self):
         return self.colors["PE Track Numbers"]
+
 
     def row_numbers(self):
         return self.colors["PE Row Numbers"]
@@ -196,7 +234,7 @@ class SequencerColors(BaseColors):
         self.colors = colors
 
     #darknen = 0 to +2
-    def background(self, darknen=0, is_selected=False):
+    def background(self, darken=0, is_selected=False):
         if is_selected:
             darken = 3
         
@@ -211,12 +249,11 @@ class SequencerColors(BaseColors):
         return self.colors["SE Loop Line"]
 
     def track_background(self):
-        return self.colors["SE Track Background"]
-    
+        return self.colors["SE Track Background"]    
 
-    def line(self, is_light: False):
-        strength_name = PatternColors.line_shades[bool(is_light)]
-        return self.colors[strength_name]
+    # def line(self, is_light = False):
+    #     strength_name = PatternColors.line_shades[bool(is_light)]
+    #     return self.colors[strength_name]
 
 
 class Colors(BaseColors):
@@ -227,6 +264,7 @@ class Colors(BaseColors):
         self.sequencer = SequencerColors(self.colors)
         self.pattern = PatternColors(self.colors)
         self.refresh()
+
 
     def refresh(self):
         for color in theme_properties:

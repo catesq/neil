@@ -25,15 +25,16 @@ import math, os
 import struct
 
 
-# avoid import the ui submodule here to break a recursive import
-# where ui imports from the components module and the components modules imports utils
 
 from .base import *
-from .colors import *
 from .paths import *
 from .plugin import *
 from .converters import *
 from .textify import *
+
+# do not import these modules here. recursive imports happen.
+# from .colors import *
+# from .ui import *
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

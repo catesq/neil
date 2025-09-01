@@ -322,8 +322,11 @@ class ParameterView(Gtk.VBox):
         rc = self.scrollwindow.get_allocation()
         swx,swy = rc.width, rc.height
         ofsy = cdh - swy # size without scrollwindow
-        print("get best x size", cdx, rgx, swx)
-        return max(rgx, 500), min((rgy+20+ofsy), (3*Gdk.Screen.height())/4)
+
+        best_x = max(rgx, 500)
+        best_y = min((rgy+20+ofsy), (3*Gdk.Screen.height())/4)
+
+        return int(best_x), int(best_y)
 
     def get_title(self):
         return self._title

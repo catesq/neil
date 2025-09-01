@@ -66,6 +66,17 @@ DOCUMENT_UI = dict(
 
 
 class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
+    active_plugins: list[zzub.Plugin]
+    active_patterns: list[tuple[zzub.Plugin, int]]
+    active_waves: list[zzub.Wave]
+    octave: int
+    autoconnect_target: zzub.Plugin
+    sequence_step: int
+    plugin_origin: tuple[float, float]
+    solo_plugin: zzub.Plugin
+    document_path: str
+    
+
     __neil__ = dict(
         id='neil.core.player',
         singleton=True,
@@ -74,9 +85,11 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         ],
     )
 
+
     _exclude_event_debug_ = [
         zzub.zzub_event_type_parameter_changed,
     ]
+
 
     _event_types_ = dict(
         zzub_event_type_double_click = dict(args=None),
@@ -119,6 +132,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         zzub_event_type_all = dict(args='all'),
     )
 
+
     def __init__(self):
         Player.__init__(self, Player.create())
 
@@ -128,12 +142,14 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self._hevtime = 0
         self.__lazy_commits = False
         self.__event_stats = False
-        self.solo_plugin=None
+        self.solo_plugin=None # type: ignore
+
         # enumerate zzub_event_types and prepare unwrappers for the different types
         self.event_id_to_name = {}
+        # self.event_id_to_name[zzub.zzub_event_type_all]
         for enumname, cfg in self._event_types_.items():
             val = getattr(zzub, enumname)
-            #assert val not in self.event_id_to_name, "value %s (%s) already registered." % (val, eventname)
+            #assert val allnot in self.event_id_to_name, "value %s (%s) already registered." % (val, eventname)
             # where is eventname defined?
             assert val not in self.event_id_to_name, "value %s already registered." % (val)
             eventname = 'zzub_' + enumname[len('zzub_event_type_'):]
@@ -149,9 +165,11 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
                 assert datatype, "couldn't find member %s in zzub_event_data_t" % membername
                 for argname, argtype in datatype._fields_:
                     args.append(argname)
+                print(eventname, membername, args)
             self.event_id_to_name[val] = (eventname, membername, args)
             #print "'%s', # ( %s )" % (eventname, ','.join(args + ["..."]))
-        config = components.get('neil.core.config')
+            
+        config = components.get_config()
         pluginpath = os.environ.get('NEIL_PLUGIN_PATH', None)
         if pluginpath:
             pluginpaths = pluginpath.split(os.pathsep)
@@ -188,9 +206,9 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self.playstarttime = time.time()
         self.document_unchanged()
         #self.spinbox_edit = False
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.zzub_pre_delete_plugin += self.on_pre_delete_plugin
-        eventbus.zzub_pre_delete_pattern += self.on_pre_delete_pattern
+        eventbus = components.get_eventbus()
+        eventbus.add_handler('pre_delete_plugin', self.on_pre_delete_plugin) 
+        eventbus.add_handler('pre_delete_pattern', self.on_pre_delete_pattern)
 
         self._callback = zzub.zzub_callback_t(self.handle_event)
         self.set_callback(self._callback, None)

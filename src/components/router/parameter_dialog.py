@@ -28,8 +28,8 @@ class ParameterDialog(Gtk.Dialog):
         self.get_content_area().add(self.paramview)
         self.connect('destroy', self.on_destroy)
         self.connect('realize', self.on_realize)
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.zzub_delete_plugin += self.on_zzub_delete_plugin
+        eventbus = components.get_eventbus()
+        eventbus.add_handler('delete_plugin', self.on_zzub_delete_plugin)
 
 
     def on_realize(self, widget):
@@ -62,7 +62,7 @@ class ParameterDialogManager:
     def __init__(self):
         self.plugin_dialogs = {}
 
-    def show(self, plugin, parent):
+    def show_plugin(self, plugin, parent):
         """
         Shows a parameter dialog for a plugin.
 

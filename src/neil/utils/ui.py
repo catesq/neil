@@ -9,6 +9,8 @@ import types
 from .textify import prepstr
 import ctypes
 
+from . import colors 
+from .colors import *
 
 def set_clipboard_text(data):
     clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
@@ -763,3 +765,56 @@ def get_window_pointer(gtk_window):
     ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
     ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
     return ctypes.pythonapi.PyCapsule_GetPointer(gtk_window.__gpointer__, None)
+
+
+__all = [
+    'set_clipboard_text',
+    'get_clipboard_text',
+    'refresh_gui',
+    'make_submenu_item',
+    'make_stock_menu_item',
+    'make_stock_tool_item',
+    'make_stock_toggle_item',
+    'make_stock_radio_item',
+    'make_menu_item',
+    'quick_menu_item',
+    'make_check_item',
+    'make_radio_item',
+    'new_listview',
+    'new_combobox',
+    'new_liststore',
+    'new_image_button',
+    'new_stock_image_button',
+    'new_stock_image_toggle_button',
+    'new_image_toggle_button',
+    'new_theme_image_toggle_button',
+    'new_theme_image',
+    'get_item_count',
+    'add_scrollbars',
+    'add_vscrollbar',
+    'add_hscrollbar',
+    'file_filter',
+    'run_function_with_progress',
+    'gettext',
+    'question',
+    'error',
+    'message',
+    'warning',
+    'ImageToggleButton',
+    'ObjectHandlerGroup',
+    'PropertyEventHandler',
+    'AcceleratorMap',
+    'EasyMenuBar',
+    'EasyMenu',
+    'easy_menu_wrapper',
+    'wave_names_generator',
+    'test_view',
+    'get_window_pointer',
+    'colors',
+    'Colors',
+    'PatternColors',
+    'SequencerColors',
+    'RouterColors',
+    'get_plugin_color_key',
+    'get_plugin_color_group',
+]

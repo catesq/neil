@@ -1,6 +1,5 @@
 from enum import IntEnum
 import zzub
-import cairo
 
 class PluginType(IntEnum):
     Root = 0

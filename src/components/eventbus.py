@@ -109,7 +109,7 @@ class EventHandlerList:
 
         if isinstance(funcargs, (list, tuple)):
             if len(funcargs) >= 2:
-                func,args = funcargs[0],funcargs[1:]
+                func, args = funcargs[0],funcargs[1:]
             else:
                 func = funcargs[0]
         else:
@@ -122,6 +122,7 @@ class EventHandlerList:
     def make_ref_funcname(self, func):
         ref = None
         funcname = None
+        
         if hasattr(func, '__self__'):
             ref = weakref.ref(func.__self__)
             funcname = func.__name__
@@ -146,11 +147,7 @@ class EventHandlerList:
 
         return self
 
-    def add_handler(self, funcargs):
-        return self.__add__(funcargs)
 
-    def remove_handler(self, funcargs):
-        return self.__sub__(funcargs)
 
 
     def __sub__(self, funcargs):
@@ -205,12 +202,13 @@ class EventHandlerList:
             if self.debug_events:
                 print((" => %s(%s)" % (funcname,','.join([repr(x) for x in args]))), end='\n')
 
+
 class EventBus:
     __readonly__ = False
 
     def __init__(self):
         self.handlers = []
-        for name in self.names: #pylint: disable=no-member
+        for name in self.names:  # type: ignore
             attrname = name.replace('-','_')
             self.handlers.append(attrname)
             setattr(self, attrname, EventHandlerList(name))
@@ -229,6 +227,27 @@ class EventBus:
         for idstr in sorted(self.handlers):
             handlerlist = getattr(self, idstr)
             handlerlist.print_mapping()
+
+    def get_handler_list(self, event_name) -> EventHandlerList | None:
+        if not event_name.startswith('zzub_') and not hasattr(self, event_name):
+            event_name  = 'zzub_' + event_name
+
+        return getattr(self, event_name)
+
+    # call __add__ in EventhandlerList
+    def add_handler(self, event_name: str, *funcargs):
+        handler_list = self.get_handler_list(event_name)
+
+        if handler_list:
+            handler_list.__add__(funcargs)
+
+    # call __sub__ in EventhandlerList
+    def remove_handler(self, event_name: str, *funcargs):
+        handler_list = self.get_handler_list(event_name)
+
+        if handler_list:
+            handler_list.__sub__(funcargs)
+
 
 class NeilEventBus(EventBus):
     __neil__ = dict(
