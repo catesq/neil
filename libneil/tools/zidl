@@ -1148,7 +1148,10 @@ class Function(zzubIDLObject):
 				
 		if self.static:
 			print ('\t@staticmethod', file=f)
-		print ('\tdef ' + self.name + '(' + ', '.join(args) + '):', file=f)
+		add_type_hint = ''
+		if self.ret_arg and self.ret_arg.python and self.ret_arg.opaque_class:
+			add_type_hint = ' -> \'' + self.ret_arg.typemap_cfg['class_'].name + '\''
+		print ('\tdef ' + self.name + '(' + ', '.join(args) + ')' +  add_type_hint + ':', file=f)
 		self.write_py_docstr(f, 2)
 		if not self.static:
 			print ('\t\tassert self._as_parameter_', file=f)
@@ -1172,7 +1175,7 @@ class Function(zzubIDLObject):
 					argname = argname + '.value'
 			if arg.opaque_class:
 				class_ = arg.typemap_cfg['class_']
-				return class_.name + '._new_from_handle(' + argname + ')'
+				return class_.name + '._new_from_handle(' + argname + ') # type: ignore' 
 			if arg.typename == 'string':
 				return 'str(' + argname + ".decode('iso-8859-1'))"
 			else:
@@ -1239,8 +1242,9 @@ class IteratorFunction(zzubIDLObject):
 		print ('\tdef ' + self.name + '(self):', file=f)
 		self.write_py_docstr(f, 2)
 		print ('\t\tfor index in range(self.' + self.get_count_func + '()):', file=f)
-		print ('\t\t\tyield self.' + self.get_item_func + '(index)', file=f)
-			
+		print ('\t\t\t' + self.name + ' = self.' + self.get_item_func + '(index)', file=f)
+		print ('\t\t\tif ' + self.name + ' is not None:', file=f)
+		print ('\t\t\t\tyield ' + self.name, file=f)
 		print ('\t', file=f)
 
 class zzubIDLParser(Parser):
