@@ -836,13 +836,20 @@ output.append(env.ZIDLPyCtypes(  '${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__
 # make targets dependent on script
 env.Depends(output, '${SRC_PATH}/libneil/tools/zidl')
 
-
 # clone zidl header files - generated immediately above - to the source dir for IDE code completion   
 for obj in output[0:3]:
     header_name = str(obj[0])
     src = env['BUILD_PATH'] + '/libneil/' + header_name
     dest = env['SRC_PATH'] + '/libneil/' + header_name
     env.AddPostAction(obj, Copy(dest, src))
+
+
+
+# Copy zzub.__init__.py to parent of BUILD_PATH 
+# the BUILD_PATH is "project_path/build/Dedug" or "project_path/build/Release"))
+# so we can include add "project_path/build" to extraPaths so "import zzub" works
+
+env.AddPostAction(output[4], Copy('${BUILD_PATH}/../zzub.py', '${BUILD_PATH}/libneil/src/pyzzub/zzub/__init__.py'))
 
 #######################################
 #
