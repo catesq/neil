@@ -729,6 +729,7 @@ class LCD(Gtk.DrawingArea):
         self.charwidth = LCD_CHARWIDTH*self.scale
         self.charheight = LCD_CHARHEIGHT*self.scale
         self.panelwidth = self.columns*(self.charwidth+1)-1
+        print("audio gui size", int(self.border*2+self.panelwidth+0.5), int(self.border*2+self.panelheight+0.5))
         self.panelheight = self.rows*(self.charheight+1)-1
         self.set_size_request(
                 int(self.border*2+self.panelwidth+0.5),

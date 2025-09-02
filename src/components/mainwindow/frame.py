@@ -26,6 +26,9 @@ import re
 import ctypes
 from functools import cmp_to_key
 
+
+from typing import cast, TYPE_CHECKING
+
 from neil.utils import (
     hicoloriconpath, CancelException, 
     settingspath, filepath, show_manual, ui
@@ -40,7 +43,13 @@ import zzub
 from preferences import show_preferences
 
 from .cmp import cmp_view
-from .statusbar import StatusBar
+
+if TYPE_CHECKING:
+    from .statusbar import StatusBar
+    from ..masterpanel import MasterPanel 
+    from ..transportpanel import TransportControls
+    from ..playback import PlaybackInfo
+    from ..driver import AudioDriver, MidiDriver
 
 
 class FramePanel(Gtk.Notebook):
@@ -61,6 +70,8 @@ class FramePanel(Gtk.Notebook):
         defaultpanel = None
         self.statusbar = components.get('neil.core.statusbar')
         self.pages = sorted(components.get_from_category('neil.viewpanel'), key=cmp_to_key(cmp_view))
+        self.set_size_request(100, 100)
+        
 
         for index, panel in enumerate(self.pages):
             if not panel or not hasattr(panel, '__view__'):
@@ -214,6 +225,12 @@ class NeilFrame(Gtk.Window):
         Gtk.Window.__init__(self, type=Gtk.WindowType.TOPLEVEL)
 
         # 
+        # self.set_size_request(800, 600)
+        self.set_default_size(800, 600)
+        self.set_size_request(600, 400)
+
+        # self.resize(100, 100)
+
         components.get_player().set_host_info(1, 1, ctypes.c_void_p(hash(self)))
 
         
@@ -237,13 +254,13 @@ class NeilFrame(Gtk.Window):
 
         errordlg.install(self)
 
-        geometry = Gdk.Geometry()
-        geometry.min_height = 800
-        geometry.min_width = 800
-        hints = Gdk.WindowHints(3) # WindowHints.POS + WindowsHints.Min_SIZE
+        # geometry = Gdk.Geometry()
+        # geometry.min_width = 800
+        # geometry.min_height = 600
+        # hints = Gdk.WindowHints(Gdk.WindowHints.POS | Gdk.WindowHints.MIN_SIZE)
 
-        self.set_geometry_hints(self, geometry, hints)
-        self.set_position(Gtk.WindowPosition.CENTER)
+        # self.set_geometry_hints(self, geometry, hints)
+        # self.set_position(Gtk.WindowPosition.CENTER)
 
         self.open_dlg = Gtk.FileChooserDialog(
             title="Open",
@@ -297,7 +314,7 @@ class NeilFrame(Gtk.Window):
         vbox = Gtk.VBox()
         self.add(vbox)
 
-        self.accelerators = components.get('neil.core.accelerators')
+        self.accelerators: Accelerators = components.get('neil.core.accelerators') # type: ignore
         self.add_accel_group(self.accelerators)
 
         # build menu Bar
@@ -305,15 +322,15 @@ class NeilFrame(Gtk.Window):
         vbox.pack_start(menubar, False, False, 0)
 
         # create some panels that are always visible
-        self.master = components.get('neil.core.panel.master')
-        self.statusbar = components.get('neil.core.statusbar')
-        self.transport = components.get('neil.core.transport')
-        self.playback_info = components.get('neil.core.playback')
-        self.framepanel = components.get('neil.core.framepanel')
+        self.master: MasterPanel = components.get('neil.core.panel.master')        # type: ignore
+        self.statusbar: StatusBar = components.get('neil.core.statusbar')          # type: ignore
+        # self.transport: TransportControls = components.get('neil.core.transport')  # type: ignore
+        self.playback_info: PlaybackInfo = components.get('neil.core.playback')    # type: ignore
+        self.framepanel: FramePanel = components.get('neil.core.framepanel')       # type: ignore
 
         hbox = Gtk.HBox()
         hbox.pack_start(self.framepanel, True, True, 0)
-        hbox.pack_end(self.master, False, True, 0)
+        # hbox.pack_end(self.master, False, True, 0)
         vbox.add(hbox)
 
         vbox.pack_end(self.statusbar, False, True, 0)
@@ -341,7 +358,7 @@ class NeilFrame(Gtk.Window):
         #     GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("22x22/apps/neil.png")),
         #     GdkPixbuf.Pixbuf.new_from_file(hicoloriconpath("16x16/apps/neil.png"))
         # )
-        self.resize(800, 600)
+        # self.resize(800, 600)
 
         self.connect('key-press-event', self.on_key_down)
         self.connect('destroy', self.on_destroy)
@@ -356,14 +373,15 @@ class NeilFrame(Gtk.Window):
         self.master.hide()
         self.load_view()
 
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.document_path_changed += self.on_document_path_changed
+        eventbus = components.get_eventbus()
+        eventbus.add_handler('document_path_changed', self.on_document_path_changed)
         eventbus.print_mapping()
-        options, args = components.get('neil.core.options').get_options_args()
+        options, args = components.get_options().get_options_args()
         if len(args) > 1:
             self.open_file(args[1])
         
-        for driver in components.get_from_category('driver'):
+        driver: AudioDriver | MidiDriver
+        for driver in components.get_from_category('driver'): #type: ignore
             if driver.init_failed:
                 GLib.timeout_add(50, show_preferences, self, 1)
                 break
@@ -372,7 +390,7 @@ class NeilFrame(Gtk.Window):
         """
         Called when an undo item is being called.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.set_callback_state(False)
         player.undo()
         player.set_callback_state(True)
@@ -583,10 +601,11 @@ class NeilFrame(Gtk.Window):
         """
         cfg = config.get_config()
         cfg.load_window_pos("MainFrameWindow", self)
+        # cfg.load_window_pos("Playback", self.playback_info)
+
         #~cfg.load_window_pos("Toolbar", self.neilframe_toolbar)
         #cfg.load_window_pos("MasterToolbar", self.mastertoolbar)
         # cfg.load_window_pos("Transport", self.transport)
-        cfg.load_window_pos("Playback", self.playback_info)
         #cfg.load_window_pos("StatusBar", self.neilframe_statusbar)
 
     def save_view(self):
@@ -594,11 +613,13 @@ class NeilFrame(Gtk.Window):
         Called to store view settings to config
         """
         cfg = config.get_config()
-        cfg.save_window_pos("MainFrameWindow", self)
+        # cfg.save_window_pos("MainFrameWindow", self)
+        
+        # cfg.save_window_pos("Playback", self.playback_info)
+
         #~cfg.save_window_pos("Toolbar", self.neilframe_toolbar)
         #cfg.save_window_pos("MasterToolbar", self.mastertoolbar)
         # cfg.save_window_pos("Transport", self.transport)
-        cfg.save_window_pos("Playback", self.playback_info)
         #cfg.save_window_pos("StatusBar", self.neilframe_statusbar)
 
     def on_help_contents(self, *args):

@@ -147,7 +147,6 @@ class Area:
         return f"Area({self.pos}, {self.size})"
 
     def __eq__(self, o):
-        print(self, o)
         return (self.x == o.x and self.y == o.y and 
                self.width == o.width and self.height == o.height)
 

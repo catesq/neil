@@ -69,6 +69,7 @@ class RouteView(Gtk.DrawingArea):
         self.connecting_alt     = False                 # is the connection audio(not alt) or cv (is alt)
 
         self.last_drop_ts = 0  # there was a multiple drop bug in drag/drop, ignore several milliseconds
+        self.set_size_request(100,100)
 
         # self.connect('drag-motion', self.on_drag_motion)
         self.connect('drag-data-received', self.on_drag_data_received)
@@ -94,6 +95,7 @@ class RouteView(Gtk.DrawingArea):
 
         if config.get_config().get_led_draw() == True: # pyright: ignore[reportAttributeAccessIssue]
             self.set_overlay_timer()
+
         
         self.recreate_ui_objects()
         self.update_color_scheme()
@@ -129,7 +131,7 @@ class RouteView(Gtk.DrawingArea):
 
     def update_area(self):
         area = self.get_allocation()
-        print(self.area, area)
+        
         if self.area != area:
             self.area.size.set(area.width, area.height)
             self.router_layer.set_size(Vec2(area.width, area.height))
@@ -204,7 +206,7 @@ class RouteView(Gtk.DrawingArea):
 
         # autoconnect if dragged onto an existing plugin
         if conn is None:
-            clicked = next(self.router_layer.get_plugins_at(x, y))
+            clicked = next(self.router_layer.get_plugins_at(x, y), None)
 
             if clicked:
                 # mp, (px, py), area = res

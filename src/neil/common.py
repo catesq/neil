@@ -36,6 +36,9 @@ PLUGIN_DRAG_TARGETS = [
 class GfxCache:
     surface:cairo.Surface
     context:cairo.Context
+    
+    def __init__(self):
+        self.clear()
 
     def clear(self):
         self.surface = None # type: ignore

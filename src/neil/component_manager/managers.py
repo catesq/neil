@@ -1,6 +1,8 @@
-from typing import Dict, List, TYPE_CHECKING, cast as typecast
+from __future__ import annotations
+from typing import Dict, List, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
+    from components.mainwindow.statusbar import StatusBar
     from components.router import RouteView
     from components.player import NeilPlayer
     from components.config import NeilConfig
@@ -259,8 +261,10 @@ class ViewComponentManager:
     def __init__(self, components: ComponentManager):
         self.components = components
 
+    def get_statusbar(self) -> StatusBar:
+        return self.components.get('neil.core.statusbar') # pyright: ignore[reportReturnType]
 
-    def get_contextmenu(self, menu_name, *args, prefix='neil.core.contextmenu') -> 'ui.EasyMenu':
+    def get_contextmenu(self, menu_name, *args, prefix='neil.core.contextmenu') -> ui.EasyMenu:
         return self.components.get(prefix + '.' + menu_name, *args) # pyright: ignore[reportReturnType]
     
     def get_view(self, view_name, prefix='neil.core', *args) -> Gtk.Widget:
@@ -275,7 +279,6 @@ class ViewComponentManager:
         if not component:
             error = "Unable to build view '{}'".format(view_name, self.components.get_ids_from_category('view'))
             self.components.throw('neil.core.error', error)
-
         
         return component # pyright: ignore[reportReturnType]
         
@@ -304,8 +307,9 @@ class ViewComponentManager:
         return close_matches[0]
     
 
-    def get_router(self) -> 'RouteView':
-        return self.components.get('neil.core.router.view') # pyright: ignore[reportReturnType]
+    # parent is only necessary when the router is created in components.router.RoutePanel.__init__() 
+    def get_router(self, parent: Optional[Gtk.Widget] = None) -> 'RouteView':
+        return self.components.get('neil.core.router.view', parent) # pyright: ignore[reportReturnType]
 
 
 

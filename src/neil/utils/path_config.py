@@ -82,7 +82,7 @@ class PathConfig(ConfigParser):
 
     def get_path(self, pathid, append=''):
         if not self.has_option('Paths', pathid):
-            return None
+            return ''
         value = os.path.expanduser(self.get('Paths', pathid))
         if not os.path.isabs(value):
             value = os.path.normpath(os.path.join(BASE_PATH, value))

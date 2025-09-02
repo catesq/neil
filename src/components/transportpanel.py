@@ -22,7 +22,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import GObject, Gtk, Gdk
 
 from neil.utils import ui, imagepath, sizes
-from neil import components
+from neil import components, views
 
 import config
 
@@ -71,7 +71,7 @@ class TransportControls:
         self.play_buttons = self.build_play_buttons()
         self.play_info = self.build_play_info()
 
-        statusbar = components.get('neil.core.statusbar')
+        statusbar = views.get_statusbar()
         statusbar.set_play_controls(self.play_buttons)
         statusbar.set_play_info(self.play_info)
 

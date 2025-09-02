@@ -1,8 +1,8 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-
-from neil import components
+from . import route_view
+from neil import components, views
 
 class RoutePanel(Gtk.VBox):
     """
@@ -17,6 +17,7 @@ class RoutePanel(Gtk.VBox):
         ]
     )
 
+
     __view__ = dict(
         label = "Router",
         stockid = "neil_router",
@@ -24,6 +25,10 @@ class RoutePanel(Gtk.VBox):
         default = True,
         order = 3,
     )
+    
+
+    view: route_view.RouteView
+    scrollview: Gtk.ScrolledWindow
 
 
     def __init__(self):
@@ -31,22 +36,30 @@ class RoutePanel(Gtk.VBox):
         Initializer.
         """
         Gtk.VBox.__init__(self)
-        self.view = components.get('neil.core.router.view', self)
-        self.pack_start(self.view, True, True, 0)
+        self.set_size_request(100,00)
+
+        self.scrollview = Gtk.ScrolledWindow()
+        self.scrollview.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        
+        self.view = views.get_router(self) 
+        self.scrollview.add(self.view)
+
+        self.pack_start(self.scrollview, True, True, 0)
 
 
     def handle_focus(self):
         self.view.grab_focus()
 
-
+    # 
     def reset(self):
-        """
-        Resets the router view. Used when
-        a new song is being loaded.
-        """
-        self.view.reset()
+    #     """
+    #     Resets the router view. Used when
+    #     a new song is being loaded.
+    #     """
+        print("***********CALLED RESET***********")
+    #     self.view.reset()
 
 
     def update_all(self):
-        self.view.update_colors()
-        self.view.redraw()
+        self.view.update_all()
+        # self.view.redraw()
