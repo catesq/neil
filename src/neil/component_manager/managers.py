@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     from components.player import NeilPlayer
     from components.config import NeilConfig
     from components.eventbus import EventBus
+    from components.options import OptionParser
     from components.driver import AudioDriver, MidiDriver
     from ..utils import ui
 
@@ -216,19 +217,25 @@ class ComponentManager():
 
 
     def get_player(self) -> 'NeilPlayer':
-        return self.get('neil.core.player') # pyright: ignore[reportReturnType]
+        return self.get('neil.core.player')        # pyright: ignore[reportReturnType]
 
 
     def get_config(self) -> 'NeilConfig':
-        return self.get('neil.core.config') # pyright: ignore[reportReturnType]
+        return self.get('neil.core.config')        # pyright: ignore[reportReturnType]
     
 
     def get_eventbus(self) -> 'EventBus':
-        return self.get('neil.core.eventbus')  # pyright: ignore[reportReturnType]
+        return self.get('neil.core.eventbus')      # pyright: ignore[reportReturnType]
+
 
     def get_audio_driver(self) -> 'AudioDriver':
-        return self.get('neil.core.driver.audio') # pyright: ignore[reportReturnType]
+        return self.get('neil.core.driver.audio')  # pyright: ignore[reportReturnType]
+
+
+    def get_options(self) -> 'OptionParser':
+        return self.get('neil.core.options')       # pyright: ignore[reportReturnType]
     
+
     def get_categories(self) -> Dict[str, List[str]]:
         return self.categories
 
