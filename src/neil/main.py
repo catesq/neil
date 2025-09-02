@@ -33,7 +33,6 @@ def shutdown():
     Gtk.main_quit()
 
 
-
 def init_neil(argv):
     """
     Loads the categories neccessary to visualize neil.
@@ -41,7 +40,6 @@ def init_neil(argv):
     components.init()
     components.get_from_category('driver')
     components.get_from_category('rootwindow')
-
 
 
 def run(argv, initfunc = init_neil):
@@ -56,7 +54,7 @@ def run(argv, initfunc = init_neil):
 
     Gdk.set_allowed_backends('x11')
     GObject.threads_init()
-    Gtk.init(argv)
+    Gtk.init()
 
     contextlog.init()
     errordlg.install()
@@ -67,14 +65,14 @@ def run(argv, initfunc = init_neil):
     #     if i in argv:
     #         argv.remove(i)
 
-    options = components.get('neil.core.options')
+    options = components.get_options()
     options.parse_args(argv)
 
-    eventbus = components.get('neil.core.eventbus')
-    eventbus.shutdown += shutdown
+    eventbus = components.get_eventbus()
+    eventbus.add_handler('shutdown', shutdown)
 
-    options = components.get('neil.core.options')
-    app_options, app_args = options.get_options_args()
+    # options = components.get('neil.core.options')
+    app_options, _ = options.get_options_args()
 
     if app_options.profile:
         import cProfile
@@ -87,6 +85,7 @@ __all__ = [
     'shutdown',
     'run',
 ]
+
 
 if __name__ == '__main__':
     run(sys.argv)

@@ -434,7 +434,7 @@ DARK_THEME = {
 }
 
 DEFAULT_THEME = DARK_THEME
-        
+  
 
 class NeilConfig(configparser.ConfigParser):
     """
