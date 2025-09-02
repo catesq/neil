@@ -18,23 +18,60 @@
 
 import optparse
 
-class OptionParser(optparse.OptionParser):
+# class OptionParser(optparse.OptionParser):
+#     __neil__ = dict(
+#         id = 'neil.core.options',
+#         singleton = True,
+#     )
+
+#     def __init__(self):
+#         optparse.OptionParser.__init__(self)
+#         self.add_option("--profile", metavar="profile", default='', help="Start Neil with profiling enabled, save results to <profile>.")
+#         self._options = dict()
+#         self._args = []
+
+#     def parse_args(self, *args, **kwargs):
+#         self._options, self._args = optparse.OptionParser.parse_args(self, *args, **kwargs)
+
+#     def get_options_args(self):
+#         return self._options, self._args
+
+
+class OptionParser:
     __neil__ = dict(
-        id = 'neil.core.options',
-        singleton = True,
+        id='neil.core.options',
+        singleton=True,
     )
 
+    parsed_options: optparse.Values
+    parsed_args: list[str]
+
     def __init__(self):
-        optparse.OptionParser.__init__(self)
-        self.add_option("--profile", metavar="profile", default='', help="Start Neil with profiling enabled, save results to <profile>.")
-        self._options = dict()
-        self._args = []
+        self.option_parser = optparse.OptionParser()
+        self.option_parser.add_option("--profile", metavar="profile", default='', help="Start Neil with profiling enabled, save results to <profile>.")
+        self.parsed_options = optparse.Values()
+        self.parsed_args = []
 
     def parse_args(self, *args, **kwargs):
-        self._options, self._args = optparse.OptionParser.parse_args(self, *args, **kwargs)
+        self.parsed_options, self.parsed_args = self.option_parser.parse_args(*args, **kwargs)
 
     def get_options_args(self):
-        return self._options, self._args
+        return self.parsed_options, self.parsed_args
+
+    # # Proxy methods
+    # def add_option(self, *args, **kwargs):
+    #     return self.option_parser.add_option(*args, **kwargs)
+
+    # def set_defaults(self, *args, **kwargs):
+    #     return self.option_parser.set_defaults(*args, **kwargs)
+
+    # def print_help(self, *args, **kwargs):
+    #     return self.option_parser.print_help(*args, **kwargs)
+
+    # def print_version(self, *args, **kwargs):
+    #     return self.option_parser.print_version(*args, **kwargs)
+
+
 
 __neil__ = dict(
     classes = [
