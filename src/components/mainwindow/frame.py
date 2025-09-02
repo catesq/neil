@@ -63,7 +63,7 @@ class FramePanel(Gtk.Notebook):
         self.pages = sorted(components.get_from_category('neil.viewpanel'), key=cmp_to_key(cmp_view))
 
         for index, panel in enumerate(self.pages):
-            if not hasattr(panel, '__view__'):
+            if not panel or not hasattr(panel, '__view__'):
                 print(("panel", panel, "misses attribute __view__"))
                 continue
 
@@ -71,8 +71,10 @@ class FramePanel(Gtk.Notebook):
             stockid = options['stockid']
             label = options['label']
             key = options.get('shortcut', '')
+
             if options.get('default'):
                 defaultpanel = panel
+                
             panel.show_all()
 
             theme_img = ui.new_theme_image(stockid, Gtk.IconSize.MENU)
@@ -209,10 +211,10 @@ class NeilFrame(Gtk.Window):
         Initializer.
         """
 
-        Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
+        Gtk.Window.__init__(self, type=Gtk.WindowType.TOPLEVEL)
 
         # 
-        components.get('neil.core.player').set_host_info(1, 1, ctypes.c_void_p(hash(self)))
+        components.get_player().set_host_info(1, 1, ctypes.c_void_p(hash(self)))
 
         
         theme = config.get_config().get_style()
@@ -222,6 +224,10 @@ class NeilFrame(Gtk.Window):
 
         provider = Gtk.CssProvider()
         screen = Gdk.Screen.get_default()
+        
+        if screen is None:
+            return
+        
         style_context = Gtk.StyleContext()
         style_context.add_provider_for_screen(
             screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
@@ -242,22 +248,31 @@ class NeilFrame(Gtk.Window):
         self.open_dlg = Gtk.FileChooserDialog(
             title="Open",
             parent=self,
-            action=Gtk.FileChooserAction.OPEN,
-            buttons=(
-                Gtk.STOCK_CANCEL,
-                Gtk.ResponseType.CANCEL,
-                Gtk.STOCK_OPEN,
-                Gtk.ResponseType.OK
-            )
+            action=Gtk.FileChooserAction.OPEN
         )
+
+        self.open_dlg.add_buttons(
+            Gtk.STOCK_CANCEL,
+            Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_OPEN,
+            Gtk.ResponseType.OK
+        )
+
+        self.open_dlg.add_shortcut_folder(filepath('demosongs'))
 
 
         display = Gdk.Display.get_default()
+        if not display:
+            return
+        
         monitor = display.get_primary_monitor()
+
+        if not monitor:
+            return
+        
         geometry = monitor.get_geometry()
         common.set_screen_size(geometry.width, geometry.height)
         
-        self.open_dlg.add_shortcut_folder(filepath('demosongs'))
 
         for filefilter in self.OPEN_SONG_FILTER:
             self.open_dlg.add_filter(filefilter)
@@ -265,13 +280,14 @@ class NeilFrame(Gtk.Window):
         self.save_dlg = Gtk.FileChooserDialog(
             title="Save",
             parent=self,
-            action=Gtk.FileChooserAction.SAVE,
-            buttons=(
-                Gtk.STOCK_CANCEL,
-                Gtk.ResponseType.CANCEL,
-                Gtk.STOCK_SAVE,
-                Gtk.ResponseType.OK
-            )
+            action=Gtk.FileChooserAction.SAVE
+        )
+
+        self.save_dlg.add_buttons(
+            Gtk.STOCK_CANCEL,
+            Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_SAVE,
+            Gtk.ResponseType.OK
         )
 
         self.save_dlg.set_do_overwrite_confirmation(True)
