@@ -36,7 +36,6 @@ class RoutePanel(Gtk.VBox):
         Initializer.
         """
         Gtk.VBox.__init__(self)
-        self.set_size_request(100,00)
 
         self.scrollview = Gtk.ScrolledWindow()
         self.scrollview.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
@@ -57,6 +56,8 @@ class RoutePanel(Gtk.VBox):
     #     a new song is being loaded.
     #     """
         print("***********CALLED RESET***********")
+    #     No sign of this actually being used. 
+
     #     self.view.reset()
 
 

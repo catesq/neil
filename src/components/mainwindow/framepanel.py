@@ -1,5 +1,5 @@
-from .helpers import cmp_view
 from functools import cmp_to_key
+from .helpers import cmp_view, set_is_panel
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -28,13 +28,14 @@ class FramePanel(Gtk.Notebook):
         defaultpanel = None
         self.statusbar = views.get_statusbar()
         self.pages = sorted(components.get_from_category('neil.viewpanel'), key=cmp_to_key(cmp_view))
-        self.set_size_request(100, 100)
         
-
         for index, panel in enumerate(self.pages):
             if not panel or not hasattr(panel, '__view__'):
                 print(("panel", panel, "misses attribute __view__"))
                 continue
+
+            print(panel)
+            set_is_panel(panel)
 
             options = panel.__view__
             stockid = options['stockid']

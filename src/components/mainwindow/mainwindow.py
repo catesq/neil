@@ -45,45 +45,7 @@ if TYPE_CHECKING:
     from ..transportpanel import TransportControls
     from ..playback import PlaybackInfo
     from ..driver import AudioDriver, MidiDriver
-
-
-
-
-
-#~class NeilToolbar(Gtk.Toolbar):
-#~ __neil__ = dict(
-#~        id = 'neil.core.toolbar',
-#~        singleton = True,
-#~        categories = [
-#~                'view',
-#~        ],
-#~ )
-#~
-#~  __view__ = dict(
-#~                label = "Toolbar",
-#~                order = 0,
-#~                toggle = True,
-#~  )
-
-# class NeilStatusbar(Gtk.Statusbar):
-#   __neil__ = dict(
-#           id = 'neil.core.statusbar',
-#           singleton = True,
-#           categories = [
-#                   'view',
-#           ],
-#   )
-
-#   __view__ = dict(
-#                   label = "Statusbar",
-#                   order = 0,
-#                   toggle = True,
-#   )
-
-#   def __init__(self):
-#     GObject.GObject.__init__(self)
-#     self.push(0, "Ready to rok again")
-
+    from .framepanel import FramePanel
 
 
 class NeilFrame(Gtk.Window):
@@ -122,18 +84,11 @@ class NeilFrame(Gtk.Window):
         Initializer.
         """
 
-        Gtk.Window.__init__(self, type=Gtk.WindowType.TOPLEVEL)
-
-        # 
-        # self.set_size_request(800, 600)
-        self.set_default_size(800, 600)
-        self.set_size_request(600, 400)
-
-        # self.resize(100, 100)
+        Gtk.Window.__init__(self, type=Gtk.WindowType.TOPLEVEL, expand=True)
 
         components.get_player().set_host_info(1, 1, ctypes.c_void_p(hash(self)))
 
-        
+
         theme = config.get_config().get_style()
 
         theme_file = Gio.File.new_for_path(os.path.join(settingspath(), "themes", theme, "main.css"))
@@ -155,11 +110,13 @@ class NeilFrame(Gtk.Window):
         errordlg.install(self)
 
         # geometry = Gdk.Geometry()
-        # geometry.min_width = 800
-        # geometry.min_height = 600
-        # hints = Gdk.WindowHints(Gdk.WindowHints.POS | Gdk.WindowHints.MIN_SIZE)
-
+        # geometry.min_width = 600
+        # geometry.min_height = 400
+        # hints = Gdk.WindowHints(Gdk.WindowHints.MIN_SIZE)
         # self.set_geometry_hints(self, geometry, hints)
+        self.set_size_request(600,400)
+        self.set_default_size(800,600)
+
         # self.set_position(Gtk.WindowPosition.CENTER)
 
         self.open_dlg = Gtk.FileChooserDialog(
@@ -228,10 +185,10 @@ class NeilFrame(Gtk.Window):
         self.playback_info: PlaybackInfo = components.get('neil.core.playback')    # type: ignore
         self.framepanel: FramePanel = components.get('neil.core.framepanel')       # type: ignore
 
-        hbox = Gtk.HBox()
+        hbox = Gtk.HBox(expand=True)
         hbox.pack_start(self.framepanel, True, True, 0)
         # hbox.pack_end(self.master, False, True, 0)
-        vbox.add(hbox)
+        vbox.pack_start(hbox, True, True, 0)
 
         vbox.pack_end(self.statusbar, False, True, 0)
         self.statusbar.set_size_request(1, 60)
@@ -900,4 +857,40 @@ class NeilFrame(Gtk.Window):
             return True
 
 
+
+
+
+#~class NeilToolbar(Gtk.Toolbar):
+#~ __neil__ = dict(
+#~        id = 'neil.core.toolbar',
+#~        singleton = True,
+#~        categories = [
+#~                'view',
+#~        ],
+#~ )
+#~
+#~  __view__ = dict(
+#~                label = "Toolbar",
+#~                order = 0,
+#~                toggle = True,
+#~  )
+
+# class NeilStatusbar(Gtk.Statusbar):
+#   __neil__ = dict(
+#           id = 'neil.core.statusbar',
+#           singleton = True,
+#           categories = [
+#                   'view',
+#           ],
+#   )
+
+#   __view__ = dict(
+#                   label = "Statusbar",
+#                   order = 0,
+#                   toggle = True,
+#   )
+
+#   def __init__(self):
+#     GObject.GObject.__init__(self)
+#     self.push(0, "Ready to rok again")
 

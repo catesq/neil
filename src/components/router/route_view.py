@@ -68,8 +68,15 @@ class RouteView(Gtk.DrawingArea):
         self.connecting         = False                 # is a connection being drawn
         self.connecting_alt     = False                 # is the connection audio(not alt) or cv (is alt)
 
-        self.last_drop_ts = 0  # there was a multiple drop bug in drag/drop, ignore several milliseconds
-        self.set_size_request(100,100)
+        self.need_drag_update   = False                 # on some systems drag/drop of plugins is very jumpy
+
+        self.last_drop_ts       = 0  # there was a multiple drop bug in drag/drop, ignore several milliseconds
+
+        
+        # need screen to be realised for reliable sizes
+        self.router_layer       = RouterLayer(router_sizes, self.colors)
+        self.locator            = self.router_layer.get_item_locator()
+
 
         # self.connect('drag-motion', self.on_drag_motion)
         self.connect('drag-data-received', self.on_drag_data_received)
@@ -85,8 +92,7 @@ class RouteView(Gtk.DrawingArea):
         self.connect('configure-event', self.on_configure_event)
         self.connect('realize', self.on_realized)
 
-        self.router_layer = RouterLayer(router_sizes, self.colors)
-        self.locator = self.router_layer.get_item_locator()
+
 
         self.connect('button-press-event', self.on_click)
         self.connect('button-release-event', self.on_release)
@@ -95,7 +101,6 @@ class RouteView(Gtk.DrawingArea):
 
         if config.get_config().get_led_draw() == True: # pyright: ignore[reportAttributeAccessIssue]
             self.set_overlay_timer()
-
         
         self.recreate_ui_objects()
         self.update_color_scheme()
@@ -131,7 +136,7 @@ class RouteView(Gtk.DrawingArea):
 
     def update_area(self):
         area = self.get_allocation()
-        
+        print("router area", area.width, area.height)
         if self.area != area:
             self.area.size.set(area.width, area.height)
             self.router_layer.set_size(Vec2(area.width, area.height))
@@ -428,11 +433,15 @@ class RouteView(Gtk.DrawingArea):
             screen_pos = self.router_layer.to_screen_pos(pinfo.dragpos)
             pinfo.dragoffset = screen_pos - event
 
-        # self.adjust_draw_led_timer(100)
-        
+        self.drag_pointer = self.get_drag_pointer()
         self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.FLEUR)) # type: ignore reportOptionalMemberAccess
         self.grab_add()
         self.set_overlay_timer(10)
+
+    def get_drag_pointer(self):
+        display = Gdk.Display.get_default()
+        seat = display.get_default_seat()   #type: ignore reportOptionalMemberAccess
+        return seat.get_pointer()         #type: ignore reportOptionalMemberAccess
 
 
     def drag_update(self, x, y, state):
@@ -616,7 +625,7 @@ class RouteView(Gtk.DrawingArea):
         """
         Some on-motion handlers were laggy for unknown reasons so forcing an update here
         """
-        if self.dragging:
+        if self.dragging and self.need_drag_update:
             self.force_drag_update()
             return True
         
@@ -644,12 +653,11 @@ class RouteView(Gtk.DrawingArea):
     # dragging plugins was very jumpy, 
     # have to get set a timer and get the pointer position to simulate a motion event
     def force_drag_update(self):
-        display = Gdk.Display.get_default()
-        seat = display.get_default_seat()   #type: ignore reportOptionalMemberAccess
-        device = seat.get_pointer()         #type: ignore reportOptionalMemberAccess
+        if not self.drag_pointer:
+            return
 
         pos = self.get_window().get_device_position(device) #type: ignore reportOptionalMemberAccess
-        print("route_view.force_drag_update:", pos)
+
         # self.drag_update(pos.x, pos.y, pos.mask)
 
         # self.translate_coordinates(parent, position[0], position[1], self.dragoffset)
@@ -1329,7 +1337,6 @@ class RouteView(Gtk.DrawingArea):
     #                     px, py = self.float_to_pixel(pinfo.dragpos)
     #                     pinfo.dragoffset = (px - mx, py - my)
 
-    #                 # self.adjust_draw_led_timer(100)
     #                 self.dragging = True
     #                 self.get_window().set_cursor(Gdk.Cursor.new(Gdk.CursorType.FLEUR))
     #                 self.grab_add()

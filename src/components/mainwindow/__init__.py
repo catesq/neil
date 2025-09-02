@@ -1,5 +1,7 @@
 
-from .frame import NeilFrame, Accelerators, FramePanel
+from .mainwindow import NeilFrame
+from .helpers import Accelerators
+from .framepanel import FramePanel
 from .view_menu import ViewMenu
 from .statusbar import StatusBar
 

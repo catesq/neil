@@ -884,10 +884,10 @@ class NeilConfig(configparser.ConfigParser):
         if isinstance(window, Gtk.Window):
             x, y = window.get_position()
             w, h = window.get_size()
-            self.write_value("X", str(x))
-            self.write_value("Y", str(y))
-            self.write_value("W", str(w))
-            self.write_value("H", str(h))
+            self.write_value("x", str(x))
+            self.write_value("y", str(y))
+            self.write_value("w", str(w))
+            self.write_value("h", str(h))
             if hasattr(window, 'IsMaximized'):
                 if window.IsMaximized():
                     maximize = 'true'
@@ -916,14 +916,15 @@ class NeilConfig(configparser.ConfigParser):
         self.set_section('Layout/' + windowid)
         if isinstance(window, Gtk.Window):
             try:
-                x = int(self.read_value('X'))
-                y = int(self.read_value('Y'))
-                w = int(self.read_value('W'))
-                h = int(self.read_value('H'))
+                x = int(self.read_value('x'))
+                y = int(self.read_value('y'))
+                w = int(self.read_value('w'))
+                h = int(self.read_value('h'))
             except TypeError:
                 return
             except ValueError:
                 return
+            print("resize to ", w, h)
             window.move(x, y)
             window.resize(w, h)
             # ~ if hasattr(window, 'IsMaximized'):

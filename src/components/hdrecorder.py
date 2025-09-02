@@ -21,7 +21,7 @@ Provides dialog class for hd recorder control.
 """
 
 import gi
-gi.require_version("Gtk", "3")
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib
 
 import os, stat

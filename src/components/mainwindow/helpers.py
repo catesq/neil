@@ -3,13 +3,21 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
+
+def is_panel(view):
+    return hasattr(view, '__is_panel__') and view.__is_panel__
+    # return 'neil.viewpanel' in view.__neil__.get('categories',[])
+
+
+def set_is_panel(view, is_panel=True):
+    view.__is_panel__ = bool(is_panel)
+
+
 # used to compare the neil objects which contains a __view__ dict, sorts them for the view menu
 def cmp_view(a, b):
     a_order = (hasattr(a, '__view__') and a.__view__.get('order',0)) or 0
     b_order = (hasattr(b, '__view__') and b.__view__.get('order',0)) or 0
     return a_order <= b_order
-
-
 
 
 class Accelerators(Gtk.AccelGroup):

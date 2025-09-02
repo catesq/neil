@@ -4,13 +4,15 @@ from gi.repository import Gtk, Gdk, GLib
 
 from functools import cmp_to_key
 
-from neil import components
+from neil import components, views
 
 import config
 
 from neil.utils import ui 
 
-from .cmp import cmp_view
+from .helpers import cmp_view, is_panel
+
+
 
 # auto populates the view menu
 # find any components with a "__neil__" property which have the category "view". Example in "src/components/patterns/panel.py"
@@ -28,9 +30,8 @@ class ViewMenu(ui.EasyMenu):
             view.hide()
 
     def on_activate_item(self, menuitem, view):
-        if 'neil.viewpanel' in view.__neil__.get('categories',[]):
-            framepanel = components.get('neil.core.framepanel')             # mainwindow/frame.py
-            framepanel.select_viewpanel(view)
+        if is_panel(view):
+            views.get_panels().select_viewpanel(view)            # mainwindow/frame.py
         else:
             view.hide()
 
