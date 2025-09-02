@@ -261,12 +261,20 @@ class ViewComponentManager:
     def __init__(self, components: ComponentManager):
         self.components = components
 
+
+    # parent is only necessary when the router is created in components.router.RoutePanel.__init__() 
+    def get_router(self, parent: Optional[Gtk.Widget] = None) -> RouteView:
+        return self.components.get('neil.core.router.view', parent) # pyright: ignore[reportReturnType]
+
+
     def get_statusbar(self) -> StatusBar:
         return self.components.get('neil.core.statusbar') # pyright: ignore[reportReturnType]
+
 
     def get_contextmenu(self, menu_name, *args, prefix='neil.core.contextmenu') -> ui.EasyMenu:
         return self.components.get(prefix + '.' + menu_name, *args) # pyright: ignore[reportReturnType]
     
+
     def get_view(self, view_name, prefix='neil.core', *args) -> Gtk.Widget:
         if not self.components.has_factory(view_name):
             view_name = prefix + '.' + view_name
@@ -283,7 +291,7 @@ class ViewComponentManager:
         return component # pyright: ignore[reportReturnType]
         
 
-    def get_dialog(self, dialog_name, *args) -> 'Gtk.Widget':
+    def get_dialog(self, dialog_name, *args) -> Gtk.Widget:
         close_matches = []
         
         for id in self.components.get_ids_from_category('viewdialog'):
@@ -305,11 +313,6 @@ class ViewComponentManager:
     def get_closest_match(self, close_matches):
         close_matches.sort(key=lambda id: self.components.get_factory_priority(id))
         return close_matches[0]
-    
-
-    # parent is only necessary when the router is created in components.router.RoutePanel.__init__() 
-    def get_router(self, parent: Optional[Gtk.Widget] = None) -> 'RouteView':
-        return self.components.get('neil.core.router.view', parent) # pyright: ignore[reportReturnType]
 
 
 
