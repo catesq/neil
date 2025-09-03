@@ -4,6 +4,7 @@ from typing import Dict, List, TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from components.mainwindow.statusbar import StatusBar
     from components.mainwindow.framepanel import FramePanel
+    from components.mainwindow.helpers import Accelerators
     from components.router import RouteView
     from components.player import NeilPlayer
     from components.config import NeilConfig
@@ -239,6 +240,10 @@ class ComponentManager():
         return self.get('neil.core.options')       # pyright: ignore[reportReturnType]
     
 
+    def get_accelerators(self) -> Accelerators:
+        return self.get('neil.core.accelerators') # pyright: ignore[reportReturnType]
+
+
     def get_categories(self) -> Dict[str, List[str]]:
         return self.categories
 
@@ -262,6 +267,7 @@ class ViewComponentManager:
     def __init__(self, components: ComponentManager):
         self.components = components
 
+
     def get_panels(self) -> FramePanel:
         return self.components.get('neil.core.framepanel')    # pyright: ignore[reportReturnType]
 
@@ -269,6 +275,7 @@ class ViewComponentManager:
     # parent is only necessary when the router is created in components.router.RoutePanel.__init__() 
     def get_router(self, parent: Optional[Gtk.Widget] = None) -> RouteView:
         return self.components.get('neil.core.router.view', parent) # pyright: ignore[reportReturnType]
+
 
 
     def get_statusbar(self) -> StatusBar:

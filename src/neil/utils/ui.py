@@ -3,6 +3,8 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject
 
+from typing import cast
+
 from neil import components
 import weakref
 import types
@@ -190,11 +192,13 @@ class ImageToggleButton(Gtk.ToggleButton):
     GTK ToggleButton with Image
     """
     def __init__(self, path, tooltip=None, width=20, height=20):
-        self.image = Gtk.Image()
-        self.image.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size(path, width, height))
-        GObject.GObject.__init__(self)
+        Gtk.ToggleButton.__init__(self)
+
         if tooltip:
             self.set_tooltip_text(tooltip)
+
+        self.image = Gtk.Image()
+        self.image.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size(path, width, height))
         self.set_image(self.image)
 
 
@@ -224,7 +228,9 @@ class MenuWrapper:
 
 
     def add_separator(self) -> Gtk.SeparatorMenuItem:
-        self.append(Gtk.SeparatorMenuItem())
+        sep = Gtk.SeparatorMenuItem()
+        self.append(sep)
+        return sep
 
     
     def add_check_item(self, label, toggled, func, *args) -> Gtk.CheckMenuItem:
@@ -238,11 +244,15 @@ class MenuWrapper:
     def add_image_item(self, label, icon_or_path, func, *args) -> Gtk.ImageMenuItem:
         # print("imagemenu.new_from_stock deprecated", label)
         item = Gtk.ImageMenuItem.new_from_stock(stock_id=label)
+
         if isinstance(icon_or_path, str):
             image = Gtk.Image()
             image.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file(icon_or_path))
         elif isinstance(icon_or_path, Gtk.Image):
             image = icon_or_path
+        else:
+            image = Gtk.Image()
+        
         item.set_image(image)
         item.connect('activate', func, *args)
         self.append(item)
@@ -252,14 +262,15 @@ class MenuWrapper:
     def add_stock_image_item(self, stockid, func, frame=None, shortcut=None, *args):
         item = Gtk.ImageMenuItem.new_from_stock(stockid, None)
         if frame and shortcut:
-            acc = components.get('neil.core.accelerators')
+            acc = components.get_accelerators()
             acc.add_accelerator(shortcut, item)
         if func:
             item.connect('activate', func, *args)
         self.append(item)
         return item
 
-
+    def append(self, child: Gtk.MenuItem):
+        pass
 
 
 
@@ -285,18 +296,19 @@ class EasyMenu(Gtk.Menu, MenuWrapper):
 
 
 # the get_submenu() method of Gtk.MenuItem returns a Gtk.Menu
-# so use this to get the EasyMenu methods 
+# so monkeypatch the EasyMenu methods 
 def easy_menu_wrapper(menu: Gtk.Menu) -> EasyMenu:
     for name in dir(MenuWrapper):
         if name.startswith('add'):
             func = getattr(MenuWrapper, name)
             setattr(menu, name, types.MethodType(func, menu))
-    return menu
+
+    return cast(EasyMenu, menu)
 
 
 
 def wave_names_generator():
-    player = components.get('neil.core.player')
+    player = components.get_player()
     for i in range(player.get_wave_count()):
         w = player.get_wave(i)
         name = "%02X. %s" % ((i + 1), prepstr(w.get_name()))

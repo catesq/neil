@@ -23,3 +23,5 @@ from .utils import sizes
 components = ComponentManager()
 
 views = ViewComponentManager(components)
+
+__all__ = ['components', 'views', 'sizes']

@@ -73,9 +73,10 @@ class AboutDialog(Gtk.AboutDialog):
 
     __neil__ = dict(
         id = "neil.core.dialog.about",
+        categories = ["viewdialog"]
     )
 
-    def __init__(self, parent):
+    def __init__(self):
         """
         Initialization.
         """
@@ -111,4 +112,4 @@ __all__ = [
 ]
 
 if __name__ == '__main__':
-    AboutDialog(None).run()
+    AboutDialog().run()

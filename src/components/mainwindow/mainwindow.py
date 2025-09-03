@@ -32,7 +32,7 @@ from neil.utils import (
 
 
 from neil import errordlg, common
-from neil import components
+from neil import views, components
 
 import config
 import zzub
@@ -314,6 +314,7 @@ class NeilFrame(Gtk.Window):
         components.get_from_category('menuitem.tool', toolsmenu)
                 
         menubar.add_submenu("_Help", self.populate_help_menu())
+        
         return menubar
     
 
@@ -321,11 +322,7 @@ class NeilFrame(Gtk.Window):
         menu = ui.EasyMenu()
 
         menu.add_stock_image_item(Gtk.STOCK_HELP, self.on_help_contents)
-        menu.add_item('Ask on IRC', self.on_irc)
-        menu.add_separator()
-        menu.add_item('Report a Bug', self.on_bug_report)
-        menu.add_separator()
-        menu.add_item('Donate', self.on_donate)
+
         menu.add_separator()
         menu.add_stock_image_item(Gtk.STOCK_ABOUT, self.on_about)
 
@@ -492,7 +489,7 @@ class NeilFrame(Gtk.Window):
         @param event: menu event.
         @type event: MenuEvent
         """
-        components.get('neil.core.dialog.about', self).show()
+        views.get_dialog('about').show()
 
     def on_preferences(self, *args):
         """
@@ -508,7 +505,7 @@ class NeilFrame(Gtk.Window):
         Event handler for key events.
         """
         k = Gdk.keyval_name(event.keyval)
-        player = components.get('neil.core.player')
+        player = components.get_player()
         if k == 'F6':
             self.play_from_cursor(event)
         elif k == 'F5':
