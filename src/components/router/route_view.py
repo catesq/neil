@@ -226,6 +226,7 @@ class RouteView(Gtk.DrawingArea):
         metaplugin = player.create_plugin(pluginloader, connection=conn, plugin=plugin)
         
         self.router_layer.add_plugin_item(metaplugin)
+        self.redraw(True)
 
         Gtk.drag_finish(context, True, False, time)
         Gdk.drop_finish(context, True, time)
