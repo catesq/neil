@@ -72,7 +72,7 @@ class RouteView(Gtk.DrawingArea):
 
         self.last_drop_ts       = 0  # there was a multiple drop bug in drag/drop, ignore several milliseconds
 
-        
+
         # need screen to be realised for reliable sizes
         self.router_layer       = RouterLayer(router_sizes, self.colors)
         self.locator            = self.router_layer.get_item_locator()

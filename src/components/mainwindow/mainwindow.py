@@ -251,28 +251,27 @@ class NeilFrame(Gtk.Window):
         player.set_callback_state(False)
         player.undo()
         player.set_callback_state(True)
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.document_loaded()
+        eventbus = components.get_eventbus()
+        eventbus.call('document_loaded')
         #self.print_history()
 
     def on_redo(self, *args):
         """
         Called when an undo item is being called.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.set_callback_state(False)
         player.redo()
         player.set_callback_state(True)
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.document_loaded()
+        eventbus = components.get_eventbus()
+        eventbus.call('document_loaded')
         #self.print_history()
-
 
     def print_history(self):
         """
         Dumps the current undo history to console.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         pos = player.history_get_position()
         historysize = player.history_get_size()
         if not historysize:
@@ -292,16 +291,14 @@ class NeilFrame(Gtk.Window):
         """
         handler for can-activate-accel signal by Undo menuitem. Checks if undo can be executed.
         """
-        player = components.get('neil.core.player')
-        return player.can_undo()
+        return components.get_player().can_undo()
 
 
     def can_activate_redo(self, *args):
         """
         handler for can-activate-accel signal by Redo menuitem. Checks if redo can be executed.
         """
-        player = components.get('neil.core.player')
-        return player.can_redo()
+        return components.get_player().can_redo()
 
 
     def populate_menubar(self, menubar):
@@ -345,7 +342,7 @@ class NeilFrame(Gtk.Window):
         for item in editmenu:
             item.destroy()
             
-        player = components.get('neil.core.player')
+        player = components.get_player()
 
         pos = player.history_get_position()
         self.print_history()
@@ -487,18 +484,6 @@ class NeilFrame(Gtk.Window):
         @type event: MenuEvent
         """
         show_manual()
-
-    def on_irc(self, *args):
-        import webbrowser
-        webbrowser.open("http://webchat.freenode.net/?channels=neil-tracker&uio=d4")
-
-    def on_bug_report(self, *args):
-        import webbrowser
-        webbrowser.open("https://bitbucket.org/bucket_brigade/neil/issues/new")
-
-    def on_donate(self, *args):
-        import webbrowser
-        webbrowser.open("https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=TCNUSE2A74ZSG&lc=LT&item_name=Neil%20Modular%20Tracker&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted")
 
     def on_about(self, *args):
         """

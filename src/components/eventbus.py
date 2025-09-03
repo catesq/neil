@@ -103,6 +103,7 @@ class EventHandlerList:
             handlers = []
         self.handlers = handlers
 
+
     def make_func_def_args(self, funcargs):
         func = None
         args = ()
@@ -119,6 +120,7 @@ class EventHandlerList:
 
         return func, args
     
+
     def make_ref_funcname(self, func):
         ref = None
         funcname = None
@@ -131,6 +133,7 @@ class EventHandlerList:
 
         return ref, funcname
     
+
     def define_handler(self, funcargs):
         func, args = self.make_func_def_args(funcargs)
         ref, funcname = self.make_ref_funcname(func)
@@ -146,8 +149,6 @@ class EventHandlerList:
         # handler.handlers.append((ref,funcname,args))
 
         return self
-
-
 
 
     def __sub__(self, funcargs):
@@ -184,8 +185,10 @@ class EventHandlerList:
                 sys.excepthook(*sys.exc_info())
         return result
 
+
     def __iter__(self):
         return iter(self.handlers)
+
 
     def print_mapping(self):
         self.filter_dead_references()
@@ -206,6 +209,7 @@ class EventHandlerList:
 class EventBus:
     __readonly__ = False
 
+
     def __init__(self):
         self.handlers = []
         for name in self.names:  # type: ignore
@@ -213,6 +217,7 @@ class EventBus:
             self.handlers.append(attrname)
             setattr(self, attrname, EventHandlerList(name))
         self.__readonly__ = True
+
 
     def __setattr__(self, name, value):
         if name.startswith('__'):
@@ -223,16 +228,19 @@ class EventBus:
             raise Exception("did you mean +=?")
         self.__dict__[name] = value
 
+
     def print_mapping(self):
         for idstr in sorted(self.handlers):
             handlerlist = getattr(self, idstr)
             handlerlist.print_mapping()
+
 
     def get_handler_list(self, event_name) -> EventHandlerList | None:
         if not event_name.startswith('zzub_') and not hasattr(self, event_name):
             event_name  = 'zzub_' + event_name
 
         return getattr(self, event_name)
+
 
     # call __add__ in EventhandlerList
     def add_handler(self, event_name: str, *funcargs):
@@ -241,12 +249,21 @@ class EventBus:
         if handler_list:
             handler_list.__add__(funcargs)
 
+
     # call __sub__ in EventhandlerList
     def remove_handler(self, event_name: str, *funcargs):
         handler_list = self.get_handler_list(event_name)
 
         if handler_list:
             handler_list.__sub__(funcargs)
+
+
+    def call(self, event_name, *args):
+        handler_list = self.get_handler_list(event_name)
+
+        if handler_list:
+            handler_list.__call__(*args)
+
 
 
 class NeilEventBus(EventBus):
