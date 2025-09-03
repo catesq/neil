@@ -28,7 +28,7 @@ class NamedComponentLoader():
             if os.path.isdir(path):
                 for filename in self.get_component_files(path):
                     pkg = parser.parse_package(filename)
-                    if pkg.is_valid():
+                    if pkg and pkg.is_valid():
                         packages.append(pkg)
 
                 if not path in sys.path:

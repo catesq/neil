@@ -6,7 +6,7 @@ from .toolbar import PatternToolBar
 from .views import PatternView
 from .patternstatus import PatternStatus
 
-from neil import components
+from neil import components, views
 
 class PatternPanel(Gtk.VBox):
     """
@@ -42,28 +42,34 @@ class PatternPanel(Gtk.VBox):
         self.viewport.add(self.view)
         self.toolbar = PatternToolBar(self.view)
         self.pack_start(self.toolbar, False, True, 0)
-        scrollwin = Gtk.Table(2, 2)
-        scrollwin.attach(self.viewport, 0, 1, 0, 1, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND)
-        scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL)
-        scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, 0)
+        scrollwin = Gtk.Table(n_columns=2, n_rows=2)
+
+        # scrollwin.attach(self.viewport, 0, 1, 0, 1, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 0, 0)
+        # scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL, 0, 0)
+        # scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, None, 0, 0)
+
+        scrollwin.attach(self.viewport, 0, 1, 0, 1, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 0, 0)
+        scrollwin.attach(vscroll,       1, 2, 0, 1, Gtk.AttachOptions.EXPAND,                          Gtk.AttachOptions.FILL,                            0, 0)
+        scrollwin.attach(hscroll,       0, 1, 1, 2, Gtk.AttachOptions.FILL,                            Gtk.AttachOptions.EXPAND,                          0, 0)
+
         self.pack_start(scrollwin, True, True, 0)
 
         self.view.grab_focus()
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.edit_pattern_request += self.on_edit_pattern_request
+        eventbus = components.get_eventbus()
+        eventbus.attach('edit_pattern_request', self.on_edit_pattern_request)
 
     def on_edit_pattern_request(self, plugin, index):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.active_plugins = [plugin]
         player.active_patterns = [(plugin, index)]
-        framepanel = components.get('neil.core.framepanel')
+        framepanel = views.get_panels()
         framepanel.select_viewpanel(self)
 
     # def has_focus(self):
     #     return self.is_focused
     
     def handle_focus(self):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         # check if active patterns match the pattern view settings
         if not (self.view.plugin, self.view.pattern) in player.active_patterns:
             # if player.active_plugins:
@@ -90,6 +96,6 @@ class PatternPanel(Gtk.VBox):
         self.toolbar.remove_focus()
 
     def update_all(self):
-        if self.self.is_focused:
+        if self.is_focused:
             self.view.update_font()
             self.view.redraw()

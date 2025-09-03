@@ -38,10 +38,12 @@ class MidiDriver:
 
     class MidiInitException(Exception):
         pass
+
     def __init__(self):
         self.enabled = False
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.shutdown += self.destroy
+        eventbus = components.get_eventbus()
+        eventbus.attach('shutdown', self.destroy)
+        
         self.init_failed = False
         try:
             self.init()

@@ -29,7 +29,7 @@ class ParameterDialog(Gtk.Dialog):
         self.connect('destroy', self.on_destroy)
         self.connect('realize', self.on_realize)
         eventbus = components.get_eventbus()
-        eventbus.add_handler('delete_plugin', self.on_zzub_delete_plugin)
+        eventbus.attach('delete_plugin', self.on_zzub_delete_plugin)
 
 
     def on_realize(self, widget):

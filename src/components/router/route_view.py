@@ -127,11 +127,11 @@ class RouteView(Gtk.DrawingArea):
         
     def register_eventbus(self):
         eventbus = components.get_eventbus()
-        eventbus.add_handler('connect', self.on_zzub_redraw_event)
-        eventbus.add_handler('disconnect', self.on_zzub_redraw_event)
-        eventbus.add_handler('plugin_changed', self.on_zzub_plugin_changed)
-        eventbus.add_handler('document_loaded', self.on_document_loaded)
-        eventbus.add_handler('active_plugins_changed', self.on_active_plugins_changed)
+        eventbus.attach('connect', self.on_zzub_redraw_event)
+        eventbus.attach('disconnect', self.on_zzub_redraw_event)
+        eventbus.attach('plugin_changed', self.on_zzub_plugin_changed)
+        eventbus.attach('document_loaded', self.on_document_loaded)
+        eventbus.attach('active_plugins_changed', self.on_active_plugins_changed)
 
 
     def update_area(self):

@@ -74,6 +74,7 @@ if __name__ == '__main__':
     from neil import components
     
     components.register(pkginfo)
+    
     print(components.get('neil.hub.myclass').x)
     print(components.get('neil.hub.myclass').x)
     print(components.get('neil.hub.myclass').x)

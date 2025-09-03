@@ -231,7 +231,7 @@ class NeilFrame(Gtk.Window):
         self.load_view()
 
         eventbus = components.get_eventbus()
-        eventbus.add_handler('document_path_changed', self.on_document_path_changed)
+        eventbus.attach('document_path_changed', self.on_document_path_changed)
         eventbus.print_mapping()
         options, args = components.get_options().get_options_args()
         if len(args) > 1:
@@ -239,8 +239,11 @@ class NeilFrame(Gtk.Window):
         
         driver: AudioDriver | MidiDriver
         for driver in components.get_from_category('driver'): #type: ignore
+            print(driver.__class__.__name__)
             if driver.init_failed:
-                GLib.timeout_add(50, show_preferences, self, 1)
+                print(driver.__class__.__name__)
+
+                GLib.timeout_add(50, lambda parent: show_preferences(parent) and False, self)
                 break
 
     def on_undo(self, *args):

@@ -243,7 +243,7 @@ class EventBus:
 
 
     # call __add__ in EventhandlerList
-    def add_handler(self, event_name: str, *funcargs):
+    def attach(self, event_name: str, *funcargs):
         handler_list = self.get_handler_list(event_name)
 
         if handler_list:
@@ -251,7 +251,7 @@ class EventBus:
 
 
     # call __sub__ in EventhandlerList
-    def remove_handler(self, event_name: str, *funcargs):
+    def detach(self, event_name: str, *funcargs):
         handler_list = self.get_handler_list(event_name)
 
         if handler_list:

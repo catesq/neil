@@ -14,12 +14,12 @@ class eventbus_handler:
         self.events = events
 
     def remove(self, eventbus):
-        for event in self.events:
-            getattr(eventbus, event).remove_handler(self.func)
+        for event_name in self.events:
+            eventbus.detach(event_name, self.func)
 
     def register(self, eventbus):
         for event_name in self.events:
-            getattr(eventbus, event_name).add_handler(self.func)
+            eventbus.attach(event_name, self.func)
 
     def get_func(self):
         return self.func
@@ -57,10 +57,10 @@ class PatternToolBar(Gtk.HBox):
         """
         Initialization.
         """
-        player = components.get('neil.core.player')
-        Gtk.HBox.__init__(self, False, sizes.get('margin'))
+        player = components.get_player()
+        Gtk.HBox.__init__(self, expand=False, margin=sizes.get('margin'))
         
-        self.has_focus = False
+        # self.has_focus = False
 
         self.pattern_view = pattern_view
         self.set_border_width(sizes.get('margin'))
@@ -148,8 +148,8 @@ class PatternToolBar(Gtk.HBox):
         return None
 
     def handle_focus(self):
-        if not self.has_focus:
-            self.has_focus = True
+        if not self.has_focus():
+            self.grab_focus()
             self.register_events()
 
     def register_events(self):
@@ -194,8 +194,7 @@ class PatternToolBar(Gtk.HBox):
         
 
     def remove_focus(self):
-        if self.has_focus:
-            self.has_focus = False
+        if self.has_focus():
             self.remove_events()
 
         # for prop in ['pluginselect_handler', 'patternselect_handler', 'waveselect_handler', 'octaveselect_handler', 'edit_step_handler', 'playnotes_handler', 'btnhelp_handler']:
@@ -247,16 +246,18 @@ class PatternToolBar(Gtk.HBox):
             info.destroy()
 
     def pluginselect_update(self, *args):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         pluginselect_handler = self.signal_handler_func_for(self.pluginselect)
 
         self.pluginselect.handler_block_by_func(pluginselect_handler)
         plugins = self.get_plugin_source()
         active = -1
+        
         if player.active_plugins != []:
             for plugin, i in zip(plugins, range(len(plugins))):
                 if plugin[1] == player.active_plugins[0]:
                     active = i
+
         model = self.pluginselect.get_model()
         model.clear()
 

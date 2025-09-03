@@ -207,8 +207,8 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self.document_unchanged()
         #self.spinbox_edit = False
         eventbus = components.get_eventbus()
-        eventbus.add_handler('pre_delete_plugin', self.on_pre_delete_plugin) 
-        eventbus.add_handler('pre_delete_pattern', self.on_pre_delete_pattern)
+        eventbus.attach('pre_delete_plugin', self.on_pre_delete_plugin) 
+        eventbus.attach('pre_delete_pattern', self.on_pre_delete_pattern)
 
         self._callback = zzub.zzub_callback_t(self.handle_event)
         self.set_callback(self._callback, None)
@@ -395,29 +395,29 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
 
 
 
-    def load_ccm(self, filename):
+    def load_ccm(self, fileName):
         self.clear()
         self.__loading = True
         self.set_callback_state(False)
-        res = zzub.Player.load_ccm(self, filename)
+        res = zzub.Player.load_ccm(self, fileName)
         self.set_callback_state(True)
         self.__loading = False
         if not res:
-            self.document_path = filename
-            eventbus = components.get('neil.core.eventbus')
-            eventbus.document_loaded()
+            self.document_path = fileName
+            eventbus = components.get_eventbus()
+            eventbus.call('document_loaded')
         self.active_plugins = [self.get_plugin(0)]
         return res
 
 
-    def save_ccm(self, filename):
+    def save_ccm(self, fileName):
         self.delete_stream_player()
         self.delete_stream_recorder()
         self.flush(None, None)
         self.history_flush_last()
-        res = zzub.Player.save_ccm(self, filename)
+        res = zzub.Player.save_ccm(self, fileName)
         if not res:
-            self.document_path = filename
+            self.document_path = fileName
         return res
 
 

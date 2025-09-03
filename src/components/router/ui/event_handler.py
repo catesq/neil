@@ -38,11 +38,11 @@ class Handler:
         self.click_area: click_area.ClickArea = None
         self.not_handler: 'ActionHandler' = None
 
-    def matches(self, evt, context):
+    def matches(self, evt, context) -> bool:
         return True
     
     # if True then stop 
-    def handle(self, evt, context):
+    def handle(self, evt, context) -> bool:
         return False
     
     # 

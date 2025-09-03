@@ -69,7 +69,7 @@ def run(argv, initfunc = init_neil):
     options.parse_args(argv)
 
     eventbus = components.get_eventbus()
-    eventbus.add_handler('shutdown', shutdown)
+    eventbus.attach('shutdown', shutdown)
 
     # options = components.get('neil.core.options')
     app_options, _ = options.get_options_args()
