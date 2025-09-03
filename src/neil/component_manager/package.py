@@ -4,12 +4,12 @@ from configparser import ConfigParser
 # the package info
 class PackageInfo:
     def __init__(self):
-        self.module = None
-        self.name = None
-        self.description = None
-        self.icon = None
-        self.authors = None
-        self.website = None
+        self.module = ''
+        self.name = ''
+        self.description = ''
+        self.icon = ''
+        self.authors = ''
+        self.website = ''
 
     def is_valid(self):
         return self.module and self.name
@@ -23,7 +23,7 @@ class PackageInfo:
 class PackageParser(ConfigParser):
     section_name = 'Neil COM'
 
-    options = [
+    component_options = [
         'Module',
         'Name',
         'Description',
@@ -43,7 +43,7 @@ class PackageParser(ConfigParser):
             print("missing section " + self.section_name + " in " + filename)
             return None
         
-        for option in self.options:
+        for option in self.component_options:
             if self.has_option(self.section_name, option):
                 setattr(package, option.lower(), self.get(self.section_name, option))
             else:

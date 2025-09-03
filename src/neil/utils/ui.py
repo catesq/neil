@@ -10,6 +10,7 @@ import weakref
 import types
 from .textify import prepstr
 import ctypes
+import time
 
 from . import colors 
 from .colors import *
@@ -395,31 +396,40 @@ def run_function_with_progress(parent, msg, allow_cancel, func, *args):
         buttons = (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
     else:
         buttons = None
-    dialog = Gtk.Dialog('',
-                        parent and parent.get_toplevel(),
-                        Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                        buttons
-                    )
+
+    dialog = Gtk.Dialog(
+        title='',
+        transient_for=parent and parent.get_toplevel(),
+        destroy_with_parent = True
+    )
+
+    dialog.add_buttons(buttons)
+
     label = Gtk.Label()
     label.set_markup(msg)
     label.set_alignment(0,0.5)
+
     progress = Gtk.ProgressBar()
-    vbox = Gtk.VBox(False, 6)
+    vbox = Gtk.VBox(expand=False, spacing=6)
     vbox.set_border_width(6)
     vbox.pack_start(label, True, True, 0)
     vbox.pack_start(progress, True, True, 0)
-    dialog._label = label
-    dialog._progress = progress
-    dialog.markup = msg
-    dialog._response = None
-    dialog.fraction = 0.0
-    dialog.get_content_area().add(vbox, True, True, 0)
+
+    dialog._label = label         # pyright: ignore[reportAttributeAccessIssue]
+    dialog._progress = progress   # pyright: ignore[reportAttributeAccessIssue]
+    dialog.markup = msg           # pyright: ignore[reportAttributeAccessIssue]
+    dialog._response = None       # pyright: ignore[reportAttributeAccessIssue]
+    dialog.fraction = 0.0         # pyright: ignore[reportAttributeAccessIssue]
+    
+    dialog.get_content_area().add(vbox)
     dialog.show_all()
+
     def update_progress(dlg):
         dlg._progress.set_fraction(dlg.fraction)
         dlg._label.set_markup(dlg.markup)
         time.sleep(0.01)
         return True
+
     def on_response(dialog, response):
         dialog._response = response
     dialog.connect('response', on_response)
