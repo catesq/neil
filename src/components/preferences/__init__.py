@@ -32,17 +32,7 @@ from .midi_panel import MidiPanel
 from .keyboard_panel import KeyboardPanel
 
 
-class CancelException(Exception):
-    """
-    Is being thrown when the user hits cancel in a sequence of
-    modal UI dialogs.
-    """
-    __neil__ = dict(
-        id = 'neil.exception.cancel',
-        exception = True,
-        categories = [
-        ]
-    )
+
 
 
 def show_preferences(parent, *args):
@@ -59,7 +49,6 @@ def show_preferences(parent, *args):
 
 __neil__ = dict(
     classes = [
-        CancelException,
         GeneralPanel,
         DriverPanel,
         ControllerPanel,
@@ -71,7 +60,6 @@ __neil__ = dict(
 
 
 __all__ = [
-    'CancelException',
     'GeneralPanel',
     'DriverPanel',
     'ControllerPanel',

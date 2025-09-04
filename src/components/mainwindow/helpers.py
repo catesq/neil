@@ -36,3 +36,24 @@ class Accelerators(Gtk.AccelGroup):
     def add_accelerator(self, shortcut, widget, signal="activate"):
         key, modifier = Gtk.accelerator_parse(shortcut)
         return widget.add_accelerator(signal, self,  key,  modifier, Gtk.AccelFlags.VISIBLE)
+
+class CancelException(Exception):
+    """
+    Is being thrown when the user hits cancel in a sequence of
+    modal UI dialogs.
+    """
+    __neil__ = dict(
+        id = 'neil.exception.cancel',
+        exception = True,
+        categories = [
+        ]
+    )
+
+class NeilException(Exception):
+    """
+    All purpose exception
+    """
+    __neil__ = dict(
+        id = 'neil.core.error',
+        exception = True
+    )

@@ -287,9 +287,15 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self.flush(None, None)
         self.history_flush_last()
 
-    def get_stream_recorder(self):
+
+    def get_stream_recorder(self) -> zzub.Plugin:
         self.create_stream_recorder()
+
+        if self.__streamrecorder is None:
+            components.throw('core.error', 'Stream recorder not created')
+            
         return self.__streamrecorder
+    
 
     def create_stream_player(self, uri):
         # create a stream player plugin and keep it out of the undo buffer

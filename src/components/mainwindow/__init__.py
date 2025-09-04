@@ -1,6 +1,5 @@
 
 from .mainwindow import NeilFrame
-from .helpers import Accelerators
 from .framepanel import FramePanel
 from .view_menu import ViewMenu
 from .statusbar import StatusBar
@@ -11,6 +10,8 @@ __all__ = [
     'ViewMenu',
     'Accelerators',
     'NeilFrame',
+    'NeilException',
+    'CancelException'
 ]
 
 __neil__ = dict(
@@ -20,6 +21,8 @@ __neil__ = dict(
         Accelerators,
         NeilFrame,
         StatusBar,
+        NeilException,
+        CancelException
     ],
 )
 

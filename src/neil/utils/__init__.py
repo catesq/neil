@@ -226,11 +226,11 @@ def get_new_pattern_name(plugin):
             break
     return s
 
-class CancelException(Exception):
-    """
-    Is being thrown when the user hits cancel in a sequence of
-    modal UI dialogs.
-    """
+# class CancelException(Exception):
+#     """
+#     Is being thrown when the user hits cancel in a sequence of
+#     modal UI dialogs.
+#     """
 
 
 def camelcase_to_unixstyle(s):
