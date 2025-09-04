@@ -319,6 +319,8 @@ class ComponentManager():
 
     def get_audio_driver(self) -> 'AudioDriver':
         return self.get('neil.core.driver.audio')  # pyright: ignore[reportReturnType]
+    def get_expressions(self) -> Expression:
+        return self.get('neil.core.expression')     # pyright: ignore[reportReturnType]
 
 
     def get_options(self) -> 'OptionParser':
