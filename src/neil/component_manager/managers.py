@@ -136,20 +136,7 @@ class ComponentManager():
                 self.add_category(category, factory_info.id)
 
 
-    def throw(self, id, arg: str):
-        # class_ = self.get_factory(id)
-        factory_id = self.get_closest_id_in_category(id, 'exception')
-
-        if factory_id is None:
-            raise Exception("No neil exception class found for id '%s':\n".format(id, arg)) 
-
-        factory = self.get_factory(factory_id) 
-
-        raise factory.create_instance(arg)  # pyright: ignore[reportOptionalMemberAccess]
-
-
     def exception(self, id):
-        # factory = self.get_factory(id)
         factory_id = self.get_closest_id_in_category(id, 'exception')
     
         if factory_id is None:
@@ -158,7 +145,8 @@ class ComponentManager():
         factory = self.get_factory(factory_id) 
 
         return factory.get_build_class() # pyright: ignore[reportOptionalMemberAccess]
-        
+
+
         
     def add_category(self, category_name, component_id):
         if not category_name in self.categories:
