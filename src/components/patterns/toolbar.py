@@ -1,12 +1,14 @@
+from __future__ import annotations
 
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
+from typing import cast
 from neil import components
 from neil.utils import ui, show_machine_manual, filenameify, sizes
 
-
+from .views import PatternView
 
 # class eventbus_handler:
 #     def __init__(self, func, events, *args, **kwargs):
@@ -53,7 +55,7 @@ class PatternToolBar(Gtk.HBox):
 
     Contains lists of the plugins, patterns, waves and octaves available.
     """
-    def __init__(self, pattern_view: Gtk.Widget):
+    def __init__(self, pattern_view: PatternView):
         """
         Initialization.
         """
@@ -199,16 +201,24 @@ class PatternToolBar(Gtk.HBox):
             
 
     def on_button_help(self, *args):
-        player = components.get('neil.core.player')
+        player = components.get_player()
 
         if len(player.active_plugins) < 1:
             return
         
         name = filenameify(player.active_plugins[0].get_pluginloader().get_name())
+
         if not show_machine_manual(name):
-            info = Gtk.MessageDialog(self.get_toplevel(), flags=0, type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, message_format="Sorry, there's no help for this plugin yet")
+            info = Gtk.MessageDialog(
+                transient_for=cast(Gtk.Window, self.get_toplevel()), 
+                message_type=Gtk.MessageType.INFO, 
+                text="Sorry, there's no help for this plugin yet",
+                buttons=Gtk.ButtonsType.OK
+            )
+
             info.run()
             info.destroy()
+
 
     def pluginselect_update(self, *args):
         player = components.get_player()
@@ -234,13 +244,15 @@ class PatternToolBar(Gtk.HBox):
 
         self.pluginselect.handler_unblock_by_func(pluginselect_handler)
 
+
     def octave_update(self, *args):
         """
         This function is called when the current octave for entering
         notes is changed somewhere.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         self.octaveselect.set_active(player.octave - 1)
+
 
     def waveselect_update(self, *args):
         """
@@ -249,11 +261,12 @@ class PatternToolBar(Gtk.HBox):
         """
         waveselect_handler = self.signal_handler_func_for('pluginselect')
         self.waveselect.handler_block_by_func(waveselect_handler)
-        player = components.get('neil.core.player')
+        player = components.get_player()
         sel = player.active_waves
         # active = self.waveselect.get_active()
         model = self.waveselect.get_model()
         model.clear()
+
         for i in range(player.get_wave_count()):
             w = player.get_wave(i)
             if w.get_level_count() >= 1:
@@ -266,7 +279,7 @@ class PatternToolBar(Gtk.HBox):
         self.waveselect.handler_unblock_by_func(waveselect_handler)
 
     def edit_step_changed(self, event):
-        step = int(self.edit_step_box.get_active_text())
+        step = int(self.edit_step_box.get_active_text() or 4)
         self.pattern_view.edit_step = step
         self.pattern_view.grab_focus()
 
@@ -275,13 +288,13 @@ class PatternToolBar(Gtk.HBox):
         self.pattern_view.grab_focus()
 
     def get_plugin_source(self):
-        player = components.get('neil.core.player')
+        player = components.get_player()
 
         plugins = sorted(list(player.get_plugin_list()), key=lambda plugin: str.lower(plugin.get_name()))
         return [(plugin.get_name(), plugin) for plugin in plugins]
 
     def get_plugin_sel(self):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         sel = player.active_plugins
         sel = (sel[0] if sel else None)
         return sel
@@ -291,7 +304,7 @@ class PatternToolBar(Gtk.HBox):
         plugins = self.get_plugin_source()
         sel = plugins[sel_index][1]
         if sel:
-            player = components.get('neil.core.player')
+            player = components.get_player()
             player.active_plugins = [sel]
             if sel.get_pattern_count() > 0:
                 player.active_patterns = [(sel, 0)]
@@ -300,7 +313,7 @@ class PatternToolBar(Gtk.HBox):
         self.pattern_view.grab_focus()
 
     def get_pattern_source(self, *args):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         plugin = self.get_plugin_sel()
         if not plugin:
             self.patternselect.get_model().clear()
@@ -323,12 +336,12 @@ class PatternToolBar(Gtk.HBox):
         self.patternselect.handler_unblock_by_func(patternselect_handler)
 
     def get_pattern_sel(self):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         sel = player.active_patterns
         return sel[0] if sel else None
 
     def set_pattern_sel(self, sel):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         try:
             sel = (player.active_plugins[0], self.patternselect.get_active())
         except IndexError:
@@ -338,15 +351,14 @@ class PatternToolBar(Gtk.HBox):
         self.pattern_view.grab_focus()
 
     def set_wave_sel(self, *args):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         sel = player.get_wave(self.waveselect.get_active())
         if sel:
-            player = components.get('neil.core.player')
             player.active_waves = [sel]
         self.pattern_view.grab_focus()
 
     def activate_wave(self, w):
-        player = components.get('neil.core.player')
+        player = components.get_player()
         if w and w.get_level_count() >= 1:
             player.preview_wave(w)
         else:
