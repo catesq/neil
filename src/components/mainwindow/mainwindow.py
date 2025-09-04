@@ -26,8 +26,7 @@ import re
 import ctypes
 
 from neil.utils import (
-    hicoloriconpath, CancelException, 
-    settingspath, filepath, show_manual, ui
+    hicoloriconpath, settingspath, filepath, show_manual, ui
 )
 
 
@@ -539,7 +538,7 @@ class NeilFrame(Gtk.Window):
         try:
             self.save_changes()
             self.open_file(filename)
-        except CancelException:
+        except components.exception('cancel'):
             pass
 
     def update_title(self):
@@ -576,6 +575,7 @@ class NeilFrame(Gtk.Window):
         """
         if not os.path.isfile(filename):
             return
+        
         self.clear()
         player = components.get_player()
         base, ext = os.path.splitext(filename)
@@ -671,7 +671,7 @@ class NeilFrame(Gtk.Window):
         try:
             self.save_changes()
             self.open()
-        except CancelException:
+        except components.exception('cancel'):
             pass
 
     def open(self):
@@ -683,6 +683,8 @@ class NeilFrame(Gtk.Window):
         self.open_dlg.hide()
         if response == Gtk.ResponseType.OK:
             self.open_file(self.open_dlg.get_filename())
+        else:
+            raise components.exception('cancel')
 
     def on_save(self, *args):
         """
@@ -690,7 +692,7 @@ class NeilFrame(Gtk.Window):
         """
         try:
             self.save()
-        except CancelException:
+        except components.exception('cancel'):
             pass
 
     def save(self):
@@ -711,11 +713,12 @@ class NeilFrame(Gtk.Window):
         self.save_dlg.set_filename(player.document_path)
         response = self.save_dlg.run()
         self.save_dlg.hide()
+
         if response == Gtk.ResponseType.OK:
             filepath = self.save_dlg.get_filename()
             self.save_file(filepath)
         else:
-            components.throw('cancel')
+            raise components.exception('cancel')
 
     def on_save_as(self, *args):
         """
@@ -726,7 +729,7 @@ class NeilFrame(Gtk.Window):
         """
         try:
             self.save_as()
-        except CancelException:
+        except components.exception('cancel'):
             pass
 
     def clear(self):
@@ -734,10 +737,10 @@ class NeilFrame(Gtk.Window):
         Clears the current document.
         """
         common.get_plugin_infos().reset()
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.clear()
         player.set_loop_start(0)
-        player.set_loop_end(components.get('neil.core.sequencerpanel').view.step)
+        player.set_loop_end(views.get_sequencer().view.step)
         player.get_plugin(0).set_parameter_value(1, 0, 1, config.get_config().get_default_int('BPM', 126), 1)
         player.get_plugin(0).set_parameter_value(1, 0, 2, config.get_config().get_default_int('TPB', 4), 1)
         player.history_flush_last()
@@ -749,8 +752,8 @@ class NeilFrame(Gtk.Window):
         @param event: menu event.
         @type event: MenuEvent
         """
-        player = components.get('neil.core.player')
-        player.play()
+        components.get_player().play()
+
 
     def play_from_cursor(self, *args):
         """
@@ -759,9 +762,10 @@ class NeilFrame(Gtk.Window):
         @param event: menu event.
         @type event: MenuEvent
         """
-        player = components.get('neil.core.player')
-        player.set_position(max(components.get('neil.core.sequencerpanel').view.row,0))
+        player = components.get_player()
+        player.set_position(max(views.get_sequencer().view.row,0))
         player.play()
+
 
     def on_select_theme(self, widget, data):
         """
@@ -775,8 +779,10 @@ class NeilFrame(Gtk.Window):
             cfg.select_theme(None)
         else:
             cfg.select_theme(data)
-        player = components.get('neil.core.player')
+
+        player = components.get_player()
         player.document_changed()
+
 
     def stop(self, *args):
         """
@@ -785,15 +791,16 @@ class NeilFrame(Gtk.Window):
         @param event: menu event.
         @type event: MenuEvent
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.stop()
+
 
     def save_changes(self):
         """
         Asks whether to save changes or not. Throws a {CancelException} if
         cancelled.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         if not player.document_changed():
             return
         if player.document_path:
@@ -803,10 +810,11 @@ class NeilFrame(Gtk.Window):
 
         response = ui.question(self, text)
         if response == int(Gtk.ResponseType.CANCEL) or response == int(Gtk.ResponseType.DELETE_EVENT):
-            raise CancelException
+            raise components.exception('cancel')
 
         if response == int(Gtk.ResponseType.YES):
             self.save()
+
 
     def on_new_file(self, *args):
         """
@@ -819,16 +827,18 @@ class NeilFrame(Gtk.Window):
             self.save_changes()
             self.clear()
             self.update_title()
-            components.get('neil.core.player').document_unchanged()
-        except CancelException:
+            components.get_player().document_unchanged()
+        except components.exception('cancel'):
             pass
+
 
     def on_destroy(self, *args):
         """
         Event handler triggered when the window is being destroyed.
         """
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.shutdown()
+        eventbus = components.get_eventbus()
+        eventbus.call('shutdown')
+
 
     def on_exit(self, *args):
         """
@@ -840,6 +850,7 @@ class NeilFrame(Gtk.Window):
         if not self.on_close(None, None):
             self.destroy()
 
+
     def on_close(self, *args):
         """
         Event handler triggered when the window is being closed.
@@ -849,7 +860,7 @@ class NeilFrame(Gtk.Window):
             self.save_changes()
             self.hide()
             return False
-        except CancelException:
+        except components.exception('cancel'):
             return True
 
 
