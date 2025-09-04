@@ -8,42 +8,42 @@ from neil.utils import ui, show_machine_manual, filenameify, sizes
 
 
 
-class eventbus_handler:
-    def __init__(self, func, events, *args, **kwargs):
-        self.func = func
-        self.events = events
+# class eventbus_handler:
+#     def __init__(self, func, events, *args, **kwargs):
+#         self.func = func
+#         self.events = events
 
-    def remove(self, eventbus):
-        for event_name in self.events:
-            eventbus.detach(event_name, self.func)
+#     def remove(self, eventbus):
+#         for event_name in self.events:
+#             eventbus.detach(event_name, self.func)
 
-    def register(self, eventbus):
-        for event_name in self.events:
-            eventbus.attach(event_name, self.func)
+#     def register(self, eventbus):
+#         for event_name in self.events:
+#             eventbus.attach(event_name, self.func)
 
-    def get_func(self):
-        return self.func
+#     def get_func(self):
+#         return self.func
 
 
 
-class gtk_widget_handler:
-    def __init__(self, widget, signal_name, func, *args, **kwargs):
-        self.func = func
-        self.id = False
-        self.signal_name = signal_name
-        self.widget = widget
+# class gtk_widget_handler:
+#     def __init__(self, widget, signal_name, func, *args, **kwargs):
+#         self.func = func
+#         self.id = False
+#         self.signal_name = signal_name
+#         self.widget = widget
 
-    def remove(self, eventbus):
-        if self.id:
-            self.widget.disconnect(self.id)
-            self.id = False
+#     def remove(self, eventbus):
+#         if self.id:
+#             self.widget.disconnect(self.id)
+#             self.id = False
 
-    def register(self, eventbus):
-        if not self.id:
-            self.id = self.widget.connect(self.signal_name, self.func)
+#     def register(self, eventbus):
+#         if not self.id:
+#             self.id = self.widget.connect(self.signal_name, self.func)
 
-    def get_func(self):
-        return self.func
+#     def get_func(self):
+#         return self.func
     
 
 
@@ -53,7 +53,7 @@ class PatternToolBar(Gtk.HBox):
 
     Contains lists of the plugins, patterns, waves and octaves available.
     """
-    def __init__(self, pattern_view):
+    def __init__(self, pattern_view: Gtk.Widget):
         """
         Initialization.
         """
@@ -127,25 +127,27 @@ class PatternToolBar(Gtk.HBox):
         self.pack_start(vsep_b, False, True, 0)
         self.pack_start(self.btnhelp, False, True, 0)
 
-        self.event_handlers = {
-            eventbus_handler(self.pluginselect_update, ['zzub_new_plugin', 'zzub_delete_plugin', 'document_loaded', 'active_plugins_changed']),
-            eventbus_handler(self.get_pattern_source, ['active_plugins_changed', 'active_patterns_changed', 'zzub_delete_pattern', 'zzub_new_pattern', 'zzub_pattern_changed']),
-            eventbus_handler(self.waveselect_update, ['active_waves_changed', 'zzub_wave_allocated', 'zzub_wave_changed', 'zzub_delete_wave', 'document_loaded']),
-            eventbus_handler(self.octave_update, ['octave_changed']),
-            gtk_widget_handler(self.pluginselect, 'changed', self.set_plugin_sel),
-            gtk_widget_handler(self.patternselect, 'changed', self.set_pattern_sel),
-            gtk_widget_handler(self.waveselect, 'changed', self.set_wave_sel),
-            gtk_widget_handler(self.octaveselect, 'changed', self.octave_set),
-            gtk_widget_handler(self.edit_step_box, 'changed', self.edit_step_changed),
-            gtk_widget_handler(self.playnotes, 'clicked', self.on_playnotes_click),
-            gtk_widget_handler(self.btnhelp, 'clicked', self.on_button_help),
-        }
+        self.gtk_handlers = {}
 
-    def signal_handler_func_for(self, widget):
-        for handler in self.event_handlers:
-            if getattr(handler, 'widget', False) == widget:
-                return handler.func
-        return None
+        # self.event_handlers = {
+        #     eventbus_handler(self.pluginselect_update, ['zzub_new_plugin', 'zzub_delete_plugin', 'document_loaded', 'active_plugins_changed']),
+        #     eventbus_handler(self.get_pattern_source, ['active_plugins_changed', 'active_patterns_changed', 'zzub_delete_pattern', 'zzub_new_pattern', 'zzub_pattern_changed']),
+        #     eventbus_handler(self.waveselect_update, ['active_waves_changed', 'zzub_wave_allocated', 'zzub_wave_changed', 'zzub_delete_wave', 'document_loaded']),
+        #     eventbus_handler(self.octave_update, ['octave_changed']),
+        #     gtk_widget_handler(self.pluginselect, 'changed', self.set_plugin_sel),
+        #     gtk_widget_handler(self.patternselect, 'changed', self.set_pattern_sel),
+        #     gtk_widget_handler(self.waveselect, 'changed', self.set_wave_sel),
+        #     gtk_widget_handler(self.octaveselect, 'changed', self.octave_set),
+        #     gtk_widget_handler(self.edit_step_box, 'changed', self.edit_step_changed),
+        #     gtk_widget_handler(self.playnotes, 'clicked', self.on_playnotes_click),
+        #     gtk_widget_handler(self.btnhelp, 'clicked', self.on_button_help),
+        # }
+
+    def signal_handler_func_for(self, widget_name):
+        if widget_name in self.gtk_handlers:
+            return self.gtk_handlers[widget_name]
+        else:
+            return None
 
     def handle_focus(self):
         if not self.has_focus():
@@ -153,84 +155,47 @@ class PatternToolBar(Gtk.HBox):
             self.register_events()
 
     def register_events(self):
-        eventbus = components.get('neil.core.eventbus')
-        for handler in self.event_handlers:
-            handler.register(eventbus)
+        eventbus = components.get_eventbus()
+
+        self.gtk_handlers['pluginselect']  = self.pluginselect.connect('changed', self.set_plugin_sel)
+        self.gtk_handlers['patternselect'] = self.patternselect.connect('changed', self.set_pattern_sel)
+        self.gtk_handlers['waveselect']    = self.waveselect.connect('changed', self.set_wave_sel)
+        self.gtk_handlers['octaveselect']  = self.octaveselect.connect('changed', self.octave_set)
+        self.gtk_handlers['edit_step_box'] = self.edit_step_box.connect('changed', self.edit_step_changed)
+        self.gtk_handlers['playnotes']     = self.playnotes.connect('clicked', self.on_playnotes_click)
+        self.gtk_handlers['btnhelp']       = self.btnhelp.connect('clicked', self.on_button_help)
+
+        eventbus.attach(['new_plugin', 'delete_plugin', 'document_loaded', 'active_plugins_changed'], self.pluginselect_update)
+        eventbus.attach(['active_plugins_changed', 'active_patterns_changed', 'delete_pattern', 'new_pattern', 'pattern_changed'], self.get_pattern_source)
+        eventbus.attach(['active_waves_changed', 'delete_plugin', 'document_loaded', 'active_plugins_changed'], self.pluginselect_update)
+        eventbus.attach(['new_plugin', 'wave_allocated', 'wave_changed', 'delete_wave', 'document_loaded'], self.pluginselect_update)
+        eventbus.attach('octave_changed', self.octave_update)
+
 
     def remove_events(self):
-        eventbus = components.get('neil.core.eventbus')
-        for handler in self.event_handlers:
-            handler.remove(eventbus)
+        eventbus = components.get_eventbus()
 
-        # eventbus.zzub_new_plugin += self.pluginselect_update
-        # eventbus.zzub_delete_plugin += self.pluginselect_update
-        # eventbus.document_loaded += self.pluginselect_update
-        # eventbus.active_plugins_changed += self.pluginselect_update
+        eventbus.detach(self.pluginselect_update)
+        eventbus.detach(self.get_pattern_source)
+        eventbus.detach(self.waveselect_update)
+        eventbus.detach(self.octave_update)
 
-        # eventbus.active_plugins_changed += self.get_pattern_source
-        # eventbus.active_patterns_changed += self.get_pattern_source
-        # eventbus.zzub_delete_pattern += self.get_pattern_source
-        # eventbus.zzub_new_pattern += self.get_pattern_source
-        # eventbus.zzub_pattern_changed += self.get_pattern_source
-        
-        # eventbus.active_waves_changed += self.waveselect_update
-        # eventbus.zzub_wave_allocated += self.waveselect_update
-        # eventbus.zzub_wave_changed += self.waveselect_update
-        # eventbus.zzub_delete_wave += self.waveselect_update
-        # eventbus.document_loaded += self.waveselect_update
+        for handler_name, handler_id in self.gtk_handlers:
+            widget = getattr(self, handler_name)
+            widget.disconnect(handler_id)
 
-        # eventbus.octave_changed += self.octave_update
+        self.gtk_handlers.clear()
 
-        # self.pluginselect_handler = self.pluginselect.connect('changed', self.set_plugin_sel)
-        # self.patternselect_handler = self.patternselect.connect('changed', self.set_pattern_sel)
-        # self.waveselect_handler = self.waveselect.connect('changed', self.set_wave_sel)
-        # self.octaveselect_handler = self.octaveselect.connect('changed', self.octave_set)
-        # self.edit_step_handler = self.edit_step_box.connect('changed', self.edit_step_changed)
-        # self.playnotes_handler = self.playnotes.connect('clicked', self.on_playnotes_click)
-        # self.btnhelp_handler = self.btnhelp.connect('clicked', self.on_button_help)
-
-
-        
-        
 
     def remove_focus(self):
         if self.has_focus():
             self.remove_events()
 
-        # for prop in ['pluginselect_handler', 'patternselect_handler', 'waveselect_handler', 'octaveselect_handler', 'edit_step_handler', 'playnotes_handler', 'btnhelp_handler']:
-        #     if getattr(self, prop):
-        #         GLib.source_remove(getattr(self, prop))
-        #         setattr(self, prop, False)
-
-
-        # eventbus = components.get('neil.core.eventbus')
-
-        # for event_handler in self.event_handlers:
-        #     event_handler.remove(eventbus)
-
-        # eventbus.zzub_new_plugin -= self.pluginselect_update
-        # eventbus.zzub_delete_plugin -= self.pluginselect_update
-        # eventbus.document_loaded -= self.pluginselect_update
-        # eventbus.active_plugins_changed -= self.pluginselect_update
-
-        # eventbus.active_plugins_changed -= self.get_pattern_source
-        # eventbus.active_patterns_changed -= self.get_pattern_source
-        # eventbus.zzub_delete_pattern -= self.get_pattern_source
-        # eventbus.zzub_new_pattern -= self.get_pattern_source
-        # eventbus.zzub_pattern_changed -= self.get_pattern_source
-        
-        # eventbus.active_waves_changed -= self.waveselect_update
-        # eventbus.zzub_wave_allocated -= self.waveselect_update
-        # eventbus.zzub_wave_changed -= self.waveselect_update
-        # eventbus.zzub_delete_wave -= self.waveselect_update
-        # eventbus.document_loaded -= self.waveselect_update
-
-        # eventbus.octave_changed -= self.octave_update
 
     def octave_set(self, event):
-            player = components.get('neil.core.player')
-            player.octave = int(self.octaveselect.get_active_text())
-            self.pattern_view.grab_focus()
+        player = components.get_player()
+        player.octave = int(self.octaveselect.get_active_text() or 4)
+        self.pattern_view.grab_focus()
             
 
     def on_button_help(self, *args):
@@ -247,7 +212,7 @@ class PatternToolBar(Gtk.HBox):
 
     def pluginselect_update(self, *args):
         player = components.get_player()
-        pluginselect_handler = self.signal_handler_func_for(self.pluginselect)
+        pluginselect_handler = self.signal_handler_func_for('pluginselect')
 
         self.pluginselect.handler_block_by_func(pluginselect_handler)
         plugins = self.get_plugin_source()
@@ -282,7 +247,7 @@ class PatternToolBar(Gtk.HBox):
         This function is called whenever it is decided that
         the wave list in the combox box is outdated.
         """
-        waveselect_handler = self.signal_handler_func_for(self.pluginselect)
+        waveselect_handler = self.signal_handler_func_for('pluginselect')
         self.waveselect.handler_block_by_func(waveselect_handler)
         player = components.get('neil.core.player')
         sel = player.active_waves
@@ -351,7 +316,7 @@ class PatternToolBar(Gtk.HBox):
         for i, name in names:
             self.patternselect.append_text("%d %s" % (i, name))
         # Block signal handler to avoid infinite recursion.
-        patternselect_handler = self.signal_handler_func_for(self.patternselect)
+        patternselect_handler = self.signal_handler_func_for('patternselect')
         self.patternselect.handler_block_by_func(patternselect_handler)
         if len(player.active_patterns) > 0:
             self.patternselect.set_active(player.active_patterns[0][1])
