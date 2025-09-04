@@ -426,6 +426,7 @@ class NeilFrame(Gtk.Window):
         if view and hasattr(view, 'on_copy'):
             view.on_copy(event)
 
+
     def on_cut(self, event):
         """
         Sent when the cut function is selected from the menu.

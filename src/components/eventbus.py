@@ -95,6 +95,9 @@ EVENTS = [
     'zzub_wave_changed', # ( wave,... )
 ]
 
+
+
+
 class EventHandlerList:
     def __init__(self, name, handlers=None):
         self.debug_events = False

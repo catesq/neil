@@ -4,13 +4,16 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 
+
 def is_panel(view):
     return hasattr(view, '__is_panel__') and view.__is_panel__
     # return 'neil.viewpanel' in view.__neil__.get('categories',[])
 
 
+
 def set_is_panel(view, is_panel=True):
     view.__is_panel__ = bool(is_panel)
+
 
 
 # used to compare the neil objects which contains a __view__ dict, sorts them for the view menu
