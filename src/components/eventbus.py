@@ -104,6 +104,10 @@ class EventHandlerList:
         self.handlers = handlers
 
 
+    # funcsargs is either:
+    #   Any callable function
+    #   A list with 1 item - a callable 
+    #   A list with more than 1 item. The first item is a callable, the other items are extra arguments passed to that function
     def make_func_def_args(self, funcargs):
         func = None
         args = ()
@@ -135,9 +139,10 @@ class EventHandlerList:
     
 
     def define_handler(self, funcargs):
+        # print(self.name, "define handler", funcargs)
         func, args = self.make_func_def_args(funcargs)
         ref, funcname = self.make_ref_funcname(func)
-
+        # print(self.name, "defined", ref, funcname, args)
         return ref,funcname,args
 
 
@@ -171,6 +176,7 @@ class EventHandlerList:
 
 
     def __call__(self, *cargs):
+        # print("calling", self.name)
         self.filter_dead_references()
         result = None
         for ref,funcname,args in self:
@@ -226,6 +232,7 @@ class EventBus:
         assert name in self.__dict__ or not self.__readonly__, "can't set attribute when object is read only"
         if name in self.__dict__ and isinstance(self.__dict__[name], EventHandlerList) and not isinstance(value, EventHandlerList):
             raise Exception("did you mean +=?")
+        
         self.__dict__[name] = value
 
 
@@ -236,32 +243,34 @@ class EventBus:
 
 
     def get_handler_list(self, event_name) -> EventHandlerList | None:
-        if not event_name.startswith('zzub_') and not hasattr(self, event_name):
-            event_name  = 'zzub_' + event_name
-
-        return getattr(self, event_name)
+        if event_name in self.__dict__:
+            return getattr(self, event_name, None)
+        else:
+            return getattr(self, 'zzub_' + event_name, None)
 
 
     # call __add__ in EventhandlerList
     def attach(self, event_name: str, *funcargs):
         handler_list = self.get_handler_list(event_name)
 
-        if handler_list:
+        if handler_list is not None:
             handler_list.__add__(funcargs)
+        else:
+            print("could not attach event '{}' found to any of {}".format(event_name, self.__dict__.keys()))
 
 
     # call __sub__ in EventhandlerList
     def detach(self, event_name: str, *funcargs):
         handler_list = self.get_handler_list(event_name)
 
-        if handler_list:
+        if handler_list is not None:
             handler_list.__sub__(funcargs)
 
 
     def call(self, event_name, *args):
         handler_list = self.get_handler_list(event_name)
 
-        if handler_list:
+        if handler_list is not None:
             handler_list.__call__(*args)
 
 

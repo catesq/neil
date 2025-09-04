@@ -1207,9 +1207,6 @@ const char* zzub_plugin_get_config(zzub_plugin_t* plugin, const char* key)
 
 int zzub_plugin_get_id(zzub_plugin_t* plugin)
 {
-    if(plugin->id == 1 && plugin->_player->front.plugins.size() == 3)
-        printf("front plugin name %s\n", plugin->_player->front.plugins[plugin->id]->name.c_str());
-    
     return plugin->id;
 }
 
@@ -1347,7 +1344,7 @@ int zzub_plugin_get_flags(zzub_plugin_t* plugin)
     operation_copy_flags flags;
     flags.copy_plugins = true;
     plugin->_player->merge_backbuffer_flags(flags);
-    printf("plugin id: %d\n", plugin->id);
+
     return plugin->_player->back.plugins[plugin->id]->flags;
 }
 

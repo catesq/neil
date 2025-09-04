@@ -74,6 +74,7 @@ struct zzub_player_callback_all_events : zzub::event_handler {
 
     std::map<int, zzub::event_handler*> handlers;
 
+    
     zzub_player_callback_all_events(
         zzub_flatapi_player* _player
     ) 
@@ -84,12 +85,13 @@ struct zzub_player_callback_all_events : zzub::event_handler {
 
     zzub_player_callback_all_events(
         zzub_flatapi_player* _player, 
-        zzub::metaplugin_proxy* _proxy
+        zzub::metaplugin_proxy* _proxy 
     ) 
     {
         player = _player;
         proxy = _proxy;
     }
+
 
     void set_proxy(
         zzub::metaplugin_proxy* proxy
@@ -97,6 +99,7 @@ struct zzub_player_callback_all_events : zzub::event_handler {
     {
         this->proxy = proxy;
     }
+
 
     virtual bool invoke(zzub_event_data_t& data);
 };
@@ -168,7 +171,6 @@ struct zzub_master_event_filter : zzub_player_callback_all_events {
     ) 
     {
         dispatch(data);
-
         return zzub_player_callback_all_events::invoke(data);
     }
 
@@ -176,13 +178,15 @@ struct zzub_master_event_filter : zzub_player_callback_all_events {
     void 
     dispatch(
         zzub_event_data_t& data
-    ) 
+    )
     {
-        auto plugin_id = get_event_data_plugin_id(data);
-
+        auto plugin_id = get_event_data_plugin_id(data); // when it's a plugin related event then plugin_id will be >= 0
+        
         if(plugin_id > 0 && listeners.contains({plugin_id, static_cast<zzub::event_type>(data.type)})) {
+            // when it's a plugin event and a listener for that plugin exists
             dispatch(data, listeners[{plugin_id, static_cast<zzub::event_type>(data.type)}]);
         } else if (listeners.contains({-1, static_cast<zzub::event_type>(data.type)})) {
+            // when it's a non plugin event
             dispatch(data, listeners[{-1, static_cast<zzub::event_type>(data.type)}]);
         }
     }

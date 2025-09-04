@@ -443,7 +443,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
                 msg = "%i operation(s) left uncommitted." % ucopcount
                 neil.errordlg.error(None, "<b>Internal Program Error</b>", msg)
                 self.history_commit("commit leak")
-        player = components.get('neil.core.player')
+        player = components.get_player()
         t1 = time.time()
         player.handle_events()
         t2 = time.time() - t1
@@ -573,7 +573,8 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         @param data: event data.
         @type data: zzub_event_data_t
         """
-        eventbus = components.get('neil.core.eventbus')
+        # print("player.handle_event()", data, tag)
+        eventbus = components.get_eventbus()
         data = data.contents
         # prepare arguments for the specific callback
         eventname, membername, argnames = self.event_id_to_name[data.type]
@@ -801,8 +802,10 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
                 plugin.add_input(mp, zzub.zzub_connection_type_audio)
 
         self.history_commit("new plugin")
+
         if active_plugins:
             self.active_plugins = active_plugins
+
         if active_patterns:
             self.active_patterns = active_patterns
 

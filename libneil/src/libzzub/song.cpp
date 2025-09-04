@@ -821,13 +821,18 @@ bool song::plugin_invoke_event(int plugin_id, zzub_event_data data, bool immedia
 {
     assert(plugin_id >= 0 && plugin_id < (int)plugins.size());
     assert(plugins[plugin_id] != 0);
+
     if (!enable_event_queue)
         return false;
+
     if (plugins[plugin_id] == 0)
         return false;
-    std::vector<event_handler*> handlers = plugins[plugin_id]->event_handlers;
+
+    std::vector<event_handler*> &handlers = plugins[plugin_id]->event_handlers;
+
     bool handled = false;
     for (size_t i = 0; i < handlers.size(); i++) {
+        
         if (!immediate) {
             event_message em = { plugin_id, handlers[i], data };
             user_event_queue[user_event_queue_write] = em;

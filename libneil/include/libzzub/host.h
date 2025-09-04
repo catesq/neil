@@ -67,7 +67,7 @@ struct host {
     virtual void set_event_handler(zzub_plugin_t *_metaplugin, event_handler *handler);
     virtual void remove_event_handler(zzub_plugin_t *_metaplugin, event_handler *handler);
 
-    virtual void add_event_type_listener(zzub::event_type type, event_handler* handler);
+    virtual void add_event_listener(zzub::event_type type, event_handler* handler);
     virtual void add_plugin_event_listener(zzub::event_type type, event_handler* handler);
     virtual void add_plugin_event_listener(int plugin_id, zzub::event_type type, event_handler* handler);
 

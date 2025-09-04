@@ -93,7 +93,6 @@ class NeilFrame(Gtk.Window):
 
         theme_file = Gio.File.new_for_path(os.path.join(settingspath(), "themes", theme, "main.css"))
 
-
         provider = Gtk.CssProvider()
         screen = Gdk.Screen.get_default()
         

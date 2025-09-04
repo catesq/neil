@@ -124,12 +124,19 @@ class RouteView(Gtk.DrawingArea):
         
     def on_configure_event(self, widget, requisition):
         self.update_area()
-        
+
+    def on_zzub_plugin_create(self, plugin):
+        # self.router_layer.add_plugin_item(plugin)
+        self.redraw(True)
+        print("plugin created", plugin.get_id())
+
     def register_eventbus(self):
         eventbus = components.get_eventbus()
         eventbus.attach('connect', self.on_zzub_redraw_event)
         eventbus.attach('disconnect', self.on_zzub_redraw_event)
         eventbus.attach('plugin_changed', self.on_zzub_plugin_changed)
+
+
         eventbus.attach('document_loaded', self.on_document_loaded)
         eventbus.attach('active_plugins_changed', self.on_active_plugins_changed)
 
@@ -224,10 +231,9 @@ class RouteView(Gtk.DrawingArea):
             #         plugin = mp
 
         metaplugin = player.create_plugin(pluginloader, connection=conn, plugin=plugin)
-        
+        print("dragged plugin", metaplugin.get_id())
         self.router_layer.add_plugin_item(metaplugin)
-        self.redraw(True)
-
+        
         Gtk.drag_finish(context, True, False, time)
         Gdk.drop_finish(context, True, time)
 
@@ -244,6 +250,7 @@ class RouteView(Gtk.DrawingArea):
 
 
     def on_zzub_plugin_changed(self, plugin):
+        print("plugin changed", plugin.get_id())
         common.get_plugin_infos().reset_plugin(plugin)
         self.redraw(True)
 

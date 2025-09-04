@@ -143,7 +143,7 @@ class PluginInfoCollection:
         self.plugin_info.clear()
         for mp in neil.components.get_player().get_plugin_list():
             if mp in previous:
-                self.plugin_info[mp] = previous[mp]
+                self.plugin_info[mp.get_id()] = previous[mp]
             else:
                 self.plugin_info[mp] = PluginInfo(mp)
 

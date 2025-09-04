@@ -80,6 +80,8 @@ bool player::initialize(zzub_master_event_filter* filter) {
     std::vector<char> bytes;
     create_plugin(bytes, "Master", &front.master_plugininfo, 0);
 
+    // zzub_master_event_filter* ev = new zzub_master_event_filter(this);
+
     // moved creation of event filter from libzzub zzub_player_initialize 
     // so that master_plugin.created() can use event_handler
     filter->set_proxy(back.plugins[0]->proxy);
@@ -579,6 +581,7 @@ int player::create_plugin(std::vector<char>& bytes, string name, const zzub::inf
     flags.copy_plugins = true;
     flags.copy_wavetable = true;
     merge_backbuffer_flags(flags);
+
     int next_id = (int)back.plugins.size();
     pflags |= loader->flags;
     if (pflags & zzub_plugin_flag_no_undo) {

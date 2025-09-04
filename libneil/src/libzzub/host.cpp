@@ -461,7 +461,7 @@ void host::add_plugin_event_listener(zzub::event_type type, event_handler* handl
     add_plugin_event_listener(_plugin->id, type, handler);
 }
 
-void host::add_event_type_listener(zzub::event_type type, event_handler* handler) {
+void host::add_event_listener(zzub::event_type type, event_handler* handler) {
     // auto event_filter = (zzub_master_event_filter*) plugin_player->plugins[0]->event_handlers.front();
     auto& plugins = plugin_player->plugins;
     auto& plugin = plugins[0];
@@ -485,7 +485,10 @@ void host::set_event_handler(metaplugin_proxy* pmac, event_handler* handler) {
 void host::remove_event_handler(metaplugin_proxy* pmac, event_handler* handler) {
     std::vector<event_handler*>& handlers = plugin_player->plugins[pmac->id]->event_handlers;
     std::vector<event_handler*>::iterator i = find(handlers.begin(), handlers.end(), handler);
-    if (i == handlers.end()) return ;
+
+    if (i == handlers.end()) 
+        return ;
+        
     handlers.erase(i);
 
     // clear events in queue using this handler

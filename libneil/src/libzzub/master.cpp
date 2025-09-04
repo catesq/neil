@@ -158,7 +158,7 @@ void master_plugin::init(
 
 void master_plugin::created() 
 {
-    _host->add_event_type_listener(zzub::event_type_player_state_changed, this);
+    _host->add_event_listener(zzub::event_type_player_state_changed, this);
 }
 
 

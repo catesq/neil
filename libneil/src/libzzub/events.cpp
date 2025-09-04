@@ -6,13 +6,18 @@ bool
 zzub_player_callback_all_events::invoke(zzub_event_data_t& data) {
     // the master plugin checks for create/delete plugin events and maintains an
     // array of handlers who forward all events to the player callback.
-    if (proxy->id == 0 && data.type == zzub_event_type_new_plugin) {
+    
+    if (proxy->id == 0 && data.type == zzub_event_type_new_plugin && data.new_plugin.plugin->id != 0) {
         zzub::metaplugin_proxy* new_plugin = data.new_plugin.plugin;
         zzub_player_callback_all_events *ev = new zzub_player_callback_all_events(player, new_plugin);
         handlers[new_plugin->id] = ev;
+        int master_size = player->front.plugins[0]->event_handlers.size();
+
         player->front.plugins[new_plugin->id]->event_handlers.push_back(ev);
+        master_size = player->front.plugins[0]->event_handlers.size();
     } else if (proxy->id == 0 && data.type == zzub_event_type_pre_delete_plugin) {
         zzub::metaplugin_proxy* del_plugin = data.delete_plugin.plugin;
+
         std::map<int, event_handler*>::iterator i = handlers.find(del_plugin->id);
         if (i != handlers.end()) {
             delete i->second;
