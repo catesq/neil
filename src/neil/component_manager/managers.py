@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Dict, List, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -111,7 +110,6 @@ class ComponentManager():
     def init(self):
         loader = NamedComponentLoader()
         loader.load(self)
-        print("Categories:", self.categories)
         self.is_loaded = True
 
 
@@ -136,15 +134,18 @@ class ComponentManager():
                 self.add_category(category, factory_info.id)
 
 
-    def exception(self, id):
+    def exception(self, id, *args):
         factory_id = self.get_closest_id_in_category(id, 'exception')
     
         if factory_id is None:
-            raise Exception("No neil exception class found for id '%s':\n".format(id, arg)) 
+            raise Exception("No neil exception class found for id '%s':\n".format(id)) 
 
         factory = self.get_factory(factory_id) 
 
-        return factory.get_build_class() # pyright: ignore[reportOptionalMemberAccess]
+        if len(args) == 0:
+            return factory.get_build_class()         # pyright: ignore[reportOptionalMemberAccess]
+        else:
+            return factory.get_build_class()(*args)  # pyright: ignore[reportOptionalMemberAccess]
 
 
         
@@ -377,14 +378,14 @@ class ViewComponentManager:
         if not self.components.has_factory(view_name):
             view_name = prefix + '.' + view_name
             if not self.components.has_factory(view_name):
-                error = "View '{}' not found".format(view_name, self.components.get_ids_from_category('view'))
-                self.components.throw('neil.core.error', error)
+                error_msg = "View '{}' not found".format(view_name, self.components.get_ids_from_category('view'))
+                raise self.components.exception('core.error', error_msg)
 
         component = self.components.get(view_name, *args)
 
         if not component:
-            error = "Unable to build view '{}'".format(view_name, self.components.get_ids_from_category('view'))
-            self.components.throw('neil.core.error', error)
+            error_msg = "Unable to build view '{}'".format(view_name, self.components.get_ids_from_category('view'))
+            raise self.components.exception('core.error', error_msg)
         
         return component # pyright: ignore[reportReturnType]
 
@@ -400,7 +401,7 @@ class ViewComponentManager:
         else:
             all_dialogs = self.components.get_ids_from_category('viewdialog')
             error_msg = "Dialog '{}' not found in {}".format(dialog_name, all_dialogs)
-            self.components.throw('neil.core.error', error_msg)
+            raise self.components.exception('core.error', error_msg)
 
 
 
