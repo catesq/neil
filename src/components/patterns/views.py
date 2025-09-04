@@ -240,14 +240,18 @@ class PatternBackgroundPainter():
             ctx.move_to(x + int(width / 2 - px / 2), int(row_height / 2 - (py / 2)))
             PangoCairo.show_layout(ctx, pango_layout)
 
+
 class PlayPosPainter():
+    widget: PatternView
+    prev_playpos: list[int] | Tuple[int, int]
+    playpos_buf: cairo.ImageSurface 
+    
     def __init__(self, widget):
         self.widget = widget
-        self.playpos = None
-        self.playpos_buf=None
-        self.prev_playpos=None
+        # self.playpos = None
+        self.prev_playpos = []
 
-    def draw(self, ctx, plugin=None, pattern=None):
+    def draw(self, ctx, plugin: zzub.Plugin, pattern: int):
         if pattern == -1:
             return
 
@@ -255,14 +259,14 @@ class PlayPosPainter():
             px, py = self.prev_playpos
             ctx.set_source_surface(self.playpos_buf, 0, py)
             ctx.paint()
-            self.prev_playpos = False
+            self.prev_playpos = []
 
         if not self.widget.has_focus():
             return
 
         w, h = self.widget.get_client_size()
 
-        if not self.playpos_buf:
+        if not hasattr(self, 'playpos_buf') or not self.playpos_buf:
             self.playpos_buf = cairo.ImageSurface(cairo.Format.ARGB32, w, 3)
         elif self.playpos_buf.get_width() != w:
             self.playpos_buf.finish()
@@ -270,7 +274,7 @@ class PlayPosPainter():
 
 
         # draw play cursor
-        player = components.get('neil.core.player')
+        player = components.get_player()
         current_position = self.widget.playpos
         seq = player.get_current_sequencer()
 
@@ -282,7 +286,7 @@ class PlayPosPainter():
             track = seq.get_sequence(i)
 
             track_plugin = track.get_plugin()
-            if plugin == track_plugin and pattern != -1:
+            if plugin == track_plugin:
                 row_count = plugin.get_pattern_length(pattern)
                 events = list(track.get_event_list())
                 for i, pair in enumerate(events):
