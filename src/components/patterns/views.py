@@ -585,24 +585,25 @@ class PatternView(Gtk.DrawingArea):
         
         self.updater_id = GLib.timeout_add(100, self.update_position)
 
-        self.handler_ids.append(self.connect('key-press-event', self.accel_map.handle_key_press_event))
-        self.handler_ids.append(self.connect("draw", self.on_draw))
-        self.handler_ids.append(self.connect('key-press-event', self.on_key_down))
-        self.handler_ids.append(self.connect('key-release-event', self.on_key_up))
-        self.handler_ids.append(self.connect('button-press-event', self.on_button_down))
-        self.handler_ids.append(self.connect('button-release-event', self.on_button_up))
-        self.handler_ids.append(self.connect('motion-notify-event', self.on_motion))
-        self.handler_ids.append(self.connect('scroll-event', self.on_mousewheel))
+        self.handler_ids = [
+            self.connect('key-press-event', self.accel_map.handle_key_press_event),
+            self.connect("draw", self.on_draw),
+            self.connect('key-press-event', self.on_key_down),
+            self.connect('key-release-event', self.on_key_up),
+            self.connect('button-press-event', self.on_button_down),
+            self.connect('button-release-event', self.on_button_up),
+            self.connect('motion-notify-event', self.on_motion),
+            self.connect('scroll-event', self.on_mousewheel)
+        ]
 
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.active_patterns_changed += self.on_active_patterns_changed
-        eventbus.active_plugins_changed += self.on_active_patterns_changed
-        eventbus.zzub_pattern_changed += self.on_pattern_changed
-        eventbus.zzub_edit_pattern += self.on_edit_pattern
-        eventbus.zzub_pattern_insert_rows += self.on_pattern_insert_rows
-        eventbus.zzub_pattern_remove_rows += self.on_pattern_remove_rows
-        eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
-        eventbus.document_loaded += self.update_all
+        eventbus = components.get_eventbus()
+        eventbus.attach(['active_patterns_changed', 'active_plugins_changed'], self.on_active_patterns_changed)
+        eventbus.attach('pattern_changed', self.on_pattern_changed)
+        eventbus.attach('edit_pattern', self.on_edit_pattern)
+        eventbus.attach('pattern_insert_rows', self.on_pattern_insert_rows)
+        eventbus.attach('pattern_remove_rows', self.on_pattern_remove_rows)
+        eventbus.attach('parameter_changed', self.on_zzub_parameter_changed)
+        eventbus.attach('document_loaded', self.update_all)
 
         self.is_connected = True
 
@@ -617,15 +618,18 @@ class PatternView(Gtk.DrawingArea):
         for handler_id in self.handler_ids:
             self.disconnect(handler_id)
 
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.active_patterns_changed - self.on_active_patterns_changed
-        eventbus.active_plugins_changed -= self.on_active_patterns_changed
-        eventbus.zzub_pattern_changed - self.on_pattern_changed
-        eventbus.zzub_edit_pattern -= self.on_edit_pattern
-        eventbus.zzub_pattern_insert_rows - self.on_pattern_insert_rows
-        eventbus.zzub_pattern_remove_rows -= self.on_pattern_remove_rows
-        eventbus.zzub_parameter_changed - self.on_zzub_parameter_changed
-        eventbus.document_loaded -= self.update_all
+        eventbus = components.get_eventbus()
+        
+        eventbus.detach_all(
+            self.on_active_patterns_changed, 
+            self.on_active_patterns_changed,
+            self.on_edit_pattern,
+            self.on_pattern_insert_rows,
+            self.on_pattern_remove_rows,
+            self.on_zzub_parameter_changed,
+            self.update_all
+        )
+
 
         self.handler_ids = []
         self.updater_id = False

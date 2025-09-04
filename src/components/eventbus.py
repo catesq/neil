@@ -23,7 +23,7 @@ please note:
 """
 
 import sys, weakref
-from typing import Callable
+from typing import Any, Callable
 
 EVENTS = [
     # these might become obsolete
@@ -269,9 +269,11 @@ class EventBus:
 
 
     # call __sub__ in EventhandlerList
-    def detach(self, event_name_or_func: str | Callable, *funcargs):
+    def detach(self, event_name_or_func: str | Any, *funcargs):
         if isinstance(event_name_or_func, str):
             return self.detach_event(event_name_or_func, *funcargs)
+        elif isinstance(event_name_or_func, list):
+            return self.detach_func(*event_name_or_func, *funcargs)
         else:
             return self.detach_func(event_name_or_func, *funcargs)
 
@@ -289,6 +291,11 @@ class EventBus:
 
             if handler_list is not None:
                 handler_list.__sub__(funcargs)
+
+
+    def detach_all(self, *event_names_or_funcs):
+        for name_or_func in event_names_or_funcs:
+            self.detach(name_or_func)
 
 
     def call(self, event_name: str, *args):
