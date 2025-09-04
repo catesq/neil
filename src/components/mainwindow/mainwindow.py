@@ -577,10 +577,10 @@ class NeilFrame(Gtk.Window):
         if not os.path.isfile(filename):
             return
         self.clear()
-        player = components.get('neil.core.player')
+        player = components.get_player()
         base, ext = os.path.splitext(filename)
         if re.search(r"""\.ccm$|\.ccm.\d\d\d\.bak$""", filename):
-            dlg = Gtk.Dialog('Neil', parent=self, flags=Gtk.DialogFlags.MODAL)
+            dlg = Gtk.Dialog(title='Neil', parent=self, modal=True)
             progBar = Gtk.ProgressBar()
             progBar.set_text('Loading CCM Song...')
             progBar.set_size_request(300, 40)
@@ -599,7 +599,7 @@ class NeilFrame(Gtk.Window):
             done = True
             # The following loads sequencer step size.
             try:
-                seq = components.get('neil.core.sequencerpanel')
+                seq = views.get_sequencer()
                 index = seq.toolbar.steps.index(player.get_seqstep())
                 seq.toolbar.stepselect.set_active(index)
             except ValueError:
@@ -612,7 +612,7 @@ class NeilFrame(Gtk.Window):
 
     def on_document_path_changed(self, path):
         self.update_title()
-        components.get('neil.core.config').add_recent_file_config(path)
+        components.get_config().add_recent_file_config(path)
 
     def save_file(self, filename):
         """
@@ -622,7 +622,7 @@ class NeilFrame(Gtk.Window):
         @param filename: Path to song.
         @type filename: str
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         try:
             if not os.path.splitext(filename)[1]:
                 filename += self.DEFAULT_EXTENSION
@@ -697,7 +697,7 @@ class NeilFrame(Gtk.Window):
         """
         Shows a save file dialog if filename is unknown and saves the file.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         if not player.document_path:
             self.save_as()
         else:
@@ -707,7 +707,7 @@ class NeilFrame(Gtk.Window):
         """
         Shows a save file dialog and saves the file.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         self.save_dlg.set_filename(player.document_path)
         response = self.save_dlg.run()
         self.save_dlg.hide()
@@ -715,7 +715,7 @@ class NeilFrame(Gtk.Window):
             filepath = self.save_dlg.get_filename()
             self.save_file(filepath)
         else:
-            raise CancelException
+            components.throw('cancel')
 
     def on_save_as(self, *args):
         """

@@ -66,6 +66,7 @@ class ControllerPanel(Gtk.VBox):
         for name,channel,ctrlid in get_config().get_midi_controllers():
             self.store.append([name, str(channel), str(ctrlid)])
 
+
     def on_add_controller(self, widget):
         """
         Handles 'Add' button click. Opens a popup that records controller events.
@@ -75,14 +76,22 @@ class ControllerPanel(Gtk.VBox):
             name, channel, ctrlid = res
             self.store.append([name, str(channel), str(ctrlid)])
 
+
     def on_remove_controller(self, widget):
         """
         Handles 'Remove' button click. Removes the selected controller from list.
         """
         store, sel = self.controllers.get_selection().get_selected_rows()
         refs = [Gtk.TreeRowReference(store, row) for row in sel]
+
         for ref in refs:
-            store.remove(store.get_iter(ref.get_path()))
+            path = ref.get_path()
+
+            if path is None:
+                continue
+
+            self.store.remove(store.get_iter(path))
+
 
     def apply(self):
         """

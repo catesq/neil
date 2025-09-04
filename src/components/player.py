@@ -216,6 +216,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         # event queue disabling count for overlapping disable calls
         self.__disable_level = 0
 
+
     def set_callback_state(self, enable):
         #self.set_event_queue_state(enable)
         #return
@@ -233,8 +234,10 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
             self.__disable_level += 1
         return False
 
+
     def is_loading(self):
         return self.__loading
+
 
     def enumerate_stream_plugins(self):
         self.__stream_ext_uri_mappings = {}
@@ -249,21 +252,25 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
                     self.__stream_ext_uri_mappings[ext] = uri
         #print "supported sample formats: " + ', '.join(sorted(self.__stream_ext_uri_mappings.keys()))
 
+
     def delete_stream_player(self):
         if not self.__streamplayer:
             return
         self.__streamplayer.destroy()
         self.__streamplayer = None
 
+
     def set_machine_non_song(self, plugin, enable):
         pi = common.get_plugin_infos().get(plugin)
         pi.songplugin = not enable
+
 
     def delete_stream_recorder(self):
         if not self.__streamrecorder:
             return
         self.__streamrecorder.destroy()
         self.__streamrecorder = None
+
 
     def create_stream_recorder(self):
         # create a recorder plugin

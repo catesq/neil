@@ -294,6 +294,9 @@ class EasyMenu(Gtk.Menu, MenuWrapper):
 
         return super().popup(None, None, None, None, button=event_button, activate_time=event_time)
 
+    def __iter__(self):
+        return (child for child in self.get_children() if isinstance(child, Gtk.MenuItem))
+
 
 
 # the get_submenu() method of Gtk.MenuItem returns a Gtk.Menu

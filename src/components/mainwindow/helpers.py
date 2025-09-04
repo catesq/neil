@@ -23,11 +23,14 @@ def cmp_view(a, b):
     return a_order <= b_order
 
 
+
 class Accelerators(Gtk.AccelGroup):
+    """
+    Shortcuts for neil. Several components retreive this and add their own shortcuts. Bit of a free for all, not ideal.
+    """
     __neil__ = dict(
         id = 'neil.core.accelerators',
-        singleton = True,
-        categories = [],
+        singleton = True
     )
 
     def __init__(self):
