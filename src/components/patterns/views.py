@@ -1,5 +1,5 @@
 from array import array
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING, Tuple, cast, Optional
 import cairo
 
 import gi
@@ -27,8 +27,11 @@ from .patternstatus import PatternStatus
 import config
 import zzub
 
+if TYPE_CHECKING:
+    from .. patternfx import PatternFx
 
 pat_sizes = Sizes(patleftmargin='margin * 8')
+# patleftmargin = Sizes.one('margin * 8')
 
 
 CONN = 0
@@ -39,6 +42,36 @@ TRACK = 2
 patternsizes = [
     1, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512
 ]
+
+
+class SelectionMode(IntEnum):
+    Column = 0
+    Track = 1
+    Group = 2
+    All = 3
+
+
+# selection modes: column, track, tracks, all
+SEL_COLUMN = 0
+SEL_TRACK = 1
+SEL_GROUP = 2
+SEL_ALL = 3
+SEL_COUNT = 4
+
+
+class PatternSelection:
+    """
+    Selection class.
+
+    Container for selection range and the selection mode.
+    """
+    begin = -1
+    end = -1
+    group = 0
+    track = 0
+    index = 0
+    mode = SEL_COLUMN
+    selection_mode = SelectionMode.Column
 
 
 class SelectionPainter:
@@ -185,6 +218,7 @@ class BarMarksPainter():
 class PatternBackgroundPainter():
     def __init__(self, widget):
         self.widget = widget
+        self.left_margin = pat_sizes.get('patleftmargin')
 
     def draw(self, ctx, pango_ctx, pango_layout):
         """ Draw the background, lines, borders and row numbers """
@@ -198,14 +232,14 @@ class PatternBackgroundPainter():
 
         ctx.set_source_rgb(*background)
         ctx.rectangle(0, 0, w, row_height)
-        ctx.rectangle(0, 0, pat_sizes.get('patleftmargin'), h)
+        ctx.rectangle(0, 0, self.left_margin, h)
         ctx.fill()
 
         if self.widget.lines == None:
             return
 
         ctx.set_source_rgb(*pen)
-        x, y = pat_sizes.get('patleftmargin'), self.widget.row_height
+        x, y = self.left_margin, self.widget.row_height
         start_row = self.widget.start_row
         row_count = self.widget.row_count
         # Draw the row numbers
@@ -447,19 +481,6 @@ def show_pattern_dialog(parent, name, length, dlgmode, letswitch=True):
 
 
 
-class SelectionMode(IntEnum):
-    Column = 0
-    Track = 1
-    Group = 2
-    All = 3
-
-# selection modes: column, track, tracks, all
-SEL_COLUMN = 0
-SEL_TRACK = 1
-SEL_GROUP = 2
-SEL_ALL = 3
-SEL_COUNT = 4
-
 
 class PatternView(Gtk.DrawingArea):
     """
@@ -468,19 +489,8 @@ class PatternView(Gtk.DrawingArea):
     CLIPBOARD_MAGIC = "PATTERNDATA"
     handler_ids: list[int]
 
-    class Selection:
-        """
-        Selection class.
 
-        Container for selection range and the selection mode.
-        """
-        begin = -1
-        end = -1
-        group = 0
-        track = 0
-        index = 0
-        mode = SEL_COLUMN
-        selection_mode = SelectionMode.Column
+    plugin: zzub.Plugin
 
     def __init__(self, panel, hscroll, vscroll):
         """
@@ -495,9 +505,7 @@ class PatternView(Gtk.DrawingArea):
         self.statusbar = None
         self.jump_to_note = False
         self.patternsize = 16
-        self.index = None
         self.pattern = -1
-        self.plugin = None
         self.row = 0
         self.index = 0
         self.track = 0
@@ -513,10 +521,12 @@ class PatternView(Gtk.DrawingArea):
         self.shiftselect = None
         self.clickpos = None
         self.track_width = [0, 0, 0]
+        self.plugin = None  # pyright: ignore[reportAttributeAccessIssue]
         self.plugin_info = common.get_plugin_infos()
         self.factors = None
         self.play_notes = True
         self.current_plugin = ""
+        self.left_margin = pat_sizes.get('left_margin')
         Gtk.DrawingArea.__init__(self)
         # "Bitstream Vera Sans Mono"
         self.update_font()
@@ -749,11 +759,13 @@ class PatternView(Gtk.DrawingArea):
         """
         Callback that constructs and displays the popup menu
         """
-        player = components.get('neil.core.player')
-        sel_sensitive = (self.selection.begin < self.selection.end)
-        paste_sensitive = (ui.get_clipboard_text().startswith(self.CLIPBOARD_MAGIC))
+        player = components.get_player()
+        sel_sensitive = (self.selection.begin < self.selection.end) if self.selection else False
 
-        menu = ui.Menu()
+        cliptext = ui.get_clipboard_text()
+        paste_sensitive = cliptext.startswith(self.CLIPBOARD_MAGIC) if cliptext is not None else False
+
+        menu = ui.EasyMenu()
         menu.add_item("Add track", self.on_popup_add_track)
         menu.add_item("Remove last track", self.on_popup_delete_track)
         menu.add_separator()
@@ -770,6 +782,7 @@ class PatternView(Gtk.DrawingArea):
         menu.add_item("Double", self.on_popup_double)
         menu.add_item("Halve", self.on_popup_halve)
         menu.add_separator()
+
         label, transform = menu.add_submenu("Transform")
         transform.add_item("Transpose +1", self.transpose_selection, 1).set_sensitive(sel_sensitive)
         transform.add_item("Transpose -1", self.transpose_selection, -1).set_sensitive(sel_sensitive)
@@ -781,9 +794,9 @@ class PatternView(Gtk.DrawingArea):
         # Pattern effects menu
         label, effects_menu = menu.add_submenu("Pattern effects")
         effects = components.get_from_category('patternfx')
-        for effect in effects:
-            effects_menu.add_item(effect.name, self.on_pattern_effect, effect).\
-                set_sensitive(sel_sensitive)
+        
+        for effect in cast(list[PatternFx], effects):
+            effects_menu.add_item(effect.name, self.on_pattern_effect, effect).set_sensitive(sel_sensitive)
 
         # User script menu
         # label, scripts_menu = menu.add_submenu("User scripts")
@@ -809,9 +822,12 @@ class PatternView(Gtk.DrawingArea):
         menu.show_all()
         menu.attach_to_widget(self, None)
         # menu.popup(self, event)
-        menu.popup(self, event)
+        menu.easy_popup(self, event)
 
     def on_pattern_effect(self, item, effect):
+        if not self.plugin:
+            return
+
         values = {}
         for row, group, track, index in self.selection_range():
             value = self.plugin.get_pattern_value(self.pattern, group,
@@ -831,14 +847,16 @@ class PatternView(Gtk.DrawingArea):
             for (row, value), i in zip(values[key], list(range(len(output)))):
                 self.plugin.set_pattern_value(self.pattern, group, track, index,
                                               row, output[i])
-            player = components.get('neil.core.player')
+            player = components.get_player()
             player.history_commit('pattern effect')
 
+
     def on_expression(self, item):
-        expression = components.get('neil.core.expression')
+        expression = components.get_expressions()
         expression.transform(self.plugin, self.pattern, self.selection_range())
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.history_commit('expression applied')
+
 
     def update_position(self):
         """
@@ -847,14 +865,17 @@ class PatternView(Gtk.DrawingArea):
         if not self.has_focus():
             return True
 
-        player = components.get('neil.core.player')
+        player = components.get_player()
 
         playpos = player.get_position()
-        if self.playpos != playpos:
-            ctx = self.get_window().cairo_create()
+        window = self.get_window()
+
+        if self.playpos != playpos  and window is not None:
+            ctx = window.cairo_create()
             self.draw_playpos_xor(ctx)
             self.playpos = playpos
             self.draw_playpos_xor(ctx)
+
         return True
 
     def get_new_pattern_name(self, m=None):
@@ -866,12 +887,13 @@ class PatternView(Gtk.DrawingArea):
             
         return get_new_pattern_name(m)
 
+
     def init_values(self):
         """
         Initializes pattern storage and information.
         """
         # plugin
-        self.plugin = None
+        self.plugin = None # pyright: ignore[reportAttributeAccessIssue]
         self.pattern = -1
         # parameter count
         self.parameter_count = [0, 0, 0]
@@ -884,15 +906,18 @@ class PatternView(Gtk.DrawingArea):
         self.subindex_count = None
         self.group_position = [0, 0, 0]
         self.group_track_count = [0, 0, 0]
+
         datasource = self.get_datasource()
         if datasource:
             # plugin loader, pattern data
             self.plugin, self.pattern = datasource
             self.row, self.group, self.track, self.index, self.subindex =\
                       self.plugin_info.get(self.plugin).pattern_position
+            
             self.selection = self.plugin_info.get(self.plugin).selection
+
             self.input_connection_count =\
-                self.get_plugin().get_input_connection_count()
+                self.plugin.get_input_connection_count()
 
             track_count = self.plugin.get_track_count() # global track not considered a track
             self.group_track_count = [self.input_connection_count, 1, track_count] # track count by group
@@ -953,16 +978,18 @@ class PatternView(Gtk.DrawingArea):
             updater.notify(self)
         self.refresh_view()
 
+
     def get_client_size(self):
         rect = self.get_allocation()
         return rect.width, rect.height
+
 
     def adjust_scrollbars(self):
         w, h = self.get_client_size()
         vw, vh = self.get_virtual_size()
         vh += 1
         vw += 1
-        pw, ph = int((w - PATLEFTMARGIN) / float(self.column_width) + 0.5),\
+        pw, ph = int((w - self.left_margin) / float(self.column_width) + 0.5),\
                  int((h - self.row_height) / float(self.row_height) + 0.5)
         hrange = vw - pw
         vrange = vh - ph
@@ -979,6 +1006,7 @@ class PatternView(Gtk.DrawingArea):
         adj = self.vscroll.get_adjustment()
         adj.configure(self.start_row, 0, vh, 1, 1, ph)
 
+
     def set_octave(self, o):
         """
         Sets the octave.
@@ -986,8 +1014,9 @@ class PatternView(Gtk.DrawingArea):
         @param o: Octave
         @type o: int
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.octave = min(max(o, 0), 9)
+
 
     def set_index(self, i):
         """
@@ -998,6 +1027,7 @@ class PatternView(Gtk.DrawingArea):
         """
         self.index = min(max(i, 0), self.parameter_count[self.group] - 1)
 
+
     def set_track(self, t):
         """
         Sets the current track position.
@@ -1006,6 +1036,7 @@ class PatternView(Gtk.DrawingArea):
         @type t: int
         """
         self.track = min(max(t, 0), self.group_track_count[self.group] - 1)
+
 
     def set_group(self, g):
         """
@@ -1030,6 +1061,7 @@ class PatternView(Gtk.DrawingArea):
                 g += 1
         return False
 
+
     def show_row(self, r):
         """
         Makes a row in the editor visible.
@@ -1048,6 +1080,7 @@ class PatternView(Gtk.DrawingArea):
                 self.start_row = row - (endrow - self.start_row)
                 self.redraw()
 
+
     def set_row(self, r):
         """
         Sets the current row position.
@@ -1057,6 +1090,7 @@ class PatternView(Gtk.DrawingArea):
         """
         self.row = min(max(r, 0), self.row_count - 1)
         self.show_row(self.row)
+
 
     def set_subindex(self, si):
         """
@@ -1070,11 +1104,13 @@ class PatternView(Gtk.DrawingArea):
             return
         self.subindex = min(max(si, 0), self.subindex_count[self.group][self.index] - 1)
 
+
     def redraw(self, *args):
         if self.get_window() and self.is_visible():
             w, h = self.get_client_size()
             self.queue_draw()
             # self.get_window().invalidate_rect(Gdk.Rectangle(0, 0, w, h), False)
+
 
     def on_active_patterns_changed(self, selpatterns):
         if self.is_visible():
@@ -1085,16 +1121,18 @@ class PatternView(Gtk.DrawingArea):
         """
         Loads and redraws the pattern view after the pattern has been changed.
         """
-        print("patterns/views.py PatternView.pattern_changed()")
-        return
         self.init_values()
         self.show_cursor_left()
         plugin = self.get_plugin()
+
         if plugin:
+            self.plugin = plugin
             self.plugin_info.get(plugin).reset_patterngfx()
+
         if self.jump_to_note:
             self.tab_to_note_column()
             self.jump_to_note = False
+
 
     def move_up(self, step = 1):
         """
@@ -1106,6 +1144,7 @@ class PatternView(Gtk.DrawingArea):
         self.set_row(self.row - step)
         self.update_statusbar()
         self.redraw()
+
 
     def move_down(self, step = 1):
         """
@@ -1120,6 +1159,7 @@ class PatternView(Gtk.DrawingArea):
         self.update_statusbar()
         self.redraw()
 
+
     def move_track_left(self):
         """
         Moves the cursor one track position left.
@@ -1131,6 +1171,7 @@ class PatternView(Gtk.DrawingArea):
         else:
             self.set_track(self.track - 1)
         return True
+
 
     def move_index_left(self):
         """
@@ -1144,6 +1185,7 @@ class PatternView(Gtk.DrawingArea):
             self.set_index(self.index - 1)
         return True
 
+
     def move_subindex_left(self):
         """
         Moves the cursor one subindex position left.
@@ -1155,6 +1197,7 @@ class PatternView(Gtk.DrawingArea):
         else:
             self.set_subindex(self.subindex - 1)
         return True
+
 
     def move_track_right(self):
         """
@@ -1168,6 +1211,7 @@ class PatternView(Gtk.DrawingArea):
             self.set_track(self.track + 1)
         return True
 
+
     def move_index_right(self):
         """
         Moves the cursor one index position right.
@@ -1179,6 +1223,7 @@ class PatternView(Gtk.DrawingArea):
         else:
             self.set_index(self.index + 1)
         return True
+
 
     def move_subindex_right(self):
         """
@@ -1192,6 +1237,7 @@ class PatternView(Gtk.DrawingArea):
             self.set_subindex(self.subindex + 1)
         return True
 
+
     def show_cursor_left(self):
         """
         Puts the cursor into visible frame after a jump to the left.
@@ -1202,6 +1248,7 @@ class PatternView(Gtk.DrawingArea):
         if x < self.start_col:
             self.start_col = max(x - (w / 3), 0)
             self.redraw()
+
 
     def show_cursor_right(self):
         """
@@ -1216,6 +1263,7 @@ class PatternView(Gtk.DrawingArea):
                                  vw - w + self.start_col)
             self.redraw()
 
+
     def move_left(self):
         """
         Moves the cursor left.
@@ -1227,6 +1275,7 @@ class PatternView(Gtk.DrawingArea):
         self.update_statusbar()
         self.redraw()
 
+
     def move_right(self):
         """
         Moves the cursor right.
@@ -1237,6 +1286,7 @@ class PatternView(Gtk.DrawingArea):
         self.show_cursor_right()
         self.update_statusbar()
         self.redraw()
+
 
     def adjust_selection(self):
         """
@@ -1256,6 +1306,7 @@ class PatternView(Gtk.DrawingArea):
             self.selection.index = 0
         else:
             self.selection.index = self.index
+
 
     def selection_range(self):
         """
@@ -1286,6 +1337,7 @@ class PatternView(Gtk.DrawingArea):
                         for index in range(0, self.parameter_count[group]):
                             yield (row, group, track, index)
 
+
     def pattern_range(self):
         """
         Iterator that moves through the entire pattern.
@@ -1300,10 +1352,14 @@ class PatternView(Gtk.DrawingArea):
                     for index in range(0, self.parameter_count[group]):
                         yield (row, group, track, index)
 
+
     def reverse_selection(self, widget):
         """
         Reverse the current selection (retrograde).
         """
+        if not self.plugin:
+            return
+
         values = []
         for row, group, track, index in self.selection_range():
             value = self.plugin.get_pattern_value(self.pattern, group,
@@ -1315,8 +1371,9 @@ class PatternView(Gtk.DrawingArea):
         for row, group, track, index, value in values:
             self.plugin.set_pattern_value(self.pattern, group, track,
                                           index, row, value)
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.history_commit("reverse")
+
 
     def transpose_selection(self, widget, offset):
         """
@@ -1345,7 +1402,7 @@ class PatternView(Gtk.DrawingArea):
                 #            p.get_value_min())
                 self.plugin.set_pattern_value(self.pattern, g, t, i, r, v)
         tmp_sel = self.selection
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.history_commit("transpose")
         self.selection = tmp_sel
 
@@ -1354,7 +1411,7 @@ class PatternView(Gtk.DrawingArea):
         Fills the current selection with values interpolated
         from selection start to selection end.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         #player.set_callback_state(False)
         if not self.selection:
             return
@@ -1402,7 +1459,7 @@ class PatternView(Gtk.DrawingArea):
         Invoked when user presses Ctrl+a.
         """
         if not self.selection:
-            self.selection = self.Selection()
+            self.selection = PatternSelection()
         self.selection.mode = SEL_ALL
         self.selection.begin = 0
         self.selection.end = self.plugin.get_pattern_length(self.pattern)
@@ -1415,7 +1472,7 @@ class PatternView(Gtk.DrawingArea):
         if not self.selection:
             return
         self.copy()
-        player = components.get('neil.core.player')
+        player = components.get_player()
         #player.set_callback_state(False)
         for r, g, t, i in self.selection_range():
             if r > self.plugin.get_pattern_length(self.pattern) - 1:
@@ -1425,7 +1482,7 @@ class PatternView(Gtk.DrawingArea):
             p = self.plugin.get_parameter(g, t, i)
             self.plugin.set_pattern_value(self.pattern, g, t, i, r,
                                           p.get_value_none())
-        player = components.get('neil.core.player')
+        
         player.history_commit("remove event")
         # if player.set_callback_state(True):
         #     eventbus = components.get('neil.core.eventbus')
@@ -1462,7 +1519,7 @@ class PatternView(Gtk.DrawingArea):
                 continue
             p = self.plugin.get_parameter(g, t, i)
             self.plugin.set_pattern_value(self.pattern, g, t, i, r, p.get_value_none())
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.history_commit("delete events")
         # if player.set_callback_state(True):
         #     eventbus = components.get('neil.core.eventbus')
@@ -1496,14 +1553,17 @@ class PatternView(Gtk.DrawingArea):
         Buzz used to not paste at all if the format wasnt right
         we still try to make some sense out of what we get.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         #player.set_callback_state(False)
         data = ui.get_clipboard_text()
+        if not data:
+            return
+        
         try:
             gen = self.unpack_clipboard_data(data.strip())
             mode = next(gen)
-            assert (mode >= 0) and (mode <= SEL_ALL)
-            for r, g, t, i, v in gen:
+            assert isinstance(mode, int) and (mode >= 0) and (mode <= SEL_ALL)
+            for r, g, t, i, v in gen:  # pyright: ignore[reportGeneralTypeIssues]
                 r = self.row + r
                 assert (g >= 0) and (g <= 2)
                 if (g < 0) or (g > 2):
@@ -1566,7 +1626,7 @@ class PatternView(Gtk.DrawingArea):
         """
         print("patterns.views.on_button_down")
         if not self.selection:
-            self.selection = self.Selection()
+            self.selection = PatternSelection()
         self.grab_focus()
         if event.button == 3:
             self.on_context_menu(event)
@@ -1639,10 +1699,10 @@ class PatternView(Gtk.DrawingArea):
         """
         Callback that removes the current pattern.
         """
-        player = components.get('neil.core.player')
-        m = self.get_plugin()
-        if self.pattern >= 0:
-            m.remove_pattern(self.pattern)
+        player = components.get_player()
+
+        if self.plugin != None and self.pattern >= 0:
+            self.plugin.remove_pattern(self.pattern)
             player.activate_pattern(-1)  # go one back
             player.history_commit("remove pattern")
 
@@ -1650,16 +1710,21 @@ class PatternView(Gtk.DrawingArea):
         """
         Callback that creates a pattern.
         """
-        if self.get_plugin() == None:
+        pl = self.get_plugin()
+        
+        if not pl:
             return
-        player = components.get('neil.core.player')
+        
+        player = components.get_player()
         name = self.get_new_pattern_name(m)
         result = show_pattern_dialog(self, name, self.patternsize, DLGMODE_NEW)
         if not result:
             return
         name, self.patternsize, switch = result
+
         if not m:
-            m = self.get_plugin()
+            m = pl
+
         p = m.create_pattern(self.patternsize)
         p.set_name(name)
         m.add_pattern(p)
@@ -1686,7 +1751,7 @@ class PatternView(Gtk.DrawingArea):
         for r, g, t, i in pattern_index:
             self.plugin.set_pattern_value(self.pattern, g, t, i, r * 2, pattern_contents[item])
             item += 1
-        player = components.get('neil.core.player')
+        player = components.get_player()
         player.history_commit("double length")
         # if player.set_callback_state(True):
         #     eventbus = components.get('neil.core.eventbus')
@@ -1697,7 +1762,7 @@ class PatternView(Gtk.DrawingArea):
         Callback that halves the length of the current pattern while
         keeping notes intact
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         #player.set_callback_state(False)
         if self.plugin.get_pattern_length(self.pattern) == 1:
             return
@@ -1706,7 +1771,7 @@ class PatternView(Gtk.DrawingArea):
                 continue
             self.plugin.set_pattern_value(self.pattern, g, t, i, r / 2, self.plugin.get_pattern_value(self.pattern, g, t, i, r))
         self.plugin.set_pattern_length(self.pattern, self.plugin.get_pattern_length(self.pattern) / 2)
-        player = components.get('neil.core.player')
+
         player.history_commit("halve length")
         # if player.set_callback_state(True):
         #     eventbus = components.get('neil.core.eventbus')
@@ -1716,27 +1781,33 @@ class PatternView(Gtk.DrawingArea):
         """
         Callback that creates a copy of the current pattern.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         name = self.get_new_pattern_name()
         result = show_pattern_dialog(self, name, self.row_count, DLGMODE_COPY)
-        if not result:
+
+        if not result or not self.plugin:
             return
+
         name, self.patternsize, switch = result
-        m = self.get_plugin()
-        p = m.get_pattern(self.pattern)
-        p.set_name(name)
-        m.add_pattern(p)
+
+        
+        pat = self.plugin.get_pattern(self.pattern)
+        pat.set_name(name)
+        self.plugin.add_pattern(pat)
+
         player.history_commit("clone pattern")
         if switch:
-            player.active_patterns = [(m, m.get_pattern_count() - 1)]
+            player.active_patterns = [(self.plugin, self.plugin.get_pattern_count() - 1)]
 
     def on_popup_solo(self, *args):
         """
         Callback that solos current plugin.
         """
-        plugin = self.get_plugin()
-        player = components.get('neil.core.player')
-        player.solo(plugin)
+        if not self.plugin:
+            return
+        
+        player = components.get_player()
+        player.solo(self.plugin)
 
     def on_popup_properties(self, *args):
         """
@@ -1745,20 +1816,23 @@ class PatternView(Gtk.DrawingArea):
         result = show_pattern_dialog(self, self.plugin.get_pattern_name(self.pattern), self.plugin.get_pattern_length(self.pattern), DLGMODE_CHANGE)
         if not result:
             return
+        
         name, rc, switch = result
         self.patternsize = rc
+
         if self.plugin.get_pattern_name(self.pattern) != name:
             self.plugin.set_pattern_name(self.pattern, name)
         if self.plugin.get_pattern_length(self.pattern) != rc:
             self.plugin.set_pattern_length(self.pattern, rc)
-        player = components.get('neil.core.player')
+            
+        player = components.get_player()
         player.history_commit("change pattern properties")
 
     def on_popup_add_track(self, *args):
         """
         Callback that adds a track.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         if self.plugin != None:
             pluginloader = self.plugin.get_pluginloader()
             self.plugin.set_track_count(min(pluginloader.get_tracks_max(), self.plugin.get_track_count() + 1))
@@ -1771,7 +1845,7 @@ class PatternView(Gtk.DrawingArea):
         """
         Callback that deletes last track.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         pluginloader = self.plugin.get_pluginloader()
         self.plugin.set_track_count(max(pluginloader.get_tracks_min(), self.plugin.get_track_count() - 1))
         player.history_commit("remove pattern track")
@@ -1831,8 +1905,8 @@ class PatternView(Gtk.DrawingArea):
             kv = kv - Gdk.keyval_from_name('KP_0') + \
                  Gdk.keyval_from_name('0')
         k = Gdk.keyval_name(kv)
-        player = components.get('neil.core.player')
-        eventbus = components.get('neil.core.eventbus')
+        player = components.get_player()
+        eventbus = components.get_eventbus()
         # shiftdown = mask & Gdk.ModifierType.SHIFT_MASK
         # ctrldown = mask & Gdk.ModifierType.CONTROL_MASK
         if k == 'less':
@@ -1842,7 +1916,7 @@ class PatternView(Gtk.DrawingArea):
             player.activate_wave(1)
         elif mask & Gdk.ModifierType.SHIFT_MASK and k == 'Down':
             if not self.selection:
-                self.selection = self.Selection()
+                self.selection = PatternSelection()
             if self.shiftselect == None:
                 self.shiftselect = self.row
             self.move_down(self.edit_step)
@@ -1856,7 +1930,7 @@ class PatternView(Gtk.DrawingArea):
             self.redraw()
         elif mask & Gdk.ModifierType.SHIFT_MASK and k == 'Up':
             if not self.selection:
-                self.selection = self.Selection()
+                self.selection = PatternSelection()
             if self.shiftselect == None:
                 self.shiftselect = self.row
             self.move_up(self.edit_step)
@@ -1870,7 +1944,7 @@ class PatternView(Gtk.DrawingArea):
             self.redraw()
         elif mask & Gdk.ModifierType.SHIFT_MASK and (k == 'Right' or k == 'Left'):
             if not self.selection:
-                self.selection = self.Selection()
+                self.selection = PatternSelection()
             if self.shiftselect == None:
                 self.shiftselect = self.row
                 self.selection.begin = self.shiftselect
@@ -1881,7 +1955,7 @@ class PatternView(Gtk.DrawingArea):
         elif (mask & Gdk.ModifierType.CONTROL_MASK):
             if k == 'b':
                 if not self.selection:
-                    self.selection = self.Selection()
+                    self.selection = PatternSelection()
                 if self.keystartselect:
                     self.selection.begin = self.keystartselect
                 if self.keyendselect:
@@ -1897,7 +1971,7 @@ class PatternView(Gtk.DrawingArea):
                 self.redraw()
             elif k == 'e':
                 if not self.selection:
-                    self.selection = self.Selection()
+                    self.selection = PatternSelection()
                 if self.keystartselect:
                     self.selection.begin = self.keystartselect
                 if self.keyendselect:
@@ -1983,16 +2057,14 @@ class PatternView(Gtk.DrawingArea):
                                             int(len(indices) / 3), self.row, 1)
             player.history_commit("remove row")
         elif k == 'Return':
-            eventbus.edit_sequence_request()
+            eventbus.call('edit_sequence_request')
         elif k in ('KP_Add', 'plus'):
             player.activate_pattern(1)
         elif k in ('KP_Subtract', 'minus'):
             player.activate_pattern(-1)
         elif k in ('KP_Multiply', 'dead_acute'):
-            player = components.get('neil.core.player')
             self.set_octave(player.octave + 1)
         elif k in ('KP_Divide', 'ssharp'):
-            player = components.get('neil.core.player')
             self.set_octave(player.octave - 1)
         elif k == 'bracketleft':
             step_select = self.panel.toolbar.edit_step_box
@@ -2029,7 +2101,6 @@ class PatternView(Gtk.DrawingArea):
                     on = key_to_note(kv)
                     if on:
                         o, n = on
-                        player = components.get('neil.core.player')
                         data = (min(player.octave + o, 9) << 4) | (n + 1)
                         if (wp != None):
                             if player.active_waves:
@@ -2119,21 +2190,21 @@ class PatternView(Gtk.DrawingArea):
         """
         # player = components.get('neil.core.player')
         if playtrack and self.play_notes:
-            m = self.get_plugin()
+            # m = self.get_plugin()
             for index in range(self.parameter_count[self.group]):
                 v = self.plugin.get_pattern_value(self.pattern, self.group,
                                                   self.track, index, self.row)
                 p = self.plugin.get_parameter(self.group, self.track, index)
                 if v != p.get_value_none():
-                    m.set_parameter_value_direct(self.group, self.track,
-                                                 index, v, 0)
+                    self.plugin.set_parameter_value_direct(self.group, self.track, index, v, 0)
+
         self.move_down(self.edit_step)
 
     def on_key_up(self, widget, event):
         """
         Callback that responds to key release
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         if config.get_config().get_pattern_noteoff() == True:
             kv = event.keyval
             k = Gdk.keyval_name(kv)
@@ -2144,8 +2215,7 @@ class PatternView(Gtk.DrawingArea):
                 if parameter.get_description() == "Note" and kv < 256:
                     on = key_to_note(kv)
                     if on:
-                        m = self.get_plugin()
-                        m.set_parameter_value(self.group, self.track,
+                        self.plugin.set_parameter_value(self.group, self.track,
                                               self.index,
                                               zzub.zzub_note_value_off, 0)
                         player.history_commit("add event")
@@ -2202,7 +2272,7 @@ class PatternView(Gtk.DrawingArea):
         @rtype: (int, int)
         """
         x, y = self.pattern_to_charpos(row, group, track, index, subindex)
-        return ((x - self.start_col) * self.column_width) + pat_sizes.get('patleftmargin') + 4, self.top_margin + ((y - self.start_row) * self.row_height)
+        return ((x - self.start_col) * self.column_width) + self.left_margin + 4, self.top_margin + ((y - self.start_row) * self.row_height)
 
     def charpos_to_pattern(self, position):
         """
@@ -2235,15 +2305,16 @@ class PatternView(Gtk.DrawingArea):
         # find index, subindex
         index = self.index
         subindex = self.subindex
+        i = None
         if not out_of_bounds:
             if self.parameter_count[group]:
                 for i, pos in enumerate(self.parameter_position[group]):
                     if x < pos:
                         index = i - 1
                         break
-                else:
-                    # last index
-                    index = i
+                    elif i is not None:
+                        index = i # last index
+                        
                 x -= self.parameter_position[group][index]
                 # subindex is that what remains
                 subindex = x
@@ -2261,14 +2332,14 @@ class PatternView(Gtk.DrawingArea):
         @rtype: (int, int, int, int, int)
         """
         x, y = position
-        return self.charpos_to_pattern(( int((x - pat_sizes.get('patleftmargin') - 4) / self.column_width) + self.start_col, int((y - self.top_margin) / self.row_height * 1) + self.start_row))
+        return self.charpos_to_pattern(( int((x - self.left_margin - 4) / self.column_width) + self.start_col, int((y - self.top_margin) / self.row_height * 1) + self.start_row))
 
     def get_charbounds(self):
         """
         Returns the outermost coordinates in characters.
         """
         w, h = self.get_client_size()
-        w -= pat_sizes.get('patleftmargin') + 4
+        w -= self.left_margin + 4
         h -= self.top_margin
         return self.start_col + int(w / self.column_width) - 1, self.start_row + int(h / self.row_height) - 1
 
@@ -2314,6 +2385,10 @@ class PatternView(Gtk.DrawingArea):
 
     def update_plugin_info(self):
         plugin = self.get_plugin()
+        if not plugin:
+            return
+        
+        self.plugin = plugin
         pi = self.plugin_info.get(plugin)
         # store current position
         pi.pattern_position = (self.row, self.group, self.track, self.index, self.subindex)
@@ -2375,11 +2450,14 @@ class PatternView(Gtk.DrawingArea):
         @return: zzub plugin plugin.
         @rtype: zzub.Plugin
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
+
         if player.get_plugin_count() == 0:
-            return
+            return None
+
         sel = player.active_plugins
-        return sel and sel[0] or None
+
+        return sel[0] if sel else None
 
     def get_datasource(self):
         """
@@ -2390,8 +2468,8 @@ class PatternView(Gtk.DrawingArea):
         """
         plugin = self.get_plugin()
         if not plugin:
-            return
-        player = components.get('neil.core.player')
+            return None
+        player = components.get_player()
         for selplugin, i in player.active_patterns:
             if selplugin == plugin:
                 return plugin, i
@@ -2404,19 +2482,24 @@ class PatternView(Gtk.DrawingArea):
         @param row: Line that will be updated.
         @type row: int
         """
+        if self.plugin is None or self.lines is None:
+            return
+        
         for g in range(3):
-            if self.lines[g]:
-                tc = self.group_track_count[g]
-                for t in range(tc):
-                    s = ' '.join([get_str_from_param(self.plugin.get_parameter(g, t, i),
-                                                     self.plugin.get_pattern_value(self.pattern, g, t, i, row))
-                                                    for i in range(self.parameter_count[g])])
-                    # values = [self.plugin.get_pattern_value(self.pattern, g, t, i, row) != self.plugin.get_parameter(g, t, i).get_value_none()
-                    #                                         for i in range(self.parameter_count[g])]
-                    try:
-                        self.lines[g][t][row] = s
-                    except IndexError:
-                        pass
+            if not self.lines[g]:
+                continue
+
+            tc = self.group_track_count[g]
+            for t in range(tc):
+                s = ' '.join([get_str_from_param(self.plugin.get_parameter(g, t, i),
+                                                    self.plugin.get_pattern_value(self.pattern, g, t, i, row))
+                                                for i in range(self.parameter_count[g])])
+                # values = [self.plugin.get_pattern_value(self.pattern, g, t, i, row) != self.plugin.get_parameter(g, t, i).get_value_none()
+                #                                         for i in range(self.parameter_count[g])]
+                try:
+                    self.lines[g][t][row] = s
+                except IndexError:
+                    pass
 
     # This does the same job as update_line, but if we need to
     # update a lot of data at once, it's faster to use update_col.
@@ -2470,7 +2553,7 @@ class PatternView(Gtk.DrawingArea):
         if not self.is_visible():
             return
         cx, cy = self.pattern_to_pos(self.row, self.group, self.track, self.index, self.subindex)
-        if (cx >= (pat_sizes.get('patleftmargin') + 4)) and (cy >= self.top_margin):
+        if (cx >= (self.left_margin + 4)) and (cy >= self.top_margin):
             ctx.rectangle(cx + 0.5, cy + 0.5, self.column_width, self.row_height)
             ctx.set_source_rgba(1.0, 0.0, 0.0, 1.0)
             ctx.set_line_width(1)
@@ -2520,10 +2603,12 @@ class PatternView(Gtk.DrawingArea):
         # edge of the screen, which signifies that we don't have to process
         # the columns that are further to the right.
         out_of_bounds = False
-        if self.lines != None:
+        plugin = self.get_plugin()
+        if self.lines != None and plugin != None:
             # Draw connection parameters (volume, pan, etc)
+            
             for t in range(self.group_track_count[CONN]):
-                connectiontype = self.get_plugin().get_input_connection_type(t)
+                connectiontype = plugin.get_input_connection_type(t)
                 if connectiontype == zzub.zzub_connection_type_audio:
                     extent = draw_parameters_range(row, num_rows, CONN, t)
                     out_of_bounds = extent > w
@@ -2583,3 +2668,9 @@ class PatternView(Gtk.DrawingArea):
         self.draw_playpos_xor(ctx)
 
         return False
+
+__all__ = [
+    'PatternView',
+    'PatternSelection',
+    
+]
