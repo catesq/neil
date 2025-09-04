@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from components.options import OptionParser
     from components.driver import AudioDriver, MidiDriver
     from components.sequencer import SequencerPanel
+    from components.expression import Expression
     from ..utils import ui
 
 from .package import PackageInfo
@@ -305,30 +306,31 @@ class ComponentManager():
         return partial_matches[0]
 
 
-    def get_player(self) -> 'NeilPlayer':
+    def get_player(self) -> NeilPlayer:
         return self.get('neil.core.player')        # pyright: ignore[reportReturnType]
 
 
-    def get_config(self) -> 'NeilConfig':
+    def get_config(self) -> NeilConfig:
         return self.get('neil.core.config')        # pyright: ignore[reportReturnType]
     
 
-    def get_eventbus(self) -> 'EventBus':
+    def get_eventbus(self) -> EventBus:
         return self.get('neil.core.eventbus')      # pyright: ignore[reportReturnType]
 
 
-    def get_audio_driver(self) -> 'AudioDriver':
-        return self.get('neil.core.driver.audio')  # pyright: ignore[reportReturnType]
+    def get_audio_driver(self) -> AudioDriver:
+        return self.get('neil.core.driver.audio')   # pyright: ignore[reportReturnType]
+    
     def get_expressions(self) -> Expression:
         return self.get('neil.core.expression')     # pyright: ignore[reportReturnType]
 
 
     def get_options(self) -> 'OptionParser':
-        return self.get('neil.core.options')       # pyright: ignore[reportReturnType]
+        return self.get('neil.core.options')        # pyright: ignore[reportReturnType]
     
 
     def get_accelerators(self) -> Accelerators:
-        return self.get('neil.core.accelerators') # pyright: ignore[reportReturnType]
+        return self.get('neil.core.accelerators')   # pyright: ignore[reportReturnType]
 
 
     def get_categories(self) -> Dict[str, List[str]]:
@@ -339,8 +341,8 @@ class ComponentManager():
         return self.factories
 
 
-    def get_factory_names(self):
-        return self.factories.keys()
+    def get_factory_names(self) -> list[str]:
+        return self.factories.keys()                  # pyright: ignore[reportReturnType]
     
 
     def get_packages(self) -> List[PackageInfo]:

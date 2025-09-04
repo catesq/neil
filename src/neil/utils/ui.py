@@ -3,7 +3,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject
 
-from typing import cast
+from typing import Optional, cast
 
 from neil import components
 import weakref
@@ -205,11 +205,24 @@ class ImageToggleButton(Gtk.ToggleButton):
 
 
 
+# the get_submenu() method of Gtk.MenuItem returns a Gtk.Menu
+# so monkeypatch the EasyMenu methods 
+def easy_menu_wrapper(menu: Gtk.Menu) -> 'EasyMenu':
+    for name in dir(MenuWrapper):
+        if name.startswith('add'):
+            func = getattr(MenuWrapper, name)
+            setattr(menu, name, types.MethodType(func, menu))
+
+    return cast(EasyMenu, menu)
+
+
 # helper functions shared by the EasyMenu and EasyMenuBar 
 class MenuWrapper:
-    def add_submenu(self, label, submenu = None, func = None, *args) -> tuple[Gtk.MenuItem, Gtk.Menu]:
+    def add_submenu(self, label, submenu: Optional['Gtk.Menu | EasyMenu'] = None, func = None, *args) -> tuple[Gtk.MenuItem, 'EasyMenu']:
         if not submenu:
             submenu = EasyMenu()
+        elif isinstance(submenu, Gtk.Menu):
+            submenu = easy_menu_wrapper(submenu)
 
         item = self.add_item(label, func, args)
         item.set_submenu(submenu)
@@ -298,17 +311,6 @@ class EasyMenu(Gtk.Menu, MenuWrapper):
     def __iter__(self):
         return (child for child in self.get_children() if isinstance(child, Gtk.MenuItem))
 
-
-
-# the get_submenu() method of Gtk.MenuItem returns a Gtk.Menu
-# so monkeypatch the EasyMenu methods 
-def easy_menu_wrapper(menu: Gtk.Menu) -> EasyMenu:
-    for name in dir(MenuWrapper):
-        if name.startswith('add'):
-            func = getattr(MenuWrapper, name)
-            setattr(menu, name, types.MethodType(func, menu))
-
-    return cast(EasyMenu, menu)
 
 
 

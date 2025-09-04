@@ -21,7 +21,7 @@
 Provides information used by all ui sections.
 """
 
-from typing import Any, Generator
+from typing import Any, Generator, Tuple
 import neil
 import gi
 gi.require_version("Gtk", "3.0")
@@ -50,6 +50,8 @@ class PluginInfo(object):
     """
     Encapsulates data associated with a plugin.
     """
+    pattern_position: Tuple[int, int,int,int,int]
+    
     def __init__(self, plugin):
         print("new PluginInfo for %s %s" % (plugin.get_id(), plugin.get_name()))
         self.plugin = plugin
