@@ -6,6 +6,12 @@ from neil.utils import ui
 from neil.envelope import SimpleEnvelope
 from random import randint
 
+class PatternFx():
+    name: str
+    
+    def transform(self, data, parameter):
+        return data
+
 class SimpleRandom():
     __neil__ = dict(
         id = 'neil.core.patternfx.simplerandom',
