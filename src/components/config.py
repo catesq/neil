@@ -665,7 +665,7 @@ class NeilConfig(configparser.ConfigParser):
         """
         self.set_section('Defaults')
         return int(self.read_value(key, str(defval)))
-
+    
     def set_default_int(self, key, val):
         """
         Stores a default value for an UI setting.
