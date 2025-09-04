@@ -384,7 +384,7 @@ class RouteView(Gtk.DrawingArea):
 
     def double_click_not_plugin(self, event):
         print("double click not plugin")
-        searchwindow = cast(Gtk.Window, views.get_dialog('searchplugins'))
+        searchwindow = views.get_dialog('searchplugins')
         searchwindow.show_all()
         searchwindow.present()
 

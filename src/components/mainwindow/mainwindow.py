@@ -346,7 +346,7 @@ class NeilFrame(Gtk.Window):
         pos = player.history_get_position()
         self.print_history()
 
-        accel = components.get('neil.core.accelerators')
+        accel = components.get_accelerators()
         item = editmenu.add_item("Undo", "", self.on_undo)
         accel.add_accelerator("<Control>Z", item)
         if player.can_undo():
@@ -540,7 +540,7 @@ class NeilFrame(Gtk.Window):
         Updates the title to display the filename of the currently
         loaded document.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         filename = os.path.basename(player.document_path)
         if not filename:
             filename = 'Unsaved'

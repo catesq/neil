@@ -81,7 +81,7 @@ if __name__ == '__main__':
     print(components.get('neil.hub.myclass.singleton').x)
     print(components.get('neil.hub.myclass.singleton').x)
     print(components.get('neil.hub.myclass.singleton').x)
-    print(components.category('uselessclass'))
+    print(components.get_from_category('uselessclass'))
     try:
         components.throw('neil.exception.cancel', "argh.")
     except components.exception('neil.exception.cancel') as test:

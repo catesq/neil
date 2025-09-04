@@ -4,8 +4,13 @@ from .package import PackageParser
 from .. import errordlg
 
 
+# looks for files ending in ".neil-component" in component path and the 'packages' subdirectory of eahc directory in component path - 
+# then build a PackageInfo from the info in that file
 
-# looks for files like "core-about.neil-component" in component path then tries to load matching package
+# For each PackageInfo it tries importing the module name. 
+
+# If the module has a __neil__ dict it registers the PackageInfo, the module file and the class names listed in the __neil__ dict 
+
 class NamedComponentLoader():
     def __init__(self):
         pass

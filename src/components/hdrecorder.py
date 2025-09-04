@@ -97,7 +97,7 @@ class HDRecorderDialog(Gtk.Dialog):
         self.filename = ''
         GLib.timeout_add(100, self.on_timer)
         eventbus = components.get_eventbus()
-        eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
+        eventbus.attach('parameter_changed', self.on_zzub_parameter_changed)
         self.update_label()
         self.update_rec_button()
 
