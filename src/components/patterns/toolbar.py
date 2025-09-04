@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
@@ -9,44 +7,6 @@ from neil import components
 from neil.utils import ui, show_machine_manual, filenameify, sizes
 
 from .views import PatternView
-
-# class eventbus_handler:
-#     def __init__(self, func, events, *args, **kwargs):
-#         self.func = func
-#         self.events = events
-
-#     def remove(self, eventbus):
-#         for event_name in self.events:
-#             eventbus.detach(event_name, self.func)
-
-#     def register(self, eventbus):
-#         for event_name in self.events:
-#             eventbus.attach(event_name, self.func)
-
-#     def get_func(self):
-#         return self.func
-
-
-
-# class gtk_widget_handler:
-#     def __init__(self, widget, signal_name, func, *args, **kwargs):
-#         self.func = func
-#         self.id = False
-#         self.signal_name = signal_name
-#         self.widget = widget
-
-#     def remove(self, eventbus):
-#         if self.id:
-#             self.widget.disconnect(self.id)
-#             self.id = False
-
-#     def register(self, eventbus):
-#         if not self.id:
-#             self.id = self.widget.connect(self.signal_name, self.func)
-
-#     def get_func(self):
-#         return self.func
-    
 
 
 class PatternToolBar(Gtk.HBox):
@@ -131,20 +91,6 @@ class PatternToolBar(Gtk.HBox):
 
         self.gtk_handlers = {}
 
-        # self.event_handlers = {
-        #     eventbus_handler(self.pluginselect_update, ['zzub_new_plugin', 'zzub_delete_plugin', 'document_loaded', 'active_plugins_changed']),
-        #     eventbus_handler(self.get_pattern_source, ['active_plugins_changed', 'active_patterns_changed', 'zzub_delete_pattern', 'zzub_new_pattern', 'zzub_pattern_changed']),
-        #     eventbus_handler(self.waveselect_update, ['active_waves_changed', 'zzub_wave_allocated', 'zzub_wave_changed', 'zzub_delete_wave', 'document_loaded']),
-        #     eventbus_handler(self.octave_update, ['octave_changed']),
-        #     gtk_widget_handler(self.pluginselect, 'changed', self.set_plugin_sel),
-        #     gtk_widget_handler(self.patternselect, 'changed', self.set_pattern_sel),
-        #     gtk_widget_handler(self.waveselect, 'changed', self.set_wave_sel),
-        #     gtk_widget_handler(self.octaveselect, 'changed', self.octave_set),
-        #     gtk_widget_handler(self.edit_step_box, 'changed', self.edit_step_changed),
-        #     gtk_widget_handler(self.playnotes, 'clicked', self.on_playnotes_click),
-        #     gtk_widget_handler(self.btnhelp, 'clicked', self.on_button_help),
-        # }
-
     def signal_handler_func_for(self, widget_name):
         if widget_name in self.gtk_handlers:
             return self.gtk_handlers[widget_name]
@@ -157,8 +103,6 @@ class PatternToolBar(Gtk.HBox):
             self.register_events()
 
     def register_events(self):
-        eventbus = components.get_eventbus()
-
         self.gtk_handlers['pluginselect']  = self.pluginselect.connect('changed', self.set_plugin_sel)
         self.gtk_handlers['patternselect'] = self.patternselect.connect('changed', self.set_pattern_sel)
         self.gtk_handlers['waveselect']    = self.waveselect.connect('changed', self.set_wave_sel)
@@ -167,6 +111,7 @@ class PatternToolBar(Gtk.HBox):
         self.gtk_handlers['playnotes']     = self.playnotes.connect('clicked', self.on_playnotes_click)
         self.gtk_handlers['btnhelp']       = self.btnhelp.connect('clicked', self.on_button_help)
 
+        eventbus = components.get_eventbus()
         eventbus.attach(['new_plugin', 'delete_plugin', 'document_loaded', 'active_plugins_changed'], self.pluginselect_update)
         eventbus.attach(['active_plugins_changed', 'active_patterns_changed', 'delete_pattern', 'new_pattern', 'pattern_changed'], self.get_pattern_source)
         eventbus.attach(['active_waves_changed', 'delete_plugin', 'document_loaded', 'active_plugins_changed'], self.pluginselect_update)
@@ -176,7 +121,6 @@ class PatternToolBar(Gtk.HBox):
 
     def remove_events(self):
         eventbus = components.get_eventbus()
-
         eventbus.detach(self.pluginselect_update)
         eventbus.detach(self.get_pattern_source)
         eventbus.detach(self.waveselect_update)

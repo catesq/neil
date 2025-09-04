@@ -1,11 +1,16 @@
+from __future__ import annotations
+
+from array import array
+from typing import Optional, Tuple
 import cairo
+
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, Gdk, GLib, Pango, PangoCairo
 
 
-from neil import components
+from neil import components, views
 import neil.common as common
 
 from neil.utils import (
@@ -23,7 +28,9 @@ from .patternstatus import PatternStatus
 import config
 import zzub
 
+
 pat_sizes = Sizes(patleftmargin='margin * 8')
+
 
 CONN = 0
 GLOBAL = 1
@@ -174,6 +181,7 @@ class BarMarksPainter():
                     color = get_color(row)
                     if color != None:
                         draw_bar(row, TRACK, track, color)
+
 
 class PatternBackgroundPainter():
     def __init__(self, widget):
@@ -332,11 +340,12 @@ class PatternDialog(Gtk.Dialog):
         """
         Gtk.Dialog.__init__(
             self,
-            "Pattern Properties",
-            parent.get_toplevel(),
-            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-            None
+            title="Pattern Properties",
+            transient_for=parent.get_toplevel(),
+            modal=True, 
+            destroy_with_parent=True
         )
+        
         vbox = Gtk.VBox(False, pat_sizes.get('margin'))
         vbox.set_border_width(pat_sizes.get('margin'))
 
@@ -449,6 +458,7 @@ class PatternView(Gtk.DrawingArea):
     Pattern viewer class.
     """
     CLIPBOARD_MAGIC = "PATTERNDATA"
+    handler_ids: list[int]
 
     class Selection:
         """
@@ -571,7 +581,7 @@ class PatternView(Gtk.DrawingArea):
 
 
     def handle_focus(self):
-        statusbar = components.get('neil.core.statusbar')
+        statusbar = views.get_statusbar('neil.core.statusbar')
         statusbar.set_left(self.pattern_status.get_values_widget(), self.pattern_status.get_description_widget())
         statusbar.set_right(self.pattern_status.get_position_widget(), self.pattern_status.get_selection_widget())
         self.connect_handlers()
