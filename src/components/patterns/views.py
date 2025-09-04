@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from array import array
 from typing import Optional, Tuple
 import cairo
@@ -9,6 +7,7 @@ gi.require_version("Gtk", "3.0")
 gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, Gdk, GLib, Pango, PangoCairo
 
+from enum import IntEnum
 
 from neil import components, views
 import neil.common as common
@@ -250,7 +249,7 @@ class PatternBackgroundPainter():
 
 
 class PlayPosPainter():
-    widget: PatternView
+    widget: 'PatternView'
     prev_playpos: list[int] | Tuple[int, int]
     playpos_buf: cairo.ImageSurface 
     
@@ -334,7 +333,7 @@ class PatternDialog(Gtk.Dialog):
     This dialog is used to create a new pattern or a copy of a pattern,
     and to modify existent patterns.
     """
-    def __init__(self, parent):
+    def __init__(self, parent, mode):
         """
         Initialization.
         """
@@ -345,8 +344,8 @@ class PatternDialog(Gtk.Dialog):
             modal=True, 
             destroy_with_parent=True
         )
-        
-        vbox = Gtk.VBox(False, pat_sizes.get('margin'))
+        self.dlgmode = mode
+        vbox = Gtk.VBox(expand=False, margin=pat_sizes.get('margin'))
         vbox.set_border_width(pat_sizes.get('margin'))
 
         self.btn_ok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
@@ -355,16 +354,16 @@ class PatternDialog(Gtk.Dialog):
         self.edtname = Gtk.Entry()
         self.length_label = Gtk.Label(label="Length")
         self.lengthbox = Gtk.ComboBoxText.new_with_entry()
-        self.chkswitch = Gtk.CheckButton('Switch to new pattern')
+        self.chkswitch = Gtk.CheckButton.new_with_label('Switch to new pattern')
         for size in patternsizes:
             self.lengthbox.append_text(str(size))
         self.rows_label = Gtk.Label(label="Rows")
 
-        sgroup1 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
-        sgroup2 = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
+        sgroup1 = Gtk.SizeGroup.new(Gtk.SizeGroupMode.HORIZONTAL)
+        sgroup2 = Gtk.SizeGroup.new(Gtk.SizeGroupMode.HORIZONTAL)
 
         def add_row(c1, c2):
-            row = Gtk.HBox(False, pat_sizes.get('margin'))
+            row = Gtk.HBox(expand=False, margin=pat_sizes.get('margin'))
             c1.set_alignment(1, 0.5)
             row.pack_start(c1, False, True, 0)
             row.pack_start(c2, True, True, 0)
@@ -376,7 +375,11 @@ class PatternDialog(Gtk.Dialog):
         add_row(self.rows_label, self.lengthbox)
         vbox.pack_start(self.chkswitch, False, True, 0)
         self.edtname.connect('activate', self.on_enter)
-        self.lengthbox.get_child().connect('activate', self.on_enter)
+
+        child = self.lengthbox.get_child()
+        if child is not None:
+            child.connect('activate', self.on_enter)
+
         self.get_content_area().add(vbox)
         self.show_all()
 
@@ -405,8 +408,8 @@ def show_pattern_dialog(parent, name, length, dlgmode, letswitch=True):
     @return: Tuple containing pattern name, length, and whether to switch to new pattern or not
     @rtype: (string, int, int)
     """
-    dlg = PatternDialog(parent)
-    dlg.dlgmode = dlgmode
+    dlg = PatternDialog(parent, dlgmode)
+    
     if dlgmode == DLGMODE_NEW:
         dlg.set_title("New Pattern")
         if not letswitch:
@@ -418,17 +421,23 @@ def show_pattern_dialog(parent, name, length, dlgmode, letswitch=True):
         dlg.set_title("Pattern Properties")
         dlg.chkswitch.set_sensitive(False)
     dlg.edtname.set_text(name)
-    dlg.chkswitch.set_active(config.get_config().get_default_int('SwitchToNewPattern', 1))
-    dlg.lengthbox.get_child().set_text(str(length))
+    dlg.chkswitch.set_active(bool(config.get_config().get_default_int('SwitchToNewPattern', 1)))
+    
+    dlg.lengthbox.remove_all()
+    dlg.lengthbox.append_text(str(length))
+    # dlg.lengthbox.get_child().set_text(str(length))
+
     dlg.edtname.select_region(0, -1)
     dlg.edtname.grab_focus()
     response = dlg.run()
     dlg.hide()
     result = None
+
     if response == Gtk.ResponseType.OK:
         switch = int(dlg.chkswitch.get_active())
         config.get_config().set_default_int('SwitchToNewPattern', switch)
-        length = int(dlg.lengthbox.get_child().get_text())
+        length = int(dlg.lengthbox.get_active_text())
+        # length = int(dlg.lengthbox.get_child().get_text())
         result = (str(dlg.edtname.get_text()), length, switch)
     dlg.destroy()
     return result
@@ -437,12 +446,11 @@ def show_pattern_dialog(parent, name, length, dlgmode, letswitch=True):
 
 
 
-from enum import IntEnum
 
 class SelectionMode(IntEnum):
-    Column = 0,
-    Track = 1,
-    Group = 2,
+    Column = 0
+    Track = 1
+    Group = 2
     All = 3
 
 # selection modes: column, track, tracks, all
@@ -581,7 +589,7 @@ class PatternView(Gtk.DrawingArea):
 
 
     def handle_focus(self):
-        statusbar = views.get_statusbar('neil.core.statusbar')
+        statusbar = views.get_statusbar()
         statusbar.set_left(self.pattern_status.get_values_widget(), self.pattern_status.get_description_widget())
         statusbar.set_right(self.pattern_status.get_position_widget(), self.pattern_status.get_selection_widget())
         self.connect_handlers()
@@ -684,11 +692,15 @@ class PatternView(Gtk.DrawingArea):
 
     def update_font(self):
         pctx = self.get_pango_context()
-        desc = Pango.FontDescription(config.get_config().get_pattern_font())  # .get_font_description()
+        desc = Pango.FontDescription.from_string(config.get_config().get_pattern_font())  # .get_font_description()
         pctx.set_font_description(desc)
         self.fontdesc = desc
         self.font = pctx.load_font(desc)
-        metrics = self.font.get_metrics(None)
+
+        if self.font is None:
+            return
+        
+        metrics = self.font.get_metrics()
 
         # fh = (metrics.get_ascent() + metrics.get_descent()) / Pango.SCALE
         fh = metrics.get_height() / Pango.SCALE
