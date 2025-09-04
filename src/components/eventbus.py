@@ -23,6 +23,7 @@ please note:
 """
 
 import sys, weakref
+from typing import Callable
 
 EVENTS = [
     # these might become obsolete
@@ -253,7 +254,12 @@ class EventBus:
 
 
     # call __add__ in EventhandlerList
-    def attach(self, event_name: str, *funcargs):
+    def attach(self, event_name: str | list[str], *funcargs):
+        if isinstance(event_name, list):
+            for name in event_name:
+                self.attach(name, funcargs)
+            return
+        
         handler_list = self.get_handler_list(event_name)
 
         if handler_list is not None:
@@ -263,14 +269,29 @@ class EventBus:
 
 
     # call __sub__ in EventhandlerList
-    def detach(self, event_name: str, *funcargs):
+    def detach(self, event_name_or_func: str | Callable, *funcargs):
+        if isinstance(event_name_or_func, str):
+            return self.detach_event(event_name_or_func, *funcargs)
+        else:
+            return self.detach_func(event_name_or_func, *funcargs)
+
+
+    def detach_event(self, event_name: str, *funcargs):
         handler_list = self.get_handler_list(event_name)
 
         if handler_list is not None:
             handler_list.__sub__(funcargs)
 
 
-    def call(self, event_name, *args):
+    def detach_func(self, *funcargs):
+        for event_name in self.handlers:
+            handler_list = self.get_handler_list(event_name)
+
+            if handler_list is not None:
+                handler_list.__sub__(funcargs)
+
+
+    def call(self, event_name: str, *args):
         handler_list = self.get_handler_list(event_name)
 
         if handler_list is not None:
