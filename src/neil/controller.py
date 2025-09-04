@@ -35,10 +35,10 @@ class SelectControllerDialog(Gtk.Dialog):
     """
     def __init__(self, parent=None):
         Gtk.Dialog.__init__(self,
-                title="Add Controller",
-                transient_for=parent and parent.get_toplevel(),
-                modal=True,
-                destroy_with_parent=True
+            title="Add Controller",
+            transient_for=parent and parent.get_toplevel(),
+            modal=True,
+            destroy_with_parent=True
         )
 
         vbox = Gtk.VBox()
@@ -49,6 +49,7 @@ class SelectControllerDialog(Gtk.Dialog):
         label.set_alignment(0, 0.5)
         lsizer.pack_start(label, False, True, 0)
         sg = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
+
         def make_row(name):
             row = Gtk.HBox(expand=False, margin=sizes.get('margin'))
             c1 = Gtk.Label()
@@ -61,29 +62,37 @@ class SelectControllerDialog(Gtk.Dialog):
             row.pack_start(c2, True, True, 0)
             lsizer.pack_start(row, False, True, 0)
             return c2
+        
         self.controllerlabel = make_row("Controller")
         self.channellabel = make_row("Channel")
         self.valuelabel = make_row("Value")
         self.btnok = self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
         self.btncancel = self.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+
         vbox.pack_start(lsizer, False, True, 0)
-        hsizer = Gtk.HBox(False, sizes.get('margin'))
+
+        hsizer = Gtk.HBox(expand=False, margin=sizes.get('margin'))
         self.namelabel = Gtk.Label(label="Name")
         self.editname = Gtk.Entry()
         hsizer.pack_start(self.namelabel, False, True, 0)
         hsizer.add(self.editname)
         vbox.pack_end(hsizer, True, True, 0)
         self.vbox.add(vbox)
-        self._target = None
+
+        self._target = []
         self._name = ''
         self._suggested_name = ''
         self.connect('response', self.on_close)
+
         self.editname.connect('activate', self.on_editname_activate)
         self.editname.connect('changed', self.on_editname_text)
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.zzub_midi_control += self.on_player_callback
+
+        eventbus = components.get_eventbus()
+        eventbus.attach('midi_control', self.on_player_callback)
+
         self.update()
         self.show_all()
+
 
     def on_editname_text(self, widget):
         """
@@ -91,6 +100,7 @@ class SelectControllerDialog(Gtk.Dialog):
         """
         self._name = widget.get_text()
         self.update()
+
 
     def suggest_text(self, text):
         suggested_name = str(text)
@@ -102,6 +112,7 @@ class SelectControllerDialog(Gtk.Dialog):
             self.editname.select_region(0,-1)
         self.update()
 
+
     def on_editname_activate(self, widget):
         """
         Called when return is pressed in the edit field.
@@ -109,6 +120,7 @@ class SelectControllerDialog(Gtk.Dialog):
         self.update()
         if self.btnok.get_property('sensitive'):
             self.response(Gtk.ResponseType.OK)
+
 
     def update(self):
         """
@@ -119,6 +131,7 @@ class SelectControllerDialog(Gtk.Dialog):
             self.btnok.set_sensitive(True)
         else:
             self.btnok.set_sensitive(False)
+
 
     def on_player_callback(self, status, ctrl, data):
         """
@@ -143,6 +156,7 @@ class SelectControllerDialog(Gtk.Dialog):
             self.suggest_text("CC #%03i (CH%02i)" % (channel+1, controller))
             self.update()
 
+
     def on_close(self, widget, response):
         """
         Called when the dialog is closed.
@@ -150,21 +164,25 @@ class SelectControllerDialog(Gtk.Dialog):
         # FIXME should we remove on_player_callback from the eventbus?
         pass
 
+
 def learn_controller(parent):
     dlg = SelectControllerDialog(parent)
     response = dlg.run()
     dlg.destroy()
+
     if response == Gtk.ResponseType.OK:
-        channel,ctrlid = dlg._target
+        channel, ctrlid = dlg._target
         return dlg._name, channel, ctrlid
+
     return None
 
+
 if __name__ == '__main__':
-    from . import testplayer
-    import gobject
     from .testplayer import TestWindow
     window = TestWindow()
+
     def show_dialog(rootwindow):
-        print(learn_controller(rootwindow, rootwindow))
+        print(learn_controller(rootwindow))
+        
     GObject.timeout_add(100, show_dialog, window)
     Gtk.main()
