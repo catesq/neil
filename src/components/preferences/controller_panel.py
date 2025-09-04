@@ -12,44 +12,51 @@ class ControllerPanel(Gtk.VBox):
     Panel which allows to set up midi controller mappings.
     """
 
+
     __neil__ = dict(
         id = 'neil.core.pref.controller',
         categories = [
-                'neil.prefpanel',
+            'neil.prefpanel',
         ]
     )
+
 
     __prefpanel__ = dict(
         label = "Controllers",
     )
 
+
     def __init__(self):
         self.sort_column = 0
         Gtk.VBox.__init__(self)
+
         self.set_border_width(sizes.get('margin'))
         frame1 = Gtk.Frame.new("Controllers")
-        sizer1 = Gtk.VBox(False, sizes.get('margin'))
+        sizer1 = Gtk.VBox(expand=False, margin=sizes.get('margin'))
         sizer1.set_border_width(sizes.get('margin'))
         frame1.add(sizer1)
+
         self.controllers, self.store, columns = ui.new_listview([
                 ('Name', str),
                 ('Channel', str),
                 ('Controller', str),
         ])
+
         self.controllers.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         sizer1.add(ui.add_scrollbars(self.controllers))
-        self.btnadd = Gtk.Button(stock=Gtk.STOCK_ADD)
-        self.btnremove = Gtk.Button(stock=Gtk.STOCK_REMOVE)
-        hsizer = Gtk.HButtonBox()
-        hsizer.set_spacing(sizes.get('margin'))
-        hsizer.set_layout(Gtk.ButtonBoxStyle.START)
+
+        self.btnadd = Gtk.Button.new_from_stock(Gtk.STOCK_ADD)
+        self.btnremove = Gtk.Button.new_from_stock(Gtk.STOCK_REMOVE)
+        hsizer = Gtk.HButtonBox(layout_style=Gtk.ButtonBoxStyle.START, spacing=sizes.get('margin'))
         hsizer.pack_start(self.btnadd, False, True, 0)
         hsizer.pack_start(self.btnremove, False, True, 0)
         sizer1.pack_start(hsizer, False, True, 0)
+        
         self.add(frame1)
         self.btnadd.connect('clicked', self.on_add_controller)
         self.btnremove.connect('clicked', self.on_remove_controller)
         self.update_controllers()
+
 
     def update_controllers(self):
         """

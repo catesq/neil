@@ -34,22 +34,23 @@ class SelectControllerDialog(Gtk.Dialog):
     Dialog that records a controller from keyboard input.
     """
     def __init__(self, parent=None):
-        GObject.GObject.__init__(self,
-                "Add Controller",
-                parent and parent.get_toplevel(),
-                Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                None
+        Gtk.Dialog.__init__(self,
+                title="Add Controller",
+                transient_for=parent and parent.get_toplevel(),
+                modal=True,
+                destroy_with_parent=True
         )
+
         vbox = Gtk.VBox()
-        lsizer = Gtk.VBox(False, sizes.get('margin'))
+        lsizer = Gtk.VBox(expand=False, margin=sizes.get('margin'))
         vbox.set_border_width(sizes.get('margin', 2))
         vbox.set_spacing(sizes.get('margin'))
         label = Gtk.Label(label="Move a control on your MIDI device to pick it up.")
         label.set_alignment(0, 0.5)
         lsizer.pack_start(label, False, True, 0)
-        sg = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
+        sg = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
         def make_row(name):
-            row = Gtk.HBox(False, sizes.get('margin'))
+            row = Gtk.HBox(expand=False, margin=sizes.get('margin'))
             c1 = Gtk.Label()
             c1.set_markup('<b>%s</b>' % name)
             c1.set_alignment(1, 0.5)

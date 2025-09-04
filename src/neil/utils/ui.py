@@ -409,7 +409,7 @@ def run_function_with_progress(parent, msg, allow_cancel, func, *args):
     label.set_alignment(0,0.5)
 
     progress = Gtk.ProgressBar()
-    vbox = Gtk.VBox(expand=False, spacing=6)
+    vbox = Gtk.VBox(expand=False, margin=6)
     vbox.set_border_width(6)
     vbox.pack_start(label, True, True, 0)
     vbox.pack_start(progress, True, True, 0)
@@ -461,7 +461,7 @@ def gettext(parent, msg, text=''):
     entry = Gtk.Entry()
     entry.set_text(text)
     entry.connect('activate', lambda widget: dialog.response(True))
-    vbox = Gtk.VBox(expand=False, spacing=6)
+    vbox = Gtk.VBox(expand=False, margin=6)
     vbox.set_border_width(6)
     vbox.pack_start(label, True, True, 0)
     vbox.pack_end(entry, False, True, 0)
@@ -581,7 +581,7 @@ def new_listview(columns):
     treeview = Gtk.TreeView()
     treeview.set_rules_hint(True)
     store, columncontrols = new_liststore(treeview, columns)
-    return treeview,store,columncontrols
+    return treeview, store, columncontrols
 
 
 def new_combobox(columns):

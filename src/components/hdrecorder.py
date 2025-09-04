@@ -81,10 +81,10 @@ class HDRecorderDialog(Gtk.Dialog):
         self.chkauto = chkauto
         # 0.3: DEAD
         #self.chkauto.set_active(self.master.get_auto_write())
-        sizer = Gtk.HBox(homogeneous=False, spacing=sizes.get('margin'))
+        sizer = Gtk.HBox(homogeneous=False, margin=sizes.get('margin'))
         sizer.pack_start(btnsaveas, False, True, 0)
         sizer.pack_start(textposition, False, True, 0)
-        sizer2 = Gtk.HBox(homogeneous=False, spacing=sizes.get('margin'))
+        sizer2 = Gtk.HBox(homogeneous=False, margin=sizes.get('margin'))
         sizer3 = Gtk.HButtonBox()
         sizer3.set_spacing(sizes.get('margin'))
         sizer3.set_layout(Gtk.ButtonBoxStyle.START)

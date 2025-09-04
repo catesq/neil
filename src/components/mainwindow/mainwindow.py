@@ -203,7 +203,7 @@ class NeilFrame(Gtk.Window):
             theme.append_search_path(hicoloriconpath(f"{size}x{size}/apps"))
 
         for size in [48, 32, 24, 22, 16]:
-            icon = theme.load_icon(icon_name, size, 0)
+            icon = theme.load_icon(icon_name, size, Gtk.IconLookupFlags.FORCE_SIZE)
             icons.append(icon)
         self.set_icon_list(icons)
 
@@ -349,18 +349,24 @@ class NeilFrame(Gtk.Window):
         accel = components.get_accelerators()
         item = editmenu.add_item("Undo", "", self.on_undo)
         accel.add_accelerator("<Control>Z", item)
+
         if player.can_undo():
-            item.get_children()[0].set_label('Undo "%s"' % player.history_get_description(pos-1))
+            item.set_label('Undo "%s"' % player.history_get_description(pos-1))
+            # item.get_children()[0].set_label('Undo "%s"' % player.history_get_description(pos-1))
         else:
             item.set_sensitive(False)
+
         item.connect('can-activate-accel', self.can_activate_undo)
 
         item = editmenu.add_item("Redo", "", self.on_redo)
         accel.add_accelerator("<Control>Y", item)
+
         if player.can_redo():
-            item.get_children()[0].set_label('Redo "%s"' % player.history_get_description(pos))
+            item.set_label('Redo "%s"' % player.history_get_description(pos))
+            # item.get_children()[0].set_label('Redo "%s"' % player.history_get_description(pos))
         else:
             item.set_sensitive(False)
+
         item.connect('can-activate-accel', self.can_activate_redo)
 
         editmenu.add_separator()
@@ -543,15 +549,20 @@ class NeilFrame(Gtk.Window):
         """
         player = components.get_player()
         filename = os.path.basename(player.document_path)
+
         if not filename:
             filename = 'Unsaved'
+
         if player.document_changed():
-            filename = '*'+filename
+            filename = '*' + filename
+
         if filename:
             title = filename + ' - ' + self.title
         else:
             title = self.title
+
         self.set_title(title)
+
         return True
 
 
