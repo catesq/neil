@@ -15,6 +15,7 @@ import time
 from . import colors 
 from .colors import *
 
+
 def set_clipboard_text(data):
     clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
     clipboard.set_text(data, len(data))

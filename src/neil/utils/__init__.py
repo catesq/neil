@@ -91,72 +91,6 @@ def write_string(f,s):
     write_int(f, len(s))
     f.write(s)
 
-def blend_float(rgb1, rgb2, weight = 0.5):
-    return [
-        rgb1[0] * weight + rgb2[0] * (1 - weight),
-        rgb1[1] * weight + rgb2[1] * (1 - weight),
-        rgb1[2] * weight + rgb2[2] * (1 - weight)
-    ]
-
-def blend(color1, color2, weight = 0.5):
-    """
-        Blend (lerp) two Gdk.Colors
-    """
-    return Gdk.Color (
-        color1.red_float   * weight + color2.red_float   * (1 - weight),
-        color1.green_float * weight + color2.green_float * (1 - weight),
-        color1.blue_float  * weight + color2.blue_float  * (1 - weight))
-
-def from_hsb(h=0.0,s=1.0,b=1.0):
-    """
-    Converts hue/saturation/brightness into red/green/blue components.
-    """
-    if not s:
-        return b,b,b
-    scaledhue = (h%1.0)*6.0
-    index = int(scaledhue)
-    fraction = scaledhue - index
-    p = b * (1.0 - s)
-    q = b * (1.0 - s*fraction)
-    t = b * (1.0 - s*(1.0 - fraction))
-    if index == 0:
-        return b,t,p
-    elif index == 1:
-        return q,b,p
-    elif index == 2:
-        return p,b,t
-    elif index == 3:
-        return p,q,b
-    elif index == 4:
-        return t,p,b
-    elif index == 5:
-        return b,p,q
-    return b,p,q
-
-def to_hsb(r,g,b):
-    """
-    Converts red/green/blue into hue/saturation/brightness components.
-    """
-    if (r == g) and (g == b):
-        h = 0.0
-        s = 0.0
-        b = r
-    else:
-        v = float(max(r,g,b))
-        temp = float(min(r,g,b))
-        diff = v - temp
-        if v == r:
-            h = (g - b)/diff
-        elif v == g:
-            h = (b - r)/diff + 2
-        else:
-            h = (r - g)/diff + 4
-        if h < 0:
-            h += 6
-        h = h / 6.0
-        s = diff / v
-        b = v
-    return h,s,b
 
 # is a pixel (px, py) inside the rectangle (x1, y1, x2, y2)  
 # where x1,y1 is top left and x2,y2 is bottom right
@@ -225,12 +159,6 @@ def get_new_pattern_name(plugin):
         if not found:
             break
     return s
-
-# class CancelException(Exception):
-#     """
-#     Is being thrown when the user hits cancel in a sequence of
-#     modal UI dialogs.
-#     """
 
 
 def camelcase_to_unixstyle(s):
