@@ -51,7 +51,7 @@ class PluginInfo(object):
     Encapsulates data associated with a plugin.
     """
     pattern_position: Tuple[int, int,int,int,int]
-    
+
     def __init__(self, plugin):
         print("new PluginInfo for %s %s" % (plugin.get_id(), plugin.get_name()))
         self.plugin = plugin
