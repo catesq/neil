@@ -26,7 +26,7 @@ from collections import deque
 from math import fabs
 import array
 
-from neil import utils, sizes, components
+from neil import utils, sizes, components, views
 
 
 # pylint: disable=no-member
@@ -70,7 +70,7 @@ class AmpView(Gtk.DrawingArea):
         """
         Event handler triggered by a 20fps timer event.
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         master = player.get_plugin(0)
         self.amp = min(master.get_last_peak()[self.channel], 1.0)
 
@@ -181,9 +181,11 @@ class MasterPanel(Gtk.VBox):
         Gtk.VBox.__init__(self)
         self.latency = 0
         self.ohg = utils.ui.ObjectHandlerGroup()
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
-        eventbus.document_loaded += self.update_all
+
+        eventbus = components.get_eventbus()
+        eventbus.attach('zzub_parameter_changed', self.on_zzub_parameter_changed)
+        eventbus.attach('document_loaded', self.update_all)
+
         #eventbus.zzub_player_state_changed += self.on_zzub_player_state_changed
         self.masterslider = Gtk.VScale()
         self.masterslider.set_draw_value(False)
@@ -222,7 +224,7 @@ class MasterPanel(Gtk.VBox):
 
         # Send keystrokes back to main window
         # Lambda needed because root window isn't initialized here
-        self.connect('key-press-event', lambda w, e: components.get('neil.core.window.root').on_key_down(w, e))
+        self.connect('key-press-event', lambda w, e: views.get_main_window('neil.core.window.root').on_key_down(w, e))
         self.connect('realize', self.on_realize)
 
     def on_realize(self, widget):

@@ -51,7 +51,7 @@ class TransportControls:
         Initializer.
         """
 
-        self.master_controls = components.get('neil.core.panel.master')
+        self.master_controls = views.get_master()
         self.master_control_window = Gtk.Window()
         self.master_control_window.add(self.master_controls)
         self.master_control_window.connect('delete-event', lambda widget, event: self.volume_button.set_state(False))
@@ -60,10 +60,10 @@ class TransportControls:
         self.master_control_window.set_resizable(True)
         self.master_control_window.set_position(Gtk.WindowPosition.MOUSE)
 
-        eventbus = components.get('neil.core.eventbus')
-        eventbus.zzub_parameter_changed += self.on_zzub_parameter_changed
-        eventbus.zzub_player_state_changed += self.on_zzub_player_state_changed
-        eventbus.document_loaded += self.update_all
+        eventbus = components.get_eventbus()
+        eventbus.attach('parameter_changed', self.on_zzub_parameter_changed)
+        eventbus.attach('player_state_changed', self.on_zzub_player_state_changed)
+        eventbus.attach('document_loaded', self.update_all)
 
         # when one button is clicked it blocks all other buttons added to the hgroup until the button's action is complete
         self.hgroup = ui.ObjectHandlerGroup()
@@ -78,7 +78,7 @@ class TransportControls:
         self.update_all()
 
     def build_play_info(self):
-        box = Gtk.HBox(False, sizes.half('margin'))
+        box = Gtk.HBox(expand=False, margin=sizes.half('margin'))
 
         self.bpmlabel = Gtk.Label(label="BPM")
         self.bpm = Gtk.SpinButton()
