@@ -1,6 +1,6 @@
 import os,sys,glob
 from .package import PackageParser
-from .helpers import path_cfg
+from ..utils import path_cfg
 from .. import errordlg
 
 

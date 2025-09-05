@@ -23,7 +23,97 @@
 
 # from configparser import ConfigParser
 # import sys, os
-from neil.utils.path_config import path_cfg
+# from neil.utils.path_config import path_cfg
+
+
+
+
+# """
+# Organizes finding Neils resources across the system.
+# Basically a wrapper around the path.cfg file in <install_dir>/share/neil or <local_settings_dir>
+# """
+
+# from configparser import ConfigParser
+# import sys, os
+
+# # from neil.utils.base import settingspath
+
+
+
+# if 'NEIL_BASE_PATH' in os.environ:
+#     BASE_PATH = os.environ['NEIL_BASE_PATH']
+# else:
+#     BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+
+
+
+# class PathConfig(ConfigParser):
+#     def __init__(self):
+#         ConfigParser.__init__(self)
+#         self.settings_dir = settingspath()
+
+#         try_paths = [
+#             os.path.join(settingspath(), 'path.cfg'), 
+#             os.environ['NEIL_PATH_CFG'] if 'NEIL_PATH_CFG' in os.environ else os.path.join(BASE_PATH, 'share/neil/path.cfg')
+#         ]
+
+#         path = self.get_cfg_path(try_paths)
+        
+#         assert path, "Unable to find path.cfg"
+
+#         print("Using path config: " + path)
+
+#         self.read([path])
+
+#         site_packages = self.get_path('site_packages')
+#         if not site_packages in sys.path:
+#             print(site_packages + "  missing in sys.path, prepending")
+#             sys.exit(0)
+#             # sys.path = [site_packages] + sys.path
+
+
+#     def get_cfg_path(self, paths):
+#         for path in paths:
+#             path = os.path.expanduser(path)
+#             # if not os.path.isabs(path):
+#             #     path = os.path.normpath(os.path.join(BASE_PATH,path))
+#             # print("searching " + path)
+#             if os.path.isfile(path):
+#                 return path
+
+
+#     def get_paths(self, pathid, append=''):
+#         paths = []
+#         default_path = self.get_path(pathid, append)
+#         if default_path:
+#             paths.append(default_path)
+#         paths.append(os.path.expanduser(os.path.join(self.settings_dir, pathid)))
+#         return paths
+    
+
+#     def get_path(self, pathid, append=''):
+#         if not self.has_option('Paths', pathid):
+#             return ''
+#         value = os.path.expanduser(self.get('Paths', pathid))
+#         if not os.path.isabs(value):
+#             value = os.path.normpath(os.path.join(BASE_PATH, value))
+#         if append:
+#             value = os.path.join(value, append)
+#         return value
+
+
+# path_cfg = PathConfig()
+
+
+
+
+
+
+
+
+
+
+
 
 
 # def settingspath():
