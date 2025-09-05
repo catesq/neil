@@ -18,10 +18,13 @@
 
 
 from neil.component_manager import ComponentManager, ViewComponentManager
+from . import utils
 from .utils import sizes
 
 components = ComponentManager()
 
 views = ViewComponentManager(components)
 
-__all__ = ['components', 'views', 'sizes']
+from .utils import ui
+
+__all__ = ['components', 'views', 'sizes', 'utils']
