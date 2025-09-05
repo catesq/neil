@@ -1,19 +1,23 @@
-
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject
 
-from typing import Optional, cast
+from typing import Optional, cast, TYPE_CHECKING
 
-from neil import components
 import weakref
 import types
-from .textify import prepstr
 import ctypes
 import time
 
-from . import colors 
-from .colors import *
+# never try 'from neil import components' in this file. unresolvable circular imports. 
+# pass the component manager or the component you need to the util function
+
+if TYPE_CHECKING:
+    from components.player import NeilPlayer
+    from components.mainwindow.helpers import Accelerators
+    from . import colors 
+    from .textify import prepstr
+    # from .colors import *
 
 
 def set_clipboard_text(data):
@@ -40,14 +44,14 @@ def make_submenu_item(submenu, name, use_underline=False):
     return item
 
 
-def make_stock_menu_item(stockid, func, frame=None, shortcut=None, *args):
-    item = Gtk.ImageMenuItem.new_from_stock(stockid, None)
-    if frame and shortcut:
-        acc = components.get_accelerators()
-        acc.add_accelerator(shortcut, item)
-    if func:
-        item.connect('activate', func, *args)
-    return item
+# def make_stock_menu_item(stockid, func, frame=None, shortcut=None, *args):
+#     item = Gtk.ImageMenuItem.new_from_stock(stockid, None)
+#     if frame and shortcut:
+#         acc = components.get_accelerators()
+#         acc.add_accelerator(shortcut, item)
+#     if func:
+#         item.connect('activate', func, *args)
+#     return item
 
 
 def make_stock_tool_item(stockid, func, *args):
@@ -274,13 +278,15 @@ class MenuWrapper:
         return item
     
 
-    def add_stock_image_item(self, stockid, func, frame=None, shortcut=None, *args):
+    def add_stock_image_item(self, stockid, func, acc: Optional['Accelerators'] = None, shortcut = None, *args):
         item = Gtk.ImageMenuItem.new_from_stock(stockid, None)
-        if frame and shortcut:
-            acc = components.get_accelerators()
+
+        if acc and shortcut:
             acc.add_accelerator(shortcut, item)
+
         if func:
             item.connect('activate', func, *args)
+
         self.append(item)
         return item
 
@@ -312,84 +318,12 @@ class EasyMenu(Gtk.Menu, MenuWrapper):
         return (child for child in self.get_children() if isinstance(child, Gtk.MenuItem))
 
 
-
-
-def wave_names_generator():
-    player = components.get_player()
+def wave_names_generator(player: 'NeilPlayer'):
     for i in range(player.get_wave_count()):
         w = player.get_wave(i)
         name = "%02X. %s" % ((i + 1), prepstr(w.get_name()))
         yield name
 
-
-def test_view(classname):
-    obj = components.get(classname)
-    if isinstance(obj, Gtk.Window):
-        pass
-    elif isinstance(obj, Gtk.Dialog):
-        pass
-    elif isinstance(obj, Gtk.Widget) and not obj.get_parent():
-        dlg = components.get('neil.test.dialog', embed=obj, destroy_on_close=False)
-
-
-
-
-
-
-class PropertyEventHandler(type):
-    def __new__(cls, name, bases, namespace, methods={}):
-        obj = super().__new__(cls, name, bases, namespace)
-        for name, args in methods.items():
-            obj.__generate_methods(name, args)
-        return obj
-
-    def __generate_methods(self, name, args):
-        doc = args.get('doc', '')
-
-        if args.get('list', False):
-            vtype = args['vtype']
-            getter = lambda self: PropertyEventHandler.listgetter(self, name,args)
-            setter = lambda self,value: PropertyEventHandler.listsetter(self, name,args,value)
-            default = args.get('default', [])
-        else:
-            if 'default' in args:
-                default = args['default']
-                vtype = args.get('vtype', type(default))
-            else:
-                vtype = args['vtype']
-                default = {float: 0.0, int:0, int:0, str:'', str:'', bool:False}.get(vtype, None)
-            getter = lambda self: PropertyEventHandler.getter(self, name,args)
-            setter = lambda self,value: PropertyEventHandler.setter(self, name,args,value)
-
-        setattr(self, '__' + name, default)
-
-        getter.__name__ = 'get_' + name
-        getter.__doc__ = 'Returns ' + doc
-        setattr(self, 'get_' + name, getter)
-
-        setter.__name__ = 'set_' + name
-        setter.__doc__ = 'Sets ' + doc
-        setattr(self, 'set_' + name, setter)
-
-        # add a property
-        prop = property(getter, setter, doc=doc)
-        setattr(self, name, prop)
-
-    def getter(self, membername, kwargs):
-        return getattr(self, '__' + membername)
-
-    def setter(self, membername, kwargs, value):
-        setattr(self, '__' + membername, value)
-        eventname = kwargs.get('event', membername + '_changed')
-        getattr(components.get('neil.core.eventbus'), eventname)(value)
-
-    def listgetter(self, membername, kwargs):
-        return getattr(self, '__' + membername)[:]
-
-    def listsetter(self, membername, kwargs, values):
-        setattr(self, '__' + membername, values)
-        eventname = kwargs.get('event', membername + '_changed')
-        getattr(components.get('neil.core.eventbus'), eventname)(values[:])
 
 
 

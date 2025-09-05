@@ -29,7 +29,6 @@ from gi.repository import Gtk, Gdk, Pango, PangoCairo
 import os
 from .utils import ui, sizes
 import zzub
-import config
 
 from neil import components
 
@@ -371,12 +370,13 @@ class WaveEditView(Gtk.DrawingArea):
                 for sensitive in sensitives:
                     sensitive.set_sensitive(False)
             else:
+                player = components.get_player()
                 # otherwise enable them.
                 for sensitive in sensitives:
                     sensitive.set_sensitive(True)
                 for i in self.store_submenu.get_children():
                     self.store_submenu.remove(i)
-                for index, name in enumerate(ui.wave_names_generator()):
+                for index, name in enumerate(ui.wave_names_generator(player)):
                     self.store_submenu.add_item_no_underline(name, self.on_copy_range, index)
             self.context_menu.popup(self, event)
 

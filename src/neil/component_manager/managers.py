@@ -1,9 +1,7 @@
 from typing import Dict, List, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from components.mainwindow.statusbar import StatusBar
-    from components.mainwindow.framepanel import FramePanel
-    from components.mainwindow.helpers import Accelerators
+    from components.mainwindow import NeilFrame, Accelerators, FramePanel, StatusBar
     from components.router import RouteView
     from components.player import NeilPlayer
     from components.config import NeilConfig
@@ -12,6 +10,7 @@ if TYPE_CHECKING:
     from components.driver import AudioDriver, MidiDriver
     from components.sequencer import SequencerPanel
     from components.expression import Expression
+    from components.masterpanel import MasterPanel
     from ..utils import ui
 
 from .package import PackageInfo
@@ -182,9 +181,6 @@ class ComponentManager():
         return 0 if factory_info is None else factory_info.priority
 
 
-        
-
-
     def singleton(self, id):
         # try to get a singleton first
         instance = self.singletons.get(id, False)
@@ -306,22 +302,23 @@ class ComponentManager():
         return partial_matches[0]
 
 
-    def get_player(self) -> NeilPlayer:
+    def get_player(self) -> 'NeilPlayer':
         return self.get('neil.core.player')        # pyright: ignore[reportReturnType]
 
 
-    def get_config(self) -> NeilConfig:
+    def get_config(self) -> 'NeilConfig':
         return self.get('neil.core.config')        # pyright: ignore[reportReturnType]
     
 
-    def get_eventbus(self) -> EventBus:
+    def get_eventbus(self) -> 'EventBus':
         return self.get('neil.core.eventbus')      # pyright: ignore[reportReturnType]
 
 
-    def get_audio_driver(self) -> AudioDriver:
+    def get_audio_driver(self) -> 'AudioDriver':
         return self.get('neil.core.driver.audio')   # pyright: ignore[reportReturnType]
     
-    def get_expressions(self) -> Expression:
+
+    def get_expressions(self) -> 'Expression':
         return self.get('neil.core.expression')     # pyright: ignore[reportReturnType]
 
 
@@ -329,7 +326,7 @@ class ComponentManager():
         return self.get('neil.core.options')        # pyright: ignore[reportReturnType]
     
 
-    def get_accelerators(self) -> Accelerators:
+    def get_accelerators(self) -> 'Accelerators':
         return self.get('neil.core.accelerators')   # pyright: ignore[reportReturnType]
 
 
@@ -357,24 +354,30 @@ class ViewComponentManager:
         self.components = components
 
 
-    def get_panels(self) -> FramePanel:
+    def get_panels(self) -> 'FramePanel':
         return self.components.get('neil.core.framepanel')    # pyright: ignore[reportReturnType]
 
 
     # parent is only necessary when the router is created in components.router.RoutePanel.__init__() 
-    def get_router(self, parent: Optional[Gtk.Widget] = None) -> RouteView:
-        return self.components.get('neil.core.router.view', parent) # pyright: ignore[reportReturnType]
+    def get_router(self, parent: Optional[Gtk.Widget] = None) -> 'RouteView':
+        return self.components.get('neil.core.router.view', parent)        # pyright: ignore[reportReturnType]
 
 
-    def get_statusbar(self) -> StatusBar:
-        return self.components.get('neil.core.statusbar') # pyright: ignore[reportReturnType]
+    def get_statusbar(self) -> 'StatusBar':
+        return self.components.get('neil.core.statusbar')                     # pyright: ignore[reportReturnType]
 
 
-    def get_sequencer(self) -> SequencerPanel:
-        return self.components.get('neil.core.sequencerpanel')  # pyright: ignore[reportReturnType]
+    def get_sequencer(self) -> 'SequencerPanel':
+        return self.components.get('neil.core.sequencerpanel')       # pyright: ignore[reportReturnType]
 
 
-    def get_contextmenu(self, menu_name, *args, prefix='neil.core.contextmenu') -> ui.EasyMenu:
+    def get_master(self) -> 'MasterPanel':
+        return self.components.get('neil.core.panel.master')         # pyright: ignore[reportReturnType]
+    
+    def get_mainwindow(self) -> 'NeilFrame':
+        return self.components.get('neil.core.window.root')         # pyright: ignore[reportReturnType]
+
+    def get_contextmenu(self, menu_name, *args, prefix='neil.core.contextmenu') -> 'ui.EasyMenu':
         return self.components.get(prefix + '.' + menu_name, *args) # pyright: ignore[reportReturnType]
     
 

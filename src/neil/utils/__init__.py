@@ -31,6 +31,8 @@ from .paths import *
 from .plugin import *
 from .converters import *
 from .textify import *
+from .colors import *
+from . import ui
 
 # do not import these modules here. recursive imports happen.
 # from .colors import *

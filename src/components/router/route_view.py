@@ -9,7 +9,7 @@ import zzub
 import config
 from neil.utils import ( 
     is_effect, is_a_generator, has_audio_output, has_output, has_cv_output, is_root, is_instrument, 
-    prepstr, linear2db, Vec2, Area, ui
+    prepstr, linear2db, Vec2, Area, Colors
 )
 
 from neil import components, views
@@ -18,7 +18,7 @@ from patterns import key_to_note
 
 from .parameter_dialog import ParameterDialogManager
 from .volume_slider import VolumeSlider
-from .utils import draw_line, draw_wavy_line, draw_line_arrow, router_sizes
+from .utils import router_sizes
 from .ui import AreaType, RouterLayer, ClickedArea
 from contextmenu import ConnectDialog
 
@@ -61,7 +61,7 @@ class RouteView(Gtk.DrawingArea):
         self.volume_slider      = VolumeSlider(self)
         self.selections         = {}                    #selections stored using the remember selection option
         self.area               = Area()                # will be the pixel dimensions allocated to the drawingarea
-        self.colors             = ui.Colors(config.get_config()) 
+        self.colors             = Colors(config.get_config()) 
 
         self.dragoffset         = Vec2(0, 0)           # pixel offset of the mouse click that initiated a drag to the mid point
 

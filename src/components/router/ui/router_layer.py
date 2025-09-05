@@ -4,7 +4,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Pango
 from typing import Generator, Tuple
-from neil.utils import Vec2, Area, ui
+from neil.utils import Vec2, Area, Colors
 import neil.common as common
 from typing import cast
 
@@ -61,7 +61,7 @@ class RouterItems(layers.Layer):
 class RouterLayer():
     pango: Pango.Context
 
-    def __init__(self, sizes, colors: ui.Colors):
+    def __init__(self, sizes, colors: Colors):
         # self.pango:Pango.Context = None
 
         self.sizes = sizes

@@ -21,7 +21,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import GLib
 
 from neil.utils import is_instrument, is_effect, is_streamer, is_a_generator
-from neil.utils.ui import PropertyEventHandler, refresh_gui
+from neil.utils.ui import refresh_gui
 from typing import Generator
 from zzub import Player
 
@@ -29,6 +29,66 @@ from neil import components
 import neil.common as common
 import os, sys, time
 import zzub
+
+
+
+class PropertyEventHandler(type):
+    def __new__(cls, name, bases, namespace, methods={}):
+        obj = super().__new__(cls, name, bases, namespace)
+        for name, args in methods.items():
+            obj.__generate_methods(name, args)
+        return obj
+
+    def __generate_methods(self, name, args):
+        doc = args.get('doc', '')
+
+        if args.get('list', False):
+            vtype = args['vtype']
+            getter = lambda self: PropertyEventHandler.listgetter(self, name,args)
+            setter = lambda self,value: PropertyEventHandler.listsetter(self, name,args,value)
+            default = args.get('default', [])
+        else:
+            if 'default' in args:
+                default = args['default']
+                vtype = args.get('vtype', type(default))
+            else:
+                vtype = args['vtype']
+                default = {float: 0.0, int:0, int:0, str:'', str:'', bool:False}.get(vtype, None)
+            getter = lambda self: PropertyEventHandler.getter(self, name,args)
+            setter = lambda self,value: PropertyEventHandler.setter(self, name,args,value)
+
+        setattr(self, '__' + name, default)
+
+        getter.__name__ = 'get_' + name
+        getter.__doc__ = 'Returns ' + doc
+        setattr(self, 'get_' + name, getter)
+
+        setter.__name__ = 'set_' + name
+        setter.__doc__ = 'Sets ' + doc
+        setattr(self, 'set_' + name, setter)
+
+        # add a property
+        prop = property(getter, setter, doc=doc)
+        setattr(self, name, prop)
+
+    def getter(self, membername, kwargs):
+        return getattr(self, '__' + membername)
+
+    def setter(self, membername, kwargs, value):
+        setattr(self, '__' + membername, value)
+        eventname = kwargs.get('event', membername + '_changed')
+        getattr(components.get('neil.core.eventbus'), eventname)(value)
+
+    def listgetter(self, membername, kwargs):
+        return getattr(self, '__' + membername)[:]
+
+    def listsetter(self, membername, kwargs, values):
+        setattr(self, '__' + membername, values)
+        eventname = kwargs.get('event', membername + '_changed')
+        getattr(components.get('neil.core.eventbus'), eventname)(values[:])
+
+
+
 
 DOCUMENT_UI = dict(
         # insert persistent members at this level, in the format
@@ -142,7 +202,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self._hevtime = 0
         self.__lazy_commits = False
         self.__event_stats = False
-        self.solo_plugin=None # type: ignore
+        self.solo_plugin = None   # pyright: ignore[reportAttributeAccessIssue]
 
         # enumerate zzub_event_types and prepare unwrappers for the different types
         self.event_id_to_name = {}

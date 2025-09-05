@@ -396,9 +396,11 @@ class NeilFrame(Gtk.Window):
         for item in filemenu:
             item.destroy()
 
-        filemenu.add_stock_image_item(Gtk.STOCK_NEW, self.on_new_file, frame=self, shortcut="<Control>N")
-        filemenu.add_stock_image_item(Gtk.STOCK_OPEN, self.on_open, frame=self, shortcut="<Control>O")
-        filemenu.add_stock_image_item(Gtk.STOCK_SAVE, self.on_save, frame=self, shortcut="<Control>S")
+        acc = components.get_accelerators()
+
+        filemenu.add_stock_image_item(Gtk.STOCK_NEW, self.on_new_file, acc, "<Control>N")
+        filemenu.add_stock_image_item(Gtk.STOCK_OPEN, self.on_open, acc, "<Control>O")
+        filemenu.add_stock_image_item(Gtk.STOCK_SAVE, self.on_save, acc, "<Control>S")
         filemenu.add_stock_image_item(Gtk.STOCK_SAVE_AS, self.on_save_as)
 
         recent_files = config.get_config().get_recent_files_config()
@@ -409,7 +411,7 @@ class NeilFrame(Gtk.Window):
                 filemenu.add_item("_%i %s" % (i+1,filetitle), self.open_recent_file, filename)
 
         filemenu.add_separator()
-        filemenu.add_stock_image_item(Gtk.STOCK_QUIT, self.on_exit, frame=self, shortcut="<Control>Q")
+        filemenu.add_stock_image_item(Gtk.STOCK_QUIT, self.on_exit, acc, "<Control>Q")
         filemenu.show_all()
 
     def get_active_view(self):

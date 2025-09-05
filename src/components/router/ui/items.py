@@ -6,7 +6,7 @@ from .click_area import ClickArea
 
 import zzub
 import neil.common as common
-from neil.utils import Vec2, Area, ui
+from neil.utils import Vec2, Area, Colors
 # import plugin_gfx 
 
 
@@ -49,7 +49,7 @@ class Item:
     pos: Vec2
     zoom: Vec2
 
-    def __init__(self, id, colors: ui.Colors):
+    def __init__(self, id, colors: Colors):
         
         # self.type = type
         self.id = id
@@ -59,7 +59,7 @@ class Item:
         # self.pos = None
         self.zoom = Vec2(1,1)
 
-        self.colors: ui.Colors = colors          
+        self.colors: Colors = colors          
 
         # self.display: plugin_gfx.DisplayGfx = self.create_display()
         # self.overlays: dict[AreaType, overlay_gfx.OverlayGfx] = self.create_overlays()
@@ -134,7 +134,7 @@ class Item:
 
 # each plugin in the router has one of these
 class PluginItem(Item):
-    def __init__(self, mp:zzub.Plugin, info:common.PluginInfo, colors: ui.Colors):
+    def __init__(self, mp:zzub.Plugin, info:common.PluginInfo, colors: Colors):
         Item.__init__(self, mp.get_id(), colors)
 
         self.metaplugin:zzub.Plugin = mp
@@ -280,7 +280,7 @@ class ConnectionItem(Item):
         'right':  Vec2(0,1)
     }
 
-    def __init__(self, index: int, connection:zzub.Connection, source_item:PluginItem, target_item:PluginItem, colors: ui.Colors):
+    def __init__(self, index: int, connection:zzub.Connection, source_item:PluginItem, target_item:PluginItem, colors: Colors):
         conn_id = ConnID(source_item.id, target_item.id, index)
 
         Item.__init__(self, conn_id, colors)
@@ -363,7 +363,7 @@ class DragConnectionItem(Item):
     source_pos: Vec2
     target_pos: Vec2
 
-    def __init__(self, source_item:PluginItem, target_pos: Vec2, colors: ui.Colors):
+    def __init__(self, source_item:PluginItem, target_pos: Vec2, colors: Colors):
         Item.__init__(self, DragId(source_item.id), colors)
 
         self.source_id = source_item.id

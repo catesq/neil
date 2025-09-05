@@ -522,7 +522,7 @@ class SequencerView(Gtk.DrawingArea):
         @param event: Menu event.
         @type event: wx.CommandEvent
         """
-        player = components.get('neil.core.player')
+        player = components.get_player()
         seq = player.get_current_sequencer()
         x, y = int(event.x), int(event.y)
         track, row = self.pos_to_track_row((x, y))
@@ -540,7 +540,7 @@ class SequencerView(Gtk.DrawingArea):
         wavemenu = ui.EasyMenu()
         for plugin in sorted(list(player.get_plugin_list()), key=lambda plugin: plugin.get_name().lower()):
             pmenu.add_item(prepstr(plugin.get_name().replace("_", "__")), self.on_popup_add_track, plugin)
-        for i, name in enumerate(ui.wave_names_generator()):
+        for i, name in enumerate(ui.wave_names_generator(player)):
             wavemenu.add_item(name, self.on_popup_record_to_wave, i + 1)
         menu.add_submenu("Add track", pmenu)
         menu.add_item("Delete track", self.on_popup_delete_track)
@@ -560,7 +560,7 @@ class SequencerView(Gtk.DrawingArea):
         menu.add_item("Merge patterns", self.on_popup_merge).set_sensitive(sel_sensitive)
         menu.show_all()
         menu.attach_to_widget(self, None)
-        menu.popup(self, event)
+        menu.easy_popup(self, event)
 
     def show_plugin_dialog(self):
         pmenu = []

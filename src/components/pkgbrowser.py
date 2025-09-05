@@ -36,6 +36,16 @@ from neil.utils import ui, sizes
 
 
 
+def test_view_class(classname):
+    obj = components.get(classname)
+    if isinstance(obj, Gtk.Window):
+        pass
+    elif isinstance(obj, Gtk.Dialog):
+        pass
+    elif isinstance(obj, Gtk.Widget) and not obj.get_parent():
+        dlg = components.get('neil.test.dialog', embed=obj, destroy_on_close=False)
+
+
 
 class PackageBrowserDialog(Gtk.Dialog):
     __neil__ = dict(
@@ -143,7 +153,7 @@ class PackageBrowserDialog(Gtk.Dialog):
             menu.popup(self, event)
 
     def test_view(self, menuitem, classname):
-        ui.test_view(classname)
+        test_view_class(classname)
 
     def cleanup_docstr(self, docstr):
         """

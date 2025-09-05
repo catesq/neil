@@ -25,7 +25,7 @@ Basically a wrapper around the path.cfg file in <install_dir>/share/neil or <loc
 from configparser import ConfigParser
 import sys, os
 
-from .base import settingspath
+from neil.utils.base import settingspath
 
 
 
@@ -92,3 +92,4 @@ class PathConfig(ConfigParser):
 
 
 path_cfg = PathConfig()
+

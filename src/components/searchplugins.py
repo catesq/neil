@@ -25,14 +25,12 @@ from gi.repository import Gtk, Gdk, GdkPixbuf
 from functools import cmp_to_key
 
 from neil.utils import  (
-    is_a_generator, is_effect, is_other, get_plugin_type,
-    prepstr, get_adapter_name, ui
+    is_a_generator, is_effect, is_other, 
+    get_plugin_type, prepstr, get_adapter_name, 
+    get_plugin_color_group, get_plugin_color_key, ui
 )
 
-
-from neil import common
-from neil import components
-
+from neil import common, components
 
 import zzub
 
@@ -270,8 +268,8 @@ class SearchPluginsDialog(Gtk.Window):
             return cmp(a.get_name().lower(), b.get_name().lower())
 
         def get_type_text(pluginloader):
-            color_name = ui.get_plugin_color_key(pluginloader, prefix='MV')
-            plugin_group = ui.get_plugin_color_group(pluginloader)
+            color_name = get_plugin_color_key(pluginloader, prefix='MV')
+            plugin_group = get_plugin_color_group(pluginloader)
             
             return '<span color="' + cfg.get_color(color_name) + '">' + plugin_group + ' | '  + get_adapter_name(pl) + '</span>'
 

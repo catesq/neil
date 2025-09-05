@@ -7,23 +7,24 @@ from .statusbar import StatusBar
 
 
 __all__ = [
-    'FramePanel',
-    'ViewMenu',
     'Accelerators',
-    'NeilFrame',
+    'FramePanel',
+    'CancelException',
     'NeilException',
-    'CancelException'
+    'NeilFrame',
+    'StatusBar',
+    'ViewMenu',
 ]
 
 __neil__ = dict(
     classes = [
-        FramePanel,
-        ViewMenu,
         Accelerators,
+        FramePanel,
+        CancelException,
+        NeilException,
         NeilFrame,
         StatusBar,
-        NeilException,
-        CancelException
+        ViewMenu,
     ],
 )
 
