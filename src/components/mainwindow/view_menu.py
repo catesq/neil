@@ -1,18 +1,15 @@
 import gi
 gi.require_version("Gtk", "3.0")
+
 from gi.repository import Gtk, Gdk, GLib
 
 from functools import cmp_to_key
 
-from neil import components, views
+from neil import components, views, utils, ui
 
 import config
 
-from neil.utils import ui 
-
 from .helpers import cmp_view, is_panel
-
-
 
 # auto populates the view menu
 # find any components with a "__neil__" property which have the category "view". Example in "src/components/patterns/panel.py"
@@ -23,11 +20,13 @@ class ViewMenu(ui.EasyMenu):
         categories = [],
     )
 
+
     def on_check_item(self, menuitem, view):
         if menuitem.get_active():
             view.show_all()
         else:
             view.hide()
+
 
     def on_activate_item(self, menuitem, view):
         if is_panel(view):
@@ -35,24 +34,29 @@ class ViewMenu(ui.EasyMenu):
         else:
             view.hide()
 
+
     def on_activate(self, widget, item, view):
         item.set_active(view.get_property('visible'))
         
         if view.get_property('visible'):
             view.show_all()
 
+
     def __init__(self):
         ui.EasyMenu.__init__(self)
-        views = sorted(components.get_from_category('view'), key=cmp_to_key(cmp_view))
-        components.get("neil.core.icons") # make sure theme icons are loaded
+        view_list = sorted(components.get_from_category('view'), key=cmp_to_key(cmp_view))
+        
+        components.get("neil.core.icons")  # make sure theme icons are loaded
         accel = components.get('neil.core.accelerators')
 
-        for view in views:
+        for view in view_list:
             if not hasattr(view, '__view__'):
-                print(("view",view,"misses attribute __view__"))
+                print(("view", view, "misses attribute __view__"))
                 continue
-            
-            options = view.__view__
+
+            # look in a neil components with classes with a __neil__
+            options: dict
+            options = view.__view__  # pyright: ignore[reportOptionalMemberAccess]
             label = options['label']
             stockid = options.get('stockid', None)
             shortcut = options.get('shortcut', None)
@@ -67,24 +71,28 @@ class ViewMenu(ui.EasyMenu):
                 item = self.add_item(label, self.on_activate_item)
 
             if shortcut:
-                accel.add_accelerator(shortcut, item)
+                accel.add_accelerator(shortcut, item) 
 
         if 0:
             # TODO: themes
-            neil_frame =  components.get('neil.core.accelerators')
+            neil_frame =  views.get_mainwindow()
             # main_frame = get_root_window()
             tempsubmenu = Gtk.Menu()
             defaultitem = Gtk.RadioMenuItem(label="Default")
             tempsubmenu.append(defaultitem)
             self.thememenu = tempsubmenu
             cfg = config.get_config()
+
             if not cfg.get_active_theme():
                 defaultitem.set_active(True)
+
             defaultitem.connect('toggled', neil_frame.on_select_theme, None)
+
             for name in sorted(cfg.get_theme_names()):
-                item = Gtk.RadioMenuItem(label=prepstr(name), group=defaultitem)
+                item = Gtk.RadioMenuItem(label=utils.prepstr(name), group=defaultitem)
                 if name == cfg.get_active_theme():
                     item.set_active(True)
                 item.connect('toggled', neil_frame.on_select_theme, name)
                 tempsubmenu.append(item)
+
             self.append(ui.make_submenu_item(tempsubmenu, "Themes"))
