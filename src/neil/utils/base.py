@@ -172,7 +172,7 @@ class Area:
 
 class Sizes():
     _scale_ = 1.0
-
+    
     def __init__(self, defaults = {'margin' : 6}, **kwargs):
         self.__defaults = defaults
         #copy defaults
@@ -182,6 +182,15 @@ class Sizes():
         if kwargs:
             self.set_values(kwargs)
 
+    @classmethod
+    def one(cls, to_parse):
+        return cls.instance().parse_value(to_parse)
+    
+    @classmethod
+    def instance(cls):
+        if not hasattr(cls, "_instance"):
+            cls._instance = cls()
+        return cls._instance
 
     def __getitem__(self, name) -> int | float | Area | Vec2 | list[int | float]:
         if name in self.__values:
