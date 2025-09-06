@@ -553,12 +553,15 @@ void song::make_work_order()
 
     cv_work_order.clear();
 
-    // iterator work order - if metaplugin has cv_generator flag then add it to cv_work_order
+    // filter work order if metaplugin has cv_generator flag to make cv_work_order
     for (vector<plugin_descriptor>::iterator i = work_order.begin(); i != work_order.end(); ++i) {
         int work_order_index = i - work_order.begin();
-        plugins[*i]->work_order_index = work_order_index;
+        auto plugin_id = get_plugin_id(*i);
+        auto plugin = plugins[plugin_id];
 
-        if (plugins[*i]->flags & zzub_plugin_flag_is_cv_generator) {
+        plugin->work_order_index = work_order_index;
+
+        if (plugin->flags & zzub_plugin_flag_is_cv_generator) {
             cv_work_order.push_back(*i);
         }
     }
