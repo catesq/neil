@@ -359,7 +359,7 @@ class NeilPlayer(Player, metaclass=PropertyEventHandler, methods=DOCUMENT_UI):
         self.create_stream_recorder()
 
         if self.__streamrecorder is None:
-            components.throw('core.error', 'Stream recorder not created')
+            raise components.exception('core.error', 'Stream recorder not created')
             
         return self.__streamrecorder
     
