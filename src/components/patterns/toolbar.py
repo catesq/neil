@@ -1,6 +1,6 @@
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
+from gi.repository import Gtk, GObject
 
 from typing import cast
 from neil import components
@@ -22,11 +22,9 @@ class PatternToolBar(Gtk.HBox):
         player = components.get_player()
         Gtk.HBox.__init__(self, expand=False, margin=sizes.get('margin'))
         
-        # self.has_focus = False
-
         self.pattern_view = pattern_view
         self.set_border_width(sizes.get('margin'))
-        eventbus = components.get('neil.core.eventbus')
+        eventbus = components.get_eventbus()
 
         self.pluginselect = Gtk.ComboBoxText()
         self.pluginselect.set_size_request(100, 0)
@@ -90,19 +88,6 @@ class PatternToolBar(Gtk.HBox):
         self.pack_start(self.btnhelp, False, True, 0)
 
         self.gtk_handlers = {}
-
-    def signal_handler_func_for(self, widget_name):
-        if widget_name in self.gtk_handlers:
-            return self.gtk_handlers[widget_name]
-        else:
-            return None
-
-    def handle_focus(self):
-        if not self.has_focus():
-            self.grab_focus()
-            self.register_events()
-
-    def register_events(self):
         self.gtk_handlers['pluginselect']  = self.pluginselect.connect('changed', self.set_plugin_sel)
         self.gtk_handlers['patternselect'] = self.patternselect.connect('changed', self.set_pattern_sel)
         self.gtk_handlers['waveselect']    = self.waveselect.connect('changed', self.set_wave_sel)
@@ -111,6 +96,29 @@ class PatternToolBar(Gtk.HBox):
         self.gtk_handlers['playnotes']     = self.playnotes.connect('clicked', self.on_playnotes_click)
         self.gtk_handlers['btnhelp']       = self.btnhelp.connect('clicked', self.on_button_help)
 
+
+        
+    def block_gtk_handler(self, widget_name):
+        if widget_name in self.gtk_handlers:
+            GObject.signal_handler_block(getattr(self, widget_name), self.gtk_handlers[widget_name])
+        else:
+            print("no handler for {}", widget_name)
+
+        return widget_name in self.gtk_handlers
+
+
+    def unblock_gtk_handler(self, widget_name):
+        if widget_name in self.gtk_handlers:
+            GObject.signal_handler_unblock(getattr(self, widget_name), self.gtk_handlers[widget_name])
+        else:
+            print("no handler for {}", widget_name)
+        
+
+
+    def handle_focus(self):
+        self.register_events()
+
+    def register_events(self):
         eventbus = components.get_eventbus()
         eventbus.attach(['new_plugin', 'delete_plugin', 'document_loaded', 'active_plugins_changed'], self.pluginselect_update)
         eventbus.attach(['active_plugins_changed', 'active_patterns_changed', 'delete_pattern', 'new_pattern', 'pattern_changed'], self.get_pattern_source)
@@ -126,16 +134,10 @@ class PatternToolBar(Gtk.HBox):
         eventbus.detach(self.waveselect_update)
         eventbus.detach(self.octave_update)
 
-        for handler_name, handler_id in self.gtk_handlers:
-            widget = getattr(self, handler_name)
-            widget.disconnect(handler_id)
-
-        self.gtk_handlers.clear()
 
 
     def remove_focus(self):
-        if self.has_focus():
-            self.remove_events()
+        self.remove_events()
 
 
     def octave_set(self, event):
@@ -166,9 +168,10 @@ class PatternToolBar(Gtk.HBox):
 
     def pluginselect_update(self, *args):
         player = components.get_player()
-        pluginselect_handler = self.signal_handler_func_for('pluginselect')
 
-        self.pluginselect.handler_block_by_func(pluginselect_handler)
+        if not self.block_gtk_handler('pluginselect'):
+            return
+
         plugins = self.get_plugin_source()
         active = -1
         
@@ -186,7 +189,7 @@ class PatternToolBar(Gtk.HBox):
         if active != -1:
             self.pluginselect.set_active(active)
 
-        self.pluginselect.handler_unblock_by_func(pluginselect_handler)
+        self.unblock_gtk_handler('pluginselect')
 
 
     def octave_update(self, *args):
@@ -203,8 +206,9 @@ class PatternToolBar(Gtk.HBox):
         This function is called whenever it is decided that
         the wave list in the combox box is outdated.
         """
-        waveselect_handler = self.signal_handler_func_for('pluginselect')
-        self.waveselect.handler_block_by_func(waveselect_handler)
+        if not self.block_gtk_handler('waveselect'):
+            return
+        
         player = components.get_player()
         sel = player.active_waves
         # active = self.waveselect.get_active()
@@ -220,7 +224,8 @@ class PatternToolBar(Gtk.HBox):
             self.waveselect.set_active(index)
         else:
             self.waveselect.set_active(0)
-        self.waveselect.handler_unblock_by_func(waveselect_handler)
+        self.unblock_gtk_handler('waveselect')
+
 
     def edit_step_changed(self, event):
         step = int(self.edit_step_box.get_active_text() or 4)
@@ -262,22 +267,27 @@ class PatternToolBar(Gtk.HBox):
         if not plugin:
             self.patternselect.get_model().clear()
             return
+        
         #def cmp_func(a,b):
         #    aname = a[0].get_pattern_name(a[1])
         #    bname = b[0].get_pattern_name(b[1])
         #    return cmp(aname.lower(), bname.lower())
         #patterns = sorted([(plugin, i) for i in
         #                   xrange(plugin.get_pattern_count())], cmp_func)
+        
         self.patternselect.get_model().clear()
         names = [(i, plugin.get_pattern_name(i)) for i in range(plugin.get_pattern_count())]
         for i, name in names:
             self.patternselect.append_text("%d %s" % (i, name))
+            
         # Block signal handler to avoid infinite recursion.
-        patternselect_handler = self.signal_handler_func_for('patternselect')
-        self.patternselect.handler_block_by_func(patternselect_handler)
+        if not self.block_gtk_handler('patternselect'):
+            return
+
         if len(player.active_patterns) > 0:
             self.patternselect.set_active(player.active_patterns[0][1])
-        self.patternselect.handler_unblock_by_func(patternselect_handler)
+        self.unblock_gtk_handler('patternselect')
+
 
     def get_pattern_sel(self):
         player = components.get_player()

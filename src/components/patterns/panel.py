@@ -32,52 +32,77 @@ class PatternPanel(Gtk.VBox):
         """
         Initialization.
         """
-        Gtk.VBox.__init__(self)
+        # Gtk.VBox.__init__(self, expand=True)
+        Gtk.VBox.__init__(self, expand=True)
+
         self.is_focused = False
 
-        vscroll = Gtk.VScrollbar()
-        hscroll = Gtk.HScrollbar()
-        self.view = PatternView(self, hscroll, vscroll)
+
+
+        # vscroll = Gtk.VScrollbar(fill_level=0.5)
+        # hscroll = Gtk.HScrollbar(fill_level=0.5)
+        # self.view = PatternView(self, hscroll, vscroll)
+        
+        self.scrollwin = Gtk.ScrolledWindow()
+        self.view = PatternView(self)
+
+        self.toolbar = PatternToolBar(self.view)
+
         self.viewport = Gtk.Viewport()
         self.viewport.add(self.view)
-        self.toolbar = PatternToolBar(self.view)
+
+        self.scrollwin.add(self.viewport)
+
         self.pack_start(self.toolbar, False, True, 0)
-        scrollwin = Gtk.Table(n_columns=2, n_rows=2)
+        self.pack_start(self.scrollwin, True, True, 0)
 
-        # scrollwin.attach(self.viewport, 0, 1, 0, 1, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 0, 0)
-        # scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL, 0, 0)
-        # scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, None, 0, 0)
+        # scrollwin = Gtk.Table.new(2, 2, False)
+        # scrollwin.set_border_width(2)
+        # scrollwin.set_properties
+        
 
-        scrollwin.attach(
-            self.viewport, 
-            0, 1, 
-            0, 1, 
-            Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 
-            Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 
-            0, 0
-        )
+        # # scrollwin.attach(self.viewport, 0, 1, 0, 1, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 0, 0)
+        # # scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL, 0, 0)
+        # # scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, None, 0, 0)
 
-        scrollwin.attach(
-            vscroll,       
-            1, 2, 
-            0, 1, 
-            Gtk.AttachOptions.FILL,                          
-            Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND,                            
-            0, 0
-        )
+        # scrollwin.attach(
+        #     self.viewport, 
+        #     0, 1, 
+        #     0, 1, 
+        #     Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 
+        #     Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 
+        #     0, 0
+        # )
 
-        scrollwin.attach(
-            hscroll,       
-            0, 1, 
-            1, 2, 
-            Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND,                            
-            Gtk.AttachOptions.EXPAND,                          
-            0, 0
-        )
+        # scrollwin.attach(
+        #     vscroll,       
+        #     1, 2, 
+        #     0, 1, 
+        #     Gtk.AttachOptions.SHRINK,                          
+        #     Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND,                            
+        #     0, 0
+        # )
 
-        self.pack_start(scrollwin, True, True, 0)
+        # scrollwin.attach(
+        #     hscroll,       
+        #     0, 1, 
+        #     1, 2, 
+        #     Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND,                         
+        #     Gtk.AttachOptions.SHRINK,                          
+        #     0, 0
+        # )
+        # scrollwin = Gtk.Grid( )
+        # scrollwin.attach(self.viewport, 0, 0, 1, 1)
+        # scrollwin.attach(vscroll, 1, 0, 1, 1)
+        # scrollwin.attach(hscroll, 0, 1, 1, 1)
 
-        self.view.grab_focus()
+
+        # self.pack_start(scrollwin, True, True, 0)
+
+
+
+        self.handle_focus()
+
         eventbus = components.get_eventbus()
         eventbus.attach('edit_pattern_request', self.on_edit_pattern_request)
 

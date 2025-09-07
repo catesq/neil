@@ -22,13 +22,14 @@ from .utils import (
 )
 
 
-from .patternstatus import PatternStatus
+from patternfx import PatternFx 
 
 import config
 import zzub
+from .patternstatus import PatternStatus
 
 if TYPE_CHECKING:
-    from .. patternfx import PatternFx
+    from . import PatternPanel
 
 pat_sizes = Sizes(patleftmargin='margin * 8')
 # patleftmargin = Sizes.one('margin * 8')
@@ -478,7 +479,8 @@ class PatternView(Gtk.DrawingArea):
     subindex_offset: list[list[int]]
     lines: list[list[list[str]]] | list[list[str]]
 
-    def __init__(self, panel, hscroll, vscroll):
+    # def __init__(self, panel, hscroll: Gtk.Widget, vscroll: Gtk.VScrollbar):
+    def __init__(self, panel: 'PatternPanel'):
         """
         Initialization.
         """
@@ -486,8 +488,8 @@ class PatternView(Gtk.DrawingArea):
         self.pattern_status = PatternStatus()
         self.panel = panel
         self.needfocus = True
-        self.hscroll = hscroll
-        self.vscroll = vscroll
+        # self.hscroll = panel.get_hscrollbar()
+        # self.vscroll = panel.get_vscrollbar()
         self.statusbar = None
         self.jump_to_note = False
         self.patternsize = 16
@@ -578,8 +580,9 @@ class PatternView(Gtk.DrawingArea):
         self.handler_ids = []
 
         
-        self.hscroll.connect('change-value', self.on_hscroll_window)
-        self.vscroll.connect('change-value', self.on_vscroll_window)
+        self.panel.scrollwin.get_hscrollbar().connect('change-value', self.on_hscroll_window)
+        self.panel.scrollwin.get_vscrollbar().connect('change-value', self.on_vscroll_window)
+        
 
         self.pattern_changed()
 
@@ -781,7 +784,7 @@ class PatternView(Gtk.DrawingArea):
         label, effects_menu = menu.add_submenu("Pattern effects")
         effects = components.get_from_category('patternfx')
         
-        for effect in cast(list[PatternFx], effects):
+        for effect in (cast(PatternFx, e) for e in effects):
             effects_menu.add_item(effect.name, self.on_pattern_effect, effect).set_sensitive(sel_sensitive)
 
         # User script menu
@@ -980,17 +983,25 @@ class PatternView(Gtk.DrawingArea):
                  int((h - self.row_height) / float(self.row_height) + 0.5)
         hrange = vw - pw
         vrange = vh - ph
-        if hrange <= 0:
-            self.hscroll.hide()
-        else:
-            self.hscroll.show()
-        if vrange <= 0:
-            self.vscroll.hide()
-        else:
-            self.vscroll.show()
-        adj = self.hscroll.get_adjustment()
+        
+        self.panel.scrollwin.set_policy(
+            Gtk.PolicyType.NEVER if hrange <= 0 else Gtk.PolicyType.ALWAYS,
+            Gtk.PolicyType.NEVER if vrange <= 0 else Gtk.PolicyType.ALWAYS
+        )
+
+        # if hrange <= 0:
+        #     self.hscroll.hide()
+        # else:
+        #     self.hscroll.show()
+
+        # if vrange <= 0:
+        #     self.vscroll.hide()
+        # else:
+        #     self.vscroll.show()
+
+        adj = self.panel.scrollwin.get_hadjustment()
         adj.configure(self.start_col, 0, vw, 1, 1, pw)
-        adj = self.vscroll.get_adjustment()
+        adj = self.panel.scrollwin.get_vadjustment()
         adj.configure(self.start_row, 0, vh, 1, 1, ph)
 
 
@@ -1119,6 +1130,9 @@ class PatternView(Gtk.DrawingArea):
         if self.jump_to_note:
             self.tab_to_note_column()
             self.jump_to_note = False
+
+        # self.on_hscroll_window(self.hscroll, self.hscroll, self.hscroll.get_value())
+        # self.on_vscroll_window(self.vscroll, self.vscroll, self.vscroll.get_value())
 
 
     def move_up(self, step = 1):
@@ -2346,7 +2360,7 @@ class PatternView(Gtk.DrawingArea):
         """
         Handles vertical window scrolling.
         """
-        adj = widget.get_adjustment()
+        adj = self.panel.scrollwin.get_vadjustment()
         minv = adj.get_property('lower')
         maxv = adj.get_property('upper')
         pagesize = adj.get_property('page-size')
@@ -2360,7 +2374,8 @@ class PatternView(Gtk.DrawingArea):
         """
         Handles horizontal window scrolling.
         """
-        adj = widget.get_adjustment()
+        # adj = widget.get_adjustment()
+        adj = self.panel.scrollwin.get_hadjustment()
         minv = adj.get_property('lower')
         maxv = adj.get_property('upper')
         pagesize = adj.get_property('page-size')
@@ -2369,6 +2384,8 @@ class PatternView(Gtk.DrawingArea):
         if self.start_col != value:
             self.start_col = value
             self.redraw()
+
+    
 
     def update_plugin_info(self):
         plugin = self.get_plugin()
