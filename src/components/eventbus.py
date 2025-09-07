@@ -103,24 +103,62 @@ class EventHandlerList:
     def __init__(self, name, handlers=None):
         self.debug_events = False
         self.name = name
+
         if not handlers:
             handlers = []
+                
         self.handlers = handlers
 
 
-    # funcsargs is either:
+    def clear(self):
+        """
+        Remove all handlers
+        """
+        self.handlers = []
+
+
+    # funcargs is either:
     #   Any callable function
     #   A list with 1 item - a callable 
     #   A list with more than 1 item. The first item is a callable, the other items are extra arguments passed to that function
+    def define_handler(self, funcargs):
+        """
+        Used by __add__. Builds a callback which is added to the handler list
+        @param funcargs: callable | list[callable, Any, ...]  
+
+        @return: tuple(weakreaf.ref, str, list) 
+                 The weakreaf is to a callable or to an object which has a funcname
+                 The str is optional - funcname found by make_ref_funcname
+                 The list is optional - arguments passed to the callable
+        """
+        # print(self.name, "define handler", funcargs)
+        func, args = self.make_func_def_args(funcargs)
+        ref, funcname = self.make_ref_funcname(func)
+        # print(self.name, "defined", ref, funcname, args)
+        return ref, funcname, args
+    
+    
+    
     def make_func_def_args(self, funcargs):
+        """
+        Used by self.define_handler to get the event handling function and it's arguments
+
+        @param funcargs: callable | list[callable, Any, ...]    
+                         Either a callable, or a list with callable/optional arguments
+
+        @return: callable | list[Any]     
+                 Callback function with optional extra arguments passed to callback 
+        """
         func = None
         args = ()
 
         if isinstance(funcargs, (list, tuple)):
             if len(funcargs) >= 2:
-                func, args = funcargs[0],funcargs[1:]
-            else:
+                func, args = funcargs[0], funcargs[1:]
+            elif len(funcargs) == 1:
                 func = funcargs[0]
+            else:
+                func = None
         else:
             func = funcargs
         
@@ -129,7 +167,18 @@ class EventHandlerList:
         return func, args
     
 
+    
     def make_ref_funcname(self, func):
+        """
+        Use weakref on the either a callable function or the __self__ object from an instance method 
+        so the function/object can be garbage collected.
+
+        Return (ref(callable), None) when callable was lambda/top level function 
+        Return (ref(instance), str(method_name)) when callable was instance method
+        
+        @param func: callable
+        @return: tuple[ref, Optional[str]]
+        """
         ref = None
         funcname = None
         
@@ -142,20 +191,12 @@ class EventHandlerList:
         return ref, funcname
     
 
-    def define_handler(self, funcargs):
-        # print(self.name, "define handler", funcargs)
-        func, args = self.make_func_def_args(funcargs)
-        ref, funcname = self.make_ref_funcname(func)
-        # print(self.name, "defined", ref, funcname, args)
-        return ref,funcname,args
 
 
     def __add__(self, funcargs):
         ref, funcname, args = self.define_handler(funcargs)
 
         self.handlers.append((ref,funcname,args))
-        # handler = EventHandlerList(self.name, self.handlers)
-        # handler.handlers.append((ref,funcname,args))
 
         return self
 
@@ -166,6 +207,7 @@ class EventHandlerList:
         self.handlers = [(ref,funcname,args) for ref, funcname, args in self.handlers if ref != rm_ref or funcname != rm_funcname or args != rm_args]
 
         return self
+
 
 
     def __len__(self):
@@ -180,19 +222,30 @@ class EventHandlerList:
 
 
     def __call__(self, *cargs):
-        # print("calling", self.name)
-        self.filter_dead_references()
         result = None
-        for ref,funcname,args in self:
+        deadrefs = False
+
+        for ref, funcname, args in self:
+            deref = ref()
+
+            if not deref:
+                deadrefs = True
+                continue
+
             if funcname:
-                func = getattr(ref(), funcname)
+                func = getattr(deref, funcname)
             else:
-                func = ref()
+                func = deref
+                
             try:
                 fargs = cargs + args
                 result = func(*fargs) or result
             except:
                 sys.excepthook(*sys.exc_info())
+        
+        if deadrefs:
+            self.filter_dead_references()
+
         return result
 
 
@@ -280,7 +333,10 @@ class EventBus:
             self.detach_event(event_name_or_func, *funcargs)
         elif isinstance(event_name_or_func, list):
             for item in event_name_or_func:
-                self.detach(item, *funcargs)
+                if isinstance(item, list) or isinstance(item, tuple):
+                    self.detach(*item, *funcargs)
+                else:
+                    self.detach(item, *funcargs)
         elif callable(event_name_or_func):
             self.detach_func(event_name_or_func, *funcargs)
         else:
@@ -292,7 +348,10 @@ class EventBus:
         handler_list = self.get_handler_list(event_name)
 
         if handler_list is not None:
-            handler_list.__sub__(funcargs)
+            if len(funcargs) == 0:
+                handler_list.clear()
+            else:
+                handler_list.__sub__(funcargs)
 
 
     def detach_func(self, *funcargs):
@@ -302,6 +361,16 @@ class EventBus:
             if handler_list is not None:
                 handler_list.__sub__(funcargs)
 
+
+    def detach_all(self, *funcargs):
+        """
+        Call detach() for every argument
+        Each item may be:
+            a string dispatched to self.detach_event containg event name to unbind 
+            a callable dispatched to self.detach_func to remove from all event handlers
+        """
+        for item in funcargs:
+            self.detach(item)
 
     def call(self, event_name: str, *args):
         handler_list = self.get_handler_list(event_name)
