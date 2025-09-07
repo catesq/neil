@@ -177,11 +177,11 @@ class NeilFrame(Gtk.Window):
         vbox.pack_start(menubar, False, False, 0)
 
         # create some panels that are always visible
-        self.master: MasterPanel = components.get('neil.core.panel.master')        # type: ignore
-        self.statusbar: StatusBar = components.get('neil.core.statusbar')          # type: ignore
-        # self.transport: TransportControls = components.get('neil.core.transport')  # type: ignore
+        self.master: MasterPanel = views.get_master()      
+        self.statusbar: StatusBar = views.get_statusbar()        
+        # self.transport: TransportControls = components.get('neil.core.transport') 
         self.playback_info: PlaybackInfo = components.get('neil.core.playback')    # type: ignore
-        self.framepanel: FramePanel = components.get('neil.core.framepanel')       # type: ignore
+        self.framepanel: FramePanel = views.get_panels()      
 
         hbox = Gtk.HBox(expand=True)
         hbox.pack_start(self.framepanel, True, True, 0)
