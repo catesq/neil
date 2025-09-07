@@ -123,7 +123,7 @@ class EventHandlerList:
                 func = funcargs[0]
         else:
             func = funcargs
-
+        
         assert callable(func), "object %r must be callable." % func
 
         return func, args
@@ -257,7 +257,7 @@ class EventBus:
     def attach(self, event_name: str | list[str], *funcargs):
         if isinstance(event_name, list):
             for name in event_name:
-                self.attach(name, funcargs)
+                self.attach(name, *funcargs)
             return
         
         handler_list = self.get_handler_list(event_name)
