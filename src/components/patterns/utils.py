@@ -1,6 +1,36 @@
 from neil.utils import note2str, switch2str, byte2str, word2str
+from enum import IntEnum
 
 import config
+
+
+
+class DialogMode(IntEnum):
+    New = 0
+    Copy = 1
+    Change = 2
+
+
+class SelectionMode(IntEnum):
+    Column = 0
+    Track = 1
+    Group = 2
+    All = 3
+
+
+class PatternSelection:
+    """
+    Selection class.
+
+    Container for selection range and the selection mode.
+    """
+    begin = -1
+    end = -1
+    group = 0
+    track = 0
+    index = 0
+    # mode = SEL_COLUMN
+    mode = SelectionMode.Column
 
 # builds content to display each cell in the pattern
 # t2c seems to be shorthand for type_to_characters
@@ -79,7 +109,7 @@ def get_length_from_param(p):
     return t2w[p.get_type()]
 
 
-def get_subindexcount_from_param(p):
+def get_subindexcount_from_param(p) -> int:
     """
     Gets subindex count of a parameter.
 

@@ -48,9 +48,32 @@ class PatternPanel(Gtk.VBox):
         # scrollwin.attach(vscroll, 1, 2, 0, 1, 0, Gtk.AttachOptions.FILL, 0, 0)
         # scrollwin.attach(hscroll, 0, 1, 1, 2, Gtk.AttachOptions.FILL, None, 0, 0)
 
-        scrollwin.attach(self.viewport, 0, 1, 0, 1, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 0, 0)
-        scrollwin.attach(vscroll,       1, 2, 0, 1, Gtk.AttachOptions.EXPAND,                          Gtk.AttachOptions.FILL,                            0, 0)
-        scrollwin.attach(hscroll,       0, 1, 1, 2, Gtk.AttachOptions.FILL,                            Gtk.AttachOptions.EXPAND,                          0, 0)
+        scrollwin.attach(
+            self.viewport, 
+            0, 1, 
+            0, 1, 
+            Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 
+            Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 
+            0, 0
+        )
+
+        scrollwin.attach(
+            vscroll,       
+            1, 2, 
+            0, 1, 
+            Gtk.AttachOptions.FILL,                          
+            Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND,                            
+            0, 0
+        )
+
+        scrollwin.attach(
+            hscroll,       
+            0, 1, 
+            1, 2, 
+            Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND,                            
+            Gtk.AttachOptions.EXPAND,                          
+            0, 0
+        )
 
         self.pack_start(scrollwin, True, True, 0)
 

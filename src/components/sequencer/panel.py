@@ -12,7 +12,7 @@ from .pattern_list import SequencerPatternListTreeView
 from neil import components, sizes
 import config
 
-from patterns import show_pattern_dialog, DLGMODE_NEW, DLGMODE_COPY, DLGMODE_CHANGE
+from patterns import show_pattern_dialog, DialogMode
 
 
 
@@ -101,7 +101,7 @@ class SequencerPanel(Gtk.VBox):
             treeview,
             get_new_pattern_name(self.plugin),
             self.seqview.step, 
-            DLGMODE_NEW, 
+            DialogMode.New, 
             False
         )
 
@@ -122,7 +122,7 @@ class SequencerPanel(Gtk.VBox):
             treeview,
             get_new_pattern_name(self.plugin),
             self.seqview.step, 
-            DLGMODE_COPY, 
+            DialogMode.Copy, 
             False
         )
 
@@ -143,7 +143,7 @@ class SequencerPanel(Gtk.VBox):
             treeview,
             self.plugin.get_pattern_name(pattern),
             self.plugin.get_pattern_length(pattern),
-            DLGMODE_CHANGE, 
+            DialogMode.Change, 
             False
         )
 

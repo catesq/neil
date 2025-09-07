@@ -7,8 +7,6 @@ gi.require_version("Gtk", "3.0")
 gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, Gdk, GLib, Pango, PangoCairo
 
-from enum import IntEnum
-
 from neil import components, views
 import neil.common as common
 
@@ -19,8 +17,10 @@ from neil.utils import (
 
 from .utils import (
     key_to_note, get_str_from_param, get_length_from_param, 
-    get_subindexcount_from_param, get_subindexoffsets_from_param
+    get_subindexcount_from_param, get_subindexoffsets_from_param,
+    PatternSelection, DialogMode, SelectionMode
 )
+
 
 from .patternstatus import PatternStatus
 
@@ -44,34 +44,17 @@ patternsizes = [
 ]
 
 
-class SelectionMode(IntEnum):
-    Column = 0
-    Track = 1
-    Group = 2
-    All = 3
 
 
-# selection modes: column, track, tracks, all
-SEL_COLUMN = 0
-SEL_TRACK = 1
-SEL_GROUP = 2
-SEL_ALL = 3
-SEL_COUNT = 4
+# # selection modes: column, track, tracks, all
+# SEL_COLUMN = 0
+# SEL_TRACK = 1
+# SEL_GROUP = 2
+# SEL_ALL = 3
+# SEL_COUNT = 4
 
 
-class PatternSelection:
-    """
-    Selection class.
 
-    Container for selection range and the selection mode.
-    """
-    begin = -1
-    end = -1
-    group = 0
-    track = 0
-    index = 0
-    mode = SEL_COLUMN
-    selection_mode = SelectionMode.Column
 
 
 class SelectionPainter:
@@ -114,25 +97,25 @@ class SelectionPainter:
             y1 = max(self.row_height, y1)
             y2 = min(clip_y, y2)
             if y2 > y1:
-                if self.selection.mode == SEL_COLUMN:
+                if self.selection.mode == SelectionMode.Column:
                     sel_g = self.selection.group
                     sel_i = self.selection.index
                     width = self.column_width
                     x2 = self.parameter_width[sel_g][sel_i] * width
                     self.draw_box(ctx, x, y1, x2, y2 - y1)
                     self.pattern_status.update_selection_status("Sel Column")
-                elif self.selection.mode == SEL_TRACK:
+                elif self.selection.mode == SelectionMode.Track:
                     x2 = ((self.track_width[self.selection.group] - 1) *
                           self.column_width)
                     self.draw_box(ctx, x, y1, x2, y2 - y1)
                     self.pattern_status.update_selection_status("Sel Track")
-                elif self.selection.mode == SEL_GROUP:
+                elif self.selection.mode == SelectionMode.Group:
                     track_count = self.group_track_count[self.selection.group]
                     x2 = ((self.track_width[self.selection.group] *
                            track_count - 1) * self.column_width)
                     self.draw_box(ctx, x, y1, x2, y2 - y1)
                     self.pattern_status.update_selection_status("Sel Group")
-                elif self.selection.mode == SEL_ALL:
+                elif self.selection.mode == SelectionMode.All:
                     x2 = 0
                     for group in range(3):
                         track_count = self.group_track_count[group]
@@ -367,7 +350,7 @@ class PatternDialog(Gtk.Dialog):
     This dialog is used to create a new pattern or a copy of a pattern,
     and to modify existent patterns.
     """
-    def __init__(self, parent, mode):
+    def __init__(self, parent, mode: int):
         """
         Initialization.
         """
@@ -378,7 +361,7 @@ class PatternDialog(Gtk.Dialog):
             modal=True, 
             destroy_with_parent=True
         )
-        self.dlgmode = mode
+        self.dlgmode = DialogMode(mode % 3)
         vbox = Gtk.VBox(expand=False, margin=pat_sizes.get('margin'))
         vbox.set_border_width(pat_sizes.get('margin'))
 
@@ -420,10 +403,7 @@ class PatternDialog(Gtk.Dialog):
     def on_enter(self, widget):
         self.response(Gtk.ResponseType.OK)
 
-# pattern dialog modes
-DLGMODE_NEW = 0
-DLGMODE_COPY = 1
-DLGMODE_CHANGE = 2
+
 
 
 def show_pattern_dialog(parent, name, length, dlgmode, letswitch=True):
@@ -444,16 +424,17 @@ def show_pattern_dialog(parent, name, length, dlgmode, letswitch=True):
     """
     dlg = PatternDialog(parent, dlgmode)
     
-    if dlgmode == DLGMODE_NEW:
+    if dlgmode == DialogMode.New:
         dlg.set_title("New Pattern")
         if not letswitch:
             dlg.chkswitch.set_sensitive(False)
-    elif dlgmode == DLGMODE_COPY:
+    elif dlgmode == DialogMode.Copy:
         dlg.set_title("Create copy of pattern")
         dlg.lengthbox.set_sensitive(False)
-    elif dlgmode == DLGMODE_CHANGE:
+    elif dlgmode == DialogMode.Change:
         dlg.set_title("Pattern Properties")
         dlg.chkswitch.set_sensitive(False)
+
     dlg.edtname.set_text(name)
     dlg.chkswitch.set_active(bool(config.get_config().get_default_int('SwitchToNewPattern', 1)))
     
@@ -470,9 +451,10 @@ def show_pattern_dialog(parent, name, length, dlgmode, letswitch=True):
     if response == Gtk.ResponseType.OK:
         switch = int(dlg.chkswitch.get_active())
         config.get_config().set_default_int('SwitchToNewPattern', switch)
-        length = int(dlg.lengthbox.get_active_text())
+        length = int(dlg.lengthbox.get_active_text() or 32)
         # length = int(dlg.lengthbox.get_child().get_text())
         result = (str(dlg.edtname.get_text()), length, switch)
+
     dlg.destroy()
     return result
 
@@ -489,8 +471,12 @@ class PatternView(Gtk.DrawingArea):
     CLIPBOARD_MAGIC = "PATTERNDATA"
     handler_ids: list[int]
 
-
+    selection: PatternSelection
     plugin: zzub.Plugin
+    clickpos: tuple[int, int, int, int, int] # (row, group, track, index, subindex) see self.pos_to_pattern 
+    subindex_count: list[list[int]]
+    subindex_offset: list[list[int]]
+    lines: list[list[list[str]]] | list[list[str]]
 
     def __init__(self, panel, hscroll, vscroll):
         """
@@ -512,14 +498,14 @@ class PatternView(Gtk.DrawingArea):
         self.group = 0
         self.subindex = 0
         self.start_row = 0
-        self.selection = None
+        self.selection = None           # pyright: ignore[reportAttributeAccessIssue]
         self.playpos = 0
         self.keystartselect = None
         self.keyendselect = None
         self.selection_start = None
         self.dragging = False
         self.shiftselect = None
-        self.clickpos = None
+        # self.clickpos = None
         self.track_width = [0, 0, 0]
         self.plugin = None  # pyright: ignore[reportAttributeAccessIssue]
         self.plugin_info = common.get_plugin_infos()
@@ -898,12 +884,13 @@ class PatternView(Gtk.DrawingArea):
         # parameter count
         self.parameter_count = [0, 0, 0]
         self.parameter_width = [[], [], []]
-        self.lines = None
+        self.lines = None    # pyright: ignore[reportAttributeAccessIssue]
         self.levels = {}
         self.factor_sources = {}
         self.row_count = 0
         self.parameter_type = None
-        self.subindex_count = None
+        self.subindex_count = []
+        self.subindex_offset = []
         self.group_position = [0, 0, 0]
         self.group_track_count = [0, 0, 0]
 
@@ -959,7 +946,7 @@ class PatternView(Gtk.DrawingArea):
                     pp.append(x)
                     x += get_length_from_param(self.plugin.get_parameter(g, 0, i)) + 1
                 self.parameter_position.append(pp)
-            # sub index counts
+            # sub index counts 
             self.subindex_count = [[get_subindexcount_from_param(self.plugin.get_parameter(g, 0, i)) \
                     for i in range(self.parameter_count[g])] for g in range(3)]
             # sub index offsets
@@ -1292,17 +1279,17 @@ class PatternView(Gtk.DrawingArea):
         """
         Adjusts the selection variables according to the selection mode.
         """
-        if self.selection.mode > SEL_GROUP:
+        if self.selection.mode > SelectionMode.Group:
             self.selection.group = 0
         else:
             self.selection.group = self.group
 
-        if self.selection.mode > SEL_TRACK:
+        if self.selection.mode > SelectionMode.Track:
             self.selection.track = 0
         else:
             self.selection.track = self.track
 
-        if self.selection.mode > SEL_COLUMN:
+        if self.selection.mode > SelectionMode.Column:
             self.selection.index = 0
         else:
             self.selection.index = self.index
@@ -1317,19 +1304,19 @@ class PatternView(Gtk.DrawingArea):
         """
         if not self.selection:
             yield (self.row, self.group, self.track, self.index)
-        elif self.selection.mode == SEL_COLUMN:
+        elif self.selection.mode == SelectionMode.Column:
             for row in range(self.selection.begin, self.selection.end):
                 yield (row, self.group, self.track, self.index)
-        elif self.selection.mode == SEL_TRACK:
+        elif self.selection.mode == SelectionMode.Track:
             for row in range(self.selection.begin, self.selection.end):
                 for index in range(0, self.parameter_count[self.group]):
                     yield (row, self.group, self.track, index)
-        elif self.selection.mode == SEL_GROUP:
+        elif self.selection.mode == SelectionMode.Group:
             for row in range(self.selection.begin, self.selection.end):
                 for track in range(0, self.group_track_count[self.group]):
                     for index in range(0, self.parameter_count[self.group]):
                         yield (row, self.group, track, index)
-        elif self.selection.mode == SEL_ALL:
+        elif self.selection.mode == SelectionMode.All:
             for row in range(self.selection.begin, self.selection.end):
                 for group in range(3):
                     tc = self.group_track_count[group]
@@ -1460,7 +1447,7 @@ class PatternView(Gtk.DrawingArea):
         """
         if not self.selection:
             self.selection = PatternSelection()
-        self.selection.mode = SEL_ALL
+        self.selection.mode = SelectionMode.All
         self.selection.begin = 0
         self.selection.end = self.plugin.get_pattern_length(self.pattern)
         self.redraw()
@@ -1562,7 +1549,7 @@ class PatternView(Gtk.DrawingArea):
         try:
             gen = self.unpack_clipboard_data(data.strip())
             mode = next(gen)
-            assert isinstance(mode, int) and (mode >= 0) and (mode <= SEL_ALL)
+            assert isinstance(mode, int) and (mode >= 0) and (mode <= int(SelectionMode.All))
             for r, g, t, i, v in gen:  # pyright: ignore[reportGeneralTypeIssues]
                 r = self.row + r
                 assert (g >= 0) and (g <= 2)
@@ -1570,11 +1557,11 @@ class PatternView(Gtk.DrawingArea):
                     continue
                 if (r < 0) or (r >= self.row_count):
                     continue
-                if mode == SEL_COLUMN:  # am i in column paste mode?
+                if mode == int(SelectionMode.Column):  # am i in column paste mode?
                     i = self.index  # so paste at cursor column
                 elif (i < 0) or (i >= self.parameter_count[g]):  # if not, skip if out of bounds
                     continue
-                if mode in (SEL_TRACK, SEL_COLUMN):  # am i pasting a track or a column?
+                if mode in (int(SelectionMode.Track), int(SelectionMode.Column)):  # am i pasting a track or a column?
                     t = self.track  # paste at cursor track
                 elif (t < 0) or (t >= self.group_track_count[g]):  # if not, skip if out of bounds
                     continue
@@ -1636,7 +1623,7 @@ class PatternView(Gtk.DrawingArea):
             x, y = int(event.x), int(event.y)
             row, group, track, index, subindex = self.pos_to_pattern((x, y))
             if event.type == Gdk.EventType._2BUTTON_PRESS:
-                self.selection.mode = SEL_COLUMN
+                self.selection.mode = SelectionMode.Column
                 self.selection.begin = 0
                 self.selection.end = self.row_count
                 self.adjust_selection()
@@ -1668,13 +1655,13 @@ class PatternView(Gtk.DrawingArea):
         if self.dragging:
             row, group, track, index, subindex = self.pos_to_pattern((x, y))
             if group != self.clickpos[1]:
-                self.selection.mode = SEL_ALL
+                self.selection.mode = SelectionMode.All
             elif track != self.clickpos[2]:
-                self.selection.mode = SEL_GROUP
+                self.selection.mode = SelectionMode.Group
             elif index != self.clickpos[3]:
-                self.selection.mode = SEL_TRACK
+                self.selection.mode = SelectionMode.Track
             else:
-                self.selection.mode = SEL_COLUMN
+                self.selection.mode = SelectionMode.Column
             self.show_row(row)
             if row < self.clickpos[0]:
                 self.selection.end = self.clickpos[0] + 1
@@ -1717,7 +1704,7 @@ class PatternView(Gtk.DrawingArea):
         
         player = components.get_player()
         name = self.get_new_pattern_name(m)
-        result = show_pattern_dialog(self, name, self.patternsize, DLGMODE_NEW)
+        result = show_pattern_dialog(self, name, self.patternsize, DialogMode.New)
         if not result:
             return
         name, self.patternsize, switch = result
@@ -1783,7 +1770,7 @@ class PatternView(Gtk.DrawingArea):
         """
         player = components.get_player()
         name = self.get_new_pattern_name()
-        result = show_pattern_dialog(self, name, self.row_count, DLGMODE_COPY)
+        result = show_pattern_dialog(self, name, self.row_count, DialogMode.Copy)
 
         if not result or not self.plugin:
             return
@@ -1813,7 +1800,7 @@ class PatternView(Gtk.DrawingArea):
         """
         Callback that shows the properties of the current pattern.
         """
-        result = show_pattern_dialog(self, self.plugin.get_pattern_name(self.pattern), self.plugin.get_pattern_length(self.pattern), DLGMODE_CHANGE)
+        result = show_pattern_dialog(self, self.plugin.get_pattern_name(self.pattern), self.plugin.get_pattern_length(self.pattern), DialogMode.Change)
         if not result:
             return
         
@@ -1900,6 +1887,7 @@ class PatternView(Gtk.DrawingArea):
         mask = event.get_state()
         kv = event.keyval
         # convert keypad numbers
+        data = None
         if Gdk.keyval_from_name('KP_0') <= kv <= \
                Gdk.keyval_from_name('KP_9'):
             kv = kv - Gdk.keyval_from_name('KP_0') + \
@@ -1949,7 +1937,7 @@ class PatternView(Gtk.DrawingArea):
                 self.shiftselect = self.row
                 self.selection.begin = self.shiftselect
                 self.selection.end = self.row + 1
-            self.selection.mode = (self.selection.mode + 1) % 4
+            self.selection.mode = SelectionMode((self.selection.mode + 1) % 4)
             self.adjust_selection()
             self.redraw()
         elif (mask & Gdk.ModifierType.CONTROL_MASK):
@@ -1961,7 +1949,7 @@ class PatternView(Gtk.DrawingArea):
                 if self.keyendselect:
                     self.selection.end = self.keyendselect
                 if self.selection.begin == self.row:
-                    self.selection.mode = (self.selection.mode + 1) % 4
+                    self.selection.mode = SelectionMode((self.selection.mode + 1) % 4)
                 self.selection.begin = self.row
                 self.keystartselect = self.row
                 self.selection.end =\
@@ -1977,7 +1965,7 @@ class PatternView(Gtk.DrawingArea):
                 if self.keyendselect:
                     self.selection.end = self.keyendselect
                 if self.selection.end == self.row + 1:
-                    self.selection.mode = (self.selection.mode + 1) % 4
+                    self.selection.mode = SelectionMode((self.selection.mode + 1) % 4)
                 self.selection.end = self.row + 1
                 self.keyendselect = self.row + 1
                 self.selection.begin =\
@@ -1986,7 +1974,7 @@ class PatternView(Gtk.DrawingArea):
                 self.adjust_selection()
                 self.redraw()
             elif k == 'u':
-                self.selection = None
+                self.selection = None # pyright: ignore[reportAttributeAccessIssue]
                 self.update_plugin_info()
                 self.redraw()
             elif k == 'Up':
@@ -2044,8 +2032,7 @@ class PatternView(Gtk.DrawingArea):
             self.plugin.insert_pattern_rows(self.pattern, indices, int(len(indices) / 3), self.row, 1)
             player.history_commit("insert row")
         elif k == 'Delete':
-            del self.lines[self.group][self.track][self.row:self.row +\
-                                                   1]
+            del self.lines[self.group][self.track][self.row:self.row + 1]
             indices = []
             for index in range(1):
                 self.lines[self.group][self.track].append('')
@@ -2073,7 +2060,7 @@ class PatternView(Gtk.DrawingArea):
             step_select = self.panel.toolbar.edit_step_box
             step_select.set_active((step_select.get_active() + 1) % 12)
         elif k == 'Escape':
-            self.selection = None
+            self.selection = None # pyright: ignore[reportAttributeAccessIssue]
             self.shiftselect = None
             self.update_plugin_info()
         # A key to insert a note or a parameter value was pressed.

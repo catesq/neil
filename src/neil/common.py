@@ -62,7 +62,7 @@ class PluginInfo(object):
         self.bypassed = False
         self.cpu = -9999.0
         self.pattern_position = (0, 0, 0, 0, 0)
-        self.selection = None
+        self.selection: 'PluginSelection' = None
         self.songplugin = True
         self.plugingfx = GfxCache()
         self.patterngfx = {}

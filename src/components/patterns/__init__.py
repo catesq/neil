@@ -21,11 +21,15 @@ Contains all classes and functions needed to render the pattern
 editor and its associated dialogs.
 """
 
+from .utils import DialogMode, SelectionMode, PatternSelection, key_to_note
 from .toolbar import PatternToolBar
 from .panel import PatternPanel
-from .views import PatternView, PatternDialog, show_pattern_dialog, DLGMODE_NEW, DLGMODE_COPY, DLGMODE_CHANGE
+from .views import PatternView, PatternDialog, show_pattern_dialog
 from .patternstatus import PatternStatus
-from .utils import key_to_note
+
+
+
+
 
 
 __all__ = [
@@ -34,11 +38,11 @@ __all__ = [
     'PatternPanel',
     'PatternView',
     'PatternStatus',
-    'key_to_note'
+    'DialogMode',
+    'SelectionMode',
+    'PatternSelection',
+    'key_to_note',
     'show_pattern_dialog',
-    'DLGMODE_NEW',
-    'DLGMODE_COPY',
-    'DLGMODE_CHANGE',
 ]
 
 
