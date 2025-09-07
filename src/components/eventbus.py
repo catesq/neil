@@ -270,14 +270,24 @@ class EventBus:
 
     # call __sub__ in EventhandlerList
     def detach(self, event_name_or_func: str | Any, *funcargs):
+        """
+        Either:
+            Remove the function handler in funcargs from an named event/list of named events
+            Remove all handlers from the named event/list of events
+            
+        """
         if isinstance(event_name_or_func, str):
-            return self.detach_event(event_name_or_func, *funcargs)
+            self.detach_event(event_name_or_func, *funcargs)
         elif isinstance(event_name_or_func, list):
-            return self.detach_func(*event_name_or_func, *funcargs)
+            for item in event_name_or_func:
+                self.detach(item, *funcargs)
+        elif callable(event_name_or_func):
+            self.detach_func(event_name_or_func, *funcargs)
         else:
-            return self.detach_func(event_name_or_func, *funcargs)
+            print("Unknown: eventbus.detach({}, {})".format(event_name_or_func, funcargs))
 
 
+    # 
     def detach_event(self, event_name: str, *funcargs):
         handler_list = self.get_handler_list(event_name)
 
@@ -291,11 +301,6 @@ class EventBus:
 
             if handler_list is not None:
                 handler_list.__sub__(funcargs)
-
-
-    def detach_all(self, *event_names_or_funcs):
-        for name_or_func in event_names_or_funcs:
-            self.detach(name_or_func)
 
 
     def call(self, event_name: str, *args):
