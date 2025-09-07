@@ -9,7 +9,8 @@ import types
 import ctypes
 import time
 
-# never try 'from neil import components' in this file. unresolvable circular imports. 
+# never try 'from neil import components' in this file. 
+# unresolvable circular imports. 
 # pass the component manager or the component you need to the util function
 
 if TYPE_CHECKING:
